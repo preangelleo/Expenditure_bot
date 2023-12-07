@@ -75,6 +75,17 @@ class ExpenditureList(Resource):
         except Error as e:
             return {'error': str(e)}, 500
 
+# Home route
+@app.route('/')
+def home():
+    return """
+    <html>
+    <body style="text-align: center;">
+        <h1>Hello world</h1>
+    </body>
+    </html>
+    """
+
 # Adding the resource to API
 api.add_resource(ExpenditureList, '/expenditures')
 
