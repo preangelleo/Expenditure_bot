@@ -86,6 +86,42 @@ def home():
     </html>
     """
 
+# Adding a new page 'table' to display the records in "expenditure_table"
+@app.route('/table')
+def table():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM expenditure_table")
+        records = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return """
+        <html>
+        <body style="text-align: center;">
+            <h1>Expenditure Table</h1>
+            <table style="margin: auto;">
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Unit Price</th>
+                    <th>Units</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Currency</th>
+                    <th>Tax</th>
+                    <th>Tips</th>
+                </tr>
+                """ + \
+                "\n".join(["<tr><td>" + "</td><td>".join([str(col) for col in row]) + "</td></tr>" for row in records]) + \
+                """
+            </table>
+        </body>
+        </html>
+        """
+    except Error as e:
+        return {'error': str(e)}, 500
+
 # Adding the resource to API
 api.add_resource(ExpenditureList, '/expenditures')
 
