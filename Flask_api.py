@@ -5,6 +5,7 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 import os
+from flask import make_response
 
 # Load environment variables
 load_dotenv()
@@ -124,6 +125,12 @@ def table():
 
 # Adding the resource to API
 api.add_resource(ExpenditureList, '/expenditures')
+
+@app.errorhandler(400)
+def bad_request_error(error):
+    # 在这里添加你的日志记录代码
+    app.logger.error(error)
+    return make_response(jsonify({'error': 'Bad request'}), 400)
 
 # Run the application
 if __name__ == '__main__':
