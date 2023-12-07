@@ -6,3 +6,5 @@ python-dotenv
 werkzeug
 openai
 aiogram
+tenacity
+requests

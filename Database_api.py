@@ -4,9 +4,9 @@ from flask_httpauth import HTTPTokenAuth
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
-import os
+import os, json, requests
 from flask import make_response
-import json
+
 
 # Load environment variables
 load_dotenv()
@@ -94,5 +94,19 @@ def insert_expenditure_record(item, category, unit_price, units, date, time, cur
         cursor.close()
         conn.close()
         return {'message': 'Record added successfully'}, 201
+    except Error as e:
+        return {'error': str(e)}, 500
+    
+# difine a function to send telegram message to a chat_id using requests + telegram bot api
+def send_telegram_message(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
+    print(f"Sending message to chat_id: {chat_id}")
+    try:
+        url = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/sendMessage"
+        data = {
+            "chat_id": chat_id,
+            "text": message
+        }
+        response = requests.post(url, data=data)
+        return response.json()
     except Error as e:
         return {'error': str(e)}, 500

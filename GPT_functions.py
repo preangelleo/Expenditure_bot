@@ -53,8 +53,9 @@ def ask_gpt(prompt):
 # print(response_text)
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(3))
-def chat_completion_request(messages, tools=None, tool_choice=None, model='gpt-4-1106-preview'):
-    print("chat_completion_request() working...")
+def chat_completion_request(messages, tools=None, tool_choice=None, model='gpt-4-1106-preview', from_id=os.getenv('TG_BOT_OWNER_ID')):
+    # print("chat_completion_request() working...")
+    send_telegram_message("GPT is calling function(s)...", from_id)
 
     headers = {
         "Content-Type": "application/json",
@@ -73,12 +74,14 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model='gpt-4
         )
         return response
     except Exception as e:
-        print("Unable to generate ChatCompletion response")
-        print(f"Exception: {e}")
+        # print("Unable to generate ChatCompletion response")
+        # print(f"Exception: {e}")
+        send_telegram_message(f"GPT calling functions(s) failed...\n\n{e}", from_id)
+
         return e
 
 
-def run_gpt_with_function_calls(messages):
+def run_gpt_with_function_calls(messages, from_id=os.getenv('TG_BOT_OWNER_ID')):
     tools = [
         {"type": "function",
           "function": {
@@ -111,6 +114,7 @@ def run_gpt_with_function_calls(messages):
     ittem_counts = 0
     # execut the function calls
     for tool_call in assistant_message["tool_calls"]:
+        send_telegram_message(f"Inserting new items to expenditure table...", from_id)
         ittem_counts = len(assistant_message["tool_calls"])
         if tool_call["type"] == "function":
             function_name = tool_call["function"]["name"]

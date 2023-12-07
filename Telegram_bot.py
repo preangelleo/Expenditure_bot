@@ -45,7 +45,9 @@ async def echo_handler(message: types.Message) -> None:
     By default, message handler will handle all message types (like a text, photo, sticker etc.)
     """
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
-    if message.from_user.id != TG_BOT_OWNER_ID: return
+    from_id = message.from_user.id
+
+    if from_id != TG_BOT_OWNER_ID: return
 
     # Print out the message in json format with indent
     '''
@@ -74,9 +76,6 @@ async def echo_handler(message: types.Message) -> None:
             file_path = file_info.file_path  # get file_path from File object
             file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
 
-            # print(f"File path: {file_path}")
-            # print(f"File url: {file_url}")
-
             response_text = ask_gpt_vision(prompt, file_url)
             await message.answer(response_text)
 
@@ -85,7 +84,7 @@ async def echo_handler(message: types.Message) -> None:
             messages.append({"role": "user", "content": response_text})
 
             try: 
-                ittem_counts = run_gpt_with_function_calls(messages)
+                ittem_counts = run_gpt_with_function_calls(messages, from_id)
                 await message.answer(f"{ittem_counts} items have been inserted into the Expenditure table!")
             except Exception as e: print(e)
 
