@@ -114,7 +114,7 @@ def table():
                     <th>Tips</th>
                 </tr>
                 """ + \
-                "\n".join(["<tr><td>" + "</td><td>".join([str(col) for col in row]) + "</td></tr>" for row in records]) + \
+                "\n".join(["<tr><td>" + "</td><td>".join([str(row[col]) for col in ['item', 'category', 'unit_price', 'units', 'date', 'time', 'currency', 'tax', 'tips']]) + "</td></tr>" for row in records]) + \
                 """
             </table>
         </body>
