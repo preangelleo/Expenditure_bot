@@ -20,3 +20,6 @@ dist/
 
 # Ignore log files
 *.log
+
+# Ignore temp.txt
+Temp.txt
