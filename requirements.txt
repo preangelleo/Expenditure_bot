@@ -1,6 +1,6 @@
-Flask==2.1.2
-Flask-RESTful==0.3.9
-Flask-HTTPAuth==4.5.0
-mysql-connector-python==8.0.23
-python-dotenv==0.20.0
-werkzeug==2.0.2
+Flask
+Flask-RESTful
+Flask-HTTPAuth
+mysql-connector-python
+python-dotenv
+werkzeug

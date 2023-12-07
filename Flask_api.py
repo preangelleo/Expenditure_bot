@@ -35,8 +35,8 @@ tokens = {
 
 @auth.verify_token
 def verify_token(token):
-    print(f"Received token: {token}")
-    print(f"Expected tokens: {tokens}")
+    # print(f"Received token: {token}")
+    # print(f"Expected tokens: {tokens}")
     if token in tokens:
         return tokens[token]
     return None
