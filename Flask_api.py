@@ -97,11 +97,25 @@ def table():
         records = cursor.fetchall()
         cursor.close()
         conn.close()
+        total_unit_price = sum(float(row['unit_price']) for row in records)
         return """
         <html>
-        <body style="text-align: center;">
-            <h1>Expenditure Table</h1>
-            <table style="margin: auto;">
+        <head>
+            <style>
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid black;
+                    padding: 5px;
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+            <h1 style="text-align: center;">Expenditure Table</h1>
+            <table>
                 <tr>
                     <th>Item</th>
                     <th>Category</th>
@@ -116,6 +130,11 @@ def table():
                 """ + \
                 "\n".join(["<tr><td>" + "</td><td>".join([str(row[col]) for col in ['item', 'category', 'unit_price', 'units', 'date', 'time', 'currency', 'tax', 'tips']]) + "</td></tr>" for row in records]) + \
                 """
+                <tr>
+                    <td colspan="2">Summarize</td>
+                    <td>""" + str(total_unit_price) + """</td>
+                    <td colspan="6"></td>
+                </tr>
             </table>
         </body>
         </html>
