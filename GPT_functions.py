@@ -10,7 +10,8 @@ client = OpenAI(
 )
 
 # define GPT function with input prompt and image url
-def ask_gpt_vision(prompt, image_url):
+def ask_gpt_vision(prompt, image_url, from_id=os.getenv('TG_BOT_OWNER_ID')):
+    send_telegram_message("GPT is reading the image...", from_id)
     response = client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=[
@@ -33,7 +34,8 @@ def ask_gpt_vision(prompt, image_url):
     return response_text
 
 # define GPT function with input prompt only
-def ask_gpt(prompt):
+def ask_gpt(prompt, from_id=os.getenv('TG_BOT_OWNER_ID')):
+    send_telegram_message("GPT is thinking...", from_id)
     response = client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=[
@@ -111,11 +113,12 @@ def run_gpt_with_function_calls(messages, from_id=os.getenv('TG_BOT_OWNER_ID')):
     '''
     assistant_message:  {'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_6rTbXISyXSLjp8UC0QugIJWZ', 'type': 'function', 'function': {'name': 'insert_expenditure_record', 'arguments': '{"item": "FLORIDAS NATURAL", "category": "Beverage", "unit_price": 2.5, "units": 2, "date": "Unknown", "time": "Unknown", "currency": "Unknown", "tax": 0.0, "tips": 0.0}'}}, {'id': 'call_CdSCW8dDlJ3RtgHslWKGvixh', 'type': 'function', 'function': {'name': 'insert_expenditure_record', 'arguments': '{"item": "LUCERNE WHOLE MILK", "category": "Dairy", "unit_price": 4.99, "units": 1, "date": "Unknown", "time": "Unknown", "currency": "Unknown", "tax": 0.0, "tips": 0.0}'}}, {'id': 'call_x6Gt63yxtEO4wymAIJSEqAgA', 'type': 'function', 'function': {'name': 'insert_expenditure_record', 'arguments': '{"item": "BLUEBERRIES ORGNC", "category": "Produce", "unit_price": 8.99, "units": 1, "date": "Unknown", "time": "Unknown", "currency": "Unknown", "tax": 0.0, "tips": 0.0}'}}, {'id': 'call_ZVF8O00SGFF969u346ufDyXS', 'type': 'function', 'function': {'name': 'insert_expenditure_record', 'arguments': '{"item": "GALA APPLES LARGE", "category": "Produce", "unit_price": 2.69, "units": 3.96, "date": "Unknown", "time": "Unknown", "currency": "Unknown", "tax": 0.0, "tips": 0.0}'}}, {'id': 'call_rr0RJIVIHsWAckF8hEO3N2KM', 'type': 'function', 'function': {'name': 'insert_expenditure_record', 'arguments': '{"item": "GRAPE RD SDLSS ORG", "category": "Produce", "unit_price": 4.99, "units": 2.24, "date": "Unknown", "time": "Unknown", "currency": "Unknown", "tax": 0.0, "tips": 0.0}'}}]}'''
 
-    ittem_counts = 0
+    i = 1
     # execut the function calls
     for tool_call in assistant_message["tool_calls"]:
-        send_telegram_message(f"Inserting new items to expenditure table...", from_id)
-        ittem_counts = len(assistant_message["tool_calls"])
+        item_counts = len(assistant_message["tool_calls"])
+        send_telegram_message(f"Inserting {i}/{item_counts} items to expenditure table...", from_id)
+
         if tool_call["type"] == "function":
             function_name = tool_call["function"]["name"]
             arguments = tool_call["function"]["arguments"]
@@ -123,7 +126,8 @@ def run_gpt_with_function_calls(messages, from_id=os.getenv('TG_BOT_OWNER_ID')):
             if function_name == "insert_expenditure_record":
                 try: insert_expenditure_record(**arguments_dict)
                 except Exception as e: print(e)
-    return ittem_counts
+                i += 1
+    return i
 
 if __name__ == '__main__':
     messages = []
