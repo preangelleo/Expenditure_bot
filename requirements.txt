@@ -4,3 +4,4 @@ Flask-HTTPAuth
 mysql-connector-python
 python-dotenv
 werkzeug
+openai
