@@ -98,6 +98,7 @@ def table():
         cursor.close()
         conn.close()
         total_unit_price = sum(float(row['unit_price']) for row in records)
+        total_tips = sum(float(row['tips']) for row in records)
         return """
         <html>
         <head>
@@ -133,7 +134,8 @@ def table():
                 <tr>
                     <td colspan="2">Summarize</td>
                     <td>""" + str(total_unit_price) + """</td>
-                    <td colspan="6"></td>
+                    <td colspan="5"></td>
+                    <td>""" + str(total_tips) + """</td>
                 </tr>
             </table>
         </body>
