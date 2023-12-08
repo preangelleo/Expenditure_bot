@@ -373,22 +373,12 @@ def get_token_price_table():
 
 # 通过 df_ticker = pd.read_json(BINANCE_TICKER_URL) 获得最新的 ticker 信息
 def binance_today_hot_coin(trading_volume_limit = 50_000_000):
-    # unique_coin_list = []
-    # # 读出 binance_ticker_top_30 中 的 openTime 在最近 30 天内的所有行 unique coin, 转换为 pandas df 并生成一个 unique_coin_list
-    # '''with engine.connect() as connection:
-    #     # result = connection.execute(text('SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime'), openTime=int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000)
-    #     result = connection.execute(text('SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime'), {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000})
-    #     # 将 result 转换为 pandas df
-    #     df = pd.DataFrame(result, columns=['coin'])
-    #     # 将 df 转换为 list
-    #     unique_coin_list = df['coin'].values.tolist()'''
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
-    # cursor.execute("SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime", {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000})
-    # unique_coin_list = [i[0] for i in cursor.fetchall()]
-    # cursor.close()
-    # conn.close()
-
+    
+    # 读出 binance_ticker_top_30 中 的 openTime 在最近 30 天内的所有行 unique coin, 转换为 pandas df 并生成一个 unique_coin_list
+    try:
+        df_30_days = pd.read_sql_query("SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > %s", engine, params=[(int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000,)])
+        unique_coin_list = df_30_days['coin'].values.tolist()
+    except: unique_coin_list = []
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -398,8 +388,11 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
-    # 挑选出交易量最大而且 priceChangePercent 大于 0 以及交易量大于 5000w 的币
+    # Filter out the coins with priceChangePercent > 0 and quoteVolume > trading_volume_limit
     df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 0) & (df_ticker['quoteVolume'] > trading_volume_limit)]
+
+    # Filter out the coins with lastPrice between 0.0001 and 1000
+    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
 
     df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
@@ -407,18 +400,17 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # 剔除 coin 包含 USD 的币
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
-    # IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
-    
     # 剔除掉 IGNORE_LIST 中的币
+    # IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
     # df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
 
     df_ticker = df_ticker.head(30)
 
-    # # 剔除掉 unique_coin_list 中的币
-    # df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
-    # if df_ticker.empty: return []
+    # 剔除掉 unique_coin_list 中的币
+    df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
+    if df_ticker.empty: return []
 
-    #分析列表中的每一个 coin 的 token_info = get_token_market_cap_and_ratio(coin) token_info is None, 则剔除掉该行, 如果 token_info type is dict 则 df_ticker['market_cap'] = token_info['market_cap'] df_ticker['fully_diluted_market_cap'] = token_info['fully_diluted_market_cap'] df_ticker['ratio'] = token_info['ratio']
+    # Update ticker with market cap and fully diluted market cap
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
     df_ticker['ratio'] = 0.01
@@ -433,78 +425,38 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
         else:
             df_ticker.drop(index, inplace=True)
 
+    # Filter out the coins with market_cap between 100M and 10B
+    df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 10_000_000_000)]
+
     if df_ticker.empty: return []
 
     df_ticker = df_ticker.reset_index(drop=True)
 
-    # # 先删掉 binance_ticker_top_30
-    # with engine.connect() as connection: connection.execute(text('DROP TABLE IF EXISTS binance_ticker_top_30'))
-
-    update_id = 0
-    # 如果 binance_ticker_top_30 存在，则读出最大的 update_id 值；如果不存在，则 update_id = 1
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # if binance_ticker_top_30 exist, drop the table
-    # cursor.execute("DROP TABLE IF EXISTS binance_ticker_top_30")
-
-    # if binance_ticker_top_30 not exist, create table
-    # cursor.execute("CREATE TABLE IF NOT EXISTS binance_ticker_top_30 (symbol TEXT, priceChangePercent REAL, lastPrice REAL, openPrice REAL, highPrice REAL, lowPrice REAL, quoteVolume REAL, openTime INTEGER, closeTime INTEGER, coin TEXT, market_cap REAL, fully_diluted_market_cap REAL, ratio REAL, update_id INTEGER)")
-    
-    # print out columns of binance_ticker_top_30
-    # cursor.execute("PRAGMA table_info(binance_ticker_top_30)")
-    # print('TABLE CLUMNS:', cursor.fetchall())
-
-    # check if binance_ticker_top_30 exist, if exist, read out the max update_id
-
-    cursor.execute("SHOW TABLES LIKE 'binance_ticker_top_30'")
-    if cursor.fetchone() is None: update_id = 0
-    else:
-        cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-        result = cursor.fetchone()
-        update_id = result[0] if result else 0
-
-    cursor.close()
-    conn.close()
-
-    # cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-    # update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
+    # 读出 binance_ticker_top_30 中的 update_id 的最大值, 赋值给 update_id
+    try: update_id = pd.read_sql_query("SELECT MAX(update_id) FROM binance_ticker_top_30", engine).values[0][0]
+    except: update_id = 0
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
+    # cursor.execute("SHOW TABLES LIKE 'binance_ticker_top_30'")
+    # if cursor.fetchone() is None: update_id = 0
+    # else:
+    #     cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
+    #     result = cursor.fetchone()
+    #     update_id = result[0] if result else 0
     # cursor.close()
     # conn.close()
 
-    # with engine.connect() as connection:
-    #     result = connection.execute(text('SELECT MAX(update_id) FROM binance_ticker_top_30'))
-    #     for row in result: update_id = row[0]
-
     df_ticker['update_id'] = int(update_id) + 1
 
-    # print out the dicker.columns
-    print('TOCKER DF CLUMNS:', df_ticker.columns)
-
-    print(df_ticker)
-
     # Append df_ticker to the 'binance_ticker_top_30' table
-    # df_ticker.to_sql('binance_ticker_top_30', conn, if_exists='append', index=False)
     df_ticker.to_sql('binance_ticker_top_30', engine, if_exists='append', index=False)
 
     # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
-    # with engine.connect() as connection: df_ticker = pd.read_sql(text('SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id'), connection, params={'update_id': update_id + 1})
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
-    # cursor.execute("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", {'update_id': update_id + 1})
-
-    # df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[update_id + 1])
     df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[(update_id + 1,)])
-    # df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", engine, params={'update_id': update_id + 1})
-
-    # df_ticker = pd.DataFrame(cursor.fetchall(), columns=['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime', 'coin', 'market_cap', 'fully_diluted_market_cap', 'ratio', 'update_id'])
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
-    # cursor.close()
-    # conn.close()
     return today_hot_coin_list
 ''' df_ticker
        symbol  priceChangePercent  lastPrice  openPrice  highPrice  lowPrice   quoteVolume       openTime      closeTime   coin    market_cap  fully_diluted_market_cap     ratio

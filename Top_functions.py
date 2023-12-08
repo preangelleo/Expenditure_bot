@@ -50,7 +50,7 @@ db_name = os.getenv('DB_NAME')
 # 创建数据库引擎
 # 格式：dialect+driver://username:password@host:port/database
 engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
-print(f"DEBUG: engine: {engine}")
+# print(f"DEBUG: engine: {engine}")
 
 INFURA_KEY = os.getenv('INFURA_KEY')
 DEBANK_API = os.getenv('DEBANK_API')
