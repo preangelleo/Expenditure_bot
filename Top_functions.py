@@ -11,7 +11,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 from urllib.parse import urlencode
 from urllib.parse import urljoin
+from Prompt_template import *
 
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
 BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
@@ -223,6 +225,74 @@ def get_token_market_cap_and_ratio(token_symbol):
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
             if fully_diluted_market_cap < 5_000_000_000 and market_cap / fully_diluted_market_cap > 0.5: return {'market_cap': market_cap, 'fully_diluted_market_cap': fully_diluted_market_cap, 'ratio': market_cap / fully_diluted_market_cap}
     except: return 
+
+
+# difine a function to send telegram message to a chat_id using requests + telegram bot api
+def send_msg(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
+    print(f"Sending message to chat_id: {chat_id}")
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        data = {
+            "chat_id": chat_id,
+            "text": message
+        }
+        response = requests.post(url, data=data)
+        return response.json()
+    except Error as e: return {'error': str(e)}, 500
+    
+
+'''
+Designing a database table structure for an expenditure record:
+
+ID (INTEGER, Primary Key): A unique identifier for each user.
+From_id (VARCHAR): The Telegram From_ID of the user who send the receipt image.
+Date (DATE): The date of the transaction.
+Time (TIME, format HH:MM): The time of the transaction.
+Spent (FLOAT): The total amount spent in the transaction.
+Category (VARCHAR): The category of the expenditure (e.g., Food, Transport, Bills).
+PaymentMethod (VARCHAR): How the payment was made (e.g., Cash, Credit Card, Online Payment).
+Merchant (VARCHAR): The name of the merchant or provider.
+ItemName (VARCHAR): The name of the item or service purchased.
+Price (FLOAT): The price of the individual item or service.
+Card_Number (INTEGER): The last four digits of the card used for the transaction.
+Tax (FLOAT): The tax amount on the transaction.
+Tips (FLOAT): The tips amount, if any.
+Address (VARCHAR): The address where the transaction occurred or the address of the merchant.
+Receipt_Image_URL (VARCHAR): URL link to the image of the receipt.
+'''
+
+def create_expenditure_record_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'user_expenditures_record'
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_expenditures_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Date DATE, Time TIME, Spent FLOAT, Category VARCHAR(255), PaymentMethod VARCHAR(255), Merchant VARCHAR(255), ItemName VARCHAR(255), Price FLOAT, Card_Number INTEGER, Tax FLOAT, Tips FLOAT, Address VARCHAR(255), Receipt_Image_URL VARCHAR(255))")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
+
+# Define a function to insert a new expenditure record into the table 'user_expenditures_record'
+def insert_new_expenditure_record(from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url):
+    from_id = str(from_id)
+    
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if the table 'user_expenditures_record' exists
+    cursor.execute("SHOW TABLES LIKE 'user_expenditures_record'")
+    table_exists = cursor.fetchone()
+    if not table_exists: create_expenditure_record_table()
+    
+    # Insert a new record into the table 'user_expenditures_record'
+    cursor.execute("INSERT INTO user_expenditures_record (From_id, Date, Time, Spent, Category, PaymentMethod, Merchant, ItemName, Price, Card_Number, Tax, Tips, Address, Receipt_Image_URL) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s)", (from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url))
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return f"Successfully inserted '{item_name} | {spent}' into the Expenditure table!"
 
 
 if __name__ == '__main__':

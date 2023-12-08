@@ -3,7 +3,67 @@ from time import strftime, localtime
 # Telegram
 WELCOME_FROM_TELEGRAM_BOT = "You could ask me anything:-) \nThis is GPT Assistant developed by \nLEOWANG.net" 
 
-# GPT Prompt Template
-RECEIPT_EXTRACTOR_PROMPT = f"You will extract the purchase information from the user prompt and call the insert_expenditure_record function to insert record into the expenditure_table one by one. You will do this job in just one prompt, so don't ask user for any clarification. Default currency is USD. Put 0 or None for the fields that are not available. If you find no date and time infor, then date is {strftime('%Y-%m-%d', localtime())} and time is {strftime('%H:%M', localtime())}."
+CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others']
 
-READ_RECEIPT = "Read the image and try to find out the detailed information of: item, category, unit_price, units, date, time, currency, tax, tips. The tell me the purchased information in a list."
+FUNCTIONS_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "insert_new_expenditure_record",
+            "description": "Insert a new expenditure record into the table 'user_expenditures_record'",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "from_id": {"type": "string", "description": "The user's telegram id"},
+                    "date": {"type": "string", "description": "The date of the expenditure record"},
+                    "time": {"type": "string", "description": "The time of the expenditure record"},
+                    "spent": {"type": "number", "description": "The total amount of the expenditure record"},
+                    "category": {"type": "string", "description": "The category of the expenditure record"},
+                    "payment_method": {"type": "string", "description": "The payment method of the expenditure record"},
+                    "merchant": {"type": "string", "description": "The merchant of the expenditure record"},
+                    "item_name": {"type": "string", "description": "The item name of the expenditure record"},
+                    "price": {"type": "number", "description": "The price of the expenditure record"},
+                    "card_number": {"type": "number", "description": "The last 4 digi of credit / debit card number"},
+                    "tax": {"type": "number", "description": "The tax of the expenditure record"},
+                    "tips": {"type": "number", "description": "The tips of the expenditure record"},
+                    "address": {"type": "string", "description": "The address of the expenditure record"},
+                    "receipt_image_url": {"type": "string", "description": "The receipt image url of the expenditure record"}
+                },
+                "required": ["from_id", "date", "time", "spent", "category", "payment_method", "merchant", "item_name", "price", "card_number", "tax", "tips", "address", "receipt_image_url"]
+            }
+        }
+    }
+]
+
+IMAGE_INPUT = '''Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." '''
+TEXT_INPUT = '''Determine if the prompt is a receipt. If it's not a receipt, follow the prompt instruction directly.'''
+
+RECEIPT_GUIDELINES = f'''
+If it is a receipt, read and extract the information and use your tools to call `insert_new_expenditure_record` function. Follow these guidelines:
+
+1. Use the provided `from_id` in the user prompt. If it's not provided, default to `9999999999`.
+2. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.
+3. If category info is not provided, then you can chose the closest one from list: ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others'].
+4. If 'spent' is not specified, use the 'price' as the 'spent' value.
+5. Default to 'Credit Card' if `payment_method` is unspecified.
+6. If the `merchant` is not mentioned, use 'Unknown'.
+7. Use 'Unclear' for unspecified `item_name`.
+8. Default `card_number` to '0000' if it's missing.
+9. Use 0 for `tax` if it's not provided.
+10. Default `tips` to 0 if absent.
+11. If the `address` is missing, use 'Unknown Address'.
+12. Use 'Unknown' if the `receipt_image_url` is not provided.
+13. Ignore the record if both 'spent' and 'price' are missing.'''
+
+SYSTEM_PROMPT_WITH_IMAGE_INPUT = f'''
+{IMAGE_INPUT}
+{RECEIPT_GUIDELINES}
+'''
+
+NO_IMAGE_CAPTION_DEFAULT = '''Extract receipt information from this image and follow your system prompt instruction.'''
+
+
+SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT = f'''
+{TEXT_INPUT}
+{RECEIPT_GUIDELINES}
+'''
