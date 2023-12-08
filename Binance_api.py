@@ -6,6 +6,7 @@ def network_name_change(str_name: str):
     str_name = 'ETH' if str_name.startswith("ERC") else 'TRX' if str_name.startswith("TRC") else 'BSC' if str_name.startswith("BEP") else str_name
     return str_name
 
+
 def server_time_diff():
     PATH = '/api/v1/time'
     params = None
@@ -20,6 +21,7 @@ def server_time_diff():
         print(e)
         time.sleep(0.1)
         return
+
 
 def get_listed_assets_info():
     PATH = '/sapi/v1/asset/assetDetail'
@@ -41,6 +43,11 @@ def get_listed_assets_info():
     except Exception as e:
         print(e)
         return
+'''r = get_listed_assets_info()
+df = pd.DataFrame(r)
+df = df.T
+print(df)'''
+
 
 # 查询用户API Key权限 (USER_DATA), 权重(IP): 1
 # GET /sapi/v1/account/apiRestrictions (HMAC SHA256)
@@ -62,12 +69,15 @@ def get_api_functions():
     except Exception as e:
         print(e)
         return
-    
+'''{'ipRestrict': True, 'createTime': 1665449424000, 'enableInternalTransfer': True, 'permitsUniversalTransfer': True, 'enablePortfolioMarginTrading': False, 'enableVanillaOptions': False, 'enableReading': True, 'enableSpotAndMarginTrading': True, 'enableWithdrawals': True, 'enableMargin': True, 'enableFutures': True}'''
+
+
 # use get_api_fuction() resutl convert to string send to chat_id
-def get_api_functions_str(chat_id):
+def get_api_functions_str(chat_id=BOTOWNER_CHAT_ID):
     data = get_api_functions()
     if data: return send_telegram_message('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
     else: return send_telegram_message(f"You don't have a binance API key and secrets in database yet.", chat_id)
+
 
 # 账户API交易状态(USER_DATA), 获取 api 账户交易状态详情, 权重(IP): 1
 # GET /sapi/v1/account/apiTradingStatus (HMAC SHA256)
@@ -90,6 +100,7 @@ def get_api_status():
     except Exception as e:
         print(e)
         return
+'''{'data': {'isLocked': False, 'plannedRecoverTime': 0, 'triggerCondition': {'UFR': 300, 'IFER': 150, 'GCR': 150}, 'updateTime': 0}}'''
 
 
 # 获取所有币信息 (USER_DATA), 获取针对用户的所有(Binance支持充提操作的)币种信息。权重(IP): 10
@@ -113,7 +124,11 @@ def get_account_all():
     except Exception as e:
         time.sleep(0.1)
         return 
-    
+'''r = get_account_all()
+df = pd.DataFrame(r)
+df = df.T
+print(df)    '''
+
 
 # from result of get_account_all(), check if a given coin is in the list, and the given network is in the list of the coin's networkList and withdrawEnable is True and check the withdrawFee, withdrawMin, withdrawMax, withdrawIntegerMultiple, and check the address is valid with addressRegex, return networkList
 def check_coin_network(coin, network):
@@ -129,6 +144,10 @@ def check_coin_network(coin, network):
             if not df_networkList.empty:
                 df_networkList = df_networkList[df_networkList['withdrawEnable'] == True]
                 if not df_networkList.empty: return df_networkList
+'''
+  network coin entityTag withdrawIntegerMultiple  isDefault  depositEnable  withdrawEnable depositDesc withdrawDesc specialTips              name  resetAddressStatus           addressRegex addressRule memoRegex withdrawFee withdrawMin  withdrawMax  minConfirm  unLockConfirm  sameAddress  estimatedArrivalTime   busy                                            country           contractAddressUrl                             contractAddress
+0     ETH  RSR      main              0.00000001       True           True            True                                       Ethereum (ERC20)               False  ^(0x)[0-9A-Fa-f]{40}$                              3531        7062  10000000000           6             64        False                     4  False  AE,BINANCE_BAHRAIN_BSC,KZ,FR,ES,PL,IT,SE,JP,NL...  https://etherscan.io/token/  0x320623b8e4ff03373931769a31fc52a4e78b5d70
+'''
 
 
 # 资金账户 (USER_DATA), 权重(IP): 1
@@ -153,9 +172,15 @@ def get_funding_asset():
     except Exception as e:
         print(e)
         return
-    
+'''
+  asset            free locked freeze withdrawing btcValuation
+0   ENS               1      0      0           0            0
+1   NFT  8077335.411327      0      0           0            0
+'''
+
+
 # 定义 FUNDING_MAIN 资金钱包转向现货钱包功能
-def funding_main_transfer(coin, amount):
+def funding_main_transfer(coin:str, amount):
     PATH = '/sapi/v1/asset/transfer'
     timestamp = int(time.time() * 1000)
     params = {
@@ -177,8 +202,9 @@ def funding_main_transfer(coin, amount):
         print(e)
         return
     
+
 # 通过用户input 的 coin 和 amount，调用 get_funding_asset() 获取 coin 的余额，如果余额大于 amount，则调用 funding_main_transfer(coin, amount) 转账
-def funding_main_transfer_with_check_and_send(coin, amount, chat_id):
+def funding_main_transfer_with_check_and_send(coin, amount, chat_id=BOTOWNER_CHAT_ID):
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_telegram_message(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
@@ -195,7 +221,8 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id):
         else: return send_telegram_message(f'资金账户没有 {coin} 资产。', chat_id)
     return send_telegram_message(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
 
-# 定义 MAIN_FUNDING 资金钱包转向现货钱包功能
+
+# 定义 MAIN_FUNDING 现货钱包转向资金钱包功能
 def main_funding_transfer(coin, amount):
     PATH = '/sapi/v1/asset/transfer'
     timestamp = int(time.time() * 1000)
@@ -218,8 +245,9 @@ def main_funding_transfer(coin, amount):
         print(e)
         return
 
+
 # 通过用户input 的 coin 和 amount，调用 get_user_asset() 获取 asset / coin 的余额，如果余额大于 amount，则调用 main_funding_transfer(coin, amount) 转账
-def main_funding_transfer_with_check_and_send(coin, amount, chat_id):
+def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=BOTOWNER_CHAT_ID):
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_telegram_message(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
@@ -235,6 +263,7 @@ def main_funding_transfer_with_check_and_send(coin, amount, chat_id):
             else: return send_telegram_message(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
         else: return send_telegram_message(f'现货账户没有 {coin} 资产。', chat_id)
     return send_telegram_message(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
+
 
 # 通过 get_funding_asset 检查资金账户中的 USDT 余额，如果存在 USDT 余额，则调用 funding_main_transfer_with_check_and_send(coin, amount) 将所有 USDT 余额转入到现货账户
 def funding_main_transfer_all_usdt(chat_id=BOTOWNER_CHAT_ID):
@@ -254,12 +283,14 @@ def get_coin_funding_balance_all():
         return dict(zip(df['asset'].values, df['free'].values))
     else: return {}
 
+
 # 通过 get_funding_asset() 获取某个 coin 的余额
 def get_coin_funding_balance(coin):
     df = get_funding_asset()
     df = df[df['asset'] == coin.upper()]
     if not df.empty: return df['free'].values[0]
     else: return 0
+
 
 # 币安统一账户查询, 用户持仓 (USER_DATA), 获取用户持仓, 仅返回>0的数据。权重(IP): 5
 # POST /sapi/v3/asset/getUserAsset 
@@ -282,12 +313,29 @@ def get_user_asset():
     except Exception as e:
         print(e)
         return
-    
+'''
+   asset            free locked freeze withdrawing ipoable btcValuation
+0   AKRO          124370      0      0           0       0            0
+1   API3           585.1      0      0           0       0            0
+2   ASTR         13229.6      0      0           0       0            0
+3    BNB       3.1130512      0      0           0       0            0
+4   CELO            1560      0      0           0       0            0
+5   FLOW         1210.65      0      0           0       0            0
+6   MANA            2107      0      0           0       0            0
+7    OMG          1331.5      0      0           0       0            0
+8    SXP          2402.3      0      0           0       0            0
+9   USDT  35404.13927066      0      0           0       0            0
+10   XEC        28953771      0      0           0       0            0
+'''
+
+
 # 通过 get_user_asset() 获取所有 coin 的余额并返回一个 dict key is asset, value is free
 def get_coin_wallet_balance_all():
     df = get_user_asset()
     if not df.empty: return dict(zip(df['asset'].values, df['free'].values))
     else: return {}
+'''{'AKRO': '124370', 'API3': '585.1', 'ASTR': '13229.6', 'BNB': '3.1130512', 'CELO': '1560', 'FLOW': '1210.65', 'MANA': '2107', 'OMG': '1331.5', 'SXP': '2402.3', 'USDT': '35404.13927066', 'XEC': '28953771'}'''
+
 
 # 通过 get_user_asset() 获取某个 coin 的余额
 def get_coin_wallet_balance(coin):
@@ -295,6 +343,7 @@ def get_coin_wallet_balance(coin):
     df = df[df['asset'] == coin.upper()]
     if not df.empty: return df['free'].values[0]
     else: return 0
+
 
 # 获取币安全部交易对最新价格
 def get_token_price_table():
@@ -307,6 +356,19 @@ def get_token_price_table():
     # 增加一列, coin, coin = symbol[:-4]
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     return df_ticker
+'''
+        symbol    lastPrice   coin
+0      BTCUSDT  43405.08000    BTC
+1      ETHUSDT   2375.71000    ETH
+2      BNBUSDT    235.80000    BNB
+3      BCCUSDT      0.00000    BCC
+4      NEOUSDT     12.13000    NEO
+..         ...          ...    ...
+467    VICUSDT      1.00200    VIC
+468   BLURUSDT      0.49800   BLUR
+469  VANRYUSDT      0.06315  VANRY
+470   AEURUSDT      2.88920   AEUR
+471    JTOUSDT      3.00780    JTO'''
 
 
 # 通过 df_ticker = pd.read_json(BINANCE_TICKER_URL) 获得最新的 ticker 信息
@@ -385,9 +447,9 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # if binance_ticker_top_30 not exist, create table
     cursor.execute("CREATE TABLE IF NOT EXISTS binance_ticker_top_30 (symbol TEXT, priceChangePercent REAL, lastPrice REAL, openPrice REAL, highPrice REAL, lowPrice REAL, quoteVolume REAL, openTime INTEGER, closeTime INTEGER, coin TEXT, market_cap REAL, fully_diluted_market_cap REAL, ratio REAL, update_id INTEGER)")
     cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-    update_id = cursor.fetchone()[0]
-    cursor.close()
-    conn.close()
+    update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
+    # cursor.close()
+    # conn.close()
 
     # with engine.connect() as connection:
     #     result = connection.execute(text('SELECT MAX(update_id) FROM binance_ticker_top_30'))
@@ -408,7 +470,9 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
-
+    
+    cursor.close()
+    conn.close()
     return today_hot_coin_list
 ''' df_ticker
        symbol  priceChangePercent  lastPrice  openPrice  highPrice  lowPrice   quoteVolume       openTime      closeTime   coin    market_cap  fully_diluted_market_cap     ratio
@@ -433,19 +497,18 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 六月份开始跑这个策略，到目前一个月，总收益 13%，剔除掉现有仓位的浮亏，净收益 6%。
 '''
 
+
 # 通过 get_token_price_table() 获取某个 coin 的价格
 def get_token_price(coin: str):
     df = get_token_price_table()
     df = df[df['coin'] == coin.upper()]
     if not df.empty: return df['lastPrice'].values[0]
     else: return 0
-''' return from get_token_price('eth'):
-1887.16
-type: <class 'numpy.float64'>
-'''
+'''235.8'''
+
 
 # 获取给定 hours 小时内的充值记录并发送给 chat_id
-def get_deposit_history_by_hours(chat_id, hours=1):
+def get_deposit_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
     hours = float(hours)
     PATH = '/sapi/v1/capital/deposit/hisrec'
     timestamp = int(time.time() * 1000)
@@ -530,6 +593,7 @@ recvWindow	LONG	NO
 timestamp	LONG	YES
 '''
 
+
 # 获取给定 hours 小时内的提币记录并发送给 chat_id
 def get_withdraw_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
     hours = float(hours)
@@ -567,6 +631,7 @@ def get_withdraw_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
 0  47601e0a25c847e1ac4f3d55a0e42c9b     10              1  USDT       6          TGgqTRjJxTVCVq7QsxfjvKVhdUKM4yTmtP  6308c7dcd2f755a5784f39fa1de8b6b31c02fba39fb63a...  2023-06-04 17:25:40     TRX             0          TAzsQ9Gx8eqFNFSKbeXrbi45CuVPHzA8wr         50           0        2023-06-04 17:27:42
 1  bd7e16c6d2a240e1b2f86b970f45a623     10           0.29  USDT       6  0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377  0xe19ad98e9f6ec2964a5de27eff46d0434282966b6929...  2023-06-03 22:10:54     BSC             0  0xa180fe01b906a1be37be6c534a3300785b20d947         20           0        2023-06-03 22:12:40'''
 
+
 # 获取最近三个月的提币记录（默认）
 def get_withdraw_history():
     PATH = '/sapi/v1/capital/withdraw/history'
@@ -583,6 +648,14 @@ def get_withdraw_history():
             df_status_is_6 = df.loc[df['status']==6]
             if not df_status_is_6.empty: return df_status_is_6
     return
+'''
+                                 id  amount transactionFee  coin  ...  confirmNo walletType txKey         completeTime
+0  91e7db66a9474cbd9853dbf29f47a716    1000              1  USDT  ...         50          0        2023-12-03 16:50:43
+1  fc328dd25399442cad86765c6a4abf9a    1000              1  USDT  ...         50          0        2023-12-03 16:46:41
+2  c732a1766d1f4a23b1d81cfe3130d762      10              1  USDT  ...         50          0        2023-12-03 16:42:42
+3  0c12df3c0f124cdc9af0ba607c5b291c  200000              5  USDT  ...        128          0        2023-11-27 02:44:41
+'''
+
 
 '''提币 (USER_DATA)
 Parameters:
@@ -619,12 +692,12 @@ def binance_withdraw(amount, network, coin, address):
         data = r.json()
         return data
     else: return r.reason
-
 ''' return from binance_withdraw('eth', 0.1, '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'):
 {
     "id":"7213fea8e94b4a5593d507237e5a555b"
 }
 '''
+
 
 '''获取充值地址 (支持多网络) (USER_DATA)
 GET /sapi/v1/capital/deposit/address (HMAC SHA256)
@@ -635,7 +708,6 @@ network	STRING	NO
 recvWindow	LONG	NO	
 timestamp	LONG	YES
 '''
-
 # 定义一个功能，获取给定 coin 给定 network 的充值地址
 def get_coin_deposit_address(coin, network):
     PATH = '/sapi/v1/capital/deposit/address'
@@ -698,6 +770,7 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲�
 
 
     return
+
 
 '''
 权重(UID): 1 权重(IP): 1

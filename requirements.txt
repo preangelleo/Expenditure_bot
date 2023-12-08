@@ -9,3 +9,11 @@ aiogram
 tenacity
 requests
 pandas
+chardet
+xlrd
+langdetect
+pandas
+eth-account
+mnemonic
+web3
+moralis

@@ -210,7 +210,7 @@ def get_token_market_cap_and_ratio(token_symbol):
     try:
         token_info = get_token_info_from_coinmarketcap(token_symbol)
         if token_info:
-            print(json.dumps(token_info, indent=2))
+            # print(json.dumps(token_info, indent=2))
 
             market_cap = token_info['quote']['USD']['market_cap']
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
