@@ -421,7 +421,7 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     #分析列表中的每一个 coin 的 token_info = get_token_market_cap_and_ratio(coin) token_info is None, 则剔除掉该行, 如果 token_info type is dict 则 df_ticker['market_cap'] = token_info['market_cap'] df_ticker['fully_diluted_market_cap'] = token_info['fully_diluted_market_cap'] df_ticker['ratio'] = token_info['ratio']
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
-    df_ticker['ratio'] = 0
+    df_ticker['ratio'] = 0.01
     for index, row in df_ticker.iterrows():
         coin = row['coin']
         token_info = get_token_market_cap_and_ratio(coin)
@@ -464,6 +464,9 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
         cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
         update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
 
+    cursor.close()
+    conn.close()
+
     # cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
     # update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
     # cursor.close()
@@ -481,23 +484,24 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     print(df_ticker)
 
     # Append df_ticker to the 'binance_ticker_top_30' table
-    df_ticker.to_sql('binance_ticker_top_30', conn, if_exists='append', index=False)
-
-
-    # df_ticker.to_sql('binance_ticker_top_30', con=engine, if_exists='append', index=False)
+    # df_ticker.to_sql('binance_ticker_top_30', conn, if_exists='append', index=False)
+    df_ticker.to_sql('binance_ticker_top_30', engine, if_exists='append', index=False)
 
     # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
     # with engine.connect() as connection: df_ticker = pd.read_sql(text('SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id'), connection, params={'update_id': update_id + 1})
     # conn = get_db_connection()
     # cursor = conn.cursor()
-    cursor.execute("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", {'update_id': update_id + 1})
-    df_ticker = pd.DataFrame(cursor.fetchall(), columns=['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime', 'coin', 'market_cap', 'fully_diluted_market_cap', 'ratio', 'update_id'])
+    # cursor.execute("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", {'update_id': update_id + 1})
+
+    df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", engine, params={'update_id': update_id + 1})
+
+    # df_ticker = pd.DataFrame(cursor.fetchall(), columns=['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime', 'coin', 'market_cap', 'fully_diluted_market_cap', 'ratio', 'update_id'])
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
     return today_hot_coin_list
 ''' df_ticker
        symbol  priceChangePercent  lastPrice  openPrice  highPrice  lowPrice   quoteVolume       openTime      closeTime   coin    market_cap  fully_diluted_market_cap     ratio

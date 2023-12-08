@@ -1,14 +1,16 @@
 from Database_api import *
 import os, re, json, base64, hashlib, math, string, time, uuid, time, urllib, imaplib, email, random, requests, chardet, subprocess, xlrd, pytz, hmac
 from datetime import datetime, timedelta, date
-from urllib.parse import urlencode
 from langdetect import detect
 import pandas as pd
-from urllib.parse import urljoin
 from eth_account import Account
 from mnemonic import Mnemonic
 from web3 import Web3, EthereumTesterProvider
 from moralis import evm_api
+from sqlalchemy import create_engine
+from sqlalchemy.sql import text
+from urllib.parse import urlencode
+from urllib.parse import urljoin
 
 
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
@@ -44,6 +46,11 @@ db_port = os.getenv('DB_PORT')
 db_user = os.getenv('DB_USER')
 db_password = os.getenv('DB_PASSWORD')
 db_name = os.getenv('DB_NAME')
+
+# 创建数据库引擎
+# 格式：dialect+driver://username:password@host:port/database
+engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+print(f"DEBUG: engine: {engine}")
 
 INFURA_KEY = os.getenv('INFURA_KEY')
 DEBANK_API = os.getenv('DEBANK_API')
