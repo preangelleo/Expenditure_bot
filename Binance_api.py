@@ -435,6 +435,7 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # 读出 binance_ticker_top_30 中的 update_id 的最大值, 赋值给 update_id
     try: update_id = pd.read_sql_query("SELECT MAX(update_id) FROM binance_ticker_top_30", engine).values[0][0]
     except: update_id = 0
+    
     # conn = get_db_connection()
     # cursor = conn.cursor()
     # cursor.execute("SHOW TABLES LIKE 'binance_ticker_top_30'")
@@ -453,6 +454,7 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 
     # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
     df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[(update_id + 1,)])
+    df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[(int(update_id + 1),)])
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
