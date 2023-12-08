@@ -444,15 +444,26 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # if binance_ticker_top_30 exist, drop the table
+    # cursor.execute("DROP TABLE IF EXISTS binance_ticker_top_30")
+
     # if binance_ticker_top_30 not exist, create table
-    cursor.execute("CREATE TABLE IF NOT EXISTS binance_ticker_top_30 (symbol TEXT, priceChangePercent REAL, lastPrice REAL, openPrice REAL, highPrice REAL, lowPrice REAL, quoteVolume REAL, openTime INTEGER, closeTime INTEGER, coin TEXT, market_cap REAL, fully_diluted_market_cap REAL, ratio REAL, update_id INTEGER)")
+    # cursor.execute("CREATE TABLE IF NOT EXISTS binance_ticker_top_30 (symbol TEXT, priceChangePercent REAL, lastPrice REAL, openPrice REAL, highPrice REAL, lowPrice REAL, quoteVolume REAL, openTime INTEGER, closeTime INTEGER, coin TEXT, market_cap REAL, fully_diluted_market_cap REAL, ratio REAL, update_id INTEGER)")
     
     # print out columns of binance_ticker_top_30
-    cursor.execute("PRAGMA table_info(binance_ticker_top_30)")
-    print('TABLE CLUMNS:', cursor.fetchall())
+    # cursor.execute("PRAGMA table_info(binance_ticker_top_30)")
+    # print('TABLE CLUMNS:', cursor.fetchall())
 
-    cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-    update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
+    # check if binance_ticker_top_30 exist, if exist, read out the max update_id
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='binance_ticker_top_30'")
+    if cursor.fetchone():
+        cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
+        update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
+    else: update_id = 0
+
+    # cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
+    # update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
     # cursor.close()
     # conn.close()
 
@@ -460,7 +471,7 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     #     result = connection.execute(text('SELECT MAX(update_id) FROM binance_ticker_top_30'))
     #     for row in result: update_id = row[0]
 
-    df_ticker['update_id'] = update_id + 1
+    df_ticker['update_id'] = int(update_id) + 1
 
     # print out the dicker.columns
     print('TOCKER DF CLUMNS:', df_ticker.columns)
@@ -1384,3 +1395,4 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
+    binance_today_hot_coin(trading_volume_limit = 50_000_000)
