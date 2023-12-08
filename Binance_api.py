@@ -426,9 +426,10 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
         coin = row['coin']
         token_info = get_token_market_cap_and_ratio(coin)
         if token_info:
-            df_ticker.loc[index, 'market_cap'] = token_info['market_cap']
-            df_ticker.loc[index, 'fully_diluted_market_cap'] = token_info['fully_diluted_market_cap']
-            df_ticker.loc[index, 'ratio'] = token_info['ratio']
+            '''token_info = {'market_cap': 154794584.58836213, 'fully_diluted_market_cap': 305918151.36, 'ratio': 0.5060000000006607}'''
+            df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
+            df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
+            df_ticker.loc[index, 'ratio'] = float(token_info['ratio'])
         else:
             df_ticker.drop(index, inplace=True)
 
@@ -456,11 +457,12 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # print('TABLE CLUMNS:', cursor.fetchall())
 
     # check if binance_ticker_top_30 exist, if exist, read out the max update_id
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='binance_ticker_top_30'")
-    if cursor.fetchone():
+
+    cursor.execute("SHOW TABLES LIKE 'binance_ticker_top_30'")
+    if cursor.fetchone() is None: update_id = 0
+    else:
         cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
         update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
-    else: update_id = 0
 
     # cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
     # update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
