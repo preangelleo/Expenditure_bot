@@ -462,7 +462,8 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     if cursor.fetchone() is None: update_id = 0
     else:
         cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-        update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
+        result = cursor.fetchone()
+        update_id = result[0] if result else 0
 
     cursor.close()
     conn.close()
