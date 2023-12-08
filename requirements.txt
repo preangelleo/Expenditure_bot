@@ -8,3 +8,4 @@ openai
 aiogram
 tenacity
 requests
+pandas

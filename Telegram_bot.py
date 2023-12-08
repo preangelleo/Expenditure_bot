@@ -1,6 +1,5 @@
 from Prompt_template import *
 from GPT_functions import *
-import json
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
@@ -47,8 +46,6 @@ async def echo_handler(message: types.Message) -> None:
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
     from_id = message.from_user.id
 
-    if from_id != TG_BOT_OWNER_ID: return
-
     # Print out the message in json format with indent
     '''
     Input a text message and I got this message object:
@@ -60,10 +57,12 @@ async def echo_handler(message: types.Message) -> None:
         # await message.send_copy(chat_id=message.chat.id)
 
         # Print out the sender's from_id, chat_id, and user name
-        print(f"{message.from_user.username} said: {message.text}")
+        # print(f"{message.from_user.username} said: {message.text}")
 
         # check if the message is a photo
         if message.photo:
+            # if from_id != TG_BOT_OWNER_ID: return
+
             # Capture the prompt and image url from the message and send it to ask_gpt_vision(prompt, image_url) function from GPT_functions.py
             prompt = message.caption if message.caption else READ_RECEIPT
 
@@ -76,7 +75,7 @@ async def echo_handler(message: types.Message) -> None:
             file_path = file_info.file_path  # get file_path from File object
             file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
 
-            response_text = ask_gpt_vision(prompt, file_url)
+            response_text = ask_gpt_vision(prompt, file_url, from_id)
             await message.answer(response_text)
 
             messages = []
@@ -88,13 +87,10 @@ async def echo_handler(message: types.Message) -> None:
                 await message.answer(f"{ittem_counts} items have been inserted into the Expenditure table!")
             except Exception as e: print(e)
 
-
         elif message.text:
             # Capture the prompt from the message and send it to ask_gpt(prompt) function from GPT_functions.py
-            response_text = ask_gpt(message.text)
+            response_text = ask_gpt(message.text, from_id)
             await message.answer(response_text)
-
-
 
     except TypeError:
         # But not all the types is supported to be copied so need to handle it

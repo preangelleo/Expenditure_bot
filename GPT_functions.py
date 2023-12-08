@@ -117,7 +117,7 @@ def run_gpt_with_function_calls(messages, from_id=os.getenv('TG_BOT_OWNER_ID')):
     # execut the function calls
     for tool_call in assistant_message["tool_calls"]:
         item_counts = len(assistant_message["tool_calls"])
-        send_telegram_message(f"Inserting {i}/{item_counts} items to expenditure table...", from_id)
+        send_telegram_message(f"Inserting {i}/{item_counts} item to the table...", from_id)
 
         if tool_call["type"] == "function":
             function_name = tool_call["function"]["name"]
@@ -127,7 +127,7 @@ def run_gpt_with_function_calls(messages, from_id=os.getenv('TG_BOT_OWNER_ID')):
                 try: insert_expenditure_record(**arguments_dict)
                 except Exception as e: print(e)
                 i += 1
-    return i
+    return i-1
 
 if __name__ == '__main__':
     messages = []
