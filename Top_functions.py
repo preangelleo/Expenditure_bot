@@ -1,4 +1,3 @@
-from Database_api import *
 import os, re, json, base64, hashlib, math, string, time, uuid, time, urllib, imaplib, email, random, requests, chardet, subprocess, xlrd, pytz, hmac
 from datetime import datetime, timedelta, date
 from langdetect import detect
@@ -11,7 +10,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 from urllib.parse import urlencode
 from urllib.parse import urljoin
+from flask import Flask, request, jsonify
+from flask_restful import Resource, Api
+from flask_httpauth import HTTPTokenAuth
+import mysql.connector
+from mysql.connector import Error
+from dotenv import load_dotenv
+from flask import make_response
 from Prompt_template import *
+from flask import render_template
+
+# Load environment variables
+load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
@@ -31,23 +41,17 @@ TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'
 BTC_REGEX = r'^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[bc1q|bc1p][0-9A-Za-z]{37,62}$'
 EMAIL_ADDRESS_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
-'''
-def get_db_connection():
-    conn = mysql.connector.connect(
-        host=os.getenv('DB_HOST'),
-        database=os.getenv('DB_NAME'),
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD'),
-        port=os.getenv('DB_PORT')
-    )
-    return conn'''
-
 # 获取环境变量
 db_host = os.getenv('DB_HOST')
 db_port = os.getenv('DB_PORT')
 db_user = os.getenv('DB_USER')
 db_password = os.getenv('DB_PASSWORD')
 db_name = os.getenv('DB_NAME')
+
+# Database connection function
+def get_db_connection():
+    conn = mysql.connector.connect(host=db_host, port=db_port, user=db_user, password=db_password, database=db_name)
+    return conn
 
 # 创建数据库引擎
 # 格式：dialect+driver://username:password@host:port/database
@@ -292,7 +296,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
     conn.commit()
     cursor.close()
     conn.close()
-    return f"Successfully inserted '{item_name} | {spent}' into the Expenditure table!"
+    return f'''Successfully inserted: "{item_name} | {spent} usd"'''
 
 
 if __name__ == '__main__':

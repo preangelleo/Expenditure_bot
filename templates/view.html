@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Table View</title>
+    <style>
+        .data {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .data th, .data td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Table View</h1>
+    {% for table in tables %}
+        {{ table|safe }}
+    {% endfor %}
+    <h2>Statistics</h2>
+    <p>Total Spent: {{ sum_spend }}</p>
+    <p>Total Tax: {{ sum_tax }}</p>
+    <p>Total Tips: {{ sum_tips }}</p>
+</body>
+</html>

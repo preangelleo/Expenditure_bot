@@ -75,8 +75,8 @@ def get_api_functions():
 # use get_api_fuction() resutl convert to string send to chat_id
 def get_api_functions_str(chat_id=BOTOWNER_CHAT_ID):
     data = get_api_functions()
-    if data: return send_telegram_message('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
-    else: return send_telegram_message(f"You don't have a binance API key and secrets in database yet.", chat_id)
+    if data: return send_msg('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
+    else: return send_msg(f"You don't have a binance API key and secrets in database yet.", chat_id)
 
 
 # 账户API交易状态(USER_DATA), 获取 api 账户交易状态详情, 权重(IP): 1
@@ -207,7 +207,7 @@ def funding_main_transfer(coin:str, amount):
 def funding_main_transfer_with_check_and_send(coin, amount, chat_id=BOTOWNER_CHAT_ID):
     coin = coin.upper()
     try: amount = float(amount)
-    except: return send_telegram_message(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
+    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
 
     df = get_funding_asset()
     if not df.empty:
@@ -216,10 +216,10 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=BOTOWNER_CHA
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = funding_main_transfer(coin, amount)
-                if tranId: return send_telegram_message(f'已经成功将 {format_number(amount)} {coin} 从资金账户转入到现货账户, tranId: \n{tranId}', chat_id)
-            else: return send_telegram_message(f'资金账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
-        else: return send_telegram_message(f'资金账户没有 {coin} 资产。', chat_id)
-    return send_telegram_message(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
+                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从资金账户转入到现货账户, tranId: \n{tranId}', chat_id)
+            else: return send_msg(f'资金账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
+        else: return send_msg(f'资金账户没有 {coin} 资产。', chat_id)
+    return send_msg(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
 
 
 # 定义 MAIN_FUNDING 现货钱包转向资金钱包功能
@@ -250,7 +250,7 @@ def main_funding_transfer(coin, amount):
 def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=BOTOWNER_CHAT_ID):
     coin = coin.upper()
     try: amount = float(amount)
-    except: return send_telegram_message(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
+    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
 
     df = get_user_asset()
     if not df.empty:
@@ -259,10 +259,10 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=BOTOWNER
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = main_funding_transfer(coin, amount)
-                if tranId: return send_telegram_message(f'已经成功将 {format_number(amount)} {coin} 从现货账户转入到资金账户, tranId: \n{tranId}', chat_id)
-            else: return send_telegram_message(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
-        else: return send_telegram_message(f'现货账户没有 {coin} 资产。', chat_id)
-    return send_telegram_message(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
+                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从现货账户转入到资金账户, tranId: \n{tranId}', chat_id)
+            else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
+        else: return send_msg(f'现货账户没有 {coin} 资产。', chat_id)
+    return send_msg(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
 
 
 # 通过 get_funding_asset 检查资金账户中的 USDT 余额，如果存在 USDT 余额，则调用 funding_main_transfer_with_check_and_send(coin, amount) 将所有 USDT 余额转入到现货账户
@@ -524,9 +524,9 @@ def get_deposit_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
                 # 将 dict 转换成 str
                 df_str = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
                 # 发送给 chat_id
-                send_telegram_message(df_str, chat_id)
+                send_msg(df_str, chat_id)
             return True
-        # else: send_telegram_message(f'No deposit history in the past {hours} hours.', chat_id)
+        # else: send_msg(f'No deposit history in the past {hours} hours.', chat_id)
     return 
 
 
@@ -608,9 +608,9 @@ def get_withdraw_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
                 # 将 dict 转换成 str
                 df_str = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
                 # 发送给 chat_id
-                send_telegram_message(df_str, chat_id)
+                send_msg(df_str, chat_id)
             return True
-        # else: send_telegram_message(f'No withdraw history in the past {hours} hours.', chat_id)
+        # else: send_msg(f'No withdraw history in the past {hours} hours.', chat_id)
     return
 '''
                                  id amount transactionFee  coin  status                                     address                                               txId            applyTime network  transferType                                        info  confirmNo  walletType txKey         completeTime
@@ -717,7 +717,7 @@ def get_coin_deposit_address(coin, network):
 def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲爱的', crontab=False, trading_volume_limit = 50_000_000, check_size = 1000):
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
     if not today_hot_coin_list: 
-        if not crontab: send_telegram_message(f"{user_nick_name}, 今天币安没有热门币种, 你可以明天再来看看哦 😘", chat_id)
+        if not crontab: send_msg(f"{user_nick_name}, 今天币安没有热门币种, 你可以明天再来看看哦 😘", chat_id)
         return 
 
     # query_list  = []
@@ -739,14 +739,14 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲�
         }
         # 用 '\n' join k: v
         output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
-        send_telegram_message(output_dict_str, chat_id)
+        send_msg(output_dict_str, chat_id)
 
         # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 10 个，如果没有超过 10 个则调用 binance_market_buy() 买入 1000 usdt
         conn = get_db_connection()
         df_balance = pd.read_sql_query('SELECT * FROM binance_position_buy WHERE is_closed = 0', conn)
         if df_balance.shape[0] < 10: 
             # 检查 coin 是否在 binance_position_buy table 中，如果不在则调用 binance_market_buy() 买入 1000 usdt
-            if coin not in df_balance['coin'].values: send_telegram_message(do_market_buy(coin, check_size), chat_id)
+            if coin not in df_balance['coin'].values: send_msg(do_market_buy(coin, check_size), chat_id)
         
         # query_list.append(f"Latest news about crypto project: {token_info['name']} {coin}")
 
@@ -1211,10 +1211,10 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
         for_reply['更新_ID'] = reply_dict['update_id']
 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
-        if not crontab: send_telegram_message(reply_msg, chat_id)
+        if not crontab: send_msg(reply_msg, chat_id)
 
         # 如果浮盈超过 5%, 就自动平仓
-        if reply_dict['up_ratio'] > target_profit: send_telegram_message(do_market_sell(reply_dict['coin']), chat_id)
+        if reply_dict['up_ratio'] > target_profit: send_msg(do_market_sell(reply_dict['coin']), chat_id)
 
         book_value += reply_dict['profit']
 
@@ -1238,7 +1238,7 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
             annualized_return = f"{annualized_return * 100:.2f}%"
 
             # 发送累计获利给 chat_id
-            send_telegram_message(f'Bot 运行 {duration_day}\n\n账面浮亏: {format_number(book_value)} usdt;\n累计获利: {format_number(profit_sum)} usdt;\n当前净利: {format_number(net_profit_sum)} usdt;\n年化回报: {annualized_return}', chat_id)
+            send_msg(f'Bot 运行 {duration_day}\n\n账面浮亏: {format_number(book_value)} usdt;\n累计获利: {format_number(profit_sum)} usdt;\n当前净利: {format_number(net_profit_sum)} usdt;\n年化回报: {annualized_return}', chat_id)
 
             # create a list of symbol
             symbol_list = df_profit['symbol'].unique().tolist()
@@ -1248,7 +1248,7 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
             # convert list to string and remove suffix USDT
             symbol_list = ', '.join([symbol[:-4] for symbol in symbol_list if symbol not in IGNORE_LIST])
             # 发送获利币种清单给 chat_id
-            send_telegram_message(f'获利币种清单: \n\n{symbol_list}', chat_id)
+            send_msg(f'获利币种清单: \n\n{symbol_list}', chat_id)
 
     return
 
@@ -1290,7 +1290,7 @@ def binance_asset_details(coin, chat_id):
         }'''
         real_data = data[coin]
         real_data_str = '\n'.join([f"{k}: {v}" for k, v in real_data.items()])
-        send_telegram_message(real_data_str, chat_id)
+        send_msg(real_data_str, chat_id)
         return 
 
 '''查询每日资产快照 (USER_DATA) 权重(IP): 2400
