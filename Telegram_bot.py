@@ -17,8 +17,8 @@ async def command_start_handler(message: Message) -> None:
 @dp.message()
 async def echo_handler(message: types.Message) -> None:
 
-    try: handel_telegram_message(message)
-    except: await message.answer("Error, Nice try!")
+    try: await handel_telegram_message(message)
+    except Exception as e: await message.answer(f"Failed...\n\n{e}")
 
 
 async def main() -> None:

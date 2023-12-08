@@ -52,7 +52,6 @@ async def handel_telegram_message(message: types.Message):
         text_prompt = message.caption
 
 
-    try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)
-    except Exception as e: await message.answer(f"Failed to get response from GPT, sorry...\n\n{e}")
+    await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)
 
-    return
+    

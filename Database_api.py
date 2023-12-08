@@ -11,8 +11,6 @@ from flask import make_response
 # Load environment variables
 load_dotenv()
 
-DEFAULT_MODEL = os.getenv('DEFAULT_MODEL')
-
 # Database connection function
 def get_db_connection():
     conn = mysql.connector.connect(

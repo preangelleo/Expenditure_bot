@@ -6,32 +6,32 @@ from Prompt_template import *
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-
+DEFAULT_MODEL = 'gpt-4-1106-preview'
+DEFAULT_VISION_MODEL = 'gpt-4-vision-preview'
 
 # # define GPT function with input prompt and image url
-# def ask_gpt_vision(prompt, image_url, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL):
-#     send_telegram_message("GPT is reading the image...", from_id)
-#     response = client.chat.completions.create(
-#         model=model,
-#         messages=[
-#             {
-#                 "role": "user",
-#                 "content": [
-#                     {"type": "text", "text": prompt},
-#                     {
-#                         "type": "image_url",
-#                         "image_url": {
-#                             "url": image_url,
-#                         },
-#                     },
-#                 ],
-#             }
-#         ],
-#         max_tokens=3000,
-#     )
-#     response_text = response.choices[0].message.content
-#     return response_text
+async def ask_gpt_vision(prompt, image_url, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL):
+    send_msg("GPT is reading the image...", from_id)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url,
+                        },
+                    },
+                ],
+            }
+        ],
+        max_tokens=3000,
+    )
+    response_text = response.choices[0].message.content
+    return response_text
 
 
 # # define GPT function with input prompt only
@@ -99,16 +99,17 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 #     return i
 
 
-def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL, image_url=None, prompt = None):
+async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL, image_url=None, prompt = None):
 
-    if not image_url: 
-        messages_list = [{"role": "system", "content": SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT}]
-        prompt = f"{prompt}\nfrom_id: {chat_id}"
-        messages_list.append({"role": "user", "content": prompt})
-    else: 
+    if image_url: 
         messages_list = [{"role": "system", "content": SYSTEM_PROMPT_WITH_IMAGE_INPUT}]
         prompt = f"{NO_IMAGE_CAPTION_DEFAULT}\n{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
         messages_list.append({"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]})
+        prompt = await ask_gpt_vision(prompt, image_url, chat_id, DEFAULT_VISION_MODEL)
+
+    messages_list = [{"role": "system", "content": SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT}]
+    prompt = f"{prompt}\nfrom_id: {chat_id}"
+    messages_list.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
         model=model,
@@ -125,6 +126,7 @@ def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), model=
 
     # Step 2: check if the model wanted to call a function
     if tool_calls:
+        send_msg('GPT is think how to call the functions...', chat_id)
         # Step 3: call the function
         available_functions = {
             "insert_new_expenditure_record": insert_new_expenditure_record,

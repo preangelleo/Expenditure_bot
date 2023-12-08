@@ -1,7 +1,7 @@
 from time import strftime, localtime
 
 # Telegram
-WELCOME_FROM_TELEGRAM_BOT = "You could ask me anything:-) \nThis is GPT Assistant developed by \nLEOWANG.net" 
+WELCOME_FROM_TELEGRAM_BOT = "You could ask me anything or send your receipt.\nThis is GPT Assistant developed by \nLEOWANG.net" 
 
 CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others']
 
@@ -35,11 +35,15 @@ FUNCTIONS_TOOLS = [
     }
 ]
 
-IMAGE_INPUT = '''Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." '''
-TEXT_INPUT = '''Determine if the prompt is a receipt. If it's not a receipt, follow the prompt instruction directly.'''
+IMAGE_INPUT = '''
+Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." 
+If it is a receipt, read and extract the information as mush as possible.'''
 
-RECEIPT_GUIDELINES = f'''
-If it is a receipt, read and extract the information and use your tools to call `insert_new_expenditure_record` function. Follow these guidelines:
+TEXT_INPUT = '''
+Determine if the prompt is a receipt. If it's not a receipt, follow the prompt instruction directly.
+If it is a receipt, read and extract the information and use your tools to call `insert_new_expenditure_record` function. '''
+
+RECEIPT_GUIDELINES = f'''Follow these guidelines:
 
 1. Use the provided `from_id` in the user prompt. If it's not provided, default to `9999999999`.
 2. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.

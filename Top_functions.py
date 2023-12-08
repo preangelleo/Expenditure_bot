@@ -229,7 +229,7 @@ def get_token_market_cap_and_ratio(token_symbol):
 
 # difine a function to send telegram message to a chat_id using requests + telegram bot api
 def send_msg(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
-    print(f"Sending message to chat_id: {chat_id}")
+    # print(f"Sending message to chat_id: {chat_id}")
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         data = {
