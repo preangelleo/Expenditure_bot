@@ -446,6 +446,11 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     cursor = conn.cursor()
     # if binance_ticker_top_30 not exist, create table
     cursor.execute("CREATE TABLE IF NOT EXISTS binance_ticker_top_30 (symbol TEXT, priceChangePercent REAL, lastPrice REAL, openPrice REAL, highPrice REAL, lowPrice REAL, quoteVolume REAL, openTime INTEGER, closeTime INTEGER, coin TEXT, market_cap REAL, fully_diluted_market_cap REAL, ratio REAL, update_id INTEGER)")
+    
+    # print out columns of binance_ticker_top_30
+    cursor.execute("PRAGMA table_info(binance_ticker_top_30)")
+    print('TABLE CLUMNS:', cursor.fetchall())
+
     cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
     update_id = cursor.fetchone()[0] if cursor.fetchone()[0] else 0
     # cursor.close()
@@ -457,20 +462,27 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 
     df_ticker['update_id'] = update_id + 1
 
-    # append df_ticker to table 'binance_ticker_top_30', if not exit, create table
-    df_ticker.to_sql('binance_ticker_top_30', con=conn, if_exists='append', index=False)
+    # print out the dicker.columns
+    print('TOCKER DF CLUMNS:', df_ticker.columns)
+
+    print(df_ticker)
+
+    # Append df_ticker to the 'binance_ticker_top_30' table
+    df_ticker.to_sql('binance_ticker_top_30', conn, if_exists='append', index=False)
+
+
     # df_ticker.to_sql('binance_ticker_top_30', con=engine, if_exists='append', index=False)
 
     # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
     # with engine.connect() as connection: df_ticker = pd.read_sql(text('SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id'), connection, params={'update_id': update_id + 1})
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
     cursor.execute("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", {'update_id': update_id + 1})
     df_ticker = pd.DataFrame(cursor.fetchall(), columns=['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime', 'coin', 'market_cap', 'fully_diluted_market_cap', 'ratio', 'update_id'])
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
-    
+
     cursor.close()
     conn.close()
     return today_hot_coin_list
