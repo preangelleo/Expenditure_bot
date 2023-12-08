@@ -494,7 +494,8 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     # cursor = conn.cursor()
     # cursor.execute("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", {'update_id': update_id + 1})
 
-    df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[update_id + 1])
+    # df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[update_id + 1])
+    df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[(update_id + 1,)])
     # df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id", engine, params={'update_id': update_id + 1})
 
     # df_ticker = pd.DataFrame(cursor.fetchall(), columns=['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime', 'coin', 'market_cap', 'fully_diluted_market_cap', 'ratio', 'update_id'])
