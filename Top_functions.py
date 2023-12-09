@@ -302,7 +302,8 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
     conn.commit()
     cursor.close()
     conn.close()
-    return f'''Successfully inserted: "{item_name} | {spent} usd"'''
+    send_msg(f'''Successfully inserted: "{item_name} | {spent} usd"''', from_id)
+    return 
 
 
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe

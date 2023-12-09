@@ -5,15 +5,7 @@ from GPT_functions import *
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
 
-import asyncio
-import logging
-import sys
-import os
-from aiogram import Bot, Dispatcher, Router, types
-from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
-from aiogram.types import Message
-from aiogram.utils.markdown import hbold
+
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = os.getenv('TELEGRAM_TOKEN')

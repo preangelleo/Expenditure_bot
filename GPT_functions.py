@@ -1,8 +1,17 @@
 from openai import OpenAI
-from Top_functions import *
+from Binance_api import *
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import requests
 from Prompt_template import *
+import asyncio
+import logging
+import sys
+import os
+from aiogram import Bot, Dispatcher, Router, types
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+from aiogram.utils.markdown import hbold
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -36,18 +45,32 @@ async def ask_gpt(prompt, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MO
 
 
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
-def get_total_spend_this_year():
+def get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), query_year=str(datetime.now().year), query_month=str(datetime.now().month)):
     df = get_all_expenditure_records()
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
+
+    # Convert query_year and query_month to int
+    query_year = int(query_year)
+    query_month = int(query_month)
+
     # Calculate the total spent of this year (sum the spent of this year)
-    total_spend_this_year = df[df['Date'].dt.year == datetime.now().year]['Spent'].sum()
-    # Calculate the total spent of this month (sum the spent of this month)
-    total_spend_this_month = df[df['Date'].dt.month == datetime.now().month]['Spent'].sum()
+    total_spend_this_year = df[df['Date'].dt.year == query_year]['Spent'].sum()
+
+    # Calculate the total spent of this month in this year (sum the spent of this month)
+    total_spend_this_month = df[(df['Date'].dt.year == query_year) & (df['Date'].dt.month == query_month)]['Spent'].sum()
+
+    # round the total spend of this year and this month, only show inter.
+    total_spend_this_year = format_number(total_spend_this_year)
+    total_spend_this_month = format_number(total_spend_this_month)
+
+    # Inform user the total spent of this year and this month
+    send_msg(f"Total spent of this year: {total_spend_this_year} usd\nTotal spent of this month: {total_spend_this_month} usd", from_id)
+
     return total_spend_this_year, total_spend_this_month
 
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
 async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL, image_url=None, prompt = None):
 
     if not prompt and not image_url: return
@@ -89,6 +112,8 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
         # Step 3: call the function
         available_functions = {
             "insert_new_expenditure_record": insert_new_expenditure_record,
+            "get_token_price": get_token_price,
+            "get_total_spend_of_any_year_any_month": get_total_spend_of_any_year_any_month,
         } 
         for tool_call in tool_calls:
             function_name = tool_call.function.name
@@ -96,19 +121,13 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
 
             function_to_call = available_functions[function_name]
             function_args = json.loads(tool_call.function.arguments)
-            try: send_msg(function_to_call(**function_args), chat_id)
+            try: function_to_call(**function_args)
             except Exception as e: send_msg(f"Failed from calling '{function_name}()'...\n\n{e}", chat_id)
 
         if need_to_sum:
             # Calculate the total spent of this year (sum the spent of this year)
-            total_spend_this_year, total_spend_this_month = get_total_spend_this_year()
-
-            # round the total spend of this year and this month, only show inter.
-            total_spend_this_year = int(round(total_spend_this_year))
-            total_spend_this_month = int(round(total_spend_this_month))
-
-            # Inform user the total spent of this year and this month
-            send_msg(f"Total spent of this year: {total_spend_this_year} usd\nTotal spent of this month: {total_spend_this_month} usd", chat_id)
+            try: get_total_spend_of_any_year_any_month(chat_id, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
+            except: pass
 
 
     # Inform user that the function has been called
@@ -119,3 +138,5 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
 
 if __name__ == '__main__':
     print("GPT_functions.py is running directly")
+    
+    # get_total_spend_of_any_year_any_month(from_id=BOTCREATER_CHAT_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))

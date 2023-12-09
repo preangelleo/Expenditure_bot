@@ -491,10 +491,12 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
 
 
 # 通过 get_token_price_table() 获取某个 coin 的价格
-def get_token_price(coin: str):
+def get_token_price(coin: str, from_id=None):
     df = get_token_price_table()
     df = df[df['coin'] == coin.upper()]
-    if not df.empty: return df['lastPrice'].values[0]
+    if not df.empty: 
+        if from_id: send_msg(f"{coin.upper()} current price: {format_number(df['lastPrice'].values[0])}\n\n{datetime.now()}", from_id)
+        return df['lastPrice'].values[0]
     else: return 0
 '''235.8'''
 
