@@ -147,13 +147,13 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
     if not today_hot_coin_list and not crontab: 
-        send_msg(f"{user_nick_name}, Your current positions are {df_balance.shape[0]} our of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
+        send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} our of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
         return
 
     # query_list  = []
     for coin in today_hot_coin_list:
 
-        # Check if coin in df_balance['coin'].values, if yes, ignore this coin
+        # Check if coin in coin_in_positions, if yes, ignore this coin
         if coin in coin_in_positions: continue
 
         # Check coin information from coinmarketcap, if no information, ignore this coin
