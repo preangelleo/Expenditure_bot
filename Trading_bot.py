@@ -8,7 +8,6 @@ POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
 # print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
 
 
-
 ''' Strategy:
 1. **Unique Coin List Creation**: The process begins by querying a database table named `binance_ticker_top_30`. This table provides a distinct list of coins that have been traded in the last 30 days. In instances where this table is non-existent or empty, the fallback is an empty list.
 
@@ -136,12 +135,14 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
 
+    coin_in_positions = []
     try:
         # Check if there is any open position in binance_position_buy table, if yes, ignore this coin
         df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
         if df_balance.shape[0] >= POSITIONS_LIMIT: 
             send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘", chat_id)
             return
+        coin_in_positions = df_balance['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
@@ -153,7 +154,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     for coin in today_hot_coin_list:
 
         # Check if coin in df_balance['coin'].values, if yes, ignore this coin
-        if coin in df_balance['coin'].values: continue
+        if coin in coin_in_positions: continue
 
         # Check coin information from coinmarketcap, if no information, ignore this coin
         if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id): continue
