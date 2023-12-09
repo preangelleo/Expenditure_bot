@@ -219,6 +219,8 @@ def get_token_info_from_coinmarketcap(token_symbol):
         return token_info
     return
 
+
+
 # 从 get_token_info_from_coinmarketcap(token_symbol) 读出 token_symbol 的 market_cap 以及 fully_diluted_market_cap
 def get_token_market_cap_and_ratio(token_symbol):
     try:
@@ -245,6 +247,19 @@ def send_msg(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
         return response.json()
     except Error as e: return {'error': str(e)}, 500
     
+# define a function to send telegram message to a chat_id using requests + telegram bot api in markdown format
+def send_msg_markdown(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
+    # print(f"Sending message to chat_id: {chat_id}")
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        data = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "MarkdownV2"
+        }
+        response = requests.post(url, data=data)
+        return response.json()
+    except Error as e: return {'error': str(e)}, 500    
 
 '''
 Designing a database table structure for an expenditure record:
@@ -371,6 +386,9 @@ if __name__ == '__main__':
     # {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
     # '''
 
-    from_id = BOTOWNER_CHAT_ID
-    df = get_all_expenditure_records(from_id)
-    print(df)
+    # from_id = BOTOWNER_CHAT_ID
+    # df = get_all_expenditure_records(from_id)
+    # print(df)
+
+    token_info = get_token_info_from_coinmarketcap('RSR')
+    print(json.dumps(token_info, indent=2))

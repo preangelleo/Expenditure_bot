@@ -2,7 +2,10 @@ from Binance_api import *
 
 
 TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
-
+INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
+CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
+# print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
 
 # 通过 df_ticker = pd.read_json(BINANCE_TICKER_URL) 获得最新的 ticker 信息
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
@@ -58,8 +61,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
             df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
             df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
             df_ticker.loc[index, 'ratio'] = float(token_info['ratio'])
-        else:
-            df_ticker.drop(index, inplace=True)
+        else: df_ticker.drop(index, inplace=True)
 
     # Filter out the coins with market_cap between 100M and 10B
     df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 10_000_000_000)]
@@ -68,7 +70,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 
     df_ticker = df_ticker.reset_index(drop=True)
 
-    # 读出 binance_ticker_top_30 中的 update_id 的最大值, 赋值给 update_id
+    # Read out the latest update_id from 'binance_ticker_top_30' table
     try: 
         result = engine.connect().execute(text("SELECT MAX(update_id) FROM binance_ticker_top_30"))
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
@@ -76,23 +78,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     except: update_id = 0
     update_id = int(update_id)
 
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
-    # cursor.execute("SHOW TABLES LIKE 'binance_ticker_top_30'")
-    # if cursor.fetchone() is None: update_id = 0
-    # else:
-    #     cursor.execute("SELECT MAX(update_id) FROM binance_ticker_top_30")
-    #     result = cursor.fetchone()
-    #     update_id = result[0] if result else 0
-    # cursor.close()
-    # conn.close()
-
     df_ticker['update_id'] = update_id + 1
 
     # Append df_ticker to the 'binance_ticker_top_30' table
     df_ticker.to_sql('binance_ticker_top_30', engine, if_exists='append', index=False)
 
-    # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
+    # Read out the latest update_id from 'binance_ticker_top_30' table
     df_ticker = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id"), {'update_id': update_id + 1}).fetchall())
 
     # create today_hot_coin_list
@@ -117,17 +108,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 13    FTMUSDT              -0.219   0.319200   0.319900   0.327000  0.317200  1.265156e+07  1685756783652  1685843183652    FTM  8.921519e+08              1.014947e+09  0.879014
 14  MAGICUSDT              -2.043   1.006700   1.027700   1.059100  0.991300  1.207562e+07  1685756782567  1685843182567  MAGIC  2.177512e+08              3.501676e+08  0.621848
 '''
-'''我跑了一个月的程序化交易策略逻辑和效果：
-每个小时轮训一次，读取出今日币安涨幅排行榜中交易量大于 5000w USDT 的所有币， 剔除 ignore list 中的币以及一个月内已经上过榜的币，然后再剔除掉市值信息获取失败的币（从 coinmarketcap 读取失败），最后返回所有币的 List。调用 Market Buy 按照市场价买入清单中所有的币（跳过目前还持有仓位的币），每三分钟轮训一次价格查询，如果涨幅超过 7% 则调用 Market Sell 以市场价清仓卖出，自动止盈。
-六月份开始跑这个策略，到目前一个月，总收益 13%，剔除掉现有仓位的浮亏，净收益 6%。
-'''
 
 
-
-def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲爱的', crontab=False, trading_volume_limit = 50_000_000, check_size = 1000):
+def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
-    if not today_hot_coin_list: 
-        if not crontab: send_msg(f"{user_nick_name}, 今天币安没有热门币种, 你可以明天再来看看哦 😘", chat_id)
+    if not today_hot_coin_list and not crontab: 
+        send_msg(f"{user_nick_name}, No hot coin for today, please try again tomorrow 😘", chat_id)
         return 
 
     # query_list  = []
@@ -137,25 +123,25 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲�
         if not token_info: continue
 
         output_dict = {
-            '名称': token_info['name'],
-            '排名': token_info['cmc_rank'],
-            '现价': f"{format_number(token_info['quote']['USD']['price'])} usd/{coin.lower()}",
-            '交易量': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
-            '流通市值': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
-            '24小时波动': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
-            '全流通市值': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
-            '代币总发行': f"{format_number(token_info['total_supply'])} {coin.lower()}",
-            '本次更新时间': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'CMC_Rank': f"[{coin}](https://coinmarketcap.com/currencies/{token_info['slug']}/) | {token_info['cmc_rank']}",
+            'Token_Name': token_info['name'],
+            'Market_Cap': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
+            'Total_Supply': f"{format_number(token_info['total_supply'])} {coin.lower()}",
+            'Current_Price': f"{format_number(token_info['quote']['USD']['price'])} usd/{coin.lower()}",
+            'FD_Market_Cap': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
+            'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
+            '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
+            'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         # 用 '\n' join k: v
         output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
-        send_msg(output_dict_str, chat_id)
+        send_msg_markdown(output_dict_str, chat_id)
 
-        # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 10 个，如果没有超过 10 个则调用 binance_market_buy() 买入 1000 usdt
-        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-        if df_balance.shape[0] < 10: 
-            # 检查 coin 是否在 binance_position_buy table 中，如果不在则调用 binance_market_buy() 买入 1000 usdt
-            if coin not in df_balance['coin'].values: send_msg(do_market_buy(coin, check_size), chat_id)
+        # # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 POSITIONS_LIMIT 个，如果没有超过 POSITIONS_LIMIT 个则调用 binance_market_buy() 买入 CHECK_SIZE usdt
+        # df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+        # if df_balance.shape[0] < POSITIONS_LIMIT: 
+        #     # 检查 coin 是否在 binance_position_buy table 中，如果不在则调用 binance_market_buy() 买入 1000 usdt
+        #     if coin not in df_balance['coin'].values: send_msg(do_market_buy(coin, check_size), chat_id)
         
         # query_list.append(f"Latest news about crypto project: {token_info['name']} {coin}")
 
@@ -168,5 +154,6 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲�
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
-    print(today_hot_coin_list)
+    # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
+    # print(today_hot_coin_list)
+    binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
