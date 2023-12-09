@@ -97,7 +97,7 @@ def get_token_price_table():
 471    JTOUSDT      3.00780    JTO'''
 
 # use get_api_fuction() resutl convert to string send to chat_id
-def get_api_functions_str(chat_id=BOTOWNER_CHAT_ID):
+def get_api_functions_str(chat_id=TG_BOT_OWNER_ID):
     data = get_api_functions()
     if data: return send_msg('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
     else: return send_msg(f"You don't have a binance API key and secrets in database yet.", chat_id)
@@ -228,7 +228,7 @@ def funding_main_transfer(coin:str, amount):
     
 
 # 通过用户input 的 coin 和 amount，调用 get_funding_asset() 获取 coin 的余额，如果余额大于 amount，则调用 funding_main_transfer(coin, amount) 转账
-def funding_main_transfer_with_check_and_send(coin, amount, chat_id=BOTOWNER_CHAT_ID):
+def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
@@ -271,7 +271,7 @@ def main_funding_transfer(coin, amount):
 
 
 # 通过用户input 的 coin 和 amount，调用 get_user_asset() 获取 asset / coin 的余额，如果余额大于 amount，则调用 main_funding_transfer(coin, amount) 转账
-def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=BOTOWNER_CHAT_ID):
+def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
@@ -290,7 +290,7 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=BOTOWNER
 
 
 # 通过 get_funding_asset 检查资金账户中的 USDT 余额，如果存在 USDT 余额，则调用 funding_main_transfer_with_check_and_send(coin, amount) 将所有 USDT 余额转入到现货账户
-def funding_main_transfer_all_usdt(chat_id=BOTOWNER_CHAT_ID):
+def funding_main_transfer_all_usdt(chat_id=TG_BOT_OWNER_ID):
     df = get_funding_asset()
     if not df.empty:
         df = df[df['asset'] == 'USDT']
@@ -382,7 +382,7 @@ def get_token_price(coin: str, from_id=None):
 
 
 # 获取给定 hours 小时内的充值记录并发送给 chat_id
-def get_deposit_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
+def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=1):
     hours = float(hours)
     PATH = '/sapi/v1/capital/deposit/hisrec'
     timestamp = int(time.time() * 1000)
@@ -469,7 +469,7 @@ timestamp	LONG	YES
 
 
 # 获取给定 hours 小时内的提币记录并发送给 chat_id
-def get_withdraw_history_by_hours(chat_id=BOTOWNER_CHAT_ID, hours=1):
+def get_withdraw_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=1):
     hours = float(hours)
     PATH = '/sapi/v1/capital/withdraw/history'
     timestamp = int(time.time() * 1000)

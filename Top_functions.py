@@ -19,19 +19,21 @@ from dotenv import load_dotenv
 from flask import make_response
 from Prompt_template import *
 from flask import render_template
-
+from Database_create import *
 
 # Load environment variables
 load_dotenv()
+
+# Create database engine
+engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
 BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
-
-BINANCE_BASE_URL = 'https://api.binance.com'
-BINANCE_TICKER_URL = 'https://api.binance.com/api/v3/ticker/24hr'
-BINANCE_DEPOSIT_ADDRESS_FOR_ERC20 = '0x34B940120AEB9cadbCc4131fB034aD3B83B0367d'
+BINANCE_BASE_URL = os.getenv('BINANCE_BASE_URL')
+BINANCE_TICKER_URL = os.getenv('BINANCE_TICKER_URL')
+BINANCE_DEPOSIT_ADDRESS_FOR_ERC20 = os.getenv('BINANCE_DEPOSIT_ADDRESS_FOR_ERC20')
 
 ETH_NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 ETH_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -42,30 +44,13 @@ TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'
 BTC_REGEX = r'^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[bc1q|bc1p][0-9A-Za-z]{37,62}$'
 EMAIL_ADDRESS_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
-# 获取环境变量
-db_host = os.getenv('DB_HOST')
-db_port = os.getenv('DB_PORT')
-db_user = os.getenv('DB_USER')
-db_password = os.getenv('DB_PASSWORD')
-db_name = os.getenv('DB_NAME')
 
-# Database connection function
-def get_db_connection():
-    conn = mysql.connector.connect(host=db_host, port=db_port, user=db_user, password=db_password, database=db_name)
-    return conn
-
-# 创建数据库引擎
-# 格式：dialect+driver://username:password@host:port/database
-engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
-# print(f"DEBUG: engine: {engine}")
-
-INFURA_KEY = os.getenv('INFURA_KEY')
 DEBANK_API = os.getenv('DEBANK_API')
 CMC_PA_API = os.getenv('CMC_PA_API')
 MORALIS_API = os.getenv('MORALIS_API')
 ETHERSCAN_API = os.getenv('ETHERSCAN_API')
 MONTHLY_FEE = float(os.getenv('MONTHLY_FEE'))
-BOTOWNER_CHAT_ID = os.getenv('BOTOWNER_CHAT_ID')
+TG_BOT_OWNER_ID = os.getenv('TG_BOT_OWNER_ID')
 BOTCREATER_CHAT_ID = os.getenv('BOTCREATER_CHAT_ID')
 ELEVEN_API_KEY = os.getenv('ELEVEN_API_KEY')
 USER_AVATAR_NAME = os.getenv('USER_AVATAR_NAME')
@@ -78,9 +63,7 @@ ETHERSCAN_WALLET_URL_PREFIX = 'https://etherscan.io/address/'
 ETHERSCAN_TX_URL_PREFIX = 'https://etherscan.io/tx/'
 ETHERSCAN_TOKEN_URL_PREFIX = 'https://etherscan.io/token/'
 
-BOTCREATER_TELEGRAM_HANDLE = '@laogege6'
-
-BOTCREATER_TEST_BOT = ['leowang_bot', 'Leowang_test_bot', '@Leowin_chat_bot']
+BOTCREATER_TELEGRAM_HANDLE = os.getenv('BOTCREATER_TELEGRAM_HANDLE')
 
 # initialize ignore coin list
 # init_ignore_coin_list_table()
@@ -88,10 +71,9 @@ BOTCREATER_TEST_BOT = ['leowang_bot', 'Leowang_test_bot', '@Leowin_chat_bot']
 # IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
 # print(f"DEBUG: IGNORE_LIST: {IGNORE_LIST}")
 
-
-BOT_OWNER_LIST = [BOTOWNER_CHAT_ID, BOTCREATER_CHAT_ID]
-
-INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
+INFURA_KEY = os.getenv('INFURA_KEY')
+INFURA_URL = os.getenv('INFURA_URL')
+INFURA = INFURA_URL + INFURA_KEY
 web3 = Web3(Web3.HTTPProvider(INFURA))
 
 USER_TELEGRAM_LINK = os.getenv("USER_TELEGRAM_LINK")
@@ -220,7 +202,7 @@ def get_token_info_from_coinmarketcap(token_symbol):
         return token_info
     return
 
-def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=BOTOWNER_CHAT_ID):
+def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OWNER_ID):
     token_info = get_token_info_from_coinmarketcap(coin.upper())
     if not token_info: return 
 
@@ -257,7 +239,7 @@ def get_token_market_cap_and_ratio(token_symbol):
 
 
 # difine a function to send telegram message to a chat_id using requests + telegram bot api
-def send_msg(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
+def send_msg(message, chat_id=TG_BOT_OWNER_ID):
     # print(f"Sending message to chat_id: {chat_id}")
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -270,7 +252,7 @@ def send_msg(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
     except Error as e: return {'error': str(e)}, 500
     
 # define a function to send telegram message to a chat_id using requests + telegram bot api in markdown format
-def send_msg_markdown(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
+def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID):
     # print(f"Sending message to chat_id: {chat_id}")
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -303,17 +285,7 @@ Address (VARCHAR): The address where the transaction occurred or the address of 
 Receipt_Image_URL (VARCHAR): URL link to the image of the receipt.
 '''
 
-def create_expenditure_record_table():
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Create a new table 'user_expenditures_record'
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_expenditures_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Date DATE, Time VARCHAR(20), Spent FLOAT, Category VARCHAR(255), PaymentMethod VARCHAR(255), Merchant VARCHAR(255), ItemName TEXT, Price FLOAT, Card_Number INTEGER, Tax FLOAT, Tips FLOAT, Address TEXT, Receipt_Image_URL TEXT)")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return True
+
 
 # Define a function to insert a new expenditure record into the table 'user_expenditures_record'
 def insert_new_expenditure_record(from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url):
@@ -350,7 +322,14 @@ def get_all_expenditure_records(from_id):
     return df
 
 
+# Read out ignore_list table and return a list of ignored coins
+def get_ignore_list():
+    df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
+    return df['symbol'].values.tolist()
+
+
 if __name__ == '__main__':
+    print(f"Top_functions.py is running...")
     # token_symbol = 'RSR'
     # r = get_token_market_cap_and_ratio(token_symbol)
     # print(r)
@@ -408,9 +387,9 @@ if __name__ == '__main__':
     # {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
     # '''
 
-    # from_id = BOTOWNER_CHAT_ID
+    # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)
     # print(df)
 
-    token_info = get_token_info_from_coinmarketcap('RSR')
-    print(json.dumps(token_info, indent=2))
+    # token_info = get_token_info_from_coinmarketcap('RSR')
+    # print(json.dumps(token_info, indent=2))

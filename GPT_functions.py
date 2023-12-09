@@ -30,7 +30,7 @@ async def ask_gpt_vision(messages_list, model=DEFAULT_MODEL):
 
 
 # # define GPT function with input prompt only
-async def ask_gpt(prompt, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL):
+async def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -45,7 +45,7 @@ async def ask_gpt(prompt, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MO
 
 
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
-def get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), query_year=str(datetime.now().year), query_month=str(datetime.now().month)):
+def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month)):
     df = get_all_expenditure_records(from_id)
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
@@ -71,7 +71,7 @@ def get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), 
 
 
 @retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
-async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MODEL, image_url=None, prompt = None):
+async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None):
 
     if not prompt and not image_url: return
 
@@ -142,4 +142,4 @@ if __name__ == '__main__':
     print("GPT_functions.py is running directly")
     
     # get_total_spend_of_any_year_any_month(from_id=BOTCREATER_CHAT_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
-    get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), query_year=str(datetime.now().year), query_month=str(datetime.now().month))
+    get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))

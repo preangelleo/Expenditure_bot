@@ -7,10 +7,29 @@ CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
 POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
 # print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
 
-# 通过 df_ticker = pd.read_json(BINANCE_TICKER_URL) 获得最新的 ticker 信息
+
+
+''' Strategy:
+1. **Unique Coin List Creation**: The process begins by querying a database table named `binance_ticker_top_30`. This table provides a distinct list of coins that have been traded in the last 30 days. In instances where this table is non-existent or empty, the fallback is an empty list.
+
+2. **Data Acquisition and Initial Filtering**: The next step involves fetching the latest ticker data from Binance's API. This data is then filtered to focus on symbols that end with 'USDT'. Additional filters are applied to select coins with a positive price change percentage and a trading volume that surpasses a predefined threshold. The selection is further refined to include coins whose last price falls within a specific range.
+
+3. **Sorting and Trimming the List**: Following the initial filtering, the data is sorted based on quote volume. The top 30 entries are then selected for further consideration. Any coins with 'USD' in their names or those included in a predetermined ignore list are excluded at this stage.
+
+4. **Comparison with Previously Traded Coins**: The selected coins are compared against the unique coin list derived from the `binance_ticker_top_30` table. Coins that are already on this list are removed from consideration.
+
+5. **Enhancement with Market Cap Data**: Each coin on the list is then enriched with additional data such as market cap, fully diluted market cap, and a specific ratio. This data is sourced from another function. Coins for which this additional information is not available are omitted.
+
+6. **Final Selection Based on Market Cap**: A final filter is applied to retain only those coins with a market cap between 100 million and 10 billion USD.
+
+7. **Database Update and Retrieval**: The refined list of coins is used to update the `binance_ticker_top_30` table with an incremented `update_id`. The list is then retrieved back from the table, now updated with the latest data.
+
+8. **Output Presentation**: The culmination of this process is the generation of a list termed 'today's hot coins', which is presented in a formatted string.
+'''
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     
-    # 读出 binance_ticker_top_30 中 的 openTime 在最近 30 天内的所有行 unique coin, 转换为 pandas df 并生成一个 unique_coin_list
+    # Read out the unique coin list from 'binance_ticker_top_30' table, make a empty list if binance_ticker_top_30 table is not exist or empty
     try:
         query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
         params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
@@ -21,7 +40,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
-    # 保留 symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
+    # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
 
     # pick up the symbol endswith 'USDT'
@@ -36,16 +55,17 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
 
-    # 剔除 coin 包含 USD 的币
+    # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
-    # 剔除掉 IGNORE_LIST 中的币
-    # IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
-    # df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+    # Eliminate the coins in IGNORE_LIST
+    IGNORE_LIST = get_ignore_list()
+    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
 
+    # Keep the top 30 coins
     df_ticker = df_ticker.head(30)
 
-    # 剔除掉 unique_coin_list 中的币
+    # Ignore the coins in unique_coin_list
     df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
     if df_ticker.empty: return []
 
@@ -114,13 +134,15 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 '''
 
 
-def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
+def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
 
-    # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 POSITIONS_LIMIT 个，如果没有超过 POSITIONS_LIMIT 个则调用 binance_market_buy() 买入 CHECK_SIZE usdt
-    df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-    if df_balance.shape[0] >= POSITIONS_LIMIT: 
-        send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘", chat_id)
-        return
+    try:
+        # Check if there is any open position in binance_position_buy table, if yes, ignore this coin
+        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+        if df_balance.shape[0] >= POSITIONS_LIMIT: 
+            send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘", chat_id)
+            return
+    except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
     if not today_hot_coin_list and not crontab: 
@@ -145,4 +167,4 @@ if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
     # print(today_hot_coin_list)
-    binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
+    binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
