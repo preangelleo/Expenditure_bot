@@ -302,7 +302,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
     conn.commit()
     cursor.close()
     conn.close()
-    send_msg(f'''Successfully inserted: "{item_name} | {spent} usd"''', from_id)
+    send_msg(f'''Successfully inserted: \n"{item_name} | {spent} usd"''', from_id)
     return 
 
 

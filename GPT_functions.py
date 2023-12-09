@@ -133,7 +133,7 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
 
 
     # Inform user that the function has been called
-    send_msg("ALL DONE!", chat_id)
+    # send_msg("ALL DONE!", chat_id)
 
     return
     

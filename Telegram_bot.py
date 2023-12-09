@@ -6,6 +6,7 @@ async def command_start_handler(message: Message) -> None:
     """
     This handler receives messages with `/start` command
     """
+    if message.from_user.id != TG_BOT_OWNER_ID: return await message.answer(NOT_OWNER_ALERT)
     # Most event objects have aliases for API methods that can be called in events' context
     # For example if you want to answer to incoming message you can use `message.answer(...)` alias
     # and the target chat will be passed to :ref:`aiogram.methods.send_message.SendMessage`
@@ -16,6 +17,8 @@ async def command_start_handler(message: Message) -> None:
 
 @dp.message()
 async def echo_handler(message: types.Message) -> None:
+
+    if message.from_user.id != TG_BOT_OWNER_ID: return await message.answer(NOT_OWNER_ALERT)
 
     try: await handel_telegram_message(message)
     except Exception as e: await message.answer(f"Failed...\n\n{e}")
