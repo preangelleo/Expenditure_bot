@@ -144,7 +144,7 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear
         # 用 '\n' join k: v
         output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
         print(output_dict_str)
-        send_msg_markdown(output_dict_str, chat_id)
+        send_msg(output_dict_str, chat_id)
 
         # # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 POSITIONS_LIMIT 个，如果没有超过 POSITIONS_LIMIT 个则调用 binance_market_buy() 买入 CHECK_SIZE usdt
         # df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
