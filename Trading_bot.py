@@ -89,6 +89,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
+    today_hot_coin_list_str = ', '.join(today_hot_coin_list)
+
+    print(f"today_hot_coin_list: {today_hot_coin_list_str}")
+
     return today_hot_coin_list
 ''' df_ticker
        symbol  priceChangePercent  lastPrice  openPrice  highPrice  lowPrice   quoteVolume       openTime      closeTime   coin    market_cap  fully_diluted_market_cap     ratio
@@ -111,10 +115,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 
 
 def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
-    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
-    if not today_hot_coin_list and not crontab: 
-        send_msg(f"{user_nick_name}, No hot coin for today, please try again tomorrow 😘", chat_id)
-        return 
+    # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
+    # if not today_hot_coin_list and not crontab: 
+    #     send_msg(f"{user_nick_name}, No hot coin for today, please try again tomorrow 😘", chat_id)
+    #     return 
+
+    today_hot_coin_list = ['ORDI', 'NEAR', 'FTM']
 
     # query_list  = []
     for coin in today_hot_coin_list:
