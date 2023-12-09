@@ -102,10 +102,13 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
         if need_to_sum:
             # Calculate the total spent of this year (sum the spent of this year)
             total_spend_this_year, total_spend_this_month = get_total_spend_this_year()
+
+            # round the total spend of this year and this month, only show inter.
+            total_spend_this_year = int(round(total_spend_this_year))
+            total_spend_this_month = int(round(total_spend_this_month))
+
             # Inform user the total spent of this year and this month
-            send_msg(f"Total spent of this year: {total_spend_this_year}\nTotal spent of this month: {total_spend_this_month}", chat_id)
-            # Inform user the total spent of this year and this month
-            send_msg(f"Total spent of this year: {total_spend_this_year}\nTotal spent of this month: {total_spend_this_month}", chat_id)
+            send_msg(f"Total spent of this year: {total_spend_this_year} usd\nTotal spent of this month: {total_spend_this_month} usd", chat_id)
 
 
     # Inform user that the function has been called
@@ -116,5 +119,3 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
 
 if __name__ == '__main__':
     print("GPT_functions.py is running directly")
-    total_spend_this_year, total_spend_this_month = get_total_spend_this_year()
-    print(total_spend_this_year, total_spend_this_month)
