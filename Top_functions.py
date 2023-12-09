@@ -256,7 +256,7 @@ def send_msg_markdown(message, chat_id=os.getenv('TG_BOT_OWNER_ID')):
         data = {
             "chat_id": chat_id,
             "text": message,
-            "parse_mode": "MarkdownV2"
+            "parse_mode": "Markdown"
         }
         response = requests.post(url, data=data)
         return response.json()
