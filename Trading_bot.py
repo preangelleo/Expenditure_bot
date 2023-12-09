@@ -159,7 +159,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         # Check coin information from coinmarketcap, if no information, ignore this coin
         if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id): continue
 
-        send_msg(do_market_buy(coin, check_size), chat_id)
+        # send_msg(do_market_buy(coin, check_size), chat_id)
 
     return
 
