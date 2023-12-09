@@ -130,7 +130,7 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear
         if not token_info: continue
 
         output_dict = {
-            'CMC_Rank': f"[{coin}](https://coinmarketcap.com/currencies/{token_info['slug']}/) | {token_info['cmc_rank']}",
+            'CMC_Rank': f"{coin} | {token_info['cmc_rank']}",
             'Token_Name': token_info['name'],
             'Market_Cap': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
             'Total_Supply': f"{format_number(token_info['total_supply'])} {coin.lower()}",
@@ -138,7 +138,8 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear
             'FD_Market_Cap': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
             'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
             '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
-            'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'CMC_LINK': f"https://coinmarketcap.com/currencies/{token_info['slug']}"
         }
         # 用 '\n' join k: v
         output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
