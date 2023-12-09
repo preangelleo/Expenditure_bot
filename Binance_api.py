@@ -495,7 +495,7 @@ def get_token_price(coin: str, from_id=None):
     df = get_token_price_table()
     df = df[df['coin'] == coin.upper()]
     if not df.empty: 
-        if from_id: send_msg(f"{coin.upper()} current price: {format_number(df['lastPrice'].values[0])}\n\n{datetime.now()}", from_id)
+        if from_id: send_msg(f"Current price of {coin.upper()}: {format_number(df['lastPrice'].values[0])} usdt\n\nCurrent time: {datetime.now().strftime('%Y-%m-%d %H:%M')}", from_id)
         return df['lastPrice'].values[0]
     else: return 0
 '''235.8'''
