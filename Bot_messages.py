@@ -23,6 +23,12 @@ async def handel_telegram_message(message: types.Message):
     text_prompt = message.text 
     image_url = None
 
+    if not text_prompt: return await message.answer(random.choice(HAPPY_EMOJI))
+
+    if text_prompt in IGNORE_WORDS: return await message.answer(random.choice(UNHAPPY_EMOJI))
+    
+    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
+
     # Print out the message in json format with indent
     '''
     Input a text message and I got this message object:
@@ -42,6 +48,7 @@ async def handel_telegram_message(message: types.Message):
         file_path = file_info.file_path  # get file_path from File object
         image_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
         text_prompt = f"{message.caption}\n{text_prompt}"
+
 
 
     await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)
