@@ -12,8 +12,28 @@ TOKEN = os.getenv('TELEGRAM_TOKEN')
 bot = Bot(token=TOKEN)
 TG_BOT_OWNER_ID = int(os.getenv('TG_BOT_OWNER_ID'))
 
+TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
+
 # All handlers should be attached to the Router (or Dispatcher)
 dp = Dispatcher()
+
+def telegram_bot_commands_and_menu():
+
+    # Define the list of commands
+    COMMANDS = [
+        {'command': 'start', 'description': 'Get started'}
+    ]
+
+    # Function to set the bot commands
+    def set_commands():
+        url = TELEGRAM_BASE_URL + 'setMyCommands'
+        response = requests.post(url, json={'commands': COMMANDS})
+        if response.status_code == 200: print('Bot commands updated!')
+        else: print('Failed to update bot commands.')
+
+    # Call the function to set the commands
+    set_commands()
+    return 
 
 # Define a handler for telegram messages
 async def handel_telegram_message(message: types.Message):
@@ -22,12 +42,6 @@ async def handel_telegram_message(message: types.Message):
     from_id = message.from_user.id
     text_prompt = message.text 
     image_url = None
-
-    if not text_prompt: return await message.answer(random.choice(HAPPY_EMOJI))
-
-    if text_prompt in IGNORE_WORDS: return await message.answer(random.choice(UNHAPPY_EMOJI))
-    
-    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
 
     # Print out the message in json format with indent
     '''
@@ -47,10 +61,15 @@ async def handel_telegram_message(message: types.Message):
         file_info = await bot.get_file(file_id)  # get File object
         file_path = file_info.file_path  # get file_path from File object
         image_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
-        text_prompt = f"{message.caption}\n{text_prompt}"
+        text_prompt = f"Check out this image. \n{message.caption}\n{text_prompt}"
 
+    if not text_prompt: return await message.answer(random.choice(HAPPY_EMOJI))
 
+    if text_prompt in IGNORE_WORDS: return await message.answer(random.choice(UNHAPPY_EMOJI))
+    
+    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
 
     await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)
 
-    
+if __name__ == '__main__':
+    telegram_bot_commands_and_menu()
