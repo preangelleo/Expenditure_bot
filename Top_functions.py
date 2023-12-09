@@ -307,8 +307,8 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
 
 
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe
-def get_all_expenditure_records():
-    query = "SELECT * FROM user_expenditures_record"
+def get_all_expenditure_records(from_id):
+    query = f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}'"
     df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
     return df
 
@@ -371,5 +371,6 @@ if __name__ == '__main__':
     # {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
     # '''
 
-    df = get_all_expenditure_records()
+    from_id = BOTOWNER_CHAT_ID
+    df = get_all_expenditure_records(from_id)
     print(df)

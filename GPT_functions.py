@@ -46,7 +46,7 @@ async def ask_gpt(prompt, from_id=os.getenv('TG_BOT_OWNER_ID'), model=DEFAULT_MO
 
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
 def get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), query_year=str(datetime.now().year), query_month=str(datetime.now().month)):
-    df = get_all_expenditure_records()
+    df = get_all_expenditure_records(from_id)
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
 
@@ -81,15 +81,17 @@ async def run_conversation_with_functions(chat_id=os.getenv('TG_BOT_OWNER_ID'), 
         messages_list.append({"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]})
         send_msg("GPT is reading the image...", chat_id)
         prompt = await ask_gpt_vision(messages_list, DEFAULT_VISION_MODEL)
+
+        if "nice picture" in prompt.lower(): return send_msg(prompt, chat_id)
+
         prompt = f"receipt\n{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
-        print(prompt)
     
-    if not 'receipt' in prompt.lower(): 
-        await ask_gpt(prompt, chat_id, model)
-        return 
+    # if not 'receipt' in prompt.lower(): 
+    #     await ask_gpt(prompt, chat_id, model)
+    #     return 
 
     messages_list = [{"role": "system", "content": SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT}]
-    prompt = f"{prompt}\nfrom_id: {chat_id}"
+    prompt = f"{prompt}\nfrom_id: {chat_id}\ncurrent_date: {datetime.now().strftime('%Y-%m-%d')}\ncurrent_time: {datetime.now().strftime('%H:%M')}"
     messages_list.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
@@ -140,3 +142,4 @@ if __name__ == '__main__':
     print("GPT_functions.py is running directly")
     
     # get_total_spend_of_any_year_any_month(from_id=BOTCREATER_CHAT_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
+    get_total_spend_of_any_year_any_month(from_id=os.getenv('TG_BOT_OWNER_ID'), query_year=str(datetime.now().year), query_month=str(datetime.now().month))

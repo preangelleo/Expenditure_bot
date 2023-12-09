@@ -66,7 +66,7 @@ FUNCTIONS_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "coin": {"type": "string", "description": "The token symbol in upper case"},
+                    "coin": {"type": "string", "description": "The token symbol in upper case, for example: BTC"},
                     "from_id": {"type": "string", "description": "The user's telegram from_id"}
                 },
                 "required": ["coin", "from_id"]
@@ -81,10 +81,10 @@ FUNCTIONS_TOOLS = [
                 "type": "object",
                 "properties": {
                     "from_id": {"type": "string", "description": "The user's telegram from_id"},
-                    "query_year": {"type": "string", "description": "The year to query, default to current year"},
-                    "query_month": {"type": "string", "description": "The month to query, default to current month"},
+                    "query_year": {"type": "number", "description": "The year to query, for example: 2022, default to current year"},
+                    "query_month": {"type": "number", "description": "The month to query, for example: 12, default to current month"},
                 },
-                "required": ["from_id", "query_year"]
+                "required": ["from_id", "query_year", 'query_month']
             }
         }
     }
@@ -96,10 +96,13 @@ Your task is to determine if the input image is a receipt. If it's not a receipt
 If it is a receipt, read and extract the information as mush as possible.'''
 
 TEXT_INPUT = '''
-Determine if the prompt is a receipt. If it's not a receipt, follow the prompt instruction directly.
-If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''
+Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user.
 
-RECEIPT_GUIDELINES = f'''Follow these guidelines:
+- If user is asking for the price of a token, call function `get_token_price`.
+- If user is asking for the total spend of a year or a month, call function `get_total_spend_of_any_year_any_month`.
+- If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''
+
+RECEIPT_GUIDELINES = f'''Follow these guidelines to polish the receipt information:
 
 1. Use the provided `from_id` in the user prompt. If it's not provided, default to `9999999999`.
 2. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.
