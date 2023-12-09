@@ -115,51 +115,31 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
 
 
 def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
-    # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
-    # if not today_hot_coin_list and not crontab: 
-    #     send_msg(f"{user_nick_name}, No hot coin for today, please try again tomorrow 😘", chat_id)
-    #     return 
 
-    today_hot_coin_list = ['ORDI', 'NEAR', 'RSR']
-    print(f"today_hot_coin_list: {today_hot_coin_list}")
+    # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 POSITIONS_LIMIT 个，如果没有超过 POSITIONS_LIMIT 个则调用 binance_market_buy() 买入 CHECK_SIZE usdt
+    df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    if df_balance.shape[0] >= POSITIONS_LIMIT: 
+        send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘", chat_id)
+        return
+    
+    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
+    if not today_hot_coin_list and not crontab: 
+        send_msg(f"{user_nick_name}, Your current positions are {df_balance.shape[0]} our of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
+        return
 
     # query_list  = []
     for coin in today_hot_coin_list:
-        
-        token_info = get_token_info_from_coinmarketcap(coin)
-        if not token_info: continue
 
-        output_dict = {
-            'CMC_Rank': f"{coin} | {token_info['cmc_rank']}",
-            'Token_Name': token_info['name'],
-            'Market_Cap': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
-            'Total_Supply': f"{format_number(token_info['total_supply'])} {coin.lower()}",
-            'Current_Price': f"{format_number(token_info['quote']['USD']['price'])} usd/{coin.lower()}",
-            'FD_Market_Cap': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
-            'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
-            '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
-            'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'CMC_LINK': f"https://coinmarketcap.com/currencies/{token_info['slug']}"
-        }
-        # 用 '\n' join k: v
-        output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
-        print(output_dict_str)
-        send_msg(output_dict_str, chat_id)
+        # Check if coin in df_balance['coin'].values, if yes, ignore this coin
+        if coin in df_balance['coin'].values: continue
 
-        # # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 POSITIONS_LIMIT 个，如果没有超过 POSITIONS_LIMIT 个则调用 binance_market_buy() 买入 CHECK_SIZE usdt
-        # df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-        # if df_balance.shape[0] < POSITIONS_LIMIT: 
-        #     # 检查 coin 是否在 binance_position_buy table 中，如果不在则调用 binance_market_buy() 买入 1000 usdt
-        #     if coin not in df_balance['coin'].values: send_msg(do_market_buy(coin, check_size), chat_id)
-        
-        # query_list.append(f"Latest news about crypto project: {token_info['name']} {coin}")
+        # Check coin information from coinmarketcap, if no information, ignore this coin
+        if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id): continue
 
-    # for query in query_list:
-    #     try: create_crypto_news_from_bing_search(query, chat_id)
-    #     except: pass
-
+        send_msg(do_market_buy(coin, check_size), chat_id)
 
     return
+
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')

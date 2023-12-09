@@ -220,6 +220,27 @@ def get_token_info_from_coinmarketcap(token_symbol):
         return token_info
     return
 
+def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=BOTOWNER_CHAT_ID):
+    token_info = get_token_info_from_coinmarketcap(coin.upper())
+    if not token_info: return 
+
+    output_dict = {
+        'CMC_Rank': f"{coin} | {token_info['cmc_rank']}",
+        'Token_Name': token_info['name'],
+        'Market_Cap': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
+        'Total_Supply': f"{format_number(token_info['total_supply'])} {coin.lower()}",
+        'Current_Price': f"{format_number(token_info['quote']['USD']['price'])} usd/{coin.lower()}",
+        'FD_Market_Cap': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
+        'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
+        '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
+        'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'CMC_LINK': f"https://coinmarketcap.com/currencies/{token_info['slug']}"
+    }
+    # 用 '\n' join k: v
+    output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
+
+    send_msg(output_dict_str, chat_id)
+    return True
 
 
 # 从 get_token_info_from_coinmarketcap(token_symbol) 读出 token_symbol 的 market_cap 以及 fully_diluted_market_cap
