@@ -376,7 +376,10 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     
     # 读出 binance_ticker_top_30 中 的 openTime 在最近 30 天内的所有行 unique coin, 转换为 pandas df 并生成一个 unique_coin_list
     try:
-        df_30_days = pd.read_sql_query("SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > %s", engine, params=[(int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000,)])
+        query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
+        params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
+        result = engine.connect().execute(text(query), params)
+        df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
         unique_coin_list = df_30_days['coin'].values.tolist()
     except: unique_coin_list = []
 
@@ -433,7 +436,10 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     df_ticker = df_ticker.reset_index(drop=True)
 
     # 读出 binance_ticker_top_30 中的 update_id 的最大值, 赋值给 update_id
-    try: update_id = pd.read_sql_query("SELECT MAX(update_id) FROM binance_ticker_top_30", engine).values[0][0]
+    try: 
+        result = engine.connect().execute(text("SELECT MAX(update_id) FROM binance_ticker_top_30"))
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        update_id = df['MAX(update_id)'].values[0]
     except: update_id = 0
     update_id = int(update_id)
 
@@ -454,7 +460,7 @@ def binance_today_hot_coin(trading_volume_limit = 50_000_000):
     df_ticker.to_sql('binance_ticker_top_30', engine, if_exists='append', index=False)
 
     # 读出 binance_ticker_top_30 中的 update_id = update_id + 1 的所有行, 赋值给 df_ticker
-    df_ticker = pd.read_sql_query("SELECT * FROM binance_ticker_top_30 WHERE update_id=%s", engine, params=[(update_id + 1,)])
+    df_ticker = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id"), {'update_id': update_id + 1}).fetchall())
 
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
@@ -742,8 +748,7 @@ def binance_today_hot_coins_check(chat_id=BOTOWNER_CHAT_ID, user_nick_name='亲�
         send_msg(output_dict_str, chat_id)
 
         # 检查 binance_position_buy table 中 is_closed = 0 的 row 是否超过 10 个，如果没有超过 10 个则调用 binance_market_buy() 买入 1000 usdt
-        conn = get_db_connection()
-        df_balance = pd.read_sql_query('SELECT * FROM binance_position_buy WHERE is_closed = 0', conn)
+        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
         if df_balance.shape[0] < 10: 
             # 检查 coin 是否在 binance_position_buy table 中，如果不在则调用 binance_market_buy() 买入 1000 usdt
             if coin not in df_balance['coin'].values: send_msg(do_market_buy(coin, check_size), chat_id)
@@ -867,7 +872,7 @@ def do_limit_sell(coin, target_profit_ratio=0.05):
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
     conn = get_db_connection()
     try:
-        df_balance = pd.read_sql_query(f"SELECT * FROM binance_position_buy WHERE coin = '{coin}' AND is_closed = 0 ORDER BY price ASC LIMIT 1", conn)
+        df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE coin = :coin AND is_closed = 0 ORDER BY price ASC LIMIT 1"), {'coin': coin}).fetchall())
         if df_balance.empty: reply_msg = f'No open position for coin: {coin}'
     except: reply_msg = f'No open position for coin: {coin}'
 
@@ -906,8 +911,7 @@ def do_market_sell(coin):
     reply_msg = ''
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
     try:
-        conn = get_db_connection()
-        df_balance = pd.read_sql_query(f"SELECT * FROM binance_position_buy WHERE coin = '{coin}' AND is_closed = 0 ORDER BY price ASC LIMIT 1", conn)
+        df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE coin = :coin AND is_closed = 0 ORDER BY price ASC LIMIT 1"), {'coin': coin}).fetchall())
         if df_balance.empty: reply_msg = f'No open position for coin: {coin}'
     except: reply_msg = f'No open position for coin: {coin}'
 
@@ -969,7 +973,7 @@ def do_market_sell(coin):
     df_sellout_result.to_sql('binance_position_sell', conn, if_exists='append', index=False)
 
     # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-    df_profit = pd.read_sql_query('SELECT * FROM binance_position_sell', conn)
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
     if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
 
     # update binance_position_buy table where update_id == update_id, set is_closed = 1
@@ -1101,7 +1105,7 @@ def do_market_buy(coin: str, value):
     conn = get_db_connection()
     # 读取 binance_position_buy 最大的 update_id + 1
     try:
-        df_max_update_id = pd.read_sql_query('SELECT MAX(update_id) FROM binance_position_buy', conn)
+        df_max_update_id = pd.DataFrame(engine.connect().execute(text('SELECT MAX(update_id) FROM binance_position_buy')).fetchall())
         if not df_max_update_id.empty: update_id = df_max_update_id['MAX(update_id)'].values[0]
     except: pass
 
@@ -1115,7 +1119,7 @@ def do_market_buy(coin: str, value):
     df_buyin_result.to_sql('binance_position_buy', conn, if_exists='append', index=False)
 
     # 从 binance_position 读出最大的 update_id 的记录并打印
-    df = pd.read_sql_query(f"SELECT * FROM binance_position_buy WHERE update_id = {update_id + 1}", conn)
+    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE update_id = :update_id"), {'update_id': update_id + 1}).fetchall())
     if not df.empty: 
         reply_msg = f'''
 买入币种: {coin}
@@ -1135,7 +1139,7 @@ def do_market_buy(coin: str, value):
 def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, crontab=False, check_size=1000):
     conn = get_db_connection()
     # get df_balance from binance_position_buy
-    df_balance = pd.read_sql_query('SELECT * FROM binance_position_buy WHERE is_closed = 0', conn)
+    df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     if df_balance.empty: return 'No open position for all coins'
 
     if coin: 
@@ -1220,7 +1224,7 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
 
     if not crontab: 
         # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-        df_profit = pd.read_sql_query('SELECT * FROM binance_position_sell', conn)
+        df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
         if not df_profit.empty: 
             # 从 df_profit 中读取最早的 transactTime 并计算距离当前的时间
             earliest_transactTime = df_profit['transactTime'].astype(int).min()
@@ -1358,4 +1362,11 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    binance_today_hot_coin(trading_volume_limit = 50_000_000)
+    # binance_today_hot_coin(trading_volume_limit = 50_000_000)
+    query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
+    params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
+    result = engine.connect().execute(text(query), params)
+    df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
+    print(df_30_days)
+
+

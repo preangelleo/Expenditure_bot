@@ -6,7 +6,7 @@ from eth_account import Account
 from mnemonic import Mnemonic
 from web3 import Web3, EthereumTesterProvider
 from moralis import evm_api
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.sql import text
 from urllib.parse import urlencode
 from urllib.parse import urljoin
@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from flask import make_response
 from Prompt_template import *
 from flask import render_template
+
 
 # Load environment variables
 load_dotenv()
@@ -270,7 +271,7 @@ def create_expenditure_record_table():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Create a new table 'user_expenditures_record'
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_expenditures_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Date DATE, Time TIME, Spent FLOAT, Category VARCHAR(255), PaymentMethod VARCHAR(255), Merchant VARCHAR(255), ItemName VARCHAR(255), Price FLOAT, Card_Number INTEGER, Tax FLOAT, Tips FLOAT, Address VARCHAR(255), Receipt_Image_URL VARCHAR(255))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_expenditures_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Date DATE, Time VARCHAR(20), Spent FLOAT, Category VARCHAR(255), PaymentMethod VARCHAR(255), Merchant VARCHAR(255), ItemName TEXT, Price FLOAT, Card_Number INTEGER, Tax FLOAT, Tips FLOAT, Address TEXT, Receipt_Image_URL TEXT)")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -284,6 +285,11 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # # Delete current user_expenditures_record table
+    # cursor.execute("DROP TABLE IF EXISTS user_expenditures_record")
+    # # Commit the session
+    # conn.commit()
 
     # Check if the table 'user_expenditures_record' exists
     cursor.execute("SHOW TABLES LIKE 'user_expenditures_record'")
@@ -299,60 +305,70 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
     return f'''Successfully inserted: "{item_name} | {spent} usd"'''
 
 
+# Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe
+def get_all_expenditure_records():
+    query = "SELECT * FROM user_expenditures_record"
+    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+    return df
+
+
 if __name__ == '__main__':
-    token_symbol = 'RSR'
-    r = get_token_market_cap_and_ratio(token_symbol)
-    print(r)
-    '''{
-    "id": 3964,
-    "name": "Reserve Rights",
-    "symbol": "RSR",
-    "slug": "reserve-rights",
-    "num_market_pairs": 179,
-    "date_added": "2019-05-24T00:00:00.000Z",
-    "tags": [
-        "store-of-value",
-        "defi",
-        "coinbase-ventures-portfolio",
-        "dcg-portfolio",
-        "real-world-assets"
-    ],
-    "max_supply": 100000000000,
-    "circulating_supply": 50600000000,
-    "total_supply": 100000000000,
-    "platform": {
-        "id": 1027,
-        "name": "Ethereum",
-        "symbol": "ETH",
-        "slug": "ethereum",
-        "token_address": "0x320623b8e4ff03373931769a31fc52a4e78b5d70"
-    },
-    "is_active": 1,
-    "infinite_supply": false,
-    "cmc_rank": 255,
-    "is_fiat": 0,
-    "self_reported_circulating_supply": null,
-    "self_reported_market_cap": null,
-    "tvl_ratio": null,
-    "last_updated": "2023-12-08T04:57:00.000Z",
-    "quote": {
-        "USD": {
-        "price": 0.003022959829617387,
-        "volume_24h": 9627813.39949622,
-        "volume_change_24h": -10.9172,
-        "percent_change_1h": -0.3184558,
-        "percent_change_24h": 1.89929244,
-        "percent_change_7d": 7.74822681,
-        "percent_change_30d": 23.45831876,
-        "percent_change_60d": 67.36675515,
-        "percent_change_90d": 63.50005519,
-        "market_cap": 152961767.3786398,
-        "market_cap_dominance": 0.0095,
-        "fully_diluted_market_cap": 302295982.96,
-        "tvl": null,
-        "last_updated": "2023-12-08T04:57:00.000Z"
-        }
-    }
-    }
-    {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
-    '''
+    # token_symbol = 'RSR'
+    # r = get_token_market_cap_and_ratio(token_symbol)
+    # print(r)
+    # '''{
+    # "id": 3964,
+    # "name": "Reserve Rights",
+    # "symbol": "RSR",
+    # "slug": "reserve-rights",
+    # "num_market_pairs": 179,
+    # "date_added": "2019-05-24T00:00:00.000Z",
+    # "tags": [
+    #     "store-of-value",
+    #     "defi",
+    #     "coinbase-ventures-portfolio",
+    #     "dcg-portfolio",
+    #     "real-world-assets"
+    # ],
+    # "max_supply": 100000000000,
+    # "circulating_supply": 50600000000,
+    # "total_supply": 100000000000,
+    # "platform": {
+    #     "id": 1027,
+    #     "name": "Ethereum",
+    #     "symbol": "ETH",
+    #     "slug": "ethereum",
+    #     "token_address": "0x320623b8e4ff03373931769a31fc52a4e78b5d70"
+    # },
+    # "is_active": 1,
+    # "infinite_supply": false,
+    # "cmc_rank": 255,
+    # "is_fiat": 0,
+    # "self_reported_circulating_supply": null,
+    # "self_reported_market_cap": null,
+    # "tvl_ratio": null,
+    # "last_updated": "2023-12-08T04:57:00.000Z",
+    # "quote": {
+    #     "USD": {
+    #     "price": 0.003022959829617387,
+    #     "volume_24h": 9627813.39949622,
+    #     "volume_change_24h": -10.9172,
+    #     "percent_change_1h": -0.3184558,
+    #     "percent_change_24h": 1.89929244,
+    #     "percent_change_7d": 7.74822681,
+    #     "percent_change_30d": 23.45831876,
+    #     "percent_change_60d": 67.36675515,
+    #     "percent_change_90d": 63.50005519,
+    #     "market_cap": 152961767.3786398,
+    #     "market_cap_dominance": 0.0095,
+    #     "fully_diluted_market_cap": 302295982.96,
+    #     "tvl": null,
+    #     "last_updated": "2023-12-08T04:57:00.000Z"
+    #     }
+    # }
+    # }
+    # {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
+    # '''
+
+    df = get_all_expenditure_records()
+    print(df)

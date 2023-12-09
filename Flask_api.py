@@ -67,34 +67,14 @@ def home():
     </html>
     """
 
-'''
-cursor.execute("CREATE TABLE IF NOT EXISTS user_expenditures_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Date DATE, Time TIME, Spent FLOAT, Category VARCHAR(255), PaymentMethod VARCHAR(255), Merchant VARCHAR(255), ItemName VARCHAR(255), Price FLOAT, Card_Number INTEGER, Tax FLOAT, Tips FLOAT, Address VARCHAR(255), Receipt_Image_URL VARCHAR(255))")
-'''
 
 # Adding a new page 'table' to display the records in "user_expenditures_record", add lines for sum of total spend, total tax, total tips; user can choose to display records by merchant, month, year or category; user can also choose to sort the records by date, spent; defaultly sorted by ID with descending order.
 
 @app.route('/table')
 def table():
-    df = pd.read_sql_query("SELECT * FROM user_expenditures_record", con=engine)
-    df['Date'] = pd.to_datetime(df['Date'])
-    df['Time'] = pd.to_datetime(df['Time'])
-    df['Spent'] = pd.to_numeric(df['Spent'])
-    df['Price'] = pd.to_numeric(df['Price'])
-    df['Tax'] = pd.to_numeric(df['Tax'])
-    df['Tips'] = pd.to_numeric(df['Tips'])
-    df['Card_Number'] = pd.to_numeric(df['Card_Number'])
-    df['Receipt_Image_URL'] = df['Receipt_Image_URL'].astype(str)
-    df['From_id'] = df['From_id'].astype(str)
-    df['Category'] = df['Category'].astype(str)
-    df['PaymentMethod'] = df['PaymentMethod'].astype(str)
-    df['Merchant'] = df['Merchant'].astype(str)
-    df['ItemName'] = df['ItemName'].astype(str)
-    df['Address'] = df['Address'].astype(str)
-    df['ID'] = pd.to_numeric(df['ID'])
-    df['Month'] = df['Date'].dt.month
-    df['Year'] = df['Date'].dt.year
-    df['Day'] = df['Date'].dt.day
-    
+    query = "SELECT * FROM user_expenditures_record"
+    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+
     sum_spend = df['Spent'].sum()
     sum_tax = df['Tax'].sum()
     sum_tips = df['Tips'].sum()

@@ -49,7 +49,7 @@ async def handel_telegram_message(message: types.Message):
         file_info = await bot.get_file(file_id)  # get File object
         file_path = file_info.file_path  # get file_path from File object
         image_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
-        text_prompt = message.caption
+        text_prompt = f"{message.caption}\n{text_prompt}"
 
 
     await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)

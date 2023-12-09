@@ -10,13 +10,13 @@ FUNCTIONS_TOOLS = [
         "type": "function",
         "function": {
             "name": "insert_new_expenditure_record",
-            "description": "Insert a new expenditure record into the table 'user_expenditures_record'",
+            "description": "Insert a item spending record into the table 'user_expenditures_record'",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "from_id": {"type": "string", "description": "The user's telegram id"},
-                    "date": {"type": "string", "description": "The date of the expenditure record"},
-                    "time": {"type": "string", "description": "The time of the expenditure record"},
+                    "date": {"type": "string", "description": "The date of the expenditure record in format 'YYYY-MM-DD'"},
+                    "time": {"type": "string", "description": "The time of the expenditure record in format 'HH:MM'"},
                     "spent": {"type": "number", "description": "The total amount of the expenditure record"},
                     "category": {"type": "string", "description": "The category of the expenditure record"},
                     "payment_method": {"type": "string", "description": "The payment method of the expenditure record"},
@@ -26,7 +26,7 @@ FUNCTIONS_TOOLS = [
                     "card_number": {"type": "number", "description": "The last 4 digi of credit / debit card number"},
                     "tax": {"type": "number", "description": "The tax of the expenditure record"},
                     "tips": {"type": "number", "description": "The tips of the expenditure record"},
-                    "address": {"type": "string", "description": "The address of the expenditure record"},
+                    "address": {"type": "string", "description": "The address of the merchant record"},
                     "receipt_image_url": {"type": "string", "description": "The receipt image url of the expenditure record"}
                 },
                 "required": ["from_id", "date", "time", "spent", "category", "payment_method", "merchant", "item_name", "price", "card_number", "tax", "tips", "address", "receipt_image_url"]
@@ -41,7 +41,7 @@ If it is a receipt, read and extract the information as mush as possible.'''
 
 TEXT_INPUT = '''
 Determine if the prompt is a receipt. If it's not a receipt, follow the prompt instruction directly.
-If it is a receipt, read and extract the information and use your tools to call `insert_new_expenditure_record` function. '''
+If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''
 
 RECEIPT_GUIDELINES = f'''Follow these guidelines:
 
