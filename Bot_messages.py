@@ -27,6 +27,8 @@ def telegram_bot_commands_and_menu():
         {'command': 'hot_coins_check', 'description': 'Check and buy hot coins of today'},
         {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
         {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
+        {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
+        {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'}
         ]
 
     # Function to set the bot commands
@@ -45,12 +47,14 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_expenditure_info': get_total_spend_of_any_year_any_month,
     'hot_coins_check': binance_today_hot_coins_check,
     'funding_main_transfer': funding_main_transfer_all_usdt,
-    'get_wallet_balance': get_coin_wallet_balance_all_str
+    'get_wallet_balance': get_coin_wallet_balance_all_str,
+    'binance_position_check': bot_call_binance_position_check
     }
 
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
+    'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     }
 
 # Define a handler for telegram messages

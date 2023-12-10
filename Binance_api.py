@@ -1155,8 +1155,11 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     return
 
 
-'''cursor.execute("CREATE TABLE IF NOT EXISTS net_profit_daily_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, NetProfit FLOAT)")'''
+def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
+    return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=from_id, crontab_profit_record=False)
 
+def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
+    return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=coin, chat_id=from_id, crontab_profit_record=False)
 
 '''小额资产转换 (USER_DATA)
 POST /sapi/v1/asset/dust (HMAC SHA256)
