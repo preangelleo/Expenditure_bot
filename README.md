@@ -1,7 +1,27 @@
-# Expenditure_bot
+# CRYPTO-TRADING-BOT
 An automated trading bot that can also record receipt details into a MySQL database with AI assistance.
 
+The strategy began live testing on June 1, 2023, with a principal of $10,000 USDT. After six months, it achieved a profit of $3,500, which is equivalent to an annualized return of 70%. This performance is partly attributed to the gradual entry into a bull market in the latter half of the year.
+
 ![Initial Fund](net_profit_daily_record/Initial_fund.png)
+
+Starting from December 10, 2023, this strategy is being open-sourced for the first time, and the principal has been increased to $100,000. Everyone is welcome to observe and study the code.
+
+---
+
+The core underlying logic of this strategy is to "be bullish on cryptocurrencies." Therefore, if cryptocurrencies weaken in the long term, this strategy is certain to lose money.
+
+The goal of this strategy is to outperform BTC. If BTC increases tenfold in ten years, the target for this strategy is to exceed a tenfold return.
+
+The trading logic of this strategy is to follow the trend and take profits at a 5% gain, repeating this process. There is no restriction on the trading currency; selections are made based on the list of currencies with the highest increases. However, there is an Ignore List, similar to a blacklist, which can be updated at any time through a Telegram Bot.
+
+The main parameters for selecting currencies in this trading strategy are: a daily trading volume of more than $50 million, a trading volume/market capitalization (Turnover Rate) higher than ETH, a market capitalization of over $100 million, a total circulating market capitalization of less than $10 billion, and a coin price greater than $0.001 but less than $1000.
+
+The default limit for holdings in this trading bot is set to 10 positions. Once fully invested, no further purchases are made until a coin is sold for a profit, freeing up a position.
+
+This trading strategy does not set a stop-loss policy. If all 10 positions are filled and all are losing, the strategy essentially waits indefinitely.
+
+---
 
 # Preparation:
 Ensure Python3 and NPM are installed on your system.
@@ -97,26 +117,43 @@ Now, everything is set up and ready to go!
   <img src="net_profit_daily_record/Telegram_bot_menu.png" alt="Telegram Bot Menu"/>
 </div>
 
-![Telegram Bot Menu](net_profit_daily_record/Telegram_bot_menu.png)
 ---
 
 # About the auto-trading strategy:
 
-The strategy for identifying today's hot coins on Binance unfolds through a meticulously crafted multi-step process:
+### 1. Token Market Cap and Circulating Ratio Calculation
+- The function `get_token_market_cap_and_ratio` retrieves market data for a specific cryptocurrency token.
+- It calculates the market cap, fully diluted market cap, and the circulating ratio of the token.
+- The circulating ratio is determined by dividing the market cap by the fully diluted market cap.
+- The function also calculates the turnover ratio of the token and compares it to Ethereum's turnover ratio.
 
-1. **Unique Coin List Creation**: The process begins by querying a database table named `binance_ticker_top_30`. This table provides a distinct list of coins that have been traded in the last 30 days. In instances where this table is non-existent or empty, the fallback is an empty list.
+### 2. Selection of Hot Coins from Binance
+- `binance_today_hot_coin` function selects potential investment coins based on recent trading data from Binance.
+- It filters coins based on criteria like price change percentage, last price, and trading volume.
+- Coins are excluded if they fall outside specific price ranges or are part of an ignore list.
+- The function further filters coins by market cap, ensuring they fall within a specified range.
 
-2. **Data Acquisition and Initial Filtering**: The next step involves fetching the latest ticker data from Binance's API. This data is then filtered to focus on symbols that end with 'USDT'. Additional filters are applied to select coins with a positive price change percentage and a trading volume that surpasses a predefined threshold. The selection is further refined to include coins whose last price falls within a specific range.
+### 3. Data Storage and Retrieval
+- The selected coins are stored in a database with their market cap and other relevant data.
+- The database also maintains a record of the latest updates and transactions.
 
-3. **Sorting and Trimming the List**: Following the initial filtering, the data is sorted based on quote volume. The top 30 entries are then selected for further consideration. Any coins with 'USD' in their names or those included in a predetermined ignore list are excluded at this stage.
+### 4. Checking and Managing Positions
+- `binance_today_hot_coins_check` function manages your trading positions.
+- It checks for open positions and the number of coins you currently hold.
+- If you have reached your limit of positions, no further action is taken.
+- The function also verifies if the selected hot coins are already in your positions and skips them if they are.
 
-4. **Comparison with Previously Traded Coins**: The selected coins are compared against the unique coin list derived from the `binance_ticker_top_30` table. Coins that are already on this list are removed from consideration.
+### 5. Coin Purchase Execution
+- For each selected coin not already in your positions, the system checks its information from CoinMarketCap.
+- If the coin meets the criteria, it proceeds to execute a market buy order for one unit of the coin.
 
-5. **Enhancement with Market Cap Data**: Each coin on the list is then enriched with additional data such as market cap, fully diluted market cap, and a specific ratio. This data is sourced from another function. Coins for which this additional information is not available are omitted.
+### 6. Notification and Error Handling
+- The system sends notifications about the status of the trades and actions taken.
+- It handles exceptions and errors, providing feedback on failed transactions.
 
-6. **Final Selection Based on Market Cap**: A final filter is applied to retain only those coins with a market cap between 100 million and 10 billion USD.
+### Summary
+Your strategy focuses on identifying high-potential cryptocurrencies based on market activity and cap, executing trades through Binance, and managing your portfolio by monitoring positions and making informed buying decisions. The system automates most of the process while keeping you informed through notifications.
 
-7. **Database Update and Retrieval**: The refined list of coins is used to update the `binance_ticker_top_30` table with an incremented `update_id`. The list is then retrieved back from the table, now updated with the latest data.
+---
 
-8. **Output Presentation**: The culmination of this process is the generation of a list termed 'today's hot coins', which is presented in a formatted string.
-
+![Initial Fund](net_profit_daily_record/Initial_fund.png)
