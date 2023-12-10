@@ -1017,6 +1017,7 @@ def plot_net_profit_sum():
 
 # check binance_position_buy and calculate profit based on current price for all coins
 def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False):
+    print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', TARGET_PROFIT)
 
     try:
         # get df_balance from binance_position_buy
@@ -1091,7 +1092,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
         for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
         for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
-        for_reply['Open_Position_Time'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
         for_reply['Order_ID'] = reply_dict['orderId']
         for_reply['Update_ID'] = reply_dict['update_id']
 
@@ -1114,7 +1115,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
                 earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
 
-                print('earliest_transactTime: ', earliest_transactTime)
+                # print('earliest_transactTime: ', earliest_transactTime)
 
                 duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
 
@@ -1301,8 +1302,7 @@ if __name__ == '__main__':
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
     # print(df)
 
-    # change today's net_profit_daily_record to 789.421552
-    # update_net_profit_daily_record(datetime.now().strftime('%Y-%m-%d'), 789.421552)
+    # update_net_profit_daily_record(datetime.now().strftime('%Y-%m-%d'), 325)
     # print('Done')
 
     # df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
