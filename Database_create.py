@@ -217,3 +217,5 @@ if __name__ == '__main__':
     # Initial Step 5: Create net_profit_daily_record tables
     create_net_profit_daily_record_table()
 
+    print("All tables created successfully!")
+

@@ -1,22 +1,84 @@
 # Expenditure_bot
-A bot that automatically records my purchase receipts into a MySQL database with AI assistance.
+An automated trading bot that can also record receipt details into a MySQL database with AI assistance.
 
-# Step 1:
-git clone https://github.com/preangelleo/Expenditure_bot.git
+# Preparation:
+Ensure Python3 and NPM are installed on your system.
+If not, please consult ChatGPT for installation instructions.
 
-# Step 2:
-cd Expenditure_bot
+Reference to my ChatGPT conversation: 
+[ChatGPT Conversation Link](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
 
-# Step 3:
-conda create -n expenditure_ai python=3.9
+# Step 1: Setting Up the Environment
+1. Navigate to the root directory:
+   ```bash
+   cd /root
+   ```
+2. Clone the Expenditure_bot repository:
+   ```bash
+   git clone https://github.com/preangelleo/Expenditure_bot.git
+   ```
+3. Enter the Expenditure_bot directory:
+   ```bash
+   cd Expenditure_bot
+   ```
+4. Create a new Conda environment named 'expenditure_ai' with Python 3.9:
+   ```bash
+   conda create -n expenditure_ai python=3.9
+   ```
+5. Activate the newly created environment:
+   ```bash
+   conda activate expenditure_ai
+   ```
+6. Install required Python packages:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
 
-# Step 4:
-conda activate expenditure_ai
+# Step 2: Database Creation
+Set up a database on your Ubuntu server or create an independent database on AWS.
+[Amazon AWS Lightsail Database Link](https://lightsail.aws.amazon.com/ls/webapp/home/databases)
 
-# Step 5:
-pip3 install -r requirements.txt
+Reference to my ChatGPT conversation: 
+[ChatGPT Conversation Link](https://chat.openai.com/share/2dcc78a6-34b1-4b6b-938e-9d630cf57a86)
 
-About the auto-trading strategy:
+# Step 3: Configuration
+1. Copy the .env.template file to create a new .env file:
+   ```bash
+   cp .env.template .env
+   ```
+2. Open the .env file with nano for editing:
+   ```bash
+   nano .env
+   ```
+   - Enter your credentials in the .env file.
+   - Alternatively, copy the content of .env.template to a text editor, complete your personal credentials, and then paste it back into the .env file on your server.
+
+# Step 4: Create Database and Tables
+1. Run python3 Database_create.py at Expenditure_bot folder
+   ```bash
+   python3 Database_create.py
+   ```
+2. Wait and see "All tables created successfully!"
+
+# Step 5: Start the Bot and try out
+   ```bash
+   python3 Telegram_bot.py
+   ```
+
+# Step 6: Put bot run constantly
+1. Use NPM to run Telegram_bot.py
+   ```bash
+   pm2 start Telegram_bot.py --name ep --interpreter python3
+   ```
+2. Restart command
+   ```bash
+   pm2 start ep
+   ```
+
+
+---
+
+# About the auto-trading strategy:
 
 The strategy for identifying today's hot coins on Binance unfolds through a meticulously crafted multi-step process:
 
