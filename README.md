@@ -3,8 +3,6 @@ An automated trading bot that can also record receipt details into a MySQL datab
 
 The strategy began live testing on June 1, 2023, with a principal of $10,000 USDT. After six months, it achieved a profit of $3,500, which is equivalent to an annualized return of 70%. This performance is partly attributed to the gradual entry into a bull market in the latter half of the year.
 
-![Initial Fund](net_profit_daily_record/Initial_fund.png)
-
 Starting from December 10, 2023, this strategy is being open-sourced for the first time, and the principal has been increased to $100,000. Everyone is welcome to observe and study the code.
 
 ---
@@ -14,6 +12,8 @@ Ensure Python3 and NPM are installed on your system.
 If not, please consult ChatGPT for installation instructions.
 
 Make sure deposit 100,000 USDT into your Binance account. Or any amount of initial fund you prefer.
+
+![Initial Fund](net_profit_daily_record/Initial_fund.png)
 
 Reference to my [ChatGPT Conversation](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
 
@@ -152,4 +152,4 @@ This trading strategy does not set a stop-loss policy. If all 10 positions are f
 
 ---
 
-![Initial Fund](net_profit_daily_record/Initial_fund.png)
+![Initial Fund](net_profit_daily_record/Leowang.net.jpg)
