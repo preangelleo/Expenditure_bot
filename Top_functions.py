@@ -335,7 +335,7 @@ def get_ignore_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
     ignore_list = df['symbol'].values.tolist()
     if from_id: send_msg(f"Ignore list:\n{', '.join(ignore_list)}", from_id)
-    return 
+    return ignore_list
 
 
 # define a function to add a given coin to ignore_coin_list table

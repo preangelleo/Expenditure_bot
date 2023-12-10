@@ -237,3 +237,15 @@ if __name__ == '__main__':
     # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
     # print(today_hot_coin_list)
     # binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
+    # try:
+    #     query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
+    #     params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
+    #     result = engine.connect().execute(text(query), params)
+    #     df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
+    #     unique_coin_list = df_30_days['coin'].values.tolist()
+    # except: unique_coin_list = []
+    # print(unique_coin_list)
+    # print(type(unique_coin_list))
+    # IGNORE_LIST = get_ignore_list()
+    # print(IGNORE_LIST)
+    # print(type(IGNORE_LIST))

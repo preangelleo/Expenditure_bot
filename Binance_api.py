@@ -305,6 +305,7 @@ def funding_main_transfer_all_usdt(chat_id=TG_BOT_OWNER_ID):
         if not df.empty:
             amount = float(df['free'].values[0])
             if amount > 0: return funding_main_transfer_with_check_and_send('USDT', amount, chat_id)
+            else: return send_msg(f'No USDT asset in funding account.', chat_id)
 
 
 # 通过 get_funding_asset() 获取所有 coin 的余额并返回一个 dict key is asset, value is free
