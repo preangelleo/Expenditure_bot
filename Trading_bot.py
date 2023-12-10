@@ -1,30 +1,96 @@
 from Binance_api import *
 
 
-TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
-INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
-CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
-POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
-# print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
 
 
-''' Strategy:
-1. **Unique Coin List Creation**: The process begins by querying a database table named `binance_ticker_top_30`. This table provides a distinct list of coins that have been traded in the last 30 days. In instances where this table is non-existent or empty, the fallback is an empty list.
-
-2. **Data Acquisition and Initial Filtering**: The next step involves fetching the latest ticker data from Binance's API. This data is then filtered to focus on symbols that end with 'USDT'. Additional filters are applied to select coins with a positive price change percentage and a trading volume that surpasses a predefined threshold. The selection is further refined to include coins whose last price falls within a specific range.
-
-3. **Sorting and Trimming the List**: Following the initial filtering, the data is sorted based on quote volume. The top 30 entries are then selected for further consideration. Any coins with 'USD' in their names or those included in a predetermined ignore list are excluded at this stage.
-
-4. **Comparison with Previously Traded Coins**: The selected coins are compared against the unique coin list derived from the `binance_ticker_top_30` table. Coins that are already on this list are removed from consideration.
-
-5. **Enhancement with Market Cap Data**: Each coin on the list is then enriched with additional data such as market cap, fully diluted market cap, and a specific ratio. This data is sourced from another function. Coins for which this additional information is not available are omitted.
-
-6. **Final Selection Based on Market Cap**: A final filter is applied to retain only those coins with a market cap between 100 million and 10 billion USD.
-
-7. **Database Update and Retrieval**: The refined list of coins is used to update the `binance_ticker_top_30` table with an incremented `update_id`. The list is then retrieved back from the table, now updated with the latest data.
-
-8. **Output Presentation**: The culmination of this process is the generation of a list termed 'today's hot coins', which is presented in a formatted string.
+'''COINMARKETCAP RETURN
+{
+"id": 3964,
+"name": "Reserve Rights",
+"symbol": "RSR",
+"slug": "reserve-rights",
+"num_market_pairs": 179,
+"date_added": "2019-05-24T00:00:00.000Z",
+"tags": [
+    "store-of-value",
+    "defi",
+    "coinbase-ventures-portfolio",
+    "dcg-portfolio",
+    "real-world-assets"
+],
+"max_supply": 100000000000,
+"circulating_supply": 50600000000,
+"total_supply": 100000000000,
+"platform": {
+    "id": 1027,
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "slug": "ethereum",
+    "token_address": "0x320623b8e4ff03373931769a31fc52a4e78b5d70"
+},
+"is_active": 1,
+"infinite_supply": false,
+"cmc_rank": 255,
+"is_fiat": 0,
+"self_reported_circulating_supply": null,
+"self_reported_market_cap": null,
+"tvl_ratio": null,
+"last_updated": "2023-12-08T04:57:00.000Z",
+"quote": {
+    "USD": {
+    "price": 0.003022959829617387,
+    "volume_24h": 9627813.39949622,
+    "volume_change_24h": -10.9172,
+    "percent_change_1h": -0.3184558,
+    "percent_change_24h": 1.89929244,
+    "percent_change_7d": 7.74822681,
+    "percent_change_30d": 23.45831876,
+    "percent_change_60d": 67.36675515,
+    "percent_change_90d": 63.50005519,
+    "market_cap": 152961767.3786398,
+    "market_cap_dominance": 0.0095,
+    "fully_diluted_market_cap": 302295982.96,
+    "tvl": null,
+    "last_updated": "2023-12-08T04:57:00.000Z"
+    }
+}
+}
+{'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
 '''
+
+
+'''STRATEGY:
+- Setting Limits: Define various limits such as TRADING_VOLUME_LIMIT, INITIAL_FUND, CHECK_SIZE, and POSITIONS_LIMIT.
+- Fetching Market Data: Fetches market data from Binance for coins with a trading volume above TRADING_VOLUME_LIMIT. It filters coins based on several criteria including price change percentage, last price, and quote volume.
+- Filtering Criteria: Coins are filtered to include only those with price change percent > 0, quote volume > TRADING_VOLUME_LIMIT, and last price within a specific range.
+- Exclusions: Coins in the ignore list or previously traded in the last 30 days are excluded.
+- Market Cap Analysis: Fetches market cap and fully diluted market cap for each coin from CoinMarketCap. Coins are filtered based on their market cap, circulation ratio and turnover ratio.
+- Selecting Top Coins: The top 30 coins are selected based on quote volume.
+- Position Check: The binance_today_hot_coins_check function checks if the current number of open positions is below the POSITIONS_LIMIT. If not, no further action is taken.
+- Coin Eligibility: For each eligible coin, the strategy checks if it is already in an open position. If not, it fetches price information from CoinMarketCap and send to trader.
+- Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
+'''
+# From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
+def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
+    if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+    try:
+        token_info = get_token_info_from_coinmarketcap(token_symbol)
+        if token_info:
+            market_cap = token_info['quote']['USD']['market_cap']
+            fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
+            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: return
+            if market_cap < MARKET_CAP_DOWN_LIMIT: return
+            circulating_ratio = market_cap / fully_diluted_market_cap
+            circulating_ratio = round(circulating_ratio, 2)
+            if circulating_ratio < CIRCULATION_RATIO: return 
+            # Calculate turnover ratio
+            turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
+            turnover_ratio = round(turnover_ratio, 2)
+            if turnover_ratio < turnover_ratio_eth: return
+                
+            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio}
+    except: return 
+
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     
@@ -68,18 +134,21 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
     if df_ticker.empty: return []
 
+    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+
     # Update ticker with market cap and fully diluted market cap
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
     df_ticker['ratio'] = 0.01
     for index, row in df_ticker.iterrows():
         coin = row['coin']
-        token_info = get_token_market_cap_and_ratio(coin)
+        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
         if token_info:
-            '''token_info = {'market_cap': 154794584.58836213, 'fully_diluted_market_cap': 305918151.36, 'ratio': 0.5060000000006607}'''
+            '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
             df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
             df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
-            df_ticker.loc[index, 'ratio'] = float(token_info['ratio'])
+            df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
+            df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
         else: df_ticker.drop(index, inplace=True)
 
     # Filter out the coins with market_cap between 100M and 10B
@@ -159,7 +228,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         # Check coin information from coinmarketcap, if no information, ignore this coin
         if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id): continue
 
-        # send_msg(do_market_buy(coin, check_size), chat_id)
+        send_msg(do_market_buy(coin, check_size), chat_id)
 
     return
 
@@ -168,4 +237,4 @@ if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
     # print(today_hot_coin_list)
-    binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
+    # binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)

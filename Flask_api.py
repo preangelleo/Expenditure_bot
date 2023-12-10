@@ -25,36 +25,34 @@ def verify_token(token):
 class ExpenditureList(Resource):
     @auth.login_required
     def get(self):
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM expenditure_table")
-            records = cursor.fetchall()
-            cursor.close()
-            conn.close()
-            return {'data': records}, 200
-        except Error as e:
-            return {'error': str(e)}, 500
+        with engine.connect() as connection:
+            try:
+                sql = text("SELECT * FROM user_expenditures_record")
+                result = connection.execute(sql)
+                records = [dict(row) for row in result]
+                return {'data': records}, 200
+            except SQLAlchemyError as e:
+                return {'error': str(e)}, 500
 
     @auth.login_required
     def post(self):
         try:
             data = request.get_json()
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            query = """
-            INSERT INTO expenditure_table 
-            (item, category, unit_price, units, date, time, currency, tax, tips) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (data['item'], data['category'], data['unit_price'], data['units'], data['date'], data['time'], data['currency'], data['tax'], data['tips']))
-            conn.commit()
-            cursor.close()
-            conn.close()
+            with engine.connect() as connection:
+                sql = text("""
+                    INSERT INTO user_expenditures_record 
+                    (From_id, Date, Time, Spent, Category, PaymentMethod, Merchant, ItemName, Price, Card_Number, Tax, Tips, Address, Receipt_Image_URL) 
+                    VALUES 
+                    (:From_id, :Date, :Time, :Spent, :Category, :PaymentMethod, :Merchant, :ItemName, :Price, :Card_Number, :Tax, :Tips, :Address, :Receipt_Image_URL)
+                """)
+
+                connection.execute(sql, data)
+                connection.commit()
+
             return {'message': 'Record added successfully'}, 201
-        except Error as e:
+
+        except SQLAlchemyError as e:
             return {'error': str(e)}, 500
-        
 
 # Home route
 @app.route('/')

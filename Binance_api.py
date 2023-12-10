@@ -1,5 +1,12 @@
 from Top_functions import *
 
+TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
+INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
+CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
+TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05))
+# print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
+
 
 def network_name_change(str_name: str):
     str_name = str_name.upper()
@@ -369,7 +376,6 @@ def get_coin_wallet_balance(coin):
     else: return 0
 
 
-
 # 通过 get_token_price_table() 获取某个 coin 的价格
 def get_token_price(coin: str, from_id=None):
     df = get_token_price_table()
@@ -705,11 +711,11 @@ def binance_limit_sell(coin, amount, price):
         return
     
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
-def do_limit_sell(coin, target_profit_ratio=0.05):
+def do_limit_sell(coin: str, target_profit_ratio=0.05):
     coin = coin.upper()
     reply_msg = ''
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
-    conn = get_db_connection()
+
     try:
         df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE coin = :coin AND is_closed = 0 ORDER BY price ASC LIMIT 1"), {'coin': coin}).fetchall())
         if df_balance.empty: reply_msg = f'No open position for coin: {coin}'
@@ -772,12 +778,12 @@ def do_market_sell(coin):
     
     balance = float(df_coin_balance['free'].values[0])
     if balance < amount: 
-        reply_msg = f'Balance {balance} is not enough for amount: {amount}'
+        reply_msg = f'Balance {balance} is not sufficient for amount: {amount}'
         return reply_msg
 
     data = binance_market_sell(coin, amount)
     if not data: 
-        reply_msg = f'Failed to do market sell for coin: {coin}'
+        reply_msg = f'Failed market selling coin: {coin}'
         return reply_msg
 
     # convert data['fills] to dataframe
@@ -807,19 +813,22 @@ def do_market_sell(coin):
     # convert data to dataframe
     df_sellout_result = pd.DataFrame(data, index=[0])
 
-    conn = get_db_connection()
+    
     # 如果没有 binance_position_sell table, 就创建一个，如果 table 存在，就 append df_buyin_result
-    df_sellout_result.to_sql('binance_position_sell', conn, if_exists='append', index=False)
+    df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
 
     # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
     df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
     if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
 
-    # update binance_position_buy table where update_id == update_id, set is_closed = 1
-    sql = f"UPDATE binance_position_buy SET is_closed = 1 WHERE update_id = {update_id}"
-    # with engine.begin() as con: con.execute(text(sql))
-    conn.execute(sql)
-    conn.close()
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE binance_position_buy SET is_closed = 1 WHERE update_id = :update_id"), {'update_id': update_id + 1})
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
 
     order_id = data['orderId']
 
@@ -909,7 +918,7 @@ def do_market_buy(coin: str, value):
     
     balance = float(df_usdt_balance['free'].values[0])
     if balance < value: 
-        reply_msg = f'USDT Balance {balance} is not enough for value: {value}'
+        reply_msg = f'USDT Balance {balance} is not sufficient for value: {value}'
         return reply_msg
 
     data = binance_market_buy(coin, value)
@@ -941,8 +950,7 @@ def do_market_buy(coin: str, value):
 
     update_id = 0
 
-    conn = get_db_connection()
-    # 读取 binance_position_buy 最大的 update_id + 1
+    # Read out the max update_id from binance_position_buy table
     try:
         df_max_update_id = pd.DataFrame(engine.connect().execute(text('SELECT MAX(update_id) FROM binance_position_buy')).fetchall())
         if not df_max_update_id.empty: update_id = df_max_update_id['MAX(update_id)'].values[0]
@@ -954,32 +962,24 @@ def do_market_buy(coin: str, value):
     # convert data to dataframe
     df_buyin_result = pd.DataFrame(data, index=[0])
 
-    # 如果没有 binance_position_buy table, 就创建一个，如果 table 存在，就 append df_buyin_result
-    df_buyin_result.to_sql('binance_position_buy', conn, if_exists='append', index=False)
+    # If table binance_position_buy does not exist, create one, else append df_buyin_result to binance_position_buy
+    df_buyin_result.to_sql('binance_position_buy', engine, if_exists='append', index=False)
 
-    # 从 binance_position 读出最大的 update_id 的记录并打印
+    # Read out the trading informaiton from binance_position_buy table where update_id == update_id + 1
     df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE update_id = :update_id"), {'update_id': update_id + 1}).fetchall())
     if not df.empty: 
-        reply_msg = f'''
-买入币种: {coin}
-买入价格: {format_number(data["price"])} usdt/{coin.lower()}
-买入数量: {format_number(data["executedQty"])} {coin.lower()}
-买入佣金: {format_number(trading_fee_value)} usdt
-交易_ID: {data["orderId"]}
-更新_ID: {update_id + 1}
-'''
+        reply_msg = f'''Buy in coin: {coin}\nBuy in price: {format_number(data["price"])} usdt/{coin.lower()}\nBuy in amount: {format_number(data["executedQty"])} {coin.lower()}\nTrading fee: {format_number(trading_fee_value)} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
         return reply_msg
 
-'''
-      symbol    orderId  orderListId           clientOrderId   transactTime  price       origQty   executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
-0  CAKEUSDT  513576831           -1  7F2qDttXThZ31GyHgmYa2D  1685860139703  1.747  572.40000000  572.40000000        999.98280000  FILLED         GTC  MARKET  BUY  1685860139703                    NONE  CAKE      0.002451     306.124284          1          0'''
 
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, crontab=False, check_size=1000):
-    conn = get_db_connection()
-    # get df_balance from binance_position_buy
-    df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-    if df_balance.empty: return 'No open position for all coins'
+def binance_position_buy_check_all(chat_id, coin=None, target_profit=TARGET_PROFIT, crontab=False, check_size=CHECK_SIZE):
+
+    try:
+        # get df_balance from binance_position_buy
+        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+        if df_balance.empty: return 'No open position for all coins'
+    except: return 'No open position for all coins'
 
     if coin: 
         df_balance = df_balance[df_balance['coin']==coin.upper()]
@@ -987,14 +987,12 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
 
     # get current price for all coins
     df = get_token_price_table()
-    if df.empty: return 'No price info for all coins'
+    if df.empty: return 'Failed to fetch price info'
 
     # merge df_balance and df based on coin since df and df_balance all have coin column
     df_balance = pd.merge(df_balance, df, on='coin', how='left')
 
-    # convert df_balance first row to dict
-    # print(json.dumps(df_balance.iloc[0].to_dict(), indent=2))
-    '''
+    '''convert df_balance first row to dict
     {
       "symbol_x": "CAKEUSDT",
       "orderId": 513582692,
@@ -1042,56 +1040,58 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=0.05, cront
 
         reply_dict = df_balance.iloc[i].to_dict()
         # format_number for amount, profit, up_ratio, buy_price, current_price
-        for_reply['持仓币种'] = reply_dict['coin']
-        for_reply['持仓数量'] = format_number(reply_dict['executedQty'])
-        for_reply['账面浮盈'] = format_number(reply_dict['profit'])
-        for_reply['价格浮动'] = f"{reply_dict['up_ratio']:.2f}%"
-        for_reply['建仓价格'] = f"{reply_dict['price']:.2f}"
-        for_reply['当前价格'] = f"{reply_dict['lastPrice']:.2f}"
-        for_reply['建仓佣金'] = format_number(reply_dict['bnb_cost_value'])
-        for_reply['建仓时间'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-        for_reply['交易_ID'] = reply_dict['orderId']
-        for_reply['更新_ID'] = reply_dict['update_id']
+        for_reply['coin'] = reply_dict['coin']
+        for_reply['amount'] = format_number(reply_dict['executedQty'])
+        for_reply['profit'] = format_number(reply_dict['profit'])
+        for_reply['up_ratio'] = f"{reply_dict['up_ratio']:.2f}%"
+        for_reply['buy_price'] = f"{reply_dict['price']:.2f}"
+        for_reply['current_price'] = f"{reply_dict['lastPrice']:.2f}"
+        for_reply['bnb_cost_value'] = format_number(reply_dict['bnb_cost_value'])
+        for_reply['open_position_time'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        for_reply['order_id'] = reply_dict['orderId']
+        for_reply['update_id'] = reply_dict['update_id']
 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if not crontab: send_msg(reply_msg, chat_id)
 
-        # 如果浮盈超过 5%, 就自动平仓
+        # If profit > target_profit, do market sell, close the position
         if reply_dict['up_ratio'] > target_profit: send_msg(do_market_sell(reply_dict['coin']), chat_id)
 
         book_value += reply_dict['profit']
 
     if not crontab: 
-        # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-        df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
-        if not df_profit.empty: 
-            # 从 df_profit 中读取最早的 transactTime 并计算距离当前的时间
-            earliest_transactTime = df_profit['transactTime'].astype(int).min()
-            duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
-            # 讲 duration 变为 xx 天 xx 小时
-            duration_day = f'{int(duration / 24)} 天 {int(duration % 24)} 小时' if duration > 24 else f'{int(duration)} 小时'
-            profit_sum = df_profit['profit'].astype(float).sum()
+        try:
+            # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
+            df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+            if not df_profit.empty: 
+                # 从 df_profit 中读取最早的 transactTime 并计算距离当前的时间
+                earliest_transactTime = df_profit['transactTime'].astype(int).min()
+                duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
+                # 讲 duration 变为 xx 天 xx 小时
+                duration_day = f'{int(duration / 24)} 天 {int(duration % 24)} 小时' if duration > 24 else f'{int(duration)} 小时'
+                profit_sum = df_profit['profit'].astype(float).sum()
 
-            # 净利润
-            net_profit_sum = profit_sum + book_value
+                # 净利润
+                net_profit_sum = profit_sum + book_value
 
-            # 年化回报率约等于
-            annualized_return = net_profit_sum / (duration / 24 / 365) / (check_size * 10)
-            # annualized_return with percentage format
-            annualized_return = f"{annualized_return * 100:.2f}%"
+                # 年化回报率约等于
+                annualized_return = net_profit_sum / (duration / 24 / 365) / (check_size * 10)
+                # annualized_return with percentage format
+                annualized_return = f"{annualized_return * 100:.2f}%"
 
-            # 发送累计获利给 chat_id
-            send_msg(f'Bot 运行 {duration_day}\n\n账面浮亏: {format_number(book_value)} usdt;\n累计获利: {format_number(profit_sum)} usdt;\n当前净利: {format_number(net_profit_sum)} usdt;\n年化回报: {annualized_return}', chat_id)
+                # 发送累计获利给 chat_id
+                send_msg(f'Bot 运行 {duration_day}\n\n账面浮亏: {format_number(book_value)} usdt;\n累计获利: {format_number(profit_sum)} usdt;\n当前净利: {format_number(net_profit_sum)} usdt;\n年化回报: {annualized_return}', chat_id)
 
-            # create a list of symbol
-            symbol_list = df_profit['symbol'].unique().tolist()
+                # create a list of symbol
+                symbol_list = df_profit['symbol'].unique().tolist()
 
-            IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
+                IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
 
-            # convert list to string and remove suffix USDT
-            symbol_list = ', '.join([symbol[:-4] for symbol in symbol_list if symbol not in IGNORE_LIST])
-            # 发送获利币种清单给 chat_id
-            send_msg(f'获利币种清单: \n\n{symbol_list}', chat_id)
+                # convert list to string and remove suffix USDT
+                symbol_list = ', '.join([symbol[:-4] for symbol in symbol_list if symbol not in IGNORE_LIST])
+                # 发送获利币种清单给 chat_id
+                send_msg(f'获利币种清单: \n\n{symbol_list}', chat_id)
+        except: pass
 
     return
 

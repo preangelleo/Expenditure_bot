@@ -20,6 +20,7 @@ from flask import make_response
 from Prompt_template import *
 from flask import render_template
 from Database_create import *
+from sqlalchemy.exc import SQLAlchemyError
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +35,10 @@ BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
 BINANCE_BASE_URL = os.getenv('BINANCE_BASE_URL')
 BINANCE_TICKER_URL = os.getenv('BINANCE_TICKER_URL')
 BINANCE_DEPOSIT_ADDRESS_FOR_ERC20 = os.getenv('BINANCE_DEPOSIT_ADDRESS_FOR_ERC20')
+
+FULLLY_DILUTED_MARKET_CAP_UP_LIMIT = int(os.getenv('FULLLY_DILUTED_MARKET_CAP_UP_LIMIT'))
+MARKET_CAP_DOWN_LIMIT = int(os.getenv('MARKET_CAP_DOWN_LIMIT'))
+CIRCULATION_RATIO = float(os.getenv('CIRCULATION_RATIO'))
 
 ETH_NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 ETH_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -64,12 +69,6 @@ ETHERSCAN_TX_URL_PREFIX = 'https://etherscan.io/tx/'
 ETHERSCAN_TOKEN_URL_PREFIX = 'https://etherscan.io/token/'
 
 BOTCREATER_TELEGRAM_HANDLE = os.getenv('BOTCREATER_TELEGRAM_HANDLE')
-
-# initialize ignore coin list
-# init_ignore_coin_list_table()
-
-# IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
-# print(f"DEBUG: IGNORE_LIST: {IGNORE_LIST}")
 
 INFURA_KEY = os.getenv('INFURA_KEY')
 INFURA_URL = os.getenv('INFURA_URL')
@@ -157,37 +156,8 @@ def markdown_tokentnxs(address):
     markdown_token = f'[{address[:6]}...{address[-7:]}]({ETHERSCAN_TOKEN_URL_PREFIX}{address}#tokentxns)'
     return markdown_token
 
-# 从 ignore_coin_list 表里面获取所有的 token symbol，返回一个 list
-'''
-def get_all_token_symbol_from_ignore_coin_list_table():
-    if debug: print(f"DEBUG: get_all_token_symbol_from_ignore_coin_list_table()")
-    # Create a new session
-    with Session() as session:
-        # Query the table 'ignore_coin_list' to get all the token_symbol
-        all_token_symbol = session.query(IgnoreList.symbol).all()
-        # Commit the session
-        session.commit()
-
-    # Convert the list of tuple to list
-    all_token_symbol = [i[0] for i in all_token_symbol]
-    
-    return all_token_symbol
-'''
-def get_all_token_symbol_from_ignore_coin_list_table():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # 从 ignore_coin_list 表里面获取所有的 token symbol，返回一个 list
-    cursor.execute("SELECT symbol FROM ignore_coin_list")
-    all_token_symbol = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    # Convert the list of tuple to list
-    all_token_symbol = [i[0] for i in all_token_symbol]
-    return all_token_symbol
-
 # 从 Coinmarketcap 给定 token 的价格等数据, 返回一个字典
 def get_token_info_from_coinmarketcap(token_symbol):
-    print(f"DEBUG: get_token_info_from_coinmarketcap({token_symbol})")
     # CoinMarketCap API endpoint
     url = f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol={token_symbol}'
 
@@ -201,6 +171,15 @@ def get_token_info_from_coinmarketcap(token_symbol):
         token_info = token_data[token_symbol]
         return token_info
     return
+
+# Get the turnover ratio of eth from coinmarketcap
+def get_turnover_ratio_from_coinmarketcap(coin='ETH'):
+    token_info = get_token_info_from_coinmarketcap(coin.upper())
+    if not token_info: return 0
+    turnover_ratio = token_info['quote']['USD']['volume_24h'] / token_info['quote']['USD']['market_cap']
+    turnover_ratio = round(turnover_ratio, 2)
+    return turnover_ratio
+
 
 def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OWNER_ID):
     token_info = get_token_info_from_coinmarketcap(coin.upper())
@@ -223,19 +202,6 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
 
     send_msg(output_dict_str, chat_id)
     return True
-
-
-# 从 get_token_info_from_coinmarketcap(token_symbol) 读出 token_symbol 的 market_cap 以及 fully_diluted_market_cap
-def get_token_market_cap_and_ratio(token_symbol):
-    try:
-        token_info = get_token_info_from_coinmarketcap(token_symbol)
-        if token_info:
-            # print(json.dumps(token_info, indent=2))
-
-            market_cap = token_info['quote']['USD']['market_cap']
-            fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
-            if fully_diluted_market_cap < 5_000_000_000 and market_cap / fully_diluted_market_cap > 0.5: return {'market_cap': market_cap, 'fully_diluted_market_cap': fully_diluted_market_cap, 'ratio': market_cap / fully_diluted_market_cap}
-    except: return 
 
 
 # difine a function to send telegram message to a chat_id using requests + telegram bot api
@@ -291,27 +257,44 @@ Receipt_Image_URL (VARCHAR): URL link to the image of the receipt.
 def insert_new_expenditure_record(from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url):
     from_id = str(from_id)
     
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # Assuming engine is already created as shown in previous examples
+    with engine.connect() as connection:
+        try:
+            # Define your SQL query using SQLAlchemy's text function
+            sql = text("""
+                INSERT INTO user_expenditures_record 
+                (From_id, Date, Time, Spent, Category, PaymentMethod, Merchant, ItemName, Price, Card_Number, Tax, Tips, Address, Receipt_Image_URL) 
+                VALUES 
+                (:from_id, :date, :time, :spent, :category, :payment_method, :merchant, :item_name, :price, :card_number, :tax, :tips, :address, :receipt_image_url)
+            """)
 
-    # # Delete current user_expenditures_record table
-    # cursor.execute("DROP TABLE IF EXISTS user_expenditures_record")
-    # # Commit the session
-    # conn.commit()
+            # Execute the query with the provided parameters
+            connection.execute(sql, {
+                'from_id': from_id, 
+                'date': date, 
+                'time': time, 
+                'spent': spent, 
+                'category': category, 
+                'payment_method': payment_method, 
+                'merchant': merchant, 
+                'item_name': item_name, 
+                'price': price, 
+                'card_number': card_number, 
+                'tax': tax, 
+                'tips': tips, 
+                'address': address, 
+                'receipt_image_url': receipt_image_url
+            })
 
-    # Check if the table 'user_expenditures_record' exists
-    cursor.execute("SHOW TABLES LIKE 'user_expenditures_record'")
-    table_exists = cursor.fetchone()
-    if not table_exists: create_expenditure_record_table()
-    
-    # Insert a new record into the table 'user_expenditures_record'
-    cursor.execute("INSERT INTO user_expenditures_record (From_id, Date, Time, Spent, Category, PaymentMethod, Merchant, ItemName, Price, Card_Number, Tax, Tips, Address, Receipt_Image_URL) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s)", (from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url))
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    send_msg(f'''Successfully inserted: \n"{item_name} | {spent} usd"''', from_id)
+            # Commit the transaction
+            connection.commit()
+
+            send_msg(f'''Successfully inserted: \n"{item_name} | {spent} usd"''', from_id)
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+
     return 
 
 
@@ -330,62 +313,7 @@ def get_ignore_list():
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    # token_symbol = 'RSR'
-    # r = get_token_market_cap_and_ratio(token_symbol)
-    # print(r)
-    # '''{
-    # "id": 3964,
-    # "name": "Reserve Rights",
-    # "symbol": "RSR",
-    # "slug": "reserve-rights",
-    # "num_market_pairs": 179,
-    # "date_added": "2019-05-24T00:00:00.000Z",
-    # "tags": [
-    #     "store-of-value",
-    #     "defi",
-    #     "coinbase-ventures-portfolio",
-    #     "dcg-portfolio",
-    #     "real-world-assets"
-    # ],
-    # "max_supply": 100000000000,
-    # "circulating_supply": 50600000000,
-    # "total_supply": 100000000000,
-    # "platform": {
-    #     "id": 1027,
-    #     "name": "Ethereum",
-    #     "symbol": "ETH",
-    #     "slug": "ethereum",
-    #     "token_address": "0x320623b8e4ff03373931769a31fc52a4e78b5d70"
-    # },
-    # "is_active": 1,
-    # "infinite_supply": false,
-    # "cmc_rank": 255,
-    # "is_fiat": 0,
-    # "self_reported_circulating_supply": null,
-    # "self_reported_market_cap": null,
-    # "tvl_ratio": null,
-    # "last_updated": "2023-12-08T04:57:00.000Z",
-    # "quote": {
-    #     "USD": {
-    #     "price": 0.003022959829617387,
-    #     "volume_24h": 9627813.39949622,
-    #     "volume_change_24h": -10.9172,
-    #     "percent_change_1h": -0.3184558,
-    #     "percent_change_24h": 1.89929244,
-    #     "percent_change_7d": 7.74822681,
-    #     "percent_change_30d": 23.45831876,
-    #     "percent_change_60d": 67.36675515,
-    #     "percent_change_90d": 63.50005519,
-    #     "market_cap": 152961767.3786398,
-    #     "market_cap_dominance": 0.0095,
-    #     "fully_diluted_market_cap": 302295982.96,
-    #     "tvl": null,
-    #     "last_updated": "2023-12-08T04:57:00.000Z"
-    #     }
-    # }
-    # }
-    # {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
-    # '''
+
 
     # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)
