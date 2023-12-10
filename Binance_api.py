@@ -857,7 +857,7 @@ Update_ID: {update_id}
 Profit_Sum: {format_number(profit_sum)} usdt
 '''
     send_msg(reply_msg, from_id)
-    return reply_msg
+    return profit
 '''
       symbol    orderId  orderListId           clientOrderId   transactTime     price       origQty   executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value   profit
 0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
@@ -1089,6 +1089,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     book_value = 0
 
     for_reply = {}
+    new_profit = 0
     for i in range(df_balance.shape[0]):
         # ignore coin BNB
         if df_balance.iloc[i]['coin'] == 'BNB': continue
@@ -1111,10 +1112,10 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 
         # If profit > target_profit, do market sell, close the position
         if reply_dict['up_ratio'] > target_profit: 
-            try: do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+            try: 
+                new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
             except: pass
-
-        book_value += reply_dict['profit']
+        else: book_value += reply_dict['profit']
 
     if chat_id or crontab_profit_record: 
         try:
@@ -1153,12 +1154,34 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                send_msg(f"Bot running {duration_day}\n\nBook value: {format_number(book_value)} usdt;\nProfit sum: {format_number(profit_sum)} usdt;\nNet profit: {format_number(net_profit_sum)} usdt;\nAnnualized return: {annualized_return}", chat_id)
+                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {INITIAL_FUND} usdt\nUnrealized_Gain: {format_number(book_value)} usdt;\nRealized_Gain: {format_number(profit_sum)} usdt;\nBook_Value: {format_number(net_profit_sum)} usdt;\n\nAnnualized_Return: {annualized_return}", chat_id)
 
                 file_name = plot_net_profit_sum()
-                send_img(chat_id, file_name, f"Net Profit Sum: {format_number(net_profit_sum)} usdt")
+                send_img(chat_id, file_name, f"Book Value of Today: {format_number(net_profit_sum)} usdt")
 
         except: pass
+    return
+
+''' binance_position_sell
+    symbol    orderId  orderListId           clientOrderId   transactTime     price        origQty    executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value      profit
+0  FTTUSDT  688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468  5.562989  1942.29000000  1942.29000000      10804.93829100  FILLED         GTC  MARKET  SELL  1702224291468            EXPIRE_MAKER          1       0.033751           240.3              15.54818  789.421552
+'''
+
+''' net_profit_daily_record
+         Date  NetProfit
+0  2023-12-10    1186.83
+'''
+
+# difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
+def update_net_profit_daily_record(date, net_profit):
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE net_profit_daily_record SET NetProfit = :NetProfit WHERE Date = :Date"), {'Date': date, 'NetProfit': net_profit})
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
     return
 
 
@@ -1285,3 +1308,9 @@ if __name__ == '__main__':
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
     # print(df)
 
+    # change today's net_profit_daily_record to 789.421552
+    # update_net_profit_daily_record(datetime.now().strftime('%Y-%m-%d'), 789.421552)
+    # print('Done')
+
+    # df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
+    # print(df)
