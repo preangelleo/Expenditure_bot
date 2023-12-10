@@ -21,6 +21,8 @@ from Prompt_template import *
 from flask import render_template
 from Database_create import *
 from sqlalchemy.exc import SQLAlchemyError
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 # Load environment variables
 load_dotenv()
@@ -231,6 +233,31 @@ def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID):
         return response.json()
     except Error as e: return {'error': str(e)}, 500    
 
+
+def send_file(chat_id, file_path, description=''):
+    if not file_path or not chat_id: return
+    method = "sendDocument?"
+    try: files = {'document': open(file_path, 'rb')}
+    except Exception as e: return print(f"ERROR: send_file() failed for:\n{e}\n\nOriginal message:\n{file_path}\n\nCan't open file.")
+    URL = 'https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/' + method + "chat_id=" + str(chat_id) + "&caption=" + description
+    r = ''
+    try: r = requests.post(URL, files=files)
+    except Exception as e: print(f"ERROR: send_file() failed : \n{e}")
+    return r
+
+
+def send_img(chat_id, file_path, description=''):
+    if not file_path or not chat_id: return
+    method = "sendPhoto?"
+    try: files = {'photo': open(file_path, 'rb')}
+    except Exception as e: return print(f"ERROR: send_img() failed for:\n{e}\n\nOriginal message:\n{file_path}\n\nCan't open file.")
+    URL = 'https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/' + method + "chat_id=" + str(chat_id) + "&caption=" + description
+    r = ''
+    try: r = requests.post(URL, files=files)
+    except Exception as e: print(f"ERROR: send_img() failed : \n{e}")
+    return r
+
+
 '''
 Designing a database table structure for an expenditure record:
 
@@ -250,8 +277,6 @@ Tips (FLOAT): The tips amount, if any.
 Address (VARCHAR): The address where the transaction occurred or the address of the merchant.
 Receipt_Image_URL (VARCHAR): URL link to the image of the receipt.
 '''
-
-
 
 # Define a function to insert a new expenditure record into the table 'user_expenditures_record'
 def insert_new_expenditure_record(from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url):

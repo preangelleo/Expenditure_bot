@@ -157,7 +157,11 @@ def insert_initial_ignore_list():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Insert initial ignore list
-    for symbol in INITIAL_IGNORE_LIST: cursor.execute(f"INSERT INTO ignore_coin_list (symbol) VALUES ('{symbol}')")
+    for symbol in INITIAL_IGNORE_LIST: 
+        # Check if the symbol is already in the table
+        cursor.execute(f"SELECT * FROM ignore_coin_list WHERE symbol = '{symbol}'")
+        result = cursor.fetchall()
+        if len(result) == 0: cursor.execute(f"INSERT INTO ignore_coin_list (symbol) VALUES ('{symbol}')")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -165,6 +169,35 @@ def insert_initial_ignore_list():
     print("Initial ignore list inserted successfully!")
     return True
 
+
+# Create a table 'net_profit_daily_record' to record the net profit, net profit sum of each day
+def create_net_profit_daily_record_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'net_profit_daily_record'
+    cursor.execute("CREATE TABLE IF NOT EXISTS net_profit_daily_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, NetProfit FLOAT)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'net_profit_daily_record' created successfully!")
+    return True
+
+
+# define a function to drop table by input table name
+def drop_table(table_name):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Drop table
+    cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"Table '{table_name}' dropped successfully!")
+    return True
 
 
 if __name__ == '__main__':
@@ -180,4 +213,7 @@ if __name__ == '__main__':
 
     # Initial Step 4: Insert initial ignore list
     insert_initial_ignore_list()
+
+    # Initial Step 5: Create net_profit_daily_record tables
+    create_net_profit_daily_record_table()
 

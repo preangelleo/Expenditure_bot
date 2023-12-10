@@ -972,8 +972,45 @@ def do_market_buy(coin: str, value):
         return reply_msg
 
 
+
+
+def plot_net_profit_sum():
+
+    try:
+        # Read data from the table into a DataFrame
+        df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
+        df.columns = ['Date', 'NetProfit']
+
+        # Calculate percentage
+        df['Percentage'] = (df['NetProfit'] / INITIAL_FUND) * 100
+
+        # Convert 'Date' to datetime
+        df['Date'] = pd.to_datetime(df['Date'])
+    except: return
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(df['Date'], df['Percentage'], marker='o')
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+    plt.xticks(rotation=45)
+    plt.xlabel('Date')
+    plt.ylabel('Net Profit as % of Initial Fund')
+    plt.title('Daily Net Profit Percentage')
+    plt.grid(True)
+    # plt.show()
+
+    filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}_{df['NetProfit'].iloc[-1]}.png"
+
+    # Save the plot to a file
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+    return filename
+
+
+
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_buy_check_all(chat_id, coin=None, target_profit=TARGET_PROFIT, crontab=False, check_size=CHECK_SIZE):
+def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False):
 
     try:
         # get df_balance from binance_position_buy
@@ -1040,60 +1077,73 @@ def binance_position_buy_check_all(chat_id, coin=None, target_profit=TARGET_PROF
 
         reply_dict = df_balance.iloc[i].to_dict()
         # format_number for amount, profit, up_ratio, buy_price, current_price
-        for_reply['coin'] = reply_dict['coin']
-        for_reply['amount'] = format_number(reply_dict['executedQty'])
-        for_reply['profit'] = format_number(reply_dict['profit'])
-        for_reply['up_ratio'] = f"{reply_dict['up_ratio']:.2f}%"
-        for_reply['buy_price'] = f"{reply_dict['price']:.2f}"
-        for_reply['current_price'] = f"{reply_dict['lastPrice']:.2f}"
-        for_reply['bnb_cost_value'] = format_number(reply_dict['bnb_cost_value'])
-        for_reply['open_position_time'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-        for_reply['order_id'] = reply_dict['orderId']
-        for_reply['update_id'] = reply_dict['update_id']
+        for_reply['Coin'] = reply_dict['coin']
+        for_reply['Amount'] = format_number(reply_dict['executedQty'])
+        for_reply['Profit'] = format_number(reply_dict['profit'])
+        for_reply['Up_Ratio'] = f"{reply_dict['up_ratio']:.2f}%"
+        for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
+        for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
+        for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
+        for_reply['Open_Position_Time'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        for_reply['Order_ID'] = reply_dict['orderId']
+        for_reply['Update_ID'] = reply_dict['update_id']
 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
-        if not crontab: send_msg(reply_msg, chat_id)
+        if chat_id: send_msg(reply_msg, chat_id)
 
         # If profit > target_profit, do market sell, close the position
-        if reply_dict['up_ratio'] > target_profit: send_msg(do_market_sell(reply_dict['coin']), chat_id)
+        if reply_dict['up_ratio'] > target_profit: send_msg(do_market_sell(reply_dict['coin']), TG_BOT_OWNER_ID)
 
         book_value += reply_dict['profit']
 
-    if not crontab: 
+    if chat_id or crontab_profit_record: 
         try:
             # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
             df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
             if not df_profit.empty: 
-                # 从 df_profit 中读取最早的 transactTime 并计算距离当前的时间
+
                 earliest_transactTime = df_profit['transactTime'].astype(int).min()
                 duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
-                # 讲 duration 变为 xx 天 xx 小时
-                duration_day = f'{int(duration / 24)} 天 {int(duration % 24)} 小时' if duration > 24 else f'{int(duration)} 小时'
+
+                duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
                 profit_sum = df_profit['profit'].astype(float).sum()
 
-                # 净利润
                 net_profit_sum = profit_sum + book_value
 
-                # 年化回报率约等于
-                annualized_return = net_profit_sum / (duration / 24 / 365) / (check_size * 10)
+                annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
                 # annualized_return with percentage format
                 annualized_return = f"{annualized_return * 100:.2f}%"
 
-                # 发送累计获利给 chat_id
-                send_msg(f'Bot 运行 {duration_day}\n\n账面浮亏: {format_number(book_value)} usdt;\n累计获利: {format_number(profit_sum)} usdt;\n当前净利: {format_number(net_profit_sum)} usdt;\n年化回报: {annualized_return}', chat_id)
+                # Record net_profit_sum to table net_profit_daily_record
+                with engine.connect() as connection:
+                    try:
+                        # Check if today's record exists
+                        query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
+                        params = {'Date': datetime.now().strftime('%Y-%m-%d')}
+                        result = connection.execute(text(query), params)
+                        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+                        if df.empty:
+                            # Execute the query with the updated update_id
+                            connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
+                            connection.commit()
+                    except Exception as e:
+                        print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
+                        connection.rollback()
 
-                # create a list of symbol
-                symbol_list = df_profit['symbol'].unique().tolist()
+                # Send profit_sum to chat_id
+                chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                IGNORE_LIST = get_all_token_symbol_from_ignore_coin_list_table()
+                send_msg(f"Bot running {duration_day}\n\nBook value: {format_number(book_value)} usdt;\nProfit sum: {format_number(profit_sum)} usdt;\nNet profit: {format_number(net_profit_sum)} usdt;\nAnnualized return: {annualized_return}", chat_id)
 
-                # convert list to string and remove suffix USDT
-                symbol_list = ', '.join([symbol[:-4] for symbol in symbol_list if symbol not in IGNORE_LIST])
-                # 发送获利币种清单给 chat_id
-                send_msg(f'获利币种清单: \n\n{symbol_list}', chat_id)
+                file_name = plot_net_profit_sum()
+                send_img(chat_id, file_name, f"Net Profit Sum: {format_number(net_profit_sum)} usdt")
+
         except: pass
-
     return
+
+
+'''cursor.execute("CREATE TABLE IF NOT EXISTS net_profit_daily_record (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, NetProfit FLOAT)")'''
+
 
 '''小额资产转换 (USER_DATA)
 POST /sapi/v1/asset/dust (HMAC SHA256)
@@ -1202,10 +1252,9 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
 if __name__ == '__main__':
     print('Binance_api.py is running')
     # binance_today_hot_coin(trading_volume_limit = 50_000_000)
-    query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
-    params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
-    result = engine.connect().execute(text(query), params)
-    df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
-    print(df_30_days)
-
+    # query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
+    # params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
+    # result = engine.connect().execute(text(query), params)
+    # df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
+    # print(df_30_days)
 
