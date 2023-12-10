@@ -5,8 +5,9 @@ An automated trading bot that can also record receipt details into a MySQL datab
 Ensure Python3 and NPM are installed on your system.
 If not, please consult ChatGPT for installation instructions.
 
-Reference to my ChatGPT conversation: 
-[ChatGPT Conversation Link](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
+Make sure deposit 100,000 USDT into your Binance account. Or any amount of initial fund you prefer.
+
+Reference to my [ChatGPT Conversation](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
 
 # Step 1: Setting Up the Environment
 1. Navigate to the root directory:
@@ -35,11 +36,10 @@ Reference to my ChatGPT conversation:
    ```
 
 # Step 2: Database Creation
-Set up a database on your Ubuntu server or create an independent database on AWS.
-[Amazon AWS Lightsail Database Link](https://lightsail.aws.amazon.com/ls/webapp/home/databases)
+Install and set up your MySQL database on your Ubuntu server.
+Or [Amazon AWS Lightsail](https://lightsail.aws.amazon.com/ls/webapp/home/databases)
 
-Reference to my ChatGPT conversation: 
-[ChatGPT Conversation Link](https://chat.openai.com/share/2dcc78a6-34b1-4b6b-938e-9d630cf57a86)
+How to install or create database? Reference to my [ChatGPT Conversation](https://chat.openai.com/share/2dcc78a6-34b1-4b6b-938e-9d630cf57a86)
 
 # Step 3: Configuration
 1. Copy the .env.template file to create a new .env file:
@@ -50,32 +50,48 @@ Reference to my ChatGPT conversation:
    ```bash
    nano .env
    ```
-   - Enter your credentials in the .env file.
+   - Enter your credentials in the .env file. Make sure the Initial fund amount is less or equal to the USDT balance of your Binance.
    - Alternatively, copy the content of .env.template to a text editor, complete your personal credentials, and then paste it back into the .env file on your server.
 
-# Step 4: Create Database and Tables
-1. Run python3 Database_create.py at Expenditure_bot folder
+# Step 4: Database and Table Creation
+1. In the Expenditure_bot folder, run the script to create the database and tables:
    ```bash
    python3 Database_create.py
    ```
-2. Wait and see "All tables created successfully!"
+2. Wait for the confirmation message: "All tables created successfully!"
 
-# Step 5: Start the Bot and try out
+# Step 5: Launch the Bot
+Start the bot using the following command:
    ```bash
    python3 Telegram_bot.py
    ```
 
-# Step 6: Put bot run constantly
-1. Use NPM to run Telegram_bot.py
+# Step 6: Ensure Continuous Bot Operation
+1. Use NPM to keep the bot running:
    ```bash
    pm2 start Telegram_bot.py --name ep --interpreter python3
    ```
-2. Restart command
+2. To restart the bot, use:
    ```bash
    pm2 start ep
    ```
 
+# Step 7: Setting Up Crontab Automation
+1. Copy the content from `crontab_template.txt`.
+2. On your Ubuntu Server Terminal, open the crontab editor:
+   ```bash
+   crontab -e
+   ```
+3. Paste the copied content into the editor.
+4. To save and exit, press `Ctrl + X`, then press `Y` and `Enter` to confirm the crontab jobs.
 
+Now, everything is set up and ready to go!
+
+---
+
+![Initial Fund](net_profit_daily_record/Initial_fund.png)
+
+![Telegram Bot Menu](net_profit_daily_record/Telegram_bot_menu.png)
 ---
 
 # About the auto-trading strategy:
