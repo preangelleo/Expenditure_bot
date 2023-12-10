@@ -408,19 +408,22 @@ def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=1):
         df = pd.DataFrame(data)
         if not df.empty:
             df = df.loc[:, ['coin', 'amount', 'address', 'txId', 'insertTime', 'status']]
-            df = df.rename(columns={'coin': '提币名称', 'amount': '提币数量', 'address': '充值地址', 'txId': '链上哈希', 'insertTime': ' UTC时间', 'status': '充值状态'})
+            df = df.rename(columns={'coin': 'Coin_Name', 'amount': 'Coin_Amount', 'address': 'From_Address', 'txId': 'Hash_ID', 'insertTime': ' UTC_Time', 'status': 'Status'})
             for i in range(df.shape[0]):
                 '''status (0:pending,6: credited but cannot withdraw,7=Wrong Deposit,8=Waiting User confirm,1:success)'''
-                df.loc[i, '充值状态'] = 'pending' if df.loc[i, '充值状态'] == 0 else 'success' if df.loc[i, '充值状态'] == 1 else 'credited but cannot withdraw' if df.loc[i, '充值状态'] == 6 else 'Wrong Deposit' if df.loc[i, '充值状态'] == 7 else 'Waiting User confirm' if df.loc[i, '充值状态'] == 8 else 'unknown'
-                df.loc[i, ' UTC时间'] = datetime.fromtimestamp(df.loc[i, ' UTC时间']/1000).strftime('%Y-%m-%d %H:%M:%S')
-                # 将 df.loc[i] 转换成 dict
+                df.loc[i, 'Status'] = 'pending' if df.loc[i, 'Status'] == 0 else 'success' if df.loc[i, 'Status'] == 1 else 'credited but cannot withdraw' if df.loc[i, 'Status'] == 6 else 'Wrong Deposit' if df.loc[i, 'Status'] == 7 else 'Waiting User confirm' if df.loc[i, 'Status'] == 8 else 'unknown'
+                df.loc[i, ' UTC_Time'] = datetime.fromtimestamp(df.loc[i, ' UTC_Time']/1000).strftime('%Y-%m-%d %H:%M:%S')
+
+                # convert df.loc[i] to dict
                 df_dict = df.loc[i].to_dict()
-                # 将 dict 转换成 str
+
+                # Convert dict to str
                 df_str = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
-                # 发送给 chat_id
+                
                 send_msg(df_str, chat_id)
+
             return True
-        # else: send_msg(f'No deposit history in the past {hours} hours.', chat_id)
+
     return 
 
 
@@ -970,8 +973,6 @@ def do_market_buy(coin: str, value):
     if not df.empty: 
         reply_msg = f'''Buy in coin: {coin}\nBuy in price: {format_number(data["price"])} usdt/{coin.lower()}\nBuy in amount: {format_number(data["executedQty"])} {coin.lower()}\nTrading fee: {format_number(trading_fee_value)} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
         return reply_msg
-
-
 
 
 def plot_net_profit_sum():
