@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Load the .env file
-if [ -f .env ]; then
-    export $(cat .env | xargs)
+# Load the .env file from the specified path
+if [ -f /root/Expenditure_bot/.env ]; then
+    export $(grep -v '^#' /root/Expenditure_bot/.env | xargs)
 else
-    echo ".env file not found"
+    echo ".env file not found at /root/Expenditure_bot/.env"
     exit 1
 fi
 
