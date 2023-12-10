@@ -36,7 +36,7 @@ BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
 BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
 BINANCE_BASE_URL = os.getenv('BINANCE_BASE_URL')
 BINANCE_TICKER_URL = os.getenv('BINANCE_TICKER_URL')
-BINANCE_DEPOSIT_ADDRESS_FOR_ERC20 = os.getenv('BINANCE_DEPOSIT_ADDRESS_FOR_ERC20')
+# BINANCE_DEPOSIT_ADDRESS_FOR_ERC20 = os.getenv('BINANCE_DEPOSIT_ADDRESS_FOR_ERC20')
 
 FULLLY_DILUTED_MARKET_CAP_UP_LIMIT = int(os.getenv('FULLLY_DILUTED_MARKET_CAP_UP_LIMIT'))
 MARKET_CAP_DOWN_LIMIT = int(os.getenv('MARKET_CAP_DOWN_LIMIT'))
@@ -51,34 +51,33 @@ TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'
 BTC_REGEX = r'^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[bc1q|bc1p][0-9A-Za-z]{37,62}$'
 EMAIL_ADDRESS_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
-
-DEBANK_API = os.getenv('DEBANK_API')
-CMC_PA_API = os.getenv('CMC_PA_API')
-MORALIS_API = os.getenv('MORALIS_API')
-ETHERSCAN_API = os.getenv('ETHERSCAN_API')
-MONTHLY_FEE = float(os.getenv('MONTHLY_FEE'))
 TG_BOT_OWNER_ID = os.getenv('TG_BOT_OWNER_ID')
-BOTCREATER_CHAT_ID = os.getenv('BOTCREATER_CHAT_ID')
-ELEVEN_API_KEY = os.getenv('ELEVEN_API_KEY')
-USER_AVATAR_NAME = os.getenv('USER_AVATAR_NAME')
-BOT_USERNAME = os.getenv('BOT_USERNAME')
+# BOTCREATER_CHAT_ID = os.getenv('BOTCREATER_CHAT_ID')
+CMC_PA_API = os.getenv('CMC_PA_API')
 
-BING_SEARCH_API_KEY = os.getenv("BING_SEARCH_API")
-STABILITY_URL = f"https://api.stability.ai/v1/"
+# BOTCREATER_TELEGRAM_HANDLE = os.getenv('BOTCREATER_TELEGRAM_HANDLE')
+# DEBANK_API = os.getenv('DEBANK_API')
+
+# MORALIS_API = os.getenv('MORALIS_API')
+# ETHERSCAN_API = os.getenv('ETHERSCAN_API')
+# ELEVEN_API_KEY = os.getenv('ELEVEN_API_KEY')
+# USER_AVATAR_NAME = os.getenv('USER_AVATAR_NAME')
+# BOT_USERNAME = os.getenv('BOT_USERNAME')
+# BING_SEARCH_API_KEY = os.getenv("BING_SEARCH_API")
+# STABILITY_URL = f"https://api.stability.ai/v1/"
 
 ETHERSCAN_WALLET_URL_PREFIX = 'https://etherscan.io/address/'
 ETHERSCAN_TX_URL_PREFIX = 'https://etherscan.io/tx/'
 ETHERSCAN_TOKEN_URL_PREFIX = 'https://etherscan.io/token/'
 
-BOTCREATER_TELEGRAM_HANDLE = os.getenv('BOTCREATER_TELEGRAM_HANDLE')
 
-INFURA_KEY = os.getenv('INFURA_KEY')
-INFURA_URL = os.getenv('INFURA_URL')
-INFURA = INFURA_URL + INFURA_KEY
-web3 = Web3(Web3.HTTPProvider(INFURA))
+# INFURA_KEY = os.getenv('INFURA_KEY')
+# INFURA_URL = os.getenv('INFURA_URL')
+# INFURA = INFURA_URL + INFURA_KEY
+# web3 = Web3(Web3.HTTPProvider(INFURA))
 
-USER_TELEGRAM_LINK = os.getenv("USER_TELEGRAM_LINK")
-TELEGRAM_USERNAME = USER_TELEGRAM_LINK.split('/')[-1]
+# USER_TELEGRAM_LINK = os.getenv("USER_TELEGRAM_LINK")
+# TELEGRAM_USERNAME = USER_TELEGRAM_LINK.split('/')[-1]
 
 ETH_REGEX = r'0x[a-fA-F0-9]{40}'
 TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'
@@ -202,7 +201,7 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
     # 用 '\n' join k: v
     output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
 
-    send_msg(output_dict_str, chat_id)
+    if chat_id: send_msg(output_dict_str, chat_id)
     return True
 
 

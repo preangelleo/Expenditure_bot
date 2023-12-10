@@ -92,14 +92,11 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     
-    # Read out the unique coin list from 'binance_ticker_top_30' table, make a empty list if binance_ticker_top_30 table is not exist or empty
-    try:
-        query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
-        params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
-        result = engine.connect().execute(text(query), params)
-        df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
-        unique_coin_list = df_30_days['coin'].values.tolist()
-    except: unique_coin_list = []
+    # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
+    # from binance_position_buy find out the latested bought coins in the last 30 days, use UTC time
+    df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 30')).fetchall())
+    if df_30_days.empty: unique_coin_list = []
+    else: unique_coin_list = list(set(df_30_days['coin'].values.tolist()))
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -175,9 +172,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     # create today_hot_coin_list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
-    today_hot_coin_list_str = ', '.join(today_hot_coin_list)
+    # today_hot_coin_list_str = ', '.join(today_hot_coin_list)
 
-    print(f"today_hot_coin_list: {today_hot_coin_list_str}")
+    # print(f"today_hot_coin_list: {today_hot_coin_list_str}")
 
     return today_hot_coin_list
 ''' df_ticker
@@ -224,13 +221,14 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         if coin in coin_in_positions: continue
 
         # Check coin information from coinmarketcap, if no information, ignore this coin
-        if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id): continue
+        if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id=None): continue
 
         try: do_market_buy_one_unit(coin, chat_id)
         except Exception as e: send_msg(f"{user_nick_name}, Failed to buy {coin}...\n\n{e}", chat_id)
 
-    send_msg('All done! 😘', chat_id)
+    if not crontab: send_msg('All done! 😘', chat_id)
     return
+
 
 
 if __name__ == '__main__':

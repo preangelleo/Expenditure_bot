@@ -141,5 +141,4 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
 if __name__ == '__main__':
     print("GPT_functions.py is running directly")
     
-    # get_total_spend_of_any_year_any_month(from_id=BOTCREATER_CHAT_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
     get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
