@@ -766,8 +766,8 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
     try:
         df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE coin = :coin AND is_closed = 0 ORDER BY price ASC LIMIT 1"), {'coin': coin}).fetchall())
-        if df_balance.empty: reply_msg = f'No open position for coin: {coin}'
-    except: reply_msg = f'No open position for coin: {coin}'
+        if df_balance.empty: return send_msg(f'No open position for coin: {coin}', from_id)
+    except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
 
     if reply_msg: return reply_msg
 
@@ -777,23 +777,18 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     buy_cost_bnb = float(df_balance['buy_cost_bnb'].values[0])
     buy_bnb_price = float(df_balance['buy_bnb_price'].values[0])
     open_position_time = int(df_balance['transactTime'].values[0])
+    position_order_id = int(df_balance['orderId'].values[0])
 
     # check coin balance see if it is enough
     df_coin_balance = get_user_asset()
     df_coin_balance = df_coin_balance[df_coin_balance['asset']==coin]
-    if df_coin_balance.empty: 
-        reply_msg = f'No balance for coin: {coin}'
-        return reply_msg
-    
+    if df_coin_balance.empty: return send_msg(f'No balance for coin: {coin}', from_id)
+
     balance = float(df_coin_balance['free'].values[0])
-    if balance < amount: 
-        reply_msg = f'Balance {balance} is not sufficient for amount: {amount}'
-        return reply_msg
+    if balance < amount: return send_msg(f'Balance {balance} is not sufficient for amount: {amount}', from_id)
 
     data = binance_market_sell(coin, amount)
-    if not data: 
-        reply_msg = f'Failed market selling coin: {coin}'
-        return reply_msg
+    if not data: return send_msg(f'Failed to do market sell for coin: {coin}', from_id)
 
     # convert data['fills] to dataframe
     df_fills = pd.DataFrame(data['fills'])
@@ -822,7 +817,6 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     # convert data to dataframe
     df_sellout_result = pd.DataFrame(data, index=[0])
 
-    
     # 如果没有 binance_position_sell table, 就创建一个，如果 table 存在，就 append df_buyin_result
     df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
 
@@ -833,7 +827,7 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
-            connection.execute(text("UPDATE binance_position_buy SET is_closed = 1 WHERE update_id = :update_id"), {'update_id': update_id + 1})
+            connection.execute(text("UPDATE binance_position_buy SET is_closed = 1 WHERE orderId = :position_order_id"), {'position_order_id': position_order_id})
             connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -843,7 +837,7 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
 
     duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
     # 讲 duration 变为 xx 天 xx 小时
-    duration = f'{int(duration / 24)} 天 {int(duration % 24)} 小时' if duration > 24 else f'{int(duration)} 小时'
+    duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
 
     reply_msg = f'''
 Sold_Coin: {coin}
@@ -852,7 +846,7 @@ Sold_Amount: {format_number(amount)}
 Commition_Fee: {format_number(total_bnb_cost_value)} usdt
 Trading_Profit: {format_number(profit)} usdt
 Holding_Duration: {duration}
-Trading_ID: {order_id}
+Order_ID: {order_id}
 Update_ID: {update_id}
 Profit_Sum: {format_number(profit_sum)} usdt
 '''
@@ -937,6 +931,7 @@ def do_market_buy(coin: str, value):
     
     data['coin'] = data['symbol'].replace('USDT', '')
     data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+    new_order_id = data['orderId']
 
     # convert data['fills] to dataframe
     df_fills = pd.DataFrame(data['fills'])
@@ -950,9 +945,6 @@ def do_market_buy(coin: str, value):
     bnb_price = df_bnb_price if df_bnb_price else 300
 
     data['buy_bnb_price'] = bnb_price
-
-    # trading fee value
-    trading_fee_value = commission * bnb_price
 
     # delete fills from data
     del data['fills']
@@ -974,16 +966,7 @@ def do_market_buy(coin: str, value):
     # If table binance_position_buy does not exist, create one, else append df_buyin_result to binance_position_buy
     df_buyin_result.to_sql('binance_position_buy', engine, if_exists='append', index=False)
 
-    # Read out the trading informaiton from binance_position_buy table where update_id == update_id + 1
-    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE update_id = :update_id"), {'update_id': update_id + 1}).fetchall())
-    if not df.empty: 
-        try:
-            buy_in_price = round(float(df['price'].values[0]), 4)
-            buy_in_amount = round(float(df['executedQty'].values[0]), 2)
-            trading_fee_value = round(trading_fee_value, 2)
-            reply_msg = f'''Buy in coin: {coin}\nBuy in price: {buy_in_price} usdt/{coin.lower()}\nBuy in amount: {buy_in_amount} {coin.lower()}\nTrading fee: {trading_fee_value} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
-            return reply_msg
-        except Exception as e: return f"After bought {coin} and inserted into database, During formating the reply message, an error occurred: \n\n{e}"
+    return f'''New_Position: {coin}\nOrder_ID: {new_order_id}'''
 
 
 def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -993,10 +976,17 @@ def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
 
 
 def plot_net_profit_sum():
+    filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}.png"
+    # check if the file exists, if yes, return the file name
+    if os.path.isfile(filename): return filename
 
     try:
         # Read data from the table into a DataFrame
         df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
+
+        # if the df is empty, return a default image
+        if df.empty: return f"net_profit_daily_record/Leowang.net.jpg"
+
         df.columns = ['Date', 'NetProfit']
 
         # Calculate percentage
@@ -1004,7 +994,7 @@ def plot_net_profit_sum():
 
         # Convert 'Date' to datetime
         df['Date'] = pd.to_datetime(df['Date'])
-    except: return
+    except: return f"net_profit_daily_record/Leowang.net.jpg"
 
     # Plotting
     plt.figure(figsize=(10, 6))
@@ -1014,11 +1004,9 @@ def plot_net_profit_sum():
     plt.xticks(rotation=45)
     plt.xlabel('Date')
     plt.ylabel('Net Profit as % of Initial Fund')
-    plt.title('Daily Net Profit Percentage')
+    plt.title('Daily Book Value Percentage')
     plt.grid(True)
     # plt.show()
-
-    filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}_{df['NetProfit'].iloc[-1]}.png"
 
     # Save the plot to a file
     plt.savefig(filename, bbox_inches='tight')
@@ -1112,8 +1100,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 
         # If profit > target_profit, do market sell, close the position
         if reply_dict['up_ratio'] > target_profit: 
-            try: 
-                new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+            try: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
             except: pass
         else: book_value += reply_dict['profit']
 
@@ -1123,7 +1110,12 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
             df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
             if not df_profit.empty: 
 
-                earliest_transactTime = df_profit['transactTime'].astype(int).min()
+                # From binance_position_buy read out the earliest transactTime
+                df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
+                earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
+
+                print('earliest_transactTime: ', earliest_transactTime)
+
                 duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
 
                 duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
@@ -1135,21 +1127,22 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # annualized_return with percentage format
                 annualized_return = f"{annualized_return * 100:.2f}%"
 
-                # Record net_profit_sum to table net_profit_daily_record
-                with engine.connect() as connection:
-                    try:
-                        # Check if today's record exists
-                        query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
-                        params = {'Date': datetime.now().strftime('%Y-%m-%d')}
-                        result = connection.execute(text(query), params)
-                        df = pd.DataFrame(result.fetchall(), columns=result.keys())
-                        if df.empty:
-                            # Execute the query with the updated update_id
-                            connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
-                            connection.commit()
-                    except Exception as e:
-                        print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
-                        connection.rollback()
+                if crontab_profit_record:
+                    # Record net_profit_sum to table net_profit_daily_record
+                    with engine.connect() as connection:
+                        try:
+                            # Check if today's record exists
+                            query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
+                            params = {'Date': datetime.now().strftime('%Y-%m-%d')}
+                            result = connection.execute(text(query), params)
+                            df = pd.DataFrame(result.fetchall(), columns=result.keys())
+                            if df.empty:
+                                # Execute the query with the updated update_id
+                                connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
+                                connection.commit()
+                        except Exception as e:
+                            print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
+                            connection.rollback()
 
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
