@@ -152,4 +152,8 @@ This trading strategy does not set a stop-loss policy. If all 10 positions are f
 
 ---
 
-![Initial Fund](net_profit_daily_record/Leowang.net.jpg)
+<div align="center">
+  <a href="https://leowang.net">
+    <img src="net_profit_daily_record/Leowang.net.jpg" alt="LEO WANG"/>
+  </a>
+</div>
