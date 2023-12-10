@@ -331,9 +331,29 @@ def get_all_expenditure_records(from_id):
 
 
 # Read out ignore_list table and return a list of ignored coins
-def get_ignore_list():
+def get_ignore_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
-    return df['symbol'].values.tolist()
+    ignore_list = df['symbol'].values.tolist()
+    if from_id: send_msg(f"Ignore list:\n{', '.join(ignore_list)}", from_id)
+    return 
+
+
+# define a function to add a given coin to ignore_coin_list table
+def add_coin_to_ignore_list(coin: str, from_id = TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    cursor.execute(f"SELECT * FROM ignore_coin_list WHERE symbol = '{coin}'")
+    result = cursor.fetchall()
+    if len(result) == 0: cursor.execute(f"INSERT INTO ignore_coin_list (symbol) VALUES ('{coin}')")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    send_msg(f"Coin {coin} added to ignore list successfully!", from_id)
+    return True
 
 
 if __name__ == '__main__':

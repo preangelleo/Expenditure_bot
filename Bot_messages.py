@@ -5,8 +5,6 @@ from GPT_functions import *
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
 
-
-
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 bot = Bot(token=TOKEN)
@@ -21,8 +19,12 @@ def telegram_bot_commands_and_menu():
 
     # Define the list of commands
     COMMANDS = [
-        {'command': 'start', 'description': 'Get started'}
-    ]
+        {'command': 'start', 'description': 'Get started'},
+        {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
+        {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
+        {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
+        {'command': 'get_expenditure_info', 'description': 'Get the total spend of this year and this month'},
+        ]
 
     # Function to set the bot commands
     def set_commands():
@@ -34,6 +36,16 @@ def telegram_bot_commands_and_menu():
     # Call the function to set the commands
     set_commands()
     return 
+
+NONE_PARAMETER_COMMAND_LIST = {
+    'get_ignore_list': get_ignore_list, 
+    'get_expenditure_info': get_total_spend_of_any_year_any_month,
+    }
+
+ONE_PARAMETER_COMMAND_LIST = {
+    'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
+    'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
+    }
 
 # Define a handler for telegram messages
 async def handel_telegram_message(message: types.Message):
@@ -68,6 +80,37 @@ async def handel_telegram_message(message: types.Message):
     if text_prompt in IGNORE_WORDS: return await message.answer(random.choice(UNHAPPY_EMOJI))
     
     if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
+
+    # Extract the first word from the message, check if it's in COMMAND_LIST
+    first_word = text_prompt.split()[0].lower()
+    rest_word = text_prompt.split()[1:]
+    # the type of rest_word is list
+
+    # Remove '/' from the first word
+    first_word = first_word.replace('/', '')
+
+    # If the first word is in COMMAND_LIST, then call the corresponding function
+    if first_word in ONE_PARAMETER_COMMAND_LIST:
+
+        # If there's no rest word, then reply the description of the command
+        if not rest_word: return await message.answer(ONE_PARAMETER_COMMAND_LIST[first_word]['description'])
+
+        rest_word = ' '.join(rest_word)
+
+        # Get the corresponding function
+        func = ONE_PARAMETER_COMMAND_LIST[first_word]['function']
+
+        # Call the function and return
+        return func(rest_word.upper(), from_id)
+
+    elif first_word in NONE_PARAMETER_COMMAND_LIST:
+
+        # Get the corresponding function
+        func = NONE_PARAMETER_COMMAND_LIST[first_word]
+
+        # Call the function and return
+        return func(from_id)
+
 
     await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = text_prompt)
 
