@@ -9,20 +9,6 @@ Starting from December 10, 2023, this strategy is being open-sourced for the fir
 
 ---
 
-The core underlying logic of this strategy is to "be bullish on cryptocurrencies." Therefore, if cryptocurrencies weaken in the long term, this strategy is certain to lose money.
-
-The goal of this strategy is to outperform BTC. If BTC increases tenfold in ten years, the target for this strategy is to exceed a tenfold return.
-
-The trading logic of this strategy is to follow the trend and take profits at a 5% gain, repeating this process. There is no restriction on the trading currency; selections are made based on the list of currencies with the highest increases. However, there is an Ignore List, similar to a blacklist, which can be updated at any time through a Telegram Bot.
-
-The main parameters for selecting currencies in this trading strategy are: a daily trading volume of more than $50 million, a trading volume/market capitalization (Turnover Rate) higher than ETH, a market capitalization of over $100 million, a total circulating market capitalization of less than $10 billion, and a coin price greater than $0.001 but less than $1000.
-
-The default limit for holdings in this trading bot is set to 10 positions. Once fully invested, no further purchases are made until a coin is sold for a profit, freeing up a position.
-
-This trading strategy does not set a stop-loss policy. If all 10 positions are filled and all are losing, the strategy essentially waits indefinitely.
-
----
-
 # Preparation:
 Ensure Python3 and NPM are installed on your system.
 If not, please consult ChatGPT for installation instructions.
@@ -152,7 +138,17 @@ Now, everything is set up and ready to go!
 - It handles exceptions and errors, providing feedback on failed transactions.
 
 ### Summary
-Your strategy focuses on identifying high-potential cryptocurrencies based on market activity and cap, executing trades through Binance, and managing your portfolio by monitoring positions and making informed buying decisions. The system automates most of the process while keeping you informed through notifications.
+The core underlying logic of this strategy is to "be bullish on cryptocurrencies." Therefore, if cryptocurrencies weaken in the long term, this strategy is certain to lose money.
+
+The goal of this strategy is to outperform BTC. If BTC increases tenfold in ten years, the target for this strategy is to exceed a tenfold return.
+
+The trading logic of this strategy is to follow the trend and take profits at a 5% gain, repeating this process. There is no restriction on the trading currency; selections are made based on the list of currencies with the highest increases. However, there is an Ignore List, similar to a blacklist, which can be updated at any time through a Telegram Bot.
+
+The main parameters for selecting currencies in this trading strategy are: a daily trading volume of more than $50 million, a trading volume/market capitalization (Turnover Rate) higher than ETH, a market capitalization of over $100 million, a total circulating market capitalization of less than $10 billion, and a coin price greater than $0.001 but less than $1000.
+
+The default limit for holdings in this trading bot is set to 10 positions. Once fully invested, no further purchases are made until a coin is sold for a profit, freeing up a position.
+
+This trading strategy does not set a stop-loss policy. If all 10 positions are filled and all are losing, the strategy essentially waits indefinitely.
 
 ---
 
