@@ -32,6 +32,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'do_market_sell', 'description': 'Do market sell of a given coin in Binance'},
         {'command': 'do_market_buy', 'description': 'Do market buy of a given coin in Binance'},
         {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
+        {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
         ]
 
     # Function to set the bot commands
