@@ -1,6 +1,8 @@
 # Expenditure_bot
 An automated trading bot that can also record receipt details into a MySQL database with AI assistance.
 
+![Initial Fund](net_profit_daily_record/Initial_fund.png)
+
 # Preparation:
 Ensure Python3 and NPM are installed on your system.
 If not, please consult ChatGPT for installation instructions.
@@ -89,7 +91,11 @@ Now, everything is set up and ready to go!
 
 ---
 
-![Initial Fund](net_profit_daily_record/Initial_fund.png)
+# MENU OF TELEGRAM BOT
+
+<div align="center">
+  <img src="net_profit_daily_record/Telegram_bot_menu.png" alt="Telegram Bot Menu"/>
+</div>
 
 ![Telegram Bot Menu](net_profit_daily_record/Telegram_bot_menu.png)
 ---
