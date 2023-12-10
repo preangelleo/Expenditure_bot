@@ -250,5 +250,4 @@ if __name__ == '__main__':
     # print(IGNORE_LIST)
     # print(type(IGNORE_LIST))
     # drop binance_ticker_top_30 table
-    engine.connect().execute(text("DROP TABLE binance_ticker_top_30"))
-    
+    # engine.connect().execute(text("DROP TABLE binance_ticker_top_30"))
