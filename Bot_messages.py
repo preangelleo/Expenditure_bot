@@ -28,7 +28,9 @@ def telegram_bot_commands_and_menu():
         {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
         {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
         {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
-        {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'}
+        {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'},
+        {'command': 'do_market_sell', 'description': 'Do market sell of a given coin in Binance'},
+        {'command': 'do_market_buy', 'description': 'Do market buy of a given coin in Binance'},
         ]
 
     # Function to set the bot commands
@@ -55,6 +57,8 @@ ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
+    'do_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /do_market_sell FTT'},
+    'do_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /do_market_buy CAKE'},
     }
 
 # Define a handler for telegram messages

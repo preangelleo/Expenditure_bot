@@ -760,8 +760,7 @@ def do_limit_sell(coin: str, target_profit_ratio=0.05):
     return data
 
 
-# do_market_sell('eth', 0.1)
-def do_market_sell(coin):
+def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     reply_msg = ''
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
@@ -847,17 +846,17 @@ def do_market_sell(coin):
     duration = f'{int(duration / 24)} 天 {int(duration % 24)} 小时' if duration > 24 else f'{int(duration)} 小时'
 
     reply_msg = f'''
-卖出币种: {coin}
-卖出价格: {format_number(data['price'])}
-卖出数量: {format_number(amount)}
-交易佣金: {format_number(total_bnb_cost_value)} usdt
-交易获利: {format_number(profit)} usdt
-持仓周期: {duration}
-交易_ID: {order_id}
-更新_ID: {update_id}
-累计获利: {format_number(profit_sum)} usdt
+Sold_Coin: {coin}
+Sold_Price: {format_number(data['price'])}
+Sold_Amount: {format_number(amount)}
+Commition_Fee: {format_number(total_bnb_cost_value)} usdt
+Trading_Profit: {format_number(profit)} usdt
+Holding_Duration: {duration}
+Trading_ID: {order_id}
+Update_ID: {update_id}
+Profit_Sum: {format_number(profit_sum)} usdt
 '''
-
+    send_msg(reply_msg, from_id)
     return reply_msg
 '''
       symbol    orderId  orderListId           clientOrderId   transactTime     price       origQty   executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value   profit
@@ -915,7 +914,7 @@ def binance_market_buy(coin, value):
   "selfTradePreventionMode": "NONE"
 }'''
 
-# do_market_buy('eth', 1000)
+
 def do_market_buy(coin: str, value):
     coin = coin.upper()
     reply_msg = ''
@@ -985,6 +984,12 @@ def do_market_buy(coin: str, value):
             reply_msg = f'''Buy in coin: {coin}\nBuy in price: {buy_in_price} usdt/{coin.lower()}\nBuy in amount: {buy_in_amount} {coin.lower()}\nTrading fee: {trading_fee_value} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
             return reply_msg
         except Exception as e: return f"After bought {coin} and inserted into database, During formating the reply message, an error occurred: \n\n{e}"
+
+
+def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
+    reply_msg = do_market_buy(coin, CHECK_SIZE)
+    if reply_msg: send_msg(reply_msg, from_id)
+    return reply_msg
 
 
 def plot_net_profit_sum():
@@ -1105,7 +1110,9 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         if chat_id: send_msg(reply_msg, chat_id)
 
         # If profit > target_profit, do market sell, close the position
-        if reply_dict['up_ratio'] > target_profit: send_msg(do_market_sell(reply_dict['coin']), TG_BOT_OWNER_ID)
+        if reply_dict['up_ratio'] > target_profit: 
+            try: do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+            except: pass
 
         book_value += reply_dict['profit']
 
