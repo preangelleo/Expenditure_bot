@@ -14,6 +14,7 @@ If not, please consult ChatGPT for installation instructions.
 Make sure deposit 100,000 USDT into your Binance account. Or any amount of initial fund you prefer.
 
 ![Initial Fund](net_profit_daily_record/Initial_fund.png)
+Screen shot on Dec 10, 2023
 
 Reference to my [ChatGPT Conversation](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
 
