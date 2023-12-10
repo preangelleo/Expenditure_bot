@@ -1092,7 +1092,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
         for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
         for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
-        for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M')
         for_reply['Order_ID'] = reply_dict['orderId']
         for_reply['Update_ID'] = reply_dict['update_id']
 
@@ -1148,7 +1148,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {INITIAL_FUND} usdt\nUnrealized_Gain: {format_number(book_value)} usdt;\nRealized_Gain: {format_number(profit_sum)} usdt;\nBook_Value: {format_number(net_profit_sum)} usdt;\n\nAnnualized_Return: {annualized_return}", chat_id)
+                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt;\nRealized_Gain: {format_number(profit_sum)} usdt;\nBook_Value: {format_number(net_profit_sum)} usdt;\n\nAnnualized_Return: {annualized_return}", chat_id)
 
                 file_name = plot_net_profit_sum()
                 send_img(chat_id, file_name, f"Book Value of Today: {format_number(net_profit_sum)} usdt")
