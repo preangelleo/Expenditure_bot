@@ -978,8 +978,13 @@ def do_market_buy(coin: str, value):
     # Read out the trading informaiton from binance_position_buy table where update_id == update_id + 1
     df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE update_id = :update_id"), {'update_id': update_id + 1}).fetchall())
     if not df.empty: 
-        reply_msg = f'''Buy in coin: {coin}\nBuy in price: {format_number(data["price"])} usdt/{coin.lower()}\nBuy in amount: {format_number(data["executedQty"])} {coin.lower()}\nTrading fee: {format_number(trading_fee_value)} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
-        return reply_msg
+        try:
+            buy_in_price = round(float(df['price'].values[0]), 4)
+            buy_in_amount = round(float(df['executedQty'].values[0]), 2)
+            trading_fee_value = round(trading_fee_value, 2)
+            reply_msg = f'''Buy in coin: {coin}\nBuy in price: {buy_in_price} usdt/{coin.lower()}\nBuy in amount: {buy_in_amount} {coin.lower()}\nTrading fee: {trading_fee_value} usdt\nOrder ID: {data["orderId"]}\nUpdate ID: {update_id + 1}'''
+            return reply_msg
+        except Exception as e: return f"After bought {coin} and inserted into database, During formating the reply message, an error occurred: \n\n{e}"
 
 
 def plot_net_profit_sum():
@@ -1265,4 +1270,8 @@ if __name__ == '__main__':
     # result = engine.connect().execute(text(query), params)
     # df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
     # print(df_30_days)
+
+    # print out binance_position_buy table
+    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
+    # print(df)
 
