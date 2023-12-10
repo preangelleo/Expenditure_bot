@@ -78,6 +78,7 @@ def get_api_functions():
         return
 '''{'ipRestrict': True, 'createTime': 1665449424000, 'enableInternalTransfer': True, 'permitsUniversalTransfer': True, 'enablePortfolioMarginTrading': False, 'enableVanillaOptions': False, 'enableReading': True, 'enableSpotAndMarginTrading': True, 'enableWithdrawals': True, 'enableMargin': True, 'enableFutures': True}'''
 
+
 # 获取币安全部交易对最新价格
 def get_token_price_table():
     # Get ticker data
@@ -367,6 +368,11 @@ def get_coin_wallet_balance_all():
     else: return {}
 '''{'AKRO': '124370', 'API3': '585.1', 'ASTR': '13229.6', 'BNB': '3.1130512', 'CELO': '1560', 'FLOW': '1210.65', 'MANA': '2107', 'OMG': '1331.5', 'SXP': '2402.3', 'USDT': '35404.13927066', 'XEC': '28953771'}'''
 
+
+def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
+    data = get_coin_wallet_balance_all()
+    if data: return send_msg('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
+    else: return send_msg("No coin in your wallet.", chat_id)
 
 # 通过 get_user_asset() 获取某个 coin 的余额
 def get_coin_wallet_balance(coin):

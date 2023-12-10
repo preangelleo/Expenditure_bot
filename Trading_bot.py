@@ -1,8 +1,6 @@
 from Binance_api import *
 
 
-
-
 '''COINMARKETCAP RETURN
 {
 "id": 3964,
@@ -230,6 +228,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
         send_msg(do_market_buy(coin, check_size), chat_id)
 
+    send_msg('All done! 😘', chat_id)
     return
 
 
