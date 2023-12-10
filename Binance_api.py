@@ -599,7 +599,7 @@ recvWindow	LONG	NO
 timestamp	LONG	YES
 '''
 # 定义一个功能，获取给定 coin 给定 network 的充值地址
-def get_coin_deposit_address(coin, network):
+def binance_get_coin_deposit_address(coin, network):
     PATH = '/sapi/v1/capital/deposit/address'
     timestamp = int(time.time() * 1000)
     params = {
@@ -617,6 +617,20 @@ def get_coin_deposit_address(coin, network):
     else: return r.reason
 '''{'coin': 'USDT', 'address': '0x34b940120aeb9cadbcc4131fb034ad3b83b0367d', 'tag': '', 'url': 'https://etherscan.io/address/0x34b940120aeb9cadbcc4131fb034ad3b83b0367d'}'''
 
+
+def get_coin_deposit_address(coin_and_network: str, from_id=TG_BOT_OWNER_ID):
+    coin_and_network_list = coin_and_network.split()
+    coin = coin_and_network_list[0].upper()
+    network = coin_and_network_list[1].upper() if len(coin_and_network_list) > 1 else 'ETH'
+
+    data = binance_get_coin_deposit_address(coin.upper(), network)
+    '''data : {'coin': 'USDT', 'address': 'TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV', 'tag': '', 'url': 'https://tronscan.org/#/address/TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV'}'''
+
+    address = data['address']
+    url = data['url']
+
+    if data: return send_msg(f"Binance Deposit Address for {coin} at {network}\n\n{address}\n\n{url}", from_id)
+    else: return send_msg(f"Can't get {coin.upper()} deposit address.", from_id)
 
 '''
 权重(UID): 1 权重(IP): 1
@@ -762,14 +776,13 @@ def do_limit_sell(coin: str, target_profit_ratio=0.05):
 
 def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
-    reply_msg = ''
+
     # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
     try:
         df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE coin = :coin AND is_closed = 0 ORDER BY price ASC LIMIT 1"), {'coin': coin}).fetchall())
         if df_balance.empty: return send_msg(f'No open position for coin: {coin}', from_id)
     except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
 
-    if reply_msg: return reply_msg
 
     amount = float(df_balance['executedQty'].values[0])
     update_id = int(df_balance['update_id'].values[0])
@@ -856,6 +869,25 @@ Profit_Sum: {format_number(profit_sum)} usdt
       symbol    orderId  orderListId           clientOrderId   transactTime     price       origQty   executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value   profit
 0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
 '''
+
+
+def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
+
+    if not confirm or confirm.upper() not in ['ALL', 'CONFIRM', 'YES']: return send_msg(f'You need to type ALL or CONFIRM or YES to confirm close all positions.', from_id)
+
+    # 读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录
+    try:
+        df_balance = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_buy WHERE is_closed = 0")).fetchall())
+        if df_balance.empty: return send_msg(f'No open position for close', from_id)
+    except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
+
+    # get coin list for all open positions
+    coin_list = df_balance['coin'].unique().tolist()
+
+    for coin in coin_list: do_market_sell(coin, from_id)
+
+    return 
+
 
 # 定义一个Market buy 交易功能 Input: coin, value
 def binance_market_buy(coin, value):
@@ -975,10 +1007,10 @@ def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     return reply_msg
 
 
-def plot_net_profit_sum():
+def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
     filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}.png"
     # check if the file exists, if yes, return the file name
-    if os.path.isfile(filename): return filename
+    if os.path.isfile(filename): return send_img(chat_id, filename)
 
     try:
         # Read data from the table into a DataFrame
@@ -994,7 +1026,7 @@ def plot_net_profit_sum():
 
         # Convert 'Date' to datetime
         df['Date'] = pd.to_datetime(df['Date'])
-    except: return f"net_profit_daily_record/Leowang.net.jpg"
+    except: return send_img(chat_id, f"net_profit_daily_record/Leowang.net.jpg")
 
     # Plotting
     plt.figure(figsize=(10, 6))
@@ -1011,8 +1043,7 @@ def plot_net_profit_sum():
     # Save the plot to a file
     plt.savefig(filename, bbox_inches='tight')
     plt.close()
-    return filename
-
+    return send_img(chat_id, filename)
 
 
 # check binance_position_buy and calculate profit based on current price for all coins
@@ -1148,10 +1179,9 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt;\nRealized_Gain: {format_number(profit_sum)} usdt;\nBook_Value: {format_number(net_profit_sum)} usdt;\n\nAnnualized_Return: {annualized_return}", chat_id)
+                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\n\nAnnualized_Return: {annualized_return}", chat_id)
 
-                file_name = plot_net_profit_sum()
-                send_img(chat_id, file_name, f"Book Value of Today: {format_number(net_profit_sum)} usdt")
+                plot_net_profit_sum(chat_id)
 
         except: pass
     return
@@ -1182,8 +1212,10 @@ def update_net_profit_daily_record(date, net_profit):
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
     return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=from_id, crontab_profit_record=False)
 
+
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
     return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=coin, chat_id=from_id, crontab_profit_record=False)
+
 
 '''小额资产转换 (USER_DATA)
 POST /sapi/v1/asset/dust (HMAC SHA256)
@@ -1226,6 +1258,7 @@ def binance_asset_details(coin, chat_id):
         send_msg(real_data_str, chat_id)
         return 
 
+
 '''查询每日资产快照 (USER_DATA) 权重(IP): 2400
 参数:
 名称	类型	是否必需	描述
@@ -1240,6 +1273,7 @@ timestamp	LONG	YES
 仅支持查询最近 1 个月数据
 若startTime和endTime没传，则默认返回最近7天数据
 '''
+
 
 # 查询每日资产快照
 def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, limit=1):
@@ -1288,6 +1322,8 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     else: 
         print(r.reason)
         return
+    
+
     
 if __name__ == '__main__':
     print('Binance_api.py is running')

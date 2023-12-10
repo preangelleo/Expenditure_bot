@@ -31,6 +31,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'},
         {'command': 'do_market_sell', 'description': 'Do market sell of a given coin in Binance'},
         {'command': 'do_market_buy', 'description': 'Do market buy of a given coin in Binance'},
+        {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
         ]
 
     # Function to set the bot commands
@@ -59,6 +60,8 @@ ONE_PARAMETER_COMMAND_LIST = {
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     'do_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /do_market_sell FTT'},
     'do_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /do_market_buy CAKE'},
+    'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX, by default it is USDT ETH'},
+    'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     }
 
 # Define a handler for telegram messages

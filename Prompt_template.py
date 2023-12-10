@@ -38,8 +38,8 @@ FUNCTIONS_TOOLS = [
     }, {   
         "type": "function",
         "function": {
-            "name": "get_token_price",
-            "description": "Get the price of a token from binance API",
+            "name": "get_token_price_from_coinmarketcap_and_send_msg",
+            "description": "Get the price of a token from CoinMarketCap API",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -75,7 +75,7 @@ If it is a receipt, read and extract the information as mush as possible.'''
 TEXT_INPUT = '''
 Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user.
 
-- If user is asking for the price of a token, call function `get_token_price`.
+- If user is asking for the price of a token, call function `get_token_price_from_coinmarketcap_and_send_msg`.
 - If user is asking for the total spend of a year or a month, call function `get_total_spend_of_any_year_any_month`.
 - If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''
 
