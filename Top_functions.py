@@ -190,6 +190,7 @@ def get_turnover_ratio_from_coinmarketcap(coin='ETH'):
 
 
 def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OWNER_ID):
+    print(f"Getting {coin} price from Coinmarketcap...")
     token_info = get_token_info_from_coinmarketcap(coin.upper())
     if not token_info: return 
 

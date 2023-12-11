@@ -3,6 +3,7 @@ import matplotlib.dates as mpl_dates
 
 
 def get_btc_data_with_rsi(chat_id):
+    print('Start running get_btc_data_with_rsi() ...')
     # Initialize Binance Client
     exchange = ccxt.binance()
 
