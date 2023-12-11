@@ -184,6 +184,62 @@ def create_net_profit_daily_record_table():
     print("Table 'net_profit_daily_record' created successfully!")
     return True
 
+# Create a table "trading_bot_switch" to record the trading bot switch status
+def create_trading_bot_switch_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'trading_bot_switch', with ID (key), Date, SwitchStatus (boolean)
+    cursor.execute("CREATE TABLE IF NOT EXISTS trading_bot_switch (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, SwitchStatus BOOLEAN)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'trading_bot_switch' created successfully!")
+    return True
+
+
+# Insert a new record into table "trading_bot_switch", make SwitchStatus = True
+def trading_bot_switch_on():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Insert a new record into table "trading_bot_switch", make SwitchStatus = True
+    cursor.execute("INSERT INTO trading_bot_switch (Date, SwitchStatus) VALUES (CURDATE(), True)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Trading bot switch is ON!")
+    return True
+
+# Insert a new record into table "trading_bot_switch", make SwitchStatus = False
+def trading_bot_switch_off():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Insert a new record into table "trading_bot_switch", make SwitchStatus = False
+    cursor.execute("INSERT INTO trading_bot_switch (Date, SwitchStatus) VALUES (CURDATE(), False)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Trading bot switch is OFF!")
+    return True
+
+# Read the latest record from table "trading_bot_switch", return the SwitchStatus
+def trading_bot_switch_status():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Read the latest record from table "trading_bot_switch", return the SwitchStatus
+    cursor.execute("SELECT SwitchStatus FROM trading_bot_switch ORDER BY ID DESC LIMIT 1")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return result[0][0]
 
 # define a function to drop table by input table name
 def drop_table(table_name):
@@ -216,6 +272,16 @@ if __name__ == '__main__':
 
     # Initial Step 5: Create net_profit_daily_record tables
     create_net_profit_daily_record_table()
+
+    # Initial Step 6: Create trading_bot_switch tables
+    create_trading_bot_switch_table()
+
+    # Initial Step 7: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
+    trading_bot_switch_on()
+
+    trading_bot_status = trading_bot_switch_status()
+    if not trading_bot_status: print("Trading bot is OFF!")
+    else: print("Trading bot is ACTIVE!")
 
     print("All tables created successfully!")
 
