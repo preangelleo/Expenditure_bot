@@ -794,13 +794,17 @@ def do_limit_sell(coin: str, target_profit_ratio=0.05):
     target_price = buy_cost_value * (1 + target_profit_ratio) / amount
     target_price = round(target_price, 4)
 
-    data = binance_limit_sell(coin, amount, target_price)
-    if not data: 
-        reply_msg = f'Failed to do limit sell for coin: {coin}'
-        return reply_msg
-    
-    print(json.dumps(data, indent=2))
-    return data
+    try:
+        data = binance_limit_sell(coin, amount, target_price)
+        if not data: 
+            reply_msg = f'Failed to do limit sell for coin: {coin}'
+            return reply_msg
+        
+        print(json.dumps(data, indent=2))
+        return data
+    except Exception as e:
+        print(f"An error occurred while doing limit sell order setup for {coin}: \n\n{e}")
+        return
 
 
 def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -1231,6 +1235,71 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 0  2023-12-10    1186.83
 '''
 
+'''
+    amount = float(df_balance['executedQty'].values[0])
+    buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
+
+    # check coin balance see if it is enough
+    df_coin_balance = get_user_asset()
+    df_coin_balance = df_coin_balance[df_coin_balance['asset']==coin]
+    if df_coin_balance.empty: 
+        reply_msg = f'No balance for coin: {coin}'
+        return reply_msg
+    
+    balance = float(df_coin_balance['free'].values[0])
+    if balance < amount: 
+        reply_msg = f'Balance {balance} is not enough for amount: {amount}'
+        return reply_msg
+
+    target_price = buy_cost_value * (1 + target_profit_ratio) / amount
+    target_price = round(target_price, 4)
+
+    data = binance_limit_sell(coin, amount, target_price)
+    if not data: 
+        reply_msg = f'Failed to do limit sell for coin: {coin}'
+        return reply_msg
+    
+    print(json.dumps(data, indent=2))
+    return data
+    '''
+
+# Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
+def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID):
+    try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    except: return 'binance_position_buy table does not exist'
+
+    if df_balance.empty: return send_msg(f'No open position in binance', chat_id)
+
+    for i in range(df_balance.shape[0]):
+        # ignore coin BNB
+        coin = df_balance.iloc[i]['coin']
+        amount = df_balance.iloc[i]['executedQty']
+        price = df_balance.iloc[i]['price']
+        if target_profit: price = round(price * (1 + target_profit), 6)
+
+        try:
+            data = binance_limit_sell(coin, amount, price)
+            if not data: 
+                send_msg(f'Failed to set up limit sell order for coin: {coin}', chat_id)
+                continue
+            if target_profit: send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
+            else: send_msg(f"Limit sell order is set for: {coin} at buy in price.", chat_id)
+
+        except Exception as e:
+            print(f"An error occurred while doing limit sell order setup for {coin}: \n\n{e}")
+            continue
+        
+        try: print(json.dumps(data, indent=2))
+        except: print(data)
+
+        # make data a dataframe and instert to 'binance_limit_sell_order' table
+        try: pd.DataFrame(data, index=[0]).to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
+        except Exception as e: print(f'Failed to insert data to binance_limit_sell_order table for coin: {coin}\n\n{e}')
+    
+    return send_msg("ALL SET.", chat_id)
+
+
+
 # Define a function to sell all of the profit position
 def close_postive_positions(from_id=TG_BOT_OWNER_ID):
     return binance_position_buy_check_all(target_profit=0.001, coin=None, chat_id=from_id, crontab_profit_record=False)
@@ -1384,5 +1453,7 @@ if __name__ == '__main__':
     # df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
     # print(df)
 
-    r = read_target_profit_default()
-    print(r)
+    # r = read_target_profit_default()
+    # print(r)
+
+    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
