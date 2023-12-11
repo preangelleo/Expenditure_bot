@@ -379,6 +379,13 @@ def read_trading_bot_status(from_id):
     return send_msg("Trading bot is OFF (NO more buying)!", from_id)
 
 
+# define a function to take command from the user and reboot the bot, send a message to the user before rebooting
+def reboot_bot(from_id):
+    send_msg("Rebooting the bot...", from_id)
+    os.system("sudo reboot")
+    return
+
+
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 

@@ -20,6 +20,7 @@ def telegram_bot_commands_and_menu():
     # Define the list of commands
     COMMANDS = [
         {'command': 'start', 'description': 'Get started'},
+        {'command': 'reboot_the_bot', 'description': 'Reboot / restart / reload the bot'},
         {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
@@ -39,14 +40,15 @@ def telegram_bot_commands_and_menu():
         {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
         {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
         {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
+        {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
         ]
 
     # Function to set the bot commands
     def set_commands():
         url = TELEGRAM_BASE_URL + 'setMyCommands'
         response = requests.post(url, json={'commands': COMMANDS})
-        if response.status_code == 200: print('Bot commands updated!')
-        else: print('Failed to update bot commands.')
+        if response.status_code == 200: send_msg('Trading bot started...', TG_BOT_OWNER_ID)
+        else: send_msg(f'Failed to set commands...\n\n{response.text}', TG_BOT_OWNER_ID)
 
     # Call the function to set the commands
     set_commands()
@@ -63,6 +65,8 @@ NONE_PARAMETER_COMMAND_LIST = {
     'switch_off_bot': switch_off_bot,
     'read_bot_status': read_trading_bot_status,
     'close_postive_positions': close_postive_positions,
+    'read_target_profit': read_target_profit_default,
+    'reboot_the_bot': reboot_bot,
     }
 
 ONE_PARAMETER_COMMAND_LIST = {
