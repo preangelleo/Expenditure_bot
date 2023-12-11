@@ -1214,7 +1214,11 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\n\nAnnualized_Return: {annualized_return}\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}", chat_id)
+                investment_return = net_profit_sum / INITIAL_FUND
+                # investment_return with percentage format
+                investment_return = f"{investment_return * 100:.2f}%"
+
+                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}", chat_id)
 
                 plot_net_profit_sum(chat_id)
 
