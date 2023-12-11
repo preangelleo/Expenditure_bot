@@ -1139,7 +1139,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
     target_profit = read_target_profit_default() if chat_id else target_profit
-    print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', {f"{target_profit*100:.2f}% at {datetime.now().strftime('%Y-%m-%d %H:%M')}"})
+    print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', f"{target_profit*100:.2f}% at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     book_value = 0
 
