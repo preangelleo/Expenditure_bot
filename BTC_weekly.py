@@ -38,8 +38,8 @@ def get_btc_data_with_rsi(chat_id):
 
     # Plot RSI
     ax2.plot(df['timestamp'], df['RSI'], color='blue')
-    ax2.axhline(70, color='red', linestyle='--', linewidth=1)
-    ax2.axhline(30, color='green', linestyle='--', linewidth=1)
+    ax2.axhline(80, color='red', linestyle='--', linewidth=1)
+    ax2.axhline(20, color='green', linestyle='--', linewidth=1)
     ax2.xaxis_date()
     ax2.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
     ax2.set_xlabel('Date')
