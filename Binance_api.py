@@ -227,7 +227,7 @@ def get_exchange_info_symbols(coin: str):
     
     # get the symbols info of coin.upper()+'USDT
     df = pd.DataFrame(data['symbols'])
-    df_new = df[df['baseAsset'] == coin.upper()]
+    df_new = df[df['symbol'].str.endswith(coin.upper()+'USDT')]
 
     # convert df back into dict 
     result_list = df_new.to_dict(orient='records')
