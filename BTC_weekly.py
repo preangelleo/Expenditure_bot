@@ -1,13 +1,8 @@
 from Top_functions import *
-
-import ccxt
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mpl_dates
 
-def get_btc_data_with_rsi(chat_id=TG_BOT_OWNER_ID):
+
+def get_btc_data_with_rsi(chat_id):
     # Initialize Binance Client
     exchange = ccxt.binance()
 
@@ -20,37 +15,49 @@ def get_btc_data_with_rsi(chat_id=TG_BOT_OWNER_ID):
 
     # Calculate RSI
     delta = df['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / loss
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    avg_gain = gain.rolling(window=14).mean()
+    avg_loss = loss.rolling(window=14).mean()
+    rs = avg_gain / avg_loss
     df['RSI'] = 100 - (100 / (1 + rs))
 
     # Plotting
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), gridspec_kw={'height_ratios': [2, 1]})
 
-    # Convert timestamp to a format suitable for matplotlib
+    # Format the timestamp for matplotlib
     df['timestamp'] = df['timestamp'].apply(mpl_dates.date2num)
-    candlestick_ohlc(ax1, df[['timestamp', 'open', 'high', 'low', 'close']].values, width=0.6, colorup='green', colordown='red')
 
+    # Plot candlestick chart
+    candlestick_ohlc(ax1, df[['timestamp', 'open', 'high', 'low', 'close']].values, width=0.6, colorup='green', colordown='red')
+    ax1.xaxis_date()
+    ax1.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
     ax1.set_xlabel('Date')
     ax1.set_ylabel('BTC Price')
     ax1.set_title('BTC Weekly Candlestick with RSI')
 
     # Plot RSI
     ax2.plot(df['timestamp'], df['RSI'], color='blue')
-    ax2.axhline(70, color='red', linestyle='--')
-    ax2.axhline(30, color='green', linestyle='--')
+    ax2.axhline(70, color='red', linestyle='--', linewidth=1)
+    ax2.axhline(30, color='green', linestyle='--', linewidth=1)
+    ax2.xaxis_date()
+    ax2.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
     ax2.set_xlabel('Date')
     ax2.set_ylabel('RSI')
 
-    file_name = 'net_profit_daily_record/BTC_Weekly.png'
-    # Save plot
-    plt.savefig(file_name)
-    # plt.show()
+    # Improve layout
+    plt.tight_layout()
 
-    send_msg(file_name, chat_id)
+    file_name = 'net_profit_daily_record/BTC_Weekly.png'
+    # Save plot to file
+    plt.savefig(file_name)
+    plt.close(fig)
+
+    if chat_id: send_img(chat_id, file_name)
+
     return file_name
 
-# Call the function
-file_path = get_btc_data_with_rsi()
-file_path
+# You need to define the send_msg function according to your chat bot's API and include the chat_id
+# Example placeholder for the TG_BOT_OWNER_ID (you should replace this with the actual ID)
+
+get_btc_data_with_rsi(TG_BOT_OWNER_ID)

@@ -23,6 +23,13 @@ from Database_create import *
 from sqlalchemy.exc import SQLAlchemyError
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import ccxt
+
+import numpy as np
+
+from mplfinance.original_flavor import candlestick_ohlc
+
+
 
 # Load environment variables
 load_dotenv()
