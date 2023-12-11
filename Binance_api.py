@@ -22,8 +22,7 @@ def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
     if target_profit > 0 and target_profit < 1:
         try:
             engine.connect().execute(text(f"INSERT INTO target_profit (Date, TargetProfit) VALUES ('{datetime.now().strftime('%Y-%m-%d')}', {target_profit})"))
-            send_msg(f"New target profit: {target_profit*100}%", chat_id)
-            return True
+            return read_target_profit_default(from_id=chat_id)
         except Exception as e:
             print(e)
             return
