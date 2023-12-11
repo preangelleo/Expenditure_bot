@@ -23,30 +23,26 @@ def get_btc_data_with_rsi(chat_id):
     df['RSI'] = 100 - (100 / (1 + rs))
 
     # Plotting
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), gridspec_kw={'height_ratios': [2, 1]})
-
-    # Format the timestamp for matplotlib
-    df['timestamp'] = df['timestamp'].apply(mpl_dates.date2num)
+    fig, ax1 = plt.subplots(figsize=(12, 8))
 
     # Plot candlestick chart
-    candlestick_ohlc(ax1, df[['timestamp', 'open', 'high', 'low', 'close']].values, width=0.6, colorup='green', colordown='red')
+    candlestick_ohlc(ax1, df[['timestamp', 'open', 'high', 'low', 'close']].values, width=0.6, colorup='green', colordown='red', alpha=0.8)
     ax1.xaxis_date()
     ax1.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
     ax1.set_xlabel('Date')
     ax1.set_ylabel('BTC Price')
-    ax1.set_title('BTC Weekly Candlestick with RSI')
+    ax1.set_title('BTC Weekly Chart with RSI')
 
-    # Plot RSI
-    ax2.plot(df['timestamp'], df['RSI'], color='blue')
+    # Create a secondary y-axis for the RSI
+    ax2 = ax1.twinx()
+    ax2.plot(df['timestamp'], df['RSI'], color='blue', label='RSI')
     ax2.axhline(80, color='red', linestyle='--', linewidth=1)
     ax2.axhline(20, color='green', linestyle='--', linewidth=1)
-    ax2.xaxis_date()
-    ax2.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
-    ax2.set_xlabel('Date')
     ax2.set_ylabel('RSI')
+    ax2.legend(loc='upper left')
 
     # Improve layout
-    plt.tight_layout()
+    fig.tight_layout()
 
     file_name = 'net_profit_daily_record/BTC_Weekly.png'
     # Save plot to file
@@ -57,7 +53,6 @@ def get_btc_data_with_rsi(chat_id):
 
     return file_name
 
-# You need to define the send_msg function according to your chat bot's API and include the chat_id
-# Example placeholder for the TG_BOT_OWNER_ID (you should replace this with the actual ID)
-
-get_btc_data_with_rsi(TG_BOT_OWNER_ID)
+if __name__ == '__main__':
+    print('Start running Trading_bot.py ...')
+    get_btc_data_with_rsi(TG_BOT_OWNER_ID)
