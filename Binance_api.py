@@ -248,11 +248,6 @@ def get_exchange_info_symbols(coin: str):
         'minQty': result_list[0]['filters'][1]['minQty'],
         'maxQty': result_list[0]['filters'][1]['maxQty'],
         'stepSize': result_list[0]['filters'][1]['stepSize'],
-        'applyMinToMarket': result_list[0]['filters'][7]['applyMinToMarket'],
-        'applyMaxToMarket': result_list[0]['filters'][7]['applyMaxToMarket'],
-        'avgPriceMins': result_list[0]['filters'][7]['avgPriceMins'],
-        'maxNumOrders': result_list[0]['filters'][8]['maxNumOrders'],
-        'maxNumAlgoOrders': result_list[0]['filters'][9]['maxNumAlgoOrders'],
     }
 
     # make response to a dataframe and append to binance_exchange_info table
