@@ -126,6 +126,7 @@ def get_exchange_info():
         time.sleep(0.1)
         return
 
+
 ''' SAND EXCHANGE INFO
       "symbol": "SANDUSDT",
       "status": "TRADING",
