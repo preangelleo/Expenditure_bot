@@ -940,9 +940,6 @@ def binance_limit_sell(coin, amount, price):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        # SAVE data to binance_limit_sell_order table, if clientOrderId exists, update the record, if not, insert a new record
-        df = pd.DataFrame(data, index=[0])
-        df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
         return data
     else: 
         print(r.json())
