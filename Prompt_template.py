@@ -116,3 +116,24 @@ IGNORE_WORDS = ['傻屄', '傻b', '傻x', '傻吊', '傻逼', '傻屌', '傻比'
 
 EMOJI_REPLY = ['ding', 'hello', 'lol', 'hi', '你好', '你好啊', 'chatgpt', 'gpt', '机器人', 'openai', 'ai', 'nice', 'ok', 'great', 'cool', '你好呀', '你在干嘛', '嘛呢', '亲', '在吗', '睡了吗', '呵呵', '哈哈']
 
+BOT_COMMAND_DICT = {
+    'aic': 'add_ignore_coin',
+    'ric': 'remove_ignore_coin',
+    'gci': 'get_coin_info',
+    'gil': 'get_ignore_list',
+    'gei': 'get_expenditure_info',
+    'hcc': 'hot_coins_check',
+    'fmt': 'funding_main_transfer',
+    'gwb': 'get_wallet_balance',
+    'bpc': 'binance_position_check',
+    'pcc': 'position_coin_check',
+    'bms': 'binance_market_sell',
+    'bmb': 'binance_market_buy',
+    'cda': 'coin_deposit_address',
+    'cap': 'close_all_positions',
+    'son': 'switch_on_bot',
+    'sof': 'switch_off_bot',
+    'rbs': 'read_bot_status',
+    'cpp': 'close_postive_positions',
+    'stp': 'set_target_profit',
+    }

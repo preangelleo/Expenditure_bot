@@ -184,6 +184,35 @@ def create_net_profit_daily_record_table():
     print("Table 'net_profit_daily_record' created successfully!")
     return True
 
+# Create a table 'target_profit' to set the target profit, overwirte the .env figure
+def create_target_profit_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'target_profit'
+    cursor.execute("CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'target_profit' created successfully!")
+    return True
+
+# insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
+def set_target_profit_default():
+    TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05))
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
+    cursor.execute(f"INSERT INTO target_profit (Date, TargetProfit) VALUES (CURDATE(), {TARGET_PROFIT})")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"TARGET_PROFIT = {TARGET_PROFIT} inserted successfully!")
+    return True
+
 # Create a table "trading_bot_switch" to record the trading bot switch status
 def create_trading_bot_switch_table():
     # Create a new session
@@ -277,6 +306,10 @@ if __name__ == '__main__':
     create_trading_bot_switch_table()
 
     # Initial Step 7: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
+    create_target_profit_table()
+    set_target_profit_default()
+
+    # Initial Step 8: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     trading_bot_switch_on()
 
     trading_bot_status = trading_bot_switch_status()

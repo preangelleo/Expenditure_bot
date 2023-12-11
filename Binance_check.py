@@ -1,5 +1,8 @@
 from Binance_api import *
 
+target_profit = read_target_profit_default()
+
+TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
 
 if __name__ == '__main__':
     # Crontab job, run once every 3 minutes, check hot coins to see if they are profitable chance.

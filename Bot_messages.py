@@ -29,14 +29,16 @@ def telegram_bot_commands_and_menu():
         {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
         {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
         {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'},
-        {'command': 'do_market_sell', 'description': 'Do market sell of a given coin in Binance'},
-        {'command': 'do_market_buy', 'description': 'Do market buy of a given coin in Binance'},
+        {'command': 'binance_market_sell', 'description': 'Do market sell of a given coin in Binance'},
+        {'command': 'binance_market_buy', 'description': 'Do market buy of a given coin in Binance'},
         {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
         {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
         {'command': 'switch_on_bot', 'description': 'Switch on the trading bot'},
         {'command': 'switch_off_bot', 'description': 'Switch off the trading bot'},
         {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
         {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
+        {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
+        {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
         ]
 
     # Function to set the bot commands
@@ -67,10 +69,12 @@ ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
-    'do_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /do_market_sell FTT'},
-    'do_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /do_market_buy CAKE'},
+    'binance_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /do_market_sell FTT'},
+    'binance_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /do_market_buy CAKE'},
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX, by default it is USDT ETH'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
+    'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
+    'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
     }
 
 # Define a handler for telegram messages
@@ -114,6 +118,8 @@ async def handel_telegram_message(message: types.Message):
 
     # Remove '/' from the first word
     first_word = first_word.replace('/', '')
+
+    if first_word in BOT_COMMAND_DICT: first_word = BOT_COMMAND_DICT[first_word]
 
     # If the first word is in COMMAND_LIST, then call the corresponding function
     if first_word in ONE_PARAMETER_COMMAND_LIST:

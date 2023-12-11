@@ -4,8 +4,41 @@ TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
 INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
 CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
 POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
-TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05))
+
 # print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
+
+# from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
+def read_target_profit_default(from_id):
+    df_target_profit = pd.DataFrame(engine.connect().execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
+    target_profit = float(df_target_profit['TargetProfit'].values[0])
+    if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
+    return target_profit
+
+target_profit = read_target_profit_default()
+TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
+
+def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
+    target_profit = float(target_profit)
+    if target_profit > 0 and target_profit < 1:
+        try:
+            engine.connect().execute(text(f"INSERT INTO target_profit (Date, TargetProfit) VALUES ('{datetime.now().strftime('%Y-%m-%d')}', {target_profit})"))
+            send_msg(f"New target profit: {target_profit*100}%", chat_id)
+            return True
+        except Exception as e:
+            print(e)
+            return
+    else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
+
+# from "CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))" table remove the given coin
+def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try:
+        engine.connect().execute(text(f"DELETE FROM ignore_coin_list WHERE symbol = '{coin}'"))
+        send_msg(f"Removed {coin} from ignore list.", chat_id)
+        return True
+    except Exception as e:
+        send_msg(f"Failed to remove {coin} from ignore list.", chat_id)
+        return
 
 
 def network_name_change(str_name: str):
@@ -1106,6 +1139,8 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     # sort by profit
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
+    target_profit = read_target_profit_default() if chat_id else target_profit
+
     book_value = 0
 
     for_reply = {}
@@ -1128,7 +1163,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         for_reply['Update_ID'] = reply_dict['update_id']
 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
-        if chat_id: send_msg(reply_msg, chat_id)
+        if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
         # If profit > target_profit, do market sell, close the position
         if reply_dict['up_ratio'] > target_profit: 
@@ -1179,7 +1214,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # Send profit_sum to chat_id
                 chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
 
-                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\n\nAnnualized_Return: {annualized_return}", chat_id)
+                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\n\nAnnualized_Return: {annualized_return}\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}", chat_id)
 
                 plot_net_profit_sum(chat_id)
 
@@ -1349,3 +1384,6 @@ if __name__ == '__main__':
 
     # df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
     # print(df)
+
+    r = read_target_profit_default()
+    print(r)
