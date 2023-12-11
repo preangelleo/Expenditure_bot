@@ -107,6 +107,169 @@ def get_api_functions():
         return
 '''{'ipRestrict': True, 'createTime': 1665449424000, 'enableInternalTransfer': True, 'permitsUniversalTransfer': True, 'enablePortfolioMarginTrading': False, 'enableVanillaOptions': False, 'enableReading': True, 'enableSpotAndMarginTrading': True, 'enableWithdrawals': True, 'enableMargin': True, 'enableFutures': True}'''
 
+# User curl -X GET "https://api.binance.com/api/v3/exchangeInfo" get all symbols exchange info, change to dataframe and save to a json file 'binance_exchange_info.json'
+def get_exchange_info():
+    PATH = '/api/v3/exchangeInfo'
+    params = None
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    try:
+        r = requests.get(url, params=params)
+        if r.status_code != 200:
+            return
+        data = r.json()
+        # save to json file
+        with open('binance_exchange_info.json', 'w') as f:
+            json.dump(data, f, indent=2)
+        return data
+    except Exception as e:
+        print(e)
+        time.sleep(0.1)
+        return
+
+''' SAND EXCHANGE INFO
+      "symbol": "SANDUSDT",
+      "status": "TRADING",
+      "baseAsset": "SAND",
+      "baseAssetPrecision": 8,
+      "quoteAsset": "USDT",
+      "quotePrecision": 8,
+      "quoteAssetPrecision": 8,
+      "baseCommissionPrecision": 8,
+      "quoteCommissionPrecision": 8,
+      "orderTypes": [
+        "LIMIT",
+        "LIMIT_MAKER",
+        "MARKET",
+        "STOP_LOSS_LIMIT",
+        "TAKE_PROFIT_LIMIT"
+      ],
+      "icebergAllowed": true,
+      "ocoAllowed": true,
+      "quoteOrderQtyMarketAllowed": true,
+      "allowTrailingStop": true,
+      "cancelReplaceAllowed": true,
+      "isSpotTradingAllowed": true,
+      "isMarginTradingAllowed": true,
+      "filters": [
+        {
+          "filterType": "PRICE_FILTER",
+          "minPrice": "0.00010000",
+          "maxPrice": "1000.00000000",
+          "tickSize": "0.00010000"
+        },
+        {
+          "filterType": "LOT_SIZE",
+          "minQty": "1.00000000",
+          "maxQty": "9000000.00000000",
+          "stepSize": "1.00000000"
+        },
+        {
+          "filterType": "ICEBERG_PARTS",
+          "limit": 10
+        },
+        {
+          "filterType": "MARKET_LOT_SIZE",
+          "minQty": "0.00000000",
+          "maxQty": "533669.64166666",
+          "stepSize": "0.00000000"
+        },
+        {
+          "filterType": "TRAILING_DELTA",
+          "minTrailingAboveDelta": 10,
+          "maxTrailingAboveDelta": 2000,
+          "minTrailingBelowDelta": 10,
+          "maxTrailingBelowDelta": 2000
+        },
+        {
+          "filterType": "PERCENT_PRICE_BY_SIDE",
+          "bidMultiplierUp": "5",
+          "bidMultiplierDown": "0.2",
+          "askMultiplierUp": "5",
+          "askMultiplierDown": "0.2",
+          "avgPriceMins": 5
+        },
+        {
+          "filterType": "NOTIONAL",
+          "minNotional": "5.00000000",
+          "applyMinToMarket": true,
+          "maxNotional": "9000000.00000000",
+          "applyMaxToMarket": false,
+          "avgPriceMins": 5
+        },
+        {
+          "filterType": "MAX_NUM_ORDERS",
+          "maxNumOrders": 200
+        },
+        {
+          "filterType": "MAX_NUM_ALGO_ORDERS",
+          "maxNumAlgoOrders": 5
+        }
+      ],
+      '''
+# read 'binance_exchange_info.json' and only get out symbols list and convert to a dataframe
+def get_exchange_info_symbols(coin: str):
+
+    # try to get response dict from table binance_exchange_info
+    try:
+        response = pd.read_sql(f"SELECT * FROM binance_exchange_info WHERE coin = '{coin.upper()}'", engine)
+        if not response.empty: 
+            print('Got response from binance_exchange_info table.')
+            print(json.dumps(response.to_dict(orient='records')[0], indent=2))
+            return response.to_dict(orient='records')[0]
+    except: pass
+
+    # if binance_exchange_info.json not exist, get it from binance
+    if not os.path.exists('binance_exchange_info.json'): get_exchange_info()
+
+    with open('binance_exchange_info.json') as f:
+        data = json.load(f)
+    
+    # get the symbols info of coin.upper()+'USDT
+    df = pd.DataFrame(data['symbols'])
+    df_new = df[df['baseAsset'] == coin.upper()]
+
+    # convert df back into dict 
+    result_list = df_new.to_dict(orient='records')
+    response = {
+        'symbol': result_list[0]['symbol'],
+        'status': result_list[0]['status'],
+        'baseAsset': result_list[0]['baseAsset'],
+        'coin': result_list[0]['baseAsset'],
+        'baseAssetPrecision': result_list[0]['baseAssetPrecision'],
+        'quoteAsset': result_list[0]['quoteAsset'],
+        'quotePrecision': result_list[0]['quotePrecision'],
+        'quoteAssetPrecision': result_list[0]['quoteAssetPrecision'],
+        'baseCommissionPrecision': result_list[0]['baseCommissionPrecision'],
+        'quoteCommissionPrecision': result_list[0]['quoteCommissionPrecision'],
+        'minPrice': result_list[0]['filters'][0]['minPrice'],
+        'maxPrice': result_list[0]['filters'][0]['maxPrice'],
+        'tickSize': result_list[0]['filters'][0]['tickSize'],
+        'minQty': result_list[0]['filters'][1]['minQty'],
+        'maxQty': result_list[0]['filters'][1]['maxQty'],
+        'stepSize': result_list[0]['filters'][1]['stepSize'],
+        'minNotional': result_list[0]['filters'][7]['minNotional'],
+        'maxNotional': result_list[0]['filters'][7]['maxNotional'],
+        'applyMinToMarket': result_list[0]['filters'][7]['applyMinToMarket'],
+        'applyMaxToMarket': result_list[0]['filters'][7]['applyMaxToMarket'],
+        'avgPriceMins': result_list[0]['filters'][7]['avgPriceMins'],
+        'maxNumOrders': result_list[0]['filters'][8]['maxNumOrders'],
+        'maxNumAlgoOrders': result_list[0]['filters'][9]['maxNumAlgoOrders'],
+    }
+
+    # make response to a dataframe and append to binance_exchange_info table
+    df_response = pd.DataFrame(response, index=[0])
+    df_response.to_sql('binance_exchange_info', engine, if_exists='append', index=False)
+
+    print(df_response)
+
+    print('Got response from binance_exchange_info.json and saved to binance_exchange_info table.')
+    print(json.dumps(df_response.to_dict(orient='records')[0], indent=2))    
+
+    return response
+'''
+>>> symbols('SAND')
+[{'symbol': 'SANDUSDT', 'status': 'TRADING', 'baseAsset': 'SAND', 'baseAssetPrecision': 8, 'quoteAsset': 'USDT', 'quotePrecision': 8, 'quoteAssetPrecision': 8, 'baseCommissionPrecision': 8, 'quoteCommissionPrecision': 8, 'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'], 'icebergAllowed': True, 'ocoAllowed': True, 'quoteOrderQtyMarketAllowed': True, 'allowTrailingStop': True, 'cancelReplaceAllowed': True, 'isSpotTradingAllowed': True, 'isMarginTradingAllowed': True, 'filters': [{'filterType': 'PRICE_FILTER', 'minPrice': '0.00010000', 'maxPrice': '1000.00000000', 'tickSize': '0.00010000'}, {'filterType': 'LOT_SIZE', 'minQty': '1.00000000', 'maxQty': '9000000.00000000', 'stepSize': '1.00000000'}, {'filterType': 'ICEBERG_PARTS', 'limit': 10}, {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '533669.64166666', 'stepSize': '0.00000000'}, {'filterType': 'TRAILING_DELTA', 'minTrailingAboveDelta': 10, 'maxTrailingAboveDelta': 2000, 'minTrailingBelowDelta': 10, 'maxTrailingBelowDelta': 2000}, {'filterType': 'PERCENT_PRICE_BY_SIDE', 'bidMultiplierUp': '5', 'bidMultiplierDown': '0.2', 'askMultiplierUp': '5', 'askMultiplierDown': '0.2', 'avgPriceMins': 5}, {'filterType': 'NOTIONAL', 'minNotional': '5.00000000', 'applyMinToMarket': True, 'maxNotional': '9000000.00000000', 'applyMaxToMarket': False, 'avgPriceMins': 5}, {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200}, {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}], 'permissions': ['SPOT', 'MARGIN', 'TRD_GRP_004', 'TRD_GRP_005', 'TRD_GRP_006', 'TRD_GRP_009', 'TRD_GRP_010', 'TRD_GRP_011', 'TRD_GRP_012', 'TRD_GRP_013', 'TRD_GRP_014', 'TRD_GRP_015', 'TRD_GRP_016', 'TRD_GRP_017', 'TRD_GRP_018', 'TRD_GRP_019', 'TRD_GRP_020', 'TRD_GRP_021', 'TRD_GRP_022', 'TRD_GRP_023', 'TRD_GRP_024', 'TRD_GRP_025'], 'defaultSelfTradePreventionMode': 'EXPIRE_MAKER', 'allowedSelfTradePreventionModes': ['EXPIRE_TAKER', 'EXPIRE_MAKER', 'EXPIRE_BOTH']}]
+'''
 
 # 获取币安全部交易对最新价格
 def get_token_price_table():
@@ -188,7 +351,22 @@ def get_account_all():
 '''r = get_account_all()
 df = pd.DataFrame(r)
 df = df.T
-print(df)    '''
+print(df)    
+           coin  depositAllEnable  withdrawAllEnable                            name free locked freeze withdrawing ipoing ipoable storage  isLegalMoney  trading                                        networkList
+0          AGLD              True               True                  Adventure Gold    0      0      0           0      0       0       0         False     True  [{'network': 'ETH', 'coin': 'AGLD', 'entityTag...
+1          STPT              True               True  Standard Tokenization Protocol    0      0      0           0      0       0       0         False     True  [{'network': 'ETH', 'coin': 'STPT', 'entityTag...
+2           MXN              True               True                    Mexican Peso    0      0      0           0      0       0       0          True    False  [{'network': 'FIAT_MONEY', 'coin': 'MXN', 'ent...
+3    MATICUSDCE              True               True                    Bridged USDC    0      0      0           0      0       0       0         False    False  [{'network': 'MATIC', 'coin': 'MATICUSDCE', 'e...
+4           UGX              True               True                 Uganda Shilling    0      0      0           0      0       0       0          True    False  [{'network': 'FIAT_MONEY', 'coin': 'UGX', 'ent...
+..          ...               ...                ...                             ...  ...    ...    ...         ...    ...     ...     ...           ...      ...                                                ...
+486        AKRO              True               True                       Akropolis    0      0      0           0      0       0       0         False     True  [{'network': 'ETH', 'coin': 'AKRO', 'entityTag...
+487         NZD              True               True              New Zealand Dollar    0      0      0           0      0       0       0          True    False  [{'network': 'FIAT_MONEY', 'coin': 'NZD', 'ent...
+488        MOVR              True               True                       Moonriver    0      0      0           0      0       0       0         False     True  [{'network': 'MOVR', 'coin': 'MOVR', 'entityTa...
+489         XMR              True               True                          Monero    0      0      0           0      0       0       0         False     True  [{'network': 'XMR', 'coin': 'XMR', 'entityTag'...
+490        COTI              True               True                            COTI    0      0      0           0      0       0       0         False     True  [{'network': 'BSC', 'coin': 'COTI', 'entityTag...
+
+[491 rows x 14 columns]
+'''
 
 
 # from result of get_account_all(), check if a given coin is in the list, and the given network is in the list of the coin's networkList and withdrawEnable is True and check the withdrawFee, withdrawMin, withdrawMax, withdrawIntegerMultiple, and check the address is valid with addressRegex, return networkList
@@ -764,7 +942,10 @@ def binance_limit_sell(coin, amount, price):
     else: 
         print(r.reason)
         return
-    
+'''binance_limit_sell('SAND', 18230, 0.55)
+{'symbol': 'SANDUSDT', 'orderId': 2769384671, 'orderListId': -1, 'clientOrderId': 'GKVPOrFIkwz5IbsRhsx220', 'transactTime': 1702318694019, 'price': '0.55000000', 'origQty': '18230.00000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'SELL', 'workingTime': 1702318694019, 'fills': [], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
+'''
+
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
 def do_limit_sell(coin: str, target_profit_ratio=0.05):
     coin = coin.upper()
@@ -1426,4 +1607,6 @@ if __name__ == '__main__':
     # r = read_target_profit_default()
     # print(r)
 
-    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+    # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+    
+    binance_limit_sell('SAND', 18230, 0.55)
