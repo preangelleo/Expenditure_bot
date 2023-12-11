@@ -33,6 +33,9 @@ def telegram_bot_commands_and_menu():
         {'command': 'do_market_buy', 'description': 'Do market buy of a given coin in Binance'},
         {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
         {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
+        {'command': 'switch_on_bot', 'description': 'Switch on the trading bot'},
+        {'command': 'switch_off_bot', 'description': 'Switch off the trading bot'},
+        {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
         ]
 
     # Function to set the bot commands
@@ -52,7 +55,10 @@ NONE_PARAMETER_COMMAND_LIST = {
     'hot_coins_check': binance_today_hot_coins_check,
     'funding_main_transfer': funding_main_transfer_all_usdt,
     'get_wallet_balance': get_coin_wallet_balance_all_str,
-    'binance_position_check': bot_call_binance_position_check
+    'binance_position_check': bot_call_binance_position_check,
+    'switch_on_bot': switch_on_bot,
+    'switch_off_bot': switch_off_bot,
+    'read_bot_status': read_trading_bot_status,
     }
 
 ONE_PARAMETER_COMMAND_LIST = {

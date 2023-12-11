@@ -355,6 +355,23 @@ def add_coin_to_ignore_list(coin: str, from_id = TG_BOT_OWNER_ID):
     return True
 
 
+# define a function to switch on the trading bot and send a message to the user
+def switch_on_bot(from_id):
+    if trading_bot_switch_on(): return send_msg("Trading bot has been switched ON!", from_id)
+    return send_msg("Failed to switch on trading bot!", from_id)
+
+# define a function to switch off the trading bot and send a message to the user
+def switch_off_bot(from_id):
+    if trading_bot_switch_off(): return send_msg("Trading bot has been switched OFF!", from_id)
+    return send_msg("Failed to switch off trading bot!", from_id)
+
+# define a function to read the trading bot switch status from the database
+def read_trading_bot_status(from_id):
+    status = trading_bot_switch_status()
+    if status: return send_msg("Trading bot is ON!", from_id)
+    return send_msg("Trading bot is OFF!", from_id)
+
+
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 
