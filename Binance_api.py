@@ -1706,26 +1706,4 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    # binance_today_hot_coin(trading_volume_limit = 50_000_000)
-    # query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
-    # params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
-    # result = engine.connect().execute(text(query), params)
-    # df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
-    # print(df_30_days)
-
-    # print out binance_position_buy table
-    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
-    # print(df)
-
-    # update_net_profit_daily_record(datetime.now().strftime('%Y-%m-%d'), 325)
-    # print('Done')
-
-    # df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
-    # print(df)
-
-    # r = read_target_profit_default()
-    # print(r)
-
-    # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
-    
-    # binance_limit_sell('SAND', 18230, 0.55)
+    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
