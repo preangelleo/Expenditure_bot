@@ -36,6 +36,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'switch_on_bot', 'description': 'Switch on the trading bot'},
         {'command': 'switch_off_bot', 'description': 'Switch off the trading bot'},
         {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
+        {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
         ]
 
     # Function to set the bot commands
@@ -59,6 +60,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'switch_on_bot': switch_on_bot,
     'switch_off_bot': switch_off_bot,
     'read_bot_status': read_trading_bot_status,
+    'close_postive_positions': close_postive_positions,
     }
 
 ONE_PARAMETER_COMMAND_LIST = {

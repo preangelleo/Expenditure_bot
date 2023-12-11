@@ -1196,6 +1196,11 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 0  2023-12-10    1186.83
 '''
 
+# Define a function to sell all of the profit position
+def close_postive_positions(from_id=TG_BOT_OWNER_ID):
+    return binance_position_buy_check_all(target_profit=0, coin=None, chat_id=from_id, crontab_profit_record=False)
+
+
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
 def update_net_profit_daily_record(date, net_profit):
     with engine.connect() as connection:
@@ -1323,6 +1328,7 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
         print(r.reason)
         return
     
+
 
     
 if __name__ == '__main__':
