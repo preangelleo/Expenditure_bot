@@ -1539,6 +1539,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         df = pd.DataFrame(data, index=[0])
         if df.empty: continue
 
+        print('df = pd.DataFrame(data, index=[0]): \n', df)
+
         # Check if table binance_limit_sell_order exists, if not, df.to_sql create one; if yes, check if clientOrderId exists, if yes, update, if no, insert
         try:
             df_check = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
