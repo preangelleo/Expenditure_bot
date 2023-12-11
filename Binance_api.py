@@ -248,8 +248,6 @@ def get_exchange_info_symbols(coin: str):
         'minQty': result_list[0]['filters'][1]['minQty'],
         'maxQty': result_list[0]['filters'][1]['maxQty'],
         'stepSize': result_list[0]['filters'][1]['stepSize'],
-        'minNotional': result_list[0]['filters'][7]['minNotional'],
-        'maxNotional': result_list[0]['filters'][7]['maxNotional'],
         'applyMinToMarket': result_list[0]['filters'][7]['applyMinToMarket'],
         'applyMaxToMarket': result_list[0]['filters'][7]['applyMaxToMarket'],
         'avgPriceMins': result_list[0]['filters'][7]['avgPriceMins'],
