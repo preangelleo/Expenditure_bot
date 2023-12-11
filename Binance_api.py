@@ -8,7 +8,7 @@ POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
 # print(f"TRADING_VOLUME_LIMIT: {TRADING_VOLUME_LIMIT}, INITIAL_FUND: {INITIAL_FUND}, CHECK_SIZE: {CHECK_SIZE}, POSITIONS_LIMIT: {POSITIONS_LIMIT}")
 
 # from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
-def read_target_profit_default(from_id):
+def read_target_profit_default(from_id=None):
     df_target_profit = pd.DataFrame(engine.connect().execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
     target_profit = float(df_target_profit['TargetProfit'].values[0])
     if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
