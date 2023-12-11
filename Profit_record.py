@@ -11,3 +11,6 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(chat_id=TG_BOT_OWNER_ID)
     except: pass
 
+    try: get_token_price_from_coinmarketcap_and_send_msg('BTC', TG_BOT_OWNER_ID)
+    except: pass
+

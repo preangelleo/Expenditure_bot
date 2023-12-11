@@ -1233,7 +1233,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 
 # Define a function to sell all of the profit position
 def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=0, coin=None, chat_id=from_id, crontab_profit_record=False)
+    return binance_position_buy_check_all(target_profit=0.001, coin=None, chat_id=from_id, crontab_profit_record=False)
 
 
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
