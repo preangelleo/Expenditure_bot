@@ -1455,12 +1455,14 @@ def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_
     # Check if the price is within the range
     min_price = float(parameters_standard['minPrice'])
     max_price = float(parameters_standard['maxPrice'])
+    price = float(price)
     if price < min_price: return send_msg(f'Price: {price} is lower than minPrice: {min_price} for coin: {coin}', from_id)
     if price > max_price: return send_msg(f'Price: {price} is higher than maxPrice: {max_price} for coin: {coin}', from_id)
 
     # Check if the amount is within the range
     min_qty = float(parameters_standard['minQty'])
     max_qty = float(parameters_standard['maxQty'])
+    amount = float(amount)
     if amount < min_qty: return send_msg(f'Amount: {amount} is lower than minQty: {min_qty} for coin: {coin}', from_id)
     if amount > max_qty: return send_msg(f'Amount: {amount} is higher than maxQty: {max_qty} for coin: {coin}', from_id)
 
@@ -1681,4 +1683,4 @@ if __name__ == '__main__':
 
     # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
     
-    binance_limit_sell('SAND', 18230, 0.55)
+    # binance_limit_sell('SAND', 18230, 0.55)
