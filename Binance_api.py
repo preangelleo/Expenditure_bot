@@ -702,6 +702,8 @@ def binance_market_sell(coin, amount):
     params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
     url = urljoin(BINANCE_BASE_URL, PATH)
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
+    print(r)
+
     if r.status_code == 200:
         data = r.json()
         return data
@@ -1235,33 +1237,6 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 0  2023-12-10    1186.83
 '''
 
-'''
-    amount = float(df_balance['executedQty'].values[0])
-    buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
-
-    # check coin balance see if it is enough
-    df_coin_balance = get_user_asset()
-    df_coin_balance = df_coin_balance[df_coin_balance['asset']==coin]
-    if df_coin_balance.empty: 
-        reply_msg = f'No balance for coin: {coin}'
-        return reply_msg
-    
-    balance = float(df_coin_balance['free'].values[0])
-    if balance < amount: 
-        reply_msg = f'Balance {balance} is not enough for amount: {amount}'
-        return reply_msg
-
-    target_price = buy_cost_value * (1 + target_profit_ratio) / amount
-    target_price = round(target_price, 4)
-
-    data = binance_limit_sell(coin, amount, target_price)
-    if not data: 
-        reply_msg = f'Failed to do limit sell for coin: {coin}'
-        return reply_msg
-    
-    print(json.dumps(data, indent=2))
-    return data
-    '''
 
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID):
@@ -1277,18 +1252,13 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         price = df_balance.iloc[i]['price']
         if target_profit: price = round(price * (1 + target_profit), 6)
 
-        try:
-            data = binance_limit_sell(coin, amount, price)
-            if not data: 
-                send_msg(f'Failed to set up limit sell order for coin: {coin}', chat_id)
-                continue
-            if target_profit: send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
-            else: send_msg(f"Limit sell order is set for: {coin} at buy in price.", chat_id)
 
-        except Exception as e:
-            print(f"An error occurred while doing limit sell order setup for {coin}: \n\n{e}")
-            continue
-        
+        data = binance_limit_sell(coin, amount, price)
+        if not data: return 
+
+        if target_profit: send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
+        else: send_msg(f"Limit sell order is set for: {coin} at buy in price.", chat_id)
+
         try: print(json.dumps(data, indent=2))
         except: print(data)
 
