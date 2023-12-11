@@ -1533,35 +1533,40 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
+
+        print(json.dumps(data, indent=2))
+        
         df = pd.DataFrame(data, index=[0])
         if df.empty: continue
 
         print('df = pd.DataFrame(data, index=[0]): \n', df)
 
         # Check if table binance_limit_sell_order exists, if not, df.to_sql create one; if yes, check if clientOrderId exists, if yes, update, if no, insert
-        try:
-            df_check = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
+        try: df_check = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_limit_sell_order WHERE symbol = '{coin}USDT'")).fetchall())
+        except: 
+            print('binance_limit_sell_order table does not exist, Inserting new record to binance_limit_sell_order table...')
+            df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
+    
+        if df_check.empty: 
+            print('df_check is empty, Inserting new record to binance_limit_sell_order table...')
+            df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
+        else:
+            # Check if clientOrderId exists
+            clientOrderId = df['clientOrderId'].values[0]
+            df_check = df_check[df_check['clientOrderId']==clientOrderId]
             if df_check.empty: 
-                print('binance_limit_sell_order table does not exist, create and inserting new record to binance_limit_sell_order table...')
+                print('df_check clientOrderId is empty, Inserting new record to binance_limit_sell_order table...')
                 df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
             else:
-                # Check if clientOrderId exists
-                clientOrderId = df['clientOrderId'].values[0]
-                df_check = df_check[df_check['clientOrderId']==clientOrderId]
-                if df_check.empty: 
-                    print('df_check is empty, Inserting new record to binance_limit_sell_order table...')
-                    df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-                else:
-                    with engine.connect() as connection:
-                        try:
-                            # Execute the query with the updated update_id
-                            connection.execute(text("UPDATE binance_limit_sell_order SET orderId = :orderId, transactTime = :transactTime, price = :price, origQty = :origQty, executedQty = :executedQty, cummulativeQuoteQty = :cummulativeQuoteQty, status = :status, timeInForce = :timeInForce, type = :type, side = :side, workingTime = :workingTime, selfTradePreventionMode = :selfTradePreventionMode WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'orderId': df['orderId'].values[0], 'transactTime': df['transactTime'].values[0], 'price': df['price'].values[0], 'origQty': df['origQty'].values[0], 'executedQty': df['executedQty'].values[0], 'cummulativeQuoteQty': df['cummulativeQuoteQty'].values[0], 'status': df['status'].values[0], 'timeInForce': df['timeInForce'].values[0], 'type': df['type'].values[0], 'side': df['side'].values[0], 'workingTime': df['workingTime'].values[0], 'selfTradePreventionMode': df['selfTradePreventionMode'].values[0]})
-                            connection.commit()
-                        except Exception as e:
-                            print(f"An error occurred: {e}")
-                            connection.rollback()
-        except: pass
-    
+                with engine.connect() as connection:
+                    try:
+                        # Execute the query with the updated update_id
+                        connection.execute(text("UPDATE binance_limit_sell_order SET orderId = :orderId, transactTime = :transactTime, price = :price, origQty = :origQty, executedQty = :executedQty, cummulativeQuoteQty = :cummulativeQuoteQty, status = :status, timeInForce = :timeInForce, type = :type, side = :side, workingTime = :workingTime, selfTradePreventionMode = :selfTradePreventionMode WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'orderId': df['orderId'].values[0], 'transactTime': df['transactTime'].values[0], 'price': df['price'].values[0], 'origQty': df['origQty'].values[0], 'executedQty': df['executedQty'].values[0], 'cummulativeQuoteQty': df['cummulativeQuoteQty'].values[0], 'status': df['status'].values[0], 'timeInForce': df['timeInForce'].values[0], 'type': df['type'].values[0], 'side': df['side'].values[0], 'workingTime': df['workingTime'].values[0], 'selfTradePreventionMode': df['selfTradePreventionMode'].values[0]})
+                        connection.commit()
+                    except Exception as e:
+                        print(f"An error occurred: {e}")
+                        connection.rollback()
+
     return send_msg("ALL SET.", chat_id)
 
 ''' READ TABLE binance_limit_sell_order
