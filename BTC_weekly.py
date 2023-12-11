@@ -59,3 +59,5 @@ def get_btc_data_with_rsi(chat_id):
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     get_btc_data_with_rsi(TG_BOT_OWNER_ID)
+
+    get_token_price_from_coinmarketcap_and_send_msg('BTC', TG_BOT_OWNER_ID)
