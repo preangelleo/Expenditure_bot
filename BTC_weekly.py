@@ -25,6 +25,9 @@ def get_btc_data_with_rsi(chat_id):
     # Plotting
     fig, ax1 = plt.subplots(figsize=(12, 8))
 
+    # Convert timestamp to a format suitable for matplotlib
+    df['timestamp'] = df['timestamp'].map(mpl_dates.date2num)
+
     # Plot candlestick chart
     candlestick_ohlc(ax1, df[['timestamp', 'open', 'high', 'low', 'close']].values, width=0.6, colorup='green', colordown='red', alpha=0.8)
     ax1.xaxis_date()
