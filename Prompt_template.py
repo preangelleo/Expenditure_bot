@@ -174,4 +174,5 @@ BOT_COMMAND_DICT = {
     'reboot': 'reboot_the_bot',
     'reload': 'reboot_the_bot',
     'restart': 'reboot_the_bot',
+    'sls': 'set_limit_sell',
     }

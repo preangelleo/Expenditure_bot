@@ -207,23 +207,18 @@ def get_exchange_info():
         }
       ],
       '''
-# read 'binance_exchange_info.json' and only get out symbols list and convert to a dataframe
-def get_exchange_info_symbols(coin: str):
 
+def get_exchange_info_symbols(coin: str):
     # try to get response dict from table binance_exchange_info
     try:
         response = pd.read_sql(f"SELECT * FROM binance_exchange_info WHERE coin = '{coin.upper()}'", engine)
-        if not response.empty: 
-            print('Got response from binance_exchange_info table.')
-            print(json.dumps(response.to_dict(orient='records')[0], indent=2))
-            return response.to_dict(orient='records')[0]
+        if not response.empty: return response.to_dict(orient='records')[0]
     except: pass
 
     # if binance_exchange_info.json not exist, get it from binance
     if not os.path.exists('binance_exchange_info.json'): get_exchange_info()
 
-    with open('binance_exchange_info.json') as f:
-        data = json.load(f)
+    with open('binance_exchange_info.json') as f: data = json.load(f)
     
     # get the symbols info of coin.upper()+'USDT
     df = pd.DataFrame(data['symbols'])
@@ -254,15 +249,28 @@ def get_exchange_info_symbols(coin: str):
     df_response = pd.DataFrame(response, index=[0])
     df_response.to_sql('binance_exchange_info', engine, if_exists='append', index=False)
 
-    print(df_response)
-
-    print('Got response from binance_exchange_info.json and saved to binance_exchange_info table.')
-    print(json.dumps(df_response.to_dict(orient='records')[0], indent=2))    
-
     return response
-'''
->>> symbols('SAND')
-[{'symbol': 'SANDUSDT', 'status': 'TRADING', 'baseAsset': 'SAND', 'baseAssetPrecision': 8, 'quoteAsset': 'USDT', 'quotePrecision': 8, 'quoteAssetPrecision': 8, 'baseCommissionPrecision': 8, 'quoteCommissionPrecision': 8, 'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'], 'icebergAllowed': True, 'ocoAllowed': True, 'quoteOrderQtyMarketAllowed': True, 'allowTrailingStop': True, 'cancelReplaceAllowed': True, 'isSpotTradingAllowed': True, 'isMarginTradingAllowed': True, 'filters': [{'filterType': 'PRICE_FILTER', 'minPrice': '0.00010000', 'maxPrice': '1000.00000000', 'tickSize': '0.00010000'}, {'filterType': 'LOT_SIZE', 'minQty': '1.00000000', 'maxQty': '9000000.00000000', 'stepSize': '1.00000000'}, {'filterType': 'ICEBERG_PARTS', 'limit': 10}, {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '533669.64166666', 'stepSize': '0.00000000'}, {'filterType': 'TRAILING_DELTA', 'minTrailingAboveDelta': 10, 'maxTrailingAboveDelta': 2000, 'minTrailingBelowDelta': 10, 'maxTrailingBelowDelta': 2000}, {'filterType': 'PERCENT_PRICE_BY_SIDE', 'bidMultiplierUp': '5', 'bidMultiplierDown': '0.2', 'askMultiplierUp': '5', 'askMultiplierDown': '0.2', 'avgPriceMins': 5}, {'filterType': 'NOTIONAL', 'minNotional': '5.00000000', 'applyMinToMarket': True, 'maxNotional': '9000000.00000000', 'applyMaxToMarket': False, 'avgPriceMins': 5}, {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200}, {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}], 'permissions': ['SPOT', 'MARGIN', 'TRD_GRP_004', 'TRD_GRP_005', 'TRD_GRP_006', 'TRD_GRP_009', 'TRD_GRP_010', 'TRD_GRP_011', 'TRD_GRP_012', 'TRD_GRP_013', 'TRD_GRP_014', 'TRD_GRP_015', 'TRD_GRP_016', 'TRD_GRP_017', 'TRD_GRP_018', 'TRD_GRP_019', 'TRD_GRP_020', 'TRD_GRP_021', 'TRD_GRP_022', 'TRD_GRP_023', 'TRD_GRP_024', 'TRD_GRP_025'], 'defaultSelfTradePreventionMode': 'EXPIRE_MAKER', 'allowedSelfTradePreventionModes': ['EXPIRE_TAKER', 'EXPIRE_MAKER', 'EXPIRE_BOTH']}]
+
+'''r = get_exchange_info_symbols('FTT')
+Got response from binance_exchange_info table.
+{
+  "symbol": "FTTUSDT",
+  "status": "TRADING",
+  "baseAsset": "FTT",
+  "coin": "FTT",
+  "baseAssetPrecision": 8,
+  "quoteAsset": "USDT",
+  "quotePrecision": 8,
+  "quoteAssetPrecision": 8,
+  "baseCommissionPrecision": 8,
+  "quoteCommissionPrecision": 8,
+  "minPrice": "0.00010000",
+  "maxPrice": "100000.00000000",
+  "tickSize": "0.00010000",
+  "minQty": "0.01000000",
+  "maxQty": "922327.00000000",
+  "stepSize": "0.01000000"
+}
 '''
 
 # 获取币安全部交易对最新价格
@@ -934,7 +942,7 @@ def binance_limit_sell(coin, amount, price):
         data = r.json()
         return data
     else: 
-        print(r.reason)
+        print(r.json())
         return
 '''binance_limit_sell('SAND', 18230, 0.55)
 {'symbol': 'SANDUSDT', 'orderId': 2769384671, 'orderListId': -1, 'clientOrderId': 'GKVPOrFIkwz5IbsRhsx220', 'transactTime': 1702318694019, 'price': '0.55000000', 'origQty': '18230.00000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'SELL', 'workingTime': 1702318694019, 'fills': [], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
@@ -1412,6 +1420,71 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 0  2023-12-10    1186.83
 '''
 
+'''r = get_exchange_info_symbols('FTT')
+Got response from binance_exchange_info table.
+{
+  "symbol": "FTTUSDT",
+  "status": "TRADING",
+  "baseAsset": "FTT",
+  "coin": "FTT",
+  "baseAssetPrecision": 8,
+  "quoteAsset": "USDT",
+  "quotePrecision": 8,
+  "quoteAssetPrecision": 8,
+  "baseCommissionPrecision": 8,
+  "quoteCommissionPrecision": 8,
+  "minPrice": "0.00010000",
+  "maxPrice": "100000.00000000",
+  "tickSize": "0.00010000",
+  "minQty": "0.01000000",
+  "maxQty": "922327.00000000",
+  "stepSize": "0.01000000"
+}
+'''
+
+# Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
+def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    print('Calling polish_parameters_for_limit_order()...')
+    print(f"INPUT: coin: {coin}\namount: {amount}\nprice: {price}\n")
+
+    # Assuming get_exchange_info_symbols is a function that fetches the exchange information
+    parameters_standard = get_exchange_info_symbols(coin)
+    if not parameters_standard: return send_msg(f'Failed to get parameters_standard for coin: {coin}', from_id)
+
+    # Check if the price is within the range
+    min_price = float(parameters_standard['minPrice'])
+    max_price = float(parameters_standard['maxPrice'])
+    if price < min_price: return send_msg(f'Price: {price} is lower than minPrice: {min_price} for coin: {coin}', from_id)
+    if price > max_price: return send_msg(f'Price: {price} is higher than maxPrice: {max_price} for coin: {coin}', from_id)
+
+    # Check if the amount is within the range
+    min_qty = float(parameters_standard['minQty'])
+    max_qty = float(parameters_standard['maxQty'])
+    if amount < min_qty: return send_msg(f'Amount: {amount} is lower than minQty: {min_qty} for coin: {coin}', from_id)
+    if amount > max_qty: return send_msg(f'Amount: {amount} is higher than maxQty: {max_qty} for coin: {coin}', from_id)
+
+    # Polish the price to the right tick size and precision
+    tick_size = float(parameters_standard['tickSize'])
+    quote_precision = int(parameters_standard['quoteAssetPrecision'])
+    price = round((round(price / tick_size) * tick_size), quote_precision)
+
+    # Polish the amount to the right step size and precision
+    step_size = float(parameters_standard['stepSize'])
+    base_precision = int(parameters_standard['baseAssetPrecision'])
+    amount = round((round(amount / step_size) * step_size), base_precision)
+
+    polished_parameters = {
+        'coin': coin,
+        'amount': amount,
+        'price': price
+    }
+
+    # print comparison result
+    print(f"OUTPUT: coin: {coin}\namount: {amount}\nprice: {price}\n")
+
+    return polished_parameters
+
 
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID):
@@ -1425,11 +1498,16 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         coin = df_balance.iloc[i]['coin']
         amount = df_balance.iloc[i]['executedQty']
         price = df_balance.iloc[i]['price']
-        if target_profit: price = round(price * (1 + target_profit), 6)
+        if target_profit: price = price * (1 + float(target_profit))
 
+        polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
+
+        coin = polished_parameters['coin']
+        amount = polished_parameters['amount']
+        price = polished_parameters['price']
 
         data = binance_limit_sell(coin, amount, price)
-        if not data: return 
+        if not data: continue 
 
         if target_profit: send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
         else: send_msg(f"Limit sell order is set for: {coin} at buy in price.", chat_id)

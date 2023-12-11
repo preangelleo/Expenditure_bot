@@ -222,9 +222,9 @@ def send_msg(message, chat_id=TG_BOT_OWNER_ID):
             "chat_id": chat_id,
             "text": message
         }
-        response = requests.post(url, data=data)
-        return response.json()
-    except Error as e: return {'error': str(e)}, 500
+        requests.post(url, data=data)
+        return 
+    except: return 
     
 # define a function to send telegram message to a chat_id using requests + telegram bot api in markdown format
 def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID):

@@ -41,6 +41,8 @@ def telegram_bot_commands_and_menu():
         {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
         {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
         {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
+        {'command': 'limit_sell_order', 'description': 'Set limit sell order for a target profit pencentage'},
+        
         ]
 
     # Function to set the bot commands
@@ -79,6 +81,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
+    'limit_sell_order': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /limit_sell_order 0.01'},
     }
 
 # Define a handler for telegram messages
