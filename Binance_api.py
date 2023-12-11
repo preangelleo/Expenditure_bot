@@ -18,14 +18,11 @@ target_profit = read_target_profit_default()
 TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
 
 def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
-    target_profit = float(target_profit)
+    target_profit = float(target_profit) if target_profit else 0.001
     if target_profit > 0 and target_profit < 1:
-        try:
-            engine.connect().execute(text(f"INSERT INTO target_profit (Date, TargetProfit) VALUES ('{datetime.now().strftime('%Y-%m-%d')}', {target_profit})"))
+        if set_target_profit_default(target_profit): 
+            send_msg(f"Set target profit: {target_profit*100}%", chat_id)
             return read_target_profit_default(from_id=chat_id)
-        except Exception as e:
-            print(e)
-            return
     else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
 
 # from "CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))" table remove the given coin

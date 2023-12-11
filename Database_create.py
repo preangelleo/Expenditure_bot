@@ -199,18 +199,17 @@ def create_target_profit_table():
     return True
 
 # insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
-def set_target_profit_default():
-    TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05))
+def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05))):
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
     # Insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
-    cursor.execute(f"INSERT INTO target_profit (Date, TargetProfit) VALUES (CURDATE(), {TARGET_PROFIT})")
+    cursor.execute(f"INSERT INTO target_profit (Date, TargetProfit) VALUES (CURDATE(), {target_profit})")
     # Commit the session
     conn.commit()
     cursor.close()
     conn.close()
-    print(f"TARGET_PROFIT = {TARGET_PROFIT} inserted successfully!")
+    print(f"TARGET_PROFIT = {target_profit} inserted successfully!")
     return True
 
 # Create a table "trading_bot_switch" to record the trading bot switch status
@@ -307,7 +306,7 @@ if __name__ == '__main__':
 
     # Initial Step 7: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     create_target_profit_table()
-    set_target_profit_default()
+    set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05)))
 
     # Initial Step 8: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     trading_bot_switch_on()
