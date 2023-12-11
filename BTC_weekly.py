@@ -7,7 +7,7 @@ def get_btc_data_with_rsi(chat_id):
     exchange = ccxt.binance()
 
     # Fetch historical data for BTC/USDT
-    btc_data = exchange.fetch_ohlcv('BTC/USDT', timeframe='1w', limit=52)
+    btc_data = exchange.fetch_ohlcv('BTC/USDT', timeframe='1w', limit=216)
 
     # Convert to DataFrame
     df = pd.DataFrame(btc_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
@@ -15,8 +15,8 @@ def get_btc_data_with_rsi(chat_id):
 
     # Calculate RSI
     delta = df['close'].diff()
-    gain = np.where(delta > 0, delta, 0)
-    loss = np.where(delta < 0, -delta, 0)
+    gain = (delta > 0) * delta
+    loss = (delta < 0) * -delta
     avg_gain = gain.rolling(window=14).mean()
     avg_loss = loss.rolling(window=14).mean()
     rs = avg_gain / avg_loss
