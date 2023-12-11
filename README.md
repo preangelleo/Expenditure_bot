@@ -11,6 +11,10 @@ Starting from December 10, 2023, this strategy is being open-sourced for the fir
 Ensure Python3 and NPM are installed on your system.
 If not, please consult ChatGPT for installation instructions.
 
+   ```bash
+   sudo apt-get install libta-lib0 libta-lib-dev
+   ```
+
 Make sure deposit 100,000 USDT into your Binance account. Or any amount of initial fund you prefer.
 
 <div align="center">
@@ -20,6 +24,8 @@ Make sure deposit 100,000 USDT into your Binance account. Or any amount of initi
 
 
 Reference to my [ChatGPT Conversation](https://chat.openai.com/share/5640285f-4e84-4922-92c6-ed48094c3e74)
+
+
 
 # Step 1: Setting Up the Environment
 1. Navigate to the root directory:
@@ -96,6 +102,8 @@ Start the bot using the following command:
    ```
 3. Paste the copied content into the editor.
 4. To save and exit, press `Ctrl + X`, then press `Y` and `Enter` to confirm the crontab jobs.
+
+
 
 Now, everything is set up and ready to go!
 
