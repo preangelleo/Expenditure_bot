@@ -23,3 +23,5 @@ dist/
 
 # Ignore temp.txt
 Temp.txt
+
+binance_exchange_info.json
