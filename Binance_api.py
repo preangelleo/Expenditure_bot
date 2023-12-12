@@ -1234,6 +1234,14 @@ Profit_Sum: {format_number(profit_sum)} usdt
 0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
 '''
 
+def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
+    current_orders = get_open_orders_list()
+    symbol = coin + 'USDT'
+    if symbol in current_orders:
+        clientOrderId = current_orders[symbol]
+        binance_cancel_order(coin, clientOrderId)
+    return do_market_sell(coin, from_id)
+
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
 
@@ -1506,7 +1514,12 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
             # Check if current coin has open order, if yes, ignore market sell
             symbol = reply_dict['coin'] + 'USDT'
             if symbol not in current_orders: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
-            else: book_value += reply_dict['profit']
+            else:
+                if chat_id:
+                    # Cancel order then do market sell
+                    binance_cancel_order(symbol, current_orders[symbol])
+                    new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+                else: book_value += reply_dict['profit']
 
         else: book_value += reply_dict['profit']
 
