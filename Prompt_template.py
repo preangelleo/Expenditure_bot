@@ -44,10 +44,10 @@ FUNCTIONS_TOOLS = [
                 "type": "object",
                 "properties": {
                     "from_id": {"type": "string", "description": "The user's telegram from_id"},
-                    "query_year": {"type": "number", "description": "The year to query, for example: 2022, default to current year"},
-                    "query_month": {"type": "number", "description": "The month to query, for example: 12, default to current month"},
+                    "year": {"type": "string", "description": "The year to query, for example: 2022"},
+                    "month": {"type": "string", "description": "The month to query, for example: 12"},
                 },
-                "required": ["from_id", "query_year", 'query_month']
+                "required": ["from_id", "year", 'month']
             }
         }
     }, {
@@ -123,15 +123,16 @@ FUNCTIONS_TOOLS = [
     }, {
         "type": "function",
         "function": {
-            "name": "get_coin_deposit_address",
-            "description": "Get the deposit address of the given coin",
+            "name": "gpt_coin_deposit_address",
+            "description": "Get the deposit address of the given coin for given network",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "coin_and_network": {"type": "string", "description": "The coin and network of the deposit address, e.g. USDT TRX"},
+                    "coin": {"type": "string", "description": "The coin symbol, e.g. USDT"},
+                    "network": {"type": "string", "description": "The network of the coin, e.g. TRX, ETH, BSC, SOL, etc."},
                     "from_id": {"type": "string", "description": "The user's telegram id"},
                 },
-                "required": ["coin_and_network", "from_id"]
+                "required": ["coin", "network", "from_id"]
             }
         }
     }, {
@@ -161,7 +162,7 @@ List of available_functions:
 - get_ignore_list: Read out ignore_list table and return a list of ignored coins
 - funding_main_transfer_all_usdt: Transfer all USDT from funding account to main account
 - main_funding_transfer_with_check_and_send: Transfer coin from main account to funding account
-- get_coin_deposit_address: Get the deposit address of the given coin
+- get_coin_deposit_address: Get the deposit address of the given coin for given network
 - get_btc_data_with_rsi: Get BTC weeky, daily, or monthly data chart with RSI
 '''
 

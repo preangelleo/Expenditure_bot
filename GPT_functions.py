@@ -46,20 +46,20 @@ async def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
 
 
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
-def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month)):
+def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month)):
     df = get_all_expenditure_records(from_id)
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
 
-    # Convert query_year and query_month to int
-    query_year = int(query_year)
-    query_month = int(query_month)
+    # Convert year and month to int
+    year = int(year)
+    month = int(month)
 
     # Calculate the total spent of this year (sum the spent of this year)
-    total_spend_this_year = df[df['Date'].dt.year == query_year]['Spent'].sum()
+    total_spend_this_year = df[df['Date'].dt.year == year]['Spent'].sum()
 
     # Calculate the total spent of this month in this year (sum the spent of this month)
-    total_spend_this_month = df[(df['Date'].dt.year == query_year) & (df['Date'].dt.month == query_month)]['Spent'].sum()
+    total_spend_this_month = df[(df['Date'].dt.year == year) & (df['Date'].dt.month == month)]['Spent'].sum()
 
     # round the total spend of this year and this month, only show inter.
     total_spend_this_year = format_number(total_spend_this_year)
@@ -118,7 +118,7 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
             "get_ignore_list": get_ignore_list,
             "funding_main_transfer_all_usdt": funding_main_transfer_all_usdt,
             "main_funding_transfer_with_check_and_send": main_funding_transfer_with_check_and_send,
-            'get_coin_deposit_address': get_coin_deposit_address,
+            'get_coin_deposit_address': gpt_coin_deposit_address,
             "get_btc_data_with_rsi": get_btc_data_with_rsi
         } 
         # List of available_functions [insert_new_expenditure_record, get_total_spend_of_any_year_any_month, add_coin_to_ignore_list, get_token_price_from_coinmarketcap_and_send_msg, get_ignore_list, funding_main_transfer_all_usdt, main_funding_transfer_with_check_and_send, get_coin_deposit_address, get_btc_data_with_rsi]
@@ -129,11 +129,11 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
             function_to_call = available_functions[function_name]
             function_args = json.loads(tool_call.function.arguments)
             try: function_to_call(**function_args)
-            except Exception as e: send_msg(f"Failed from calling '{function_name}()'...\n\n{e}", chat_id)
+            except: pass
 
         if need_to_sum:
             # Calculate the total spent of this year (sum the spent of this year)
-            try: get_total_spend_of_any_year_any_month(chat_id, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
+            try: get_total_spend_of_any_year_any_month(from_id=chat_id, year=str(datetime.now().year), month=str(datetime.now().month))
             except: pass
 
 
@@ -146,4 +146,4 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
 if __name__ == '__main__':
     print("GPT_functions.py is running directly")
     
-    get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, query_year=str(datetime.now().year), query_month=str(datetime.now().month))
+    get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month))
