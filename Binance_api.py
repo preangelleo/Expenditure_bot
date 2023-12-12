@@ -1798,6 +1798,16 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
                 reply_msg = f'''{coin} Limit Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
 
                 send_msg(reply_msg, TG_BOT_OWNER_ID)
+            
+            if limit_order_data['status'] == 'CANCELLED':
+                with engine.connect() as connection:
+                    try:
+                        # Execute the query with the updated update_id
+                        connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED' WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId})
+                        connection.commit()
+                    except Exception as e:
+                        print(f"An error occurred: {e}")
+                        connection.rollback()
     
     # make a coin list from df_balance_all
     position_coin_list = df_balance_all['coin'].unique().tolist()
@@ -1819,6 +1829,17 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
 
     return
 
+# define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED'
+def binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID):
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED'"))
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return send_msg(f"All orders have been set to 'CANCELLED'", chat_id)
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
 def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_ID):
@@ -2128,5 +2149,7 @@ if __name__ == '__main__':
     # select * from binance_limit_sell_order where status is not 'CANCELED'
     # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
     # print(df)
+
+    binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID)
 
     binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
