@@ -86,7 +86,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
             turnover_ratio = round(turnover_ratio, 2)
             if turnover_ratio < turnover_ratio_eth: return
                 
-            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio}
+            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug']}
     except: return 
 
 
@@ -141,6 +141,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
             df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
             df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
+            df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
         else: df_ticker.drop(index, inplace=True)
 
     # Filter out the coins with market_cap between 100M and 10B
@@ -155,23 +156,28 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     print(df_ticker)
 
     # Keep the top 30 coins
-    df_ticker = df_ticker.head(30)
+    df_ticker = df_ticker.head(10)
 
     # make a coin list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
     if today_hot_coin_list and only_check: 
-        # make a reply string, format: "Coin | PriceChangePercent | QuoteVolume | TurnoverRatio | turnover_by_priceChangePercent"
-        reply_string = ''
+        counts_of_hot_coins = len(today_hot_coin_list)
+        i = 0
         for index, row in df_ticker.iterrows():
+            i += 1
             coin = row['coin']
+            price = row['lastPrice']
             priceChangePercent = row['priceChangePercent']
             turnover_ratio = row['turnover_ratio']
             turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
-            reply_string += f"{coin} | +{priceChangePercent}% | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent, 3)}\n"
+            token_slug = row['token_slug']
+            URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
+            reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent, 3)}"
+            send_msg_markdown(reply_string, from_id)
         
-        help_info = '\nThe first number is rais percentage, the second number is the turnover ratio (trading volume / market cap), third number is the turnover_ratio / price_change.'
-        send_msg(f"CHECK ONLY\nToday's hot coins are: \n\n{reply_string}{help_info}", from_id)
+        help_info = 'The 1) number is price, 2) is price change, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
+        send_msg(help_info, from_id)
 
     return today_hot_coin_list
 

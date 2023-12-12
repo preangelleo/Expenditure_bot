@@ -199,8 +199,11 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
     token_info = get_token_info_from_coinmarketcap(coin.upper())
     if not token_info: return 
 
+    CMC_LINK = f"https://coinmarketcap.com/currencies/{token_info['slug']}"
+    title = f"[{coin}]({CMC_LINK}) | Rank {token_info['cmc_rank']}"
+    send_msg_markdown(title, chat_id)
+
     output_dict = {
-        'CMC_Rank': f"{coin} | {token_info['cmc_rank']}",
         'Token_Name': token_info['name'],
         'Market_Cap': f"{format_number(token_info['quote']['USD']['market_cap'])} usd | {token_info['circulating_supply'] / token_info['total_supply'] * 100:.1f}%",
         'Total_Supply': f"{format_number(token_info['total_supply'])} {coin.lower()}",
@@ -209,12 +212,12 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
         'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
         '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
         'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'CMC_LINK': f"https://coinmarketcap.com/currencies/{token_info['slug']}"
     }
     # 用 '\n' join k: v
     output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
 
     if chat_id: send_msg(output_dict_str, chat_id)
+
     return True
 
 
@@ -404,7 +407,7 @@ def reboot_bot(from_id):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    test_send_msg_markdown(chat_id=TG_BOT_OWNER_ID)
+    get_token_price_from_coinmarketcap_and_send_msg('RSR', chat_id=TG_BOT_OWNER_ID)
 
     # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)
