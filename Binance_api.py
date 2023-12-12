@@ -1071,15 +1071,15 @@ def get_open_orders_list():
     if r.status_code == 200:
         data = r.json()
         df = pd.DataFrame(data)
-        if df.empty: return
-        
+        if df.empty: return {}
+
         # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
         df = df.loc[:, ['symbol', 'clientOrderId']]
         df_dict = df.set_index('symbol').to_dict()['clientOrderId']
         return df_dict
     else: 
         print(r.json())
-        return
+        return {}
 '''
 {
   "FTTUSDT": "7w4KnO7kH4A4kupqItZT5x"
@@ -1657,7 +1657,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         symbol = coin + 'USDT'
 
         # Check if there is an open order for the coin, if yes, cancel it first
-        if symbol in current_orders:
+        if current_orders and symbol in current_orders:
             clientOrderId = current_orders[symbol]
             cancel_confirm = binance_cancel_order(coin, clientOrderId)
 
