@@ -5,6 +5,9 @@ if __name__ == '__main__':
     # Crontab job, run once every 4 hours, check hot coins to see if they are profitable chance.
     '''0 */4 * * * cd /root/Expenditure_bot && /root/anaconda3/envs/expenditure_ai/bin/python3 /root/Expenditure_bot/Binance_hotcoins.py >> /root/Expenditure_bot/cron.log 2>&1'''
 
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_hotcoins.py is running ...')
+
     # Check if trading bot is on
     trading_bot_status = trading_bot_switch_status()
     if trading_bot_status:

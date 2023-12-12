@@ -1518,6 +1518,9 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
 
 # check binance_position_buy and calculate profit based on current price for all coins
 def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False):
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} binance_position_buy_check_all() is running ...')
+    print(f'coin: {coin}, chat_id: {chat_id}, crontab_profit_record: {crontab_profit_record}')    
 
     try:
         # get df_balance from binance_position_buy

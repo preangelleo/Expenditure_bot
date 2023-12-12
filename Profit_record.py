@@ -5,6 +5,10 @@ if __name__ == '__main__':
     # Crontab job, run once a day at 00:00
     '''15 9 * * * cd /root/Expenditure_bot && /root/anaconda3/envs/expenditure_ai/bin/python3 /root/Expenditure_bot/Profit_record.py >> /root/Expenditure_bot/cron.log 2>&1'''
 
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Profit_record.py is running ...')
+
+
     try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=True)
     except: pass
 

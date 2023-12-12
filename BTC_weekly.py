@@ -3,7 +3,9 @@ import matplotlib.dates as mpl_dates
 
 
 def get_btc_data_with_rsi(chat_id):
-    print('Start running get_btc_data_with_rsi() ...')
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_btc_data_with_rsi() is running ...')
+
     # Initialize Binance Client
     exchange = ccxt.binance()
 
@@ -58,6 +60,7 @@ def get_btc_data_with_rsi(chat_id):
 
     if chat_id: send_img(chat_id, file_name, f'Current Price of BTC: {btc_price:.2f} usdt')
     return file_name
+
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
