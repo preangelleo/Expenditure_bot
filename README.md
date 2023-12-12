@@ -95,7 +95,14 @@ Start the bot using the following command:
    ```
 
 # Step 7: Setting Up Crontab Automation
-1. Copy the content from `crontab_template.txt`.
+
+Before this step, please use below command to get your Python3 path
+   ```bash
+   which python3
+   ```
+Replace the actually path of your python to the crontab_template.txt files. Then:
+
+1. Edit the time and path and folder infor in `crontab_template.txt` and copy the contents.
 2. On your Ubuntu Server Terminal, open the crontab editor:
    ```bash
    crontab -e
@@ -107,6 +114,8 @@ Or, you can quickly use below command to setup your crontab jobs:
    ```bash
    crontab /root/Expenditure_bot/crontab_template.txt
    ```
+
+Ask ChatGPT if you don't know how to setup crontab jobs or don't know the time frequency format.
 
 
 Now, everything is set up and ready to go!
