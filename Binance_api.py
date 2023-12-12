@@ -922,6 +922,7 @@ def binance_market_sell(coin, amount):
 }
 '''    
 
+
 # 定义一个 Limit sell 交易功能 Input: coin, amount, price
 def binance_limit_sell(coin, amount, price):
     coin = coin.upper()
@@ -1012,6 +1013,98 @@ def binance_cancel_order(coin, clientOrderId):
     else: 
         print(r.json())
         return
+
+
+'''查询订单 (USER_DATA)
+响应
+
+{
+  "symbol": "LTCBTC", // 交易对
+  "orderId": 1, // 系统的订单ID
+  "orderListId": -1, // OCO订单的ID，不然就是-1
+  "clientOrderId": "myOrder1", // 客户自己设置的ID
+  "price": "0.1", // 订单价格
+  "origQty": "1.0", // 用户设置的原始订单数量
+  "executedQty": "0.0", // 交易的订单数量
+  "cummulativeQuoteQty": "0.0", // 累计交易的金额
+  "status": "NEW", // 订单状态
+  "timeInForce": "GTC", // 订单的时效方式
+  "type": "LIMIT", // 订单类型， 比如市价单，现价单等
+  "side": "BUY", // 订单方向，买还是卖
+  "stopPrice": "0.0", // 止损价格
+  "icebergQty": "0.0", // 冰山数量
+  "time": 1499827319559, // 订单时间
+  "updateTime": 1499827319559, // 最后更新时间
+  "isWorking": true, // 订单是否出现在orderbook中
+  "workingTime":1499827319559,
+  "origQuoteOrderQty": "0.000000", // 原始的交易金额
+  "selfTradePreventionMode": "NONE"
+}
+GET /api/v3/order
+
+查询订单状态。
+
+权重(IP): 4
+
+参数:
+
+名称	类型	是否必需	描述
+symbol	STRING	YES	
+orderId	LONG	NO	
+origClientOrderId	STRING	NO	
+recvWindow	LONG	NO	赋值不得大于 60000
+timestamp	LONG	YES	
+注意:
+
+至少需要发送 orderId 与 origClientOrderId中的一个
+某些订单中cummulativeQuoteQty<0，是由于这些订单是cummulativeQuoteQty功能上线之前的订单。
+响应示例没有显示所有可以出现的字段，更多请看 "订单响应中的特定条件时才会出现的字段" 部分。
+数据源: 数据库
+'''
+def check_order_status(coin, clientOrderId):
+    coin = coin.upper()
+    PATH = '/api/v3/order'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'symbol': coin + 'USDT',
+        'origClientOrderId': clientOrderId,
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.get(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        return data
+    else: 
+        print(r.json())
+        return
+
+'''{
+  "symbol": "LTCBTC", // 交易对
+  "orderId": 1, // 系统的订单ID
+  "orderListId": -1, // OCO订单的ID，不然就是-1
+  "clientOrderId": "myOrder1", // 客户自己设置的ID
+  "price": "0.1", // 订单价格
+  "origQty": "1.0", // 用户设置的原始订单数量
+  "executedQty": "0.0", // 交易的订单数量
+  "cummulativeQuoteQty": "0.0", // 累计交易的金额
+  "status": "NEW", // 订单状态
+  "timeInForce": "GTC", // 订单的时效方式
+  "type": "LIMIT", // 订单类型， 比如市价单，现价单等
+  "side": "BUY", // 订单方向，买还是卖
+  "stopPrice": "0.0", // 止损价格
+  "icebergQty": "0.0", // 冰山数量
+  "time": 1499827319559, // 订单时间
+  "updateTime": 1499827319559, // 最后更新时间
+  "isWorking": true, // 订单是否出现在orderbook中
+  "workingTime":1499827319559,
+  "origQuoteOrderQty": "0.000000", // 原始的交易金额
+  "selfTradePreventionMode": "NONE"
+}'''
+
+
 
 
 '''当前挂单 (USER_DATA)
@@ -1609,6 +1702,156 @@ Got response from binance_exchange_info table.
 }
 '''
 
+
+# check binance_position_buy and calculate profit based on current price for all coins
+def binance_limit_order_status_check():
+
+    try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    except: return 'No open position for all coins'
+
+    if df_balance.empty: return 'No open position for all coins'
+    # if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
+    # if df_balance.empty: return f'No open position for coin: {coin}'
+
+    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
+    # Select * from binance_limit_sell_order table where status == 'NEW'
+    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
+    if df.empty: return 'No open limit sell order'
+
+    # from df make a dict with {coin: clientOrderId}
+    df_dict = df.set_index('coin').to_dict()['clientOrderId']
+    for coin, clientOrderId in df_dict.items():
+        data = check_order_status(coin, clientOrderId)
+        if data:
+            print(json.dumps(data, indent=2))
+
+    # clientOrderId_list = df['clientOrderId'].tolist()
+    # for clientOrderId in clientOrderId_list: 
+
+    #     data = check_order_status(coin, clientOrderId)
+    #     if data:
+    #         print(json.dumps(data, indent=2))
+
+
+    # # get current price for all coins
+    # df = get_token_price_table()
+    # if df.empty: return 'Failed to fetch price info'
+
+    # # merge df_balance and df based on coin since df and df_balance all have coin column
+    # df_balance = pd.merge(df_balance, df, on='coin', how='left')
+
+    # # convert df_balance['executedQty'] to float and calculate profit
+    # df_balance['executedQty'] = df_balance['executedQty'].astype(float)
+    # df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
+
+    # # calculate up_ratio in % format
+    # df_balance['up_ratio'] = df_balance['lastPrice']/ df_balance['price'] - 1
+
+    # # calculate bnb_cost_value
+    # df_balance['bnb_cost_value'] = df_balance['buy_cost_bnb'] * df_balance['buy_bnb_price']
+    
+    # # sort by profit
+    # df_balance = df_balance.sort_values(by='profit', ascending=False)
+
+    # target_profit = read_target_profit_default() if chat_id else target_profit
+    # print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', f"{target_profit*100:.2f}% at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+    # current_orders = get_open_orders_list()
+
+    # book_value = 0
+
+    # for_reply = {}
+    # new_profit = 0
+    # for i in range(df_balance.shape[0]):
+    #     # ignore coin BNB
+    #     if df_balance.iloc[i]['coin'] == 'BNB': continue
+
+    #     reply_dict = df_balance.iloc[i].to_dict()
+    #     # format_number for amount, profit, up_ratio, buy_price, current_price
+    #     for_reply['Coin'] = reply_dict['coin']
+    #     for_reply['Amount'] = format_number(reply_dict['executedQty'])
+    #     for_reply['Profit'] = format_number(reply_dict['profit'])
+    #     for_reply['Up_Ratio'] = f"{reply_dict['up_ratio']:.2f}%"
+    #     for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
+    #     for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
+    #     for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
+    #     for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M')
+    #     for_reply['Order_ID'] = reply_dict['orderId']
+    #     for_reply['Update_ID'] = reply_dict['update_id']
+
+    #     reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
+    #     if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
+
+    #     # If profit > target_profit, do market sell, close the position
+    #     if reply_dict['up_ratio'] > target_profit: 
+
+    #         # Check if current coin has open order, if yes, ignore market sell
+    #         symbol = reply_dict['coin'] + 'USDT'
+    #         if symbol not in current_orders: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+    #         else:
+    #             if chat_id:
+    #                 # Cancel order then do market sell
+    #                 binance_cancel_order(symbol, current_orders[symbol])
+    #                 new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+    #             else: book_value += reply_dict['profit']
+
+    #     else: book_value += reply_dict['profit']
+
+    # if chat_id or crontab_profit_record: 
+    #     try:
+    #         # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
+    #         df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+    #         if not df_profit.empty: 
+
+    #             # From binance_position_buy read out the earliest transactTime
+    #             df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
+    #             earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
+
+    #             # print('earliest_transactTime: ', earliest_transactTime)
+
+    #             duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
+
+    #             duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+    #             profit_sum = df_profit['profit'].astype(float).sum()
+
+    #             net_profit_sum = profit_sum + book_value
+
+    #             annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
+    #             # annualized_return with percentage format
+    #             annualized_return = f"{annualized_return * 100:.2f}%"
+
+    #             if crontab_profit_record:
+    #                 # Record net_profit_sum to table net_profit_daily_record
+    #                 with engine.connect() as connection:
+    #                     try:
+    #                         # Check if today's record exists
+    #                         query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
+    #                         params = {'Date': datetime.now().strftime('%Y-%m-%d')}
+    #                         result = connection.execute(text(query), params)
+    #                         df = pd.DataFrame(result.fetchall(), columns=result.keys())
+    #                         if df.empty:
+    #                             # Execute the query with the updated update_id
+    #                             connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
+    #                             connection.commit()
+    #                     except Exception as e:
+    #                         print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
+    #                         connection.rollback()
+
+    #             # Send profit_sum to chat_id
+    #             chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
+
+    #             investment_return = net_profit_sum / INITIAL_FUND
+    #             # investment_return with percentage format
+    #             investment_return = f"{investment_return * 100:.2f}%"
+
+    #             send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}", chat_id)
+
+    #             plot_net_profit_sum(chat_id)
+
+    #     except: pass
+    # return
+
+
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
 def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
@@ -1733,17 +1976,13 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         }
         '''
 
-        send_msg(f"Set limit sell order for: {coin} with amount: {amount} at price: {price}", chat_id)
+        send_msg(f"Set {format_number(amount)} {coin} at: {price} usdt/{coin.lower()}", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
 
-        print(json.dumps(data, indent=2))
-
         df = pd.DataFrame(data, index=[0])
         if df.empty: continue
-
-        print('df = pd.DataFrame(data, index=[0]): \n', df)
 
         try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
         except Exception as e: print(f"An error occurred: {e}")
@@ -1921,3 +2160,5 @@ if __name__ == '__main__':
     # select * from binance_limit_sell_order where status is not 'CANCELED'
     # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
     # print(df)
+
+    binance_limit_order_status_check()
