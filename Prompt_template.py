@@ -152,11 +152,27 @@ FUNCTIONS_TOOLS = [
      
 ]
 
+LIST_OF_FUNCTIONS_WITH_DISCRIPTION = '''
+List of available_functions:
+- insert_new_expenditure_record: Insert a item spending record into the table 'user_expenditures_record'
+- get_total_spend_of_any_year_any_month: Get the total spend of given year and given month
+- add_coin_to_ignore_list: Add a coin to the ignore_coin_list table
+- get_token_price_from_coinmarketcap_and_send_msg: Get token / coin / crypto information from coinmarketcap and send message to user
+- get_ignore_list: Read out ignore_list table and return a list of ignored coins
+- funding_main_transfer_all_usdt: Transfer all USDT from funding account to main account
+- main_funding_transfer_with_check_and_send: Transfer coin from main account to funding account
+- get_coin_deposit_address: Get the deposit address of the given coin
+- get_btc_data_with_rsi: Get BTC weeky, daily, or monthly data chart with RSI
+'''
+
 IMAGE_INPUT = '''
 Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." 
 If it is a receipt, read and extract the information as mush as possible.'''
 
-TEXT_INPUT = '''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user.'''
+SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user. 
+
+{LIST_OF_FUNCTIONS_WITH_DISCRIPTION}'''
+
 
 ADITIONAL_INFO = '''
 - If user is asking for the price of a token, call function `get_token_price_from_coinmarketcap_and_send_msg`.
@@ -186,11 +202,6 @@ SYSTEM_PROMPT_WITH_IMAGE_INPUT = f'''
 
 NO_IMAGE_CAPTION_DEFAULT = '''Extract receipt information from this image and follow your system prompt instruction.'''
 
-
-SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT = f'''
-{TEXT_INPUT}
-{RECEIPT_GUIDELINES}
-'''
 
 HAPPY_EMOJI = ['🤨', '😆', '😙', '🤫', '😅', '😚', '😋', '😗', '😃', '😍', '🙂', '🤪', '😄', '🤩', '🤔', '😁', '😉', '😊', '😎', '🤭', '😘', '🤗', '😂', '🙈']
 

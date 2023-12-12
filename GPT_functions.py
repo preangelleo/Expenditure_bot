@@ -86,12 +86,9 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
         if "nice picture" in prompt.lower(): return send_msg(prompt, chat_id)
 
         prompt = f"receipt\n{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
-    
-    # if not 'receipt' in prompt.lower(): 
-    #     await ask_gpt(prompt, chat_id, model)
-    #     return 
 
-    messages_list = [{"role": "system", "content": SYSTEM_PROMPT_FOR_PURE_TEXT_INPUT}]
+
+    messages_list = [{"role": "system", "content": SYSTEM_PROMPT_TEXT_INPUT}]
     prompt = f"{prompt}\nfrom_id: {chat_id}\ncurrent_date: {datetime.now().strftime('%Y-%m-%d')}\ncurrent_time: {datetime.now().strftime('%H:%M')}"
     messages_list.append({"role": "user", "content": prompt})
 
@@ -124,6 +121,7 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
             'get_coin_deposit_address': get_coin_deposit_address,
             "get_btc_data_with_rsi": get_btc_data_with_rsi
         } 
+        # List of available_functions [insert_new_expenditure_record, get_total_spend_of_any_year_any_month, add_coin_to_ignore_list, get_token_price_from_coinmarketcap_and_send_msg, get_ignore_list, funding_main_transfer_all_usdt, main_funding_transfer_with_check_and_send, get_coin_deposit_address, get_btc_data_with_rsi]
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             need_to_sum = True if function_name == "insert_new_expenditure_record" else need_to_sum
