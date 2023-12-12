@@ -948,6 +948,150 @@ def binance_limit_sell(coin, amount, price):
 {'symbol': 'SANDUSDT', 'orderId': 2769384671, 'orderListId': -1, 'clientOrderId': 'GKVPOrFIkwz5IbsRhsx220', 'transactTime': 1702318694019, 'price': '0.55000000', 'origQty': '18230.00000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'SELL', 'workingTime': 1702318694019, 'fills': [], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
 '''
 
+'''
+撤销订单 (TRADE)
+响应
+
+{
+  "symbol": "LTCBTC",
+  "origClientOrderId": "myOrder1",
+  "orderId": 4,
+  "orderListId": -1, // OCO订单ID，否则为 -1
+  "clientOrderId": "cancelMyOrder1",
+  "transactTime": 1684804350068,
+  "price": "2.00000000",
+  "origQty": "1.00000000",
+  "executedQty": "0.00000000",
+  "cummulativeQuoteQty": "0.00000000",
+  "status": "CANCELED",
+  "timeInForce": "GTC",
+  "type": "LIMIT",
+  "side": "BUY",
+  "selfTradePreventionMode": "NONE"
+}
+DELETE /api/v3/order
+
+取消有效订单。
+
+权重(IP): 1
+
+参数:
+
+名称	类型	是否必需	描述
+symbol	STRING	YES	
+orderId	LONG	NO	
+origClientOrderId	STRING	NO	
+newClientOrderId	STRING	NO	用户自定义的本次撤销操作的ID(注意不是被撤销的订单的自定义ID)。如无指定会自动赋值。
+cancelRestrictions	ENUM	NO	支持的值:
+ONLY_NEW - 如果订单状态为 NEW，订单取消将成功。
+ONLY_PARTIALLY_FILLED - 如果订单状态为 PARTIALLY_FILLED，订单取消将成功。
+recvWindow	LONG	NO	赋值不得大于 60000
+timestamp	LONG	YES	
+orderId 或 origClientOrderId 必须至少发送一个
+'''
+
+# Define a function to cancel an order
+def binance_cancel_order(coin, clientOrderId):
+    coin = coin.upper()
+    PATH = '/api/v3/order'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'symbol': coin + 'USDT',
+        'origClientOrderId': clientOrderId,
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        return data
+    else: 
+        print(r.json())
+        return
+
+
+'''
+当前挂单 (USER_DATA)
+响应
+
+[
+  {
+    "symbol": "LTCBTC",
+    "orderId": 1,
+    "orderListId": -1, // OCO订单ID，否则为 -1
+    "clientOrderId": "myOrder1",
+    "price": "0.1",
+    "origQty": "1.0",
+    "executedQty": "0.0",
+    "cummulativeQuoteQty": "0.0",
+    "status": "NEW",
+    "timeInForce": "GTC",
+    "type": "LIMIT",
+    "side": "BUY",
+    "stopPrice": "0.0",
+    "icebergQty": "0.0",
+    "time": 1499827319559,
+    "updateTime": 1499827319559,
+    "isWorking": true,
+    "workingTime": 1499827319559,
+    "origQuoteOrderQty": "0.000000",
+    "selfTradePreventionMode": "NONE"
+  }
+]
+GET /api/v3/openOrders
+
+获取交易对的所有当前挂单， 请小心使用不带交易对参数的调用。
+
+权重(IP): 6 单一交易对;
+80 交易对参数缺失;
+
+参数:
+
+名称	类型	是否必需	描述
+symbol	STRING	NO	
+recvWindow	LONG	NO	赋值不得大于 60000
+timestamp	LONG	YES	
+不带symbol参数，会返回所有交易对的挂单
+数据源: 数据库
+
+注意: 响应示例没有显示所有可以出现的字段，更多请看 "订单响应中的特定条件时才会出现的字段" 部分。
+'''
+
+# Define a function to get open orders list for all coin and make it a dataframe
+def get_open_orders_list():
+    PATH = '/api/v3/openOrders'
+    timestamp = int(time.time() * 1000)
+    params = {'timestamp': timestamp}
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.get(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        df = pd.DataFrame(data)
+        # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
+        df = df.loc[:, ['symbol', 'clientOrderId']]
+        df_dict = df.set_index('symbol').to_dict()['clientOrderId']
+        return df_dict
+    else: 
+        print(r.json())
+        return
+
+
+
+
+# Define a function to sell all of the profit position
+def close_postive_positions(from_id=TG_BOT_OWNER_ID):
+    PATH = '/api/v3/openOrders'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
 def do_limit_sell(coin: str, target_profit_ratio=0.05):
     coin = coin.upper()
@@ -1504,6 +1648,13 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         amount = polished_parameters['amount']
         price = polished_parameters['price']
 
+        #
+        cancel_confirm = binance_cancel_order(coin, clientOrderId)
+        print('cancel_confirm: ')
+        print(json.dumps(cancel_confirm, indent=2))
+
+
+
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
 
@@ -1535,7 +1686,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         del data['fills']
 
         print(json.dumps(data, indent=2))
-        
+
         df = pd.DataFrame(data, index=[0])
         if df.empty: continue
 
@@ -1546,6 +1697,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         except: 
             print('binance_limit_sell_order table does not exist, Inserting new record to binance_limit_sell_order table...')
             df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
+            return 
     
         if df_check.empty: 
             print('df_check is empty, Inserting new record to binance_limit_sell_order table...')
@@ -1573,10 +1725,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
 '''
 
-
-# Define a function to sell all of the profit position
-def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=0.001, coin=None, chat_id=from_id, crontab_profit_record=False)
 
 
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
@@ -1710,4 +1858,7 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+    # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+
+    r = get_open_orders_list()
+    print(json.dumps(r, indent=2))
