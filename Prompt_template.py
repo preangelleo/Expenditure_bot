@@ -126,6 +126,7 @@ BOT_COMMAND_DICT = {
     'gci': 'get_coin_info',
     'get_coin': 'get_coin_info',
     'get_info': 'get_coin_info',
+    'cmc': 'get_coin_info',
     'gil': 'get_ignore_list',
     'get_ignore': 'get_ignore_list',
     'gei': 'get_expenditure_info',

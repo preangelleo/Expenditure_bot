@@ -579,8 +579,13 @@ def get_coin_wallet_balance_all():
 '''{'AKRO': '124370', 'API3': '585.1', 'ASTR': '13229.6', 'BNB': '3.1130512', 'CELO': '1560', 'FLOW': '1210.65', 'MANA': '2107', 'OMG': '1331.5', 'SXP': '2402.3', 'USDT': '35404.13927066', 'XEC': '28953771'}'''
 
 
+def get_coin_wallet_balance_with_locked():
+    df = get_user_asset()
+    if not df.empty: return dict(zip(df['asset'].values, df['free'].values + df['locked'].values))
+    else: return {}
+
 def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
-    data = get_coin_wallet_balance_all()
+    data = get_coin_wallet_balance_with_locked()
     if data: return send_msg('\n'.join([f'{key}: {format_number(value)}' for key, value in data.items()]), chat_id)
     else: return send_msg("No coin in your wallet.", chat_id)
 

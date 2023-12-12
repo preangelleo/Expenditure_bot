@@ -189,7 +189,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         # Check if there is any open position in binance_position_buy table, if yes, ignore this coin
         df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
         if df_balance.shape[0] >= POSITIONS_LIMIT: 
-            send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘", chat_id)
+            if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number.", chat_id)
             return
         coin_in_positions = df_balance['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
@@ -209,7 +209,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         if not get_token_price_from_coinmarketcap_and_send_msg(coin, chat_id=None): continue
 
         try: do_market_buy_one_unit(coin, chat_id)
-        except Exception as e: send_msg(f"{user_nick_name}, Failed to buy {coin}...\n\n{e}", chat_id)
+        except Exception as e: 
+            if not crontab: send_msg(f"{user_nick_name}, Failed to buy {coin}...\n\n{e}", chat_id)
 
     if not crontab: send_msg('All done! 😘', chat_id)
     return
