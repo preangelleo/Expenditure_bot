@@ -1715,105 +1715,109 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
     if df_balance_all.empty: return 'No open position for all coins'
 
     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
-    if df.empty: return 'No open limit sell order'
+    if not df.empty: 
 
-    # add a 'coin' column to df, coin is symbol without USDT
-    df['coin'] = df['symbol'].str.replace('USDT', '')
+        # add a 'coin' column to df, coin is symbol without USDT
+        df['coin'] = df['symbol'].str.replace('USDT', '')
 
-    # from df make a dict with {coin: clientOrderId}
-    df_dict = df.set_index('coin').to_dict()['clientOrderId']
-    for coin, clientOrderId in df_dict.items():
-        limit_order_data = check_order_status(coin, clientOrderId)
-        if limit_order_data:
-            print(json.dumps(limit_order_data, indent=2))
+        # from df make a dict with {coin: clientOrderId}
+        df_dict = df.set_index('coin').to_dict()['clientOrderId']
 
-            # Check if the order is filled, if yes, do market sell
-            if limit_order_data['status'] == 'FILLED':
+        for coin, clientOrderId in df_dict.items():
+            print(f'binance_limit_order_status_check() for {coin}')
 
-                # create a dict akin to market sell data structure
-                data = {}
-                data['symbol'] = limit_order_data['symbol']
-                data['orderId'] = limit_order_data['orderId']
-                data['orderListId'] = limit_order_data['orderListId']
-                data['clientOrderId'] = limit_order_data['clientOrderId']
-                data['transactTime'] = limit_order_data.get('transactTime', int(time.time() * 1000))
-                data['price'] = limit_order_data['price']
-                data['origQty'] = limit_order_data['origQty']
-                data['executedQty'] = limit_order_data['executedQty']
-                data['cummulativeQuoteQty'] = limit_order_data['cummulativeQuoteQty']
-                data['status'] = limit_order_data['status']
-                data['timeInForce'] = limit_order_data['timeInForce']
-                data['type'] = limit_order_data['type']
-                data['side'] = limit_order_data['side']
-                data['workingTime'] = limit_order_data['workingTime']
-                data['selfTradePreventionMode'] = limit_order_data['selfTradePreventionMode']
+            limit_order_data = check_order_status(coin, clientOrderId)
+            if limit_order_data:
+                print(json.dumps(limit_order_data, indent=2))
 
-                # from df_balance find out the row with coin == coin, is_closed == 0
-                df_balance = df_balance_all[df_balance_all['coin']==coin]
-                if df_balance.empty: continue
+                # Check if the order is filled, if yes, do market sell
+                if limit_order_data['status'] == 'FILLED':
 
-                update_id = int(df_balance['update_id'].values[0])
-                buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
-                buy_cost_bnb = float(df_balance['buy_cost_bnb'].values[0])
-                buy_bnb_price = float(df_balance['buy_bnb_price'].values[0])
-                open_position_time = int(df_balance['transactTime'].values[0])
-                position_order_id = int(df_balance['orderId'].values[0])
+                    # create a dict akin to market sell data structure
+                    data = {}
+                    data['symbol'] = limit_order_data['symbol']
+                    data['orderId'] = limit_order_data['orderId']
+                    data['orderListId'] = limit_order_data['orderListId']
+                    data['clientOrderId'] = limit_order_data['clientOrderId']
+                    data['transactTime'] = limit_order_data.get('transactTime', int(time.time() * 1000))
+                    data['price'] = limit_order_data['price']
+                    data['origQty'] = limit_order_data['origQty']
+                    data['executedQty'] = limit_order_data['executedQty']
+                    data['cummulativeQuoteQty'] = limit_order_data['cummulativeQuoteQty']
+                    data['status'] = limit_order_data['status']
+                    data['timeInForce'] = limit_order_data['timeInForce']
+                    data['type'] = limit_order_data['type']
+                    data['side'] = limit_order_data['side']
+                    data['workingTime'] = limit_order_data['workingTime']
+                    data['selfTradePreventionMode'] = limit_order_data['selfTradePreventionMode']
 
-                sell_cost_bnb = buy_cost_bnb
+                    # from df_balance find out the row with coin == coin, is_closed == 0
+                    df_balance = df_balance_all[df_balance_all['coin']==coin]
+                    if df_balance.empty: continue
 
-                # check price of bnb
-                df_bnb_price = get_token_price('BNB')
-                sell_bnb_price = df_bnb_price if df_bnb_price else 250
+                    update_id = int(df_balance['update_id'].values[0])
+                    buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
+                    buy_cost_bnb = float(df_balance['buy_cost_bnb'].values[0])
+                    buy_bnb_price = float(df_balance['buy_bnb_price'].values[0])
+                    open_position_time = int(df_balance['transactTime'].values[0])
+                    position_order_id = int(df_balance['orderId'].values[0])
 
-                total_bnb_cost_value = buy_cost_bnb * buy_bnb_price + sell_cost_bnb * sell_bnb_price
+                    sell_cost_bnb = buy_cost_bnb
 
-                profit = float(limit_order_data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
+                    # check price of bnb
+                    df_bnb_price = get_token_price('BNB')
+                    sell_bnb_price = df_bnb_price if df_bnb_price else 250
 
-                data['update_id'] = update_id
-                data['sell_cost_bnb'] = sell_cost_bnb
-                data['sell_bnb_price'] = sell_bnb_price
-                data['total_bnb_cost_value'] = total_bnb_cost_value
-                data['profit'] = profit
+                    total_bnb_cost_value = buy_cost_bnb * buy_bnb_price + sell_cost_bnb * sell_bnb_price
 
-                # convert data to dataframe
-                df_sellout_result = pd.DataFrame(data, index=[0])
+                    profit = float(limit_order_data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
 
-                df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
+                    data['update_id'] = update_id
+                    data['sell_cost_bnb'] = sell_cost_bnb
+                    data['sell_bnb_price'] = sell_bnb_price
+                    data['total_bnb_cost_value'] = total_bnb_cost_value
+                    data['profit'] = profit
 
-                df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
-                if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
+                    # convert data to dataframe
+                    df_sellout_result = pd.DataFrame(data, index=[0])
 
-                with engine.connect() as connection:
-                    try:
-                        # Execute the query with the updated update_id
-                        connection.execute(text("UPDATE binance_position_buy SET is_closed = 1 WHERE orderId = :position_order_id"), {'position_order_id': position_order_id})
-                        connection.commit()
-                    except Exception as e:
-                        print(f"An error occurred: {e}")
-                        connection.rollback()
+                    df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
 
-                duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
-                duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+                    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+                    if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
 
-                reply_msg = f'''{coin} Limit Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
+                    with engine.connect() as connection:
+                        try:
+                            # Execute the query with the updated update_id
+                            connection.execute(text("UPDATE binance_position_buy SET is_closed = 1 WHERE orderId = :position_order_id"), {'position_order_id': position_order_id})
+                            connection.commit()
+                        except Exception as e:
+                            print(f"An error occurred: {e}")
+                            connection.rollback()
 
-                send_msg(reply_msg, TG_BOT_OWNER_ID)
-            
-            if limit_order_data['status'] == 'CANCELLED':
-                with engine.connect() as connection:
-                    try:
-                        # Execute the query with the updated update_id
-                        connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED' WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId})
-                        connection.commit()
-                    except Exception as e:
-                        print(f"An error occurred: {e}")
-                        connection.rollback()
-    
+                    duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
+                    duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+
+                    reply_msg = f'''{coin} Limit Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
+
+                    send_msg(reply_msg, TG_BOT_OWNER_ID)
+                
+                if limit_order_data['status'] == 'CANCELLED':
+                    with engine.connect() as connection:
+                        try:
+                            # Execute the query with the updated update_id
+                            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED' WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId})
+                            connection.commit()
+                        except Exception as e:
+                            print(f"An error occurred: {e}")
+                            connection.rollback()
+        
+
     # make a coin list from df_balance_all
     position_coin_list = df_balance_all['coin'].unique().tolist()
 
     # make a coin list from df
-    limit_order_coin_list = df['coin'].unique().tolist()
+    limit_order_coin_list = df['coin'].unique().tolist() if not df.empty else []
 
     # find out the coins in position_coin_list but not in limit_order_coin_list
     coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
@@ -1829,17 +1833,18 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
 
     return
 
-# define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED'
+# define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED' if status is not 'FILLED'
 def binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
-            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED'"))
+            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED' WHERE status != 'FILLED'"))
             connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")
             connection.rollback()
-    return send_msg(f"All orders have been set to 'CANCELLED'", chat_id)
+    return send_msg(f"All Non-Filled Orders have been set to Cancelled.", chat_id)
+
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
 def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_ID):
@@ -2150,6 +2155,6 @@ if __name__ == '__main__':
     # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
     # print(df)
 
-    binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID)
+    # binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID)
 
     binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
