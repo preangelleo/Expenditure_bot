@@ -405,7 +405,7 @@ def set_position_limit_by_user(position_limit, from_id):
 
 # define a function to take command from the user and reboot the bot, send a message to the user before rebooting
 def reboot_bot(from_id):
-    send_msg("Restarting the trading_bot...", from_id)
+    send_msg("Reloading the trading_bot...", from_id)
     os.system("pm2 restart ep")
     return
 
