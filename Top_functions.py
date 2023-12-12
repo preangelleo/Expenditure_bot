@@ -192,7 +192,7 @@ def get_turnover_ratio_from_coinmarketcap(coin='ETH'):
     return turnover_ratio
 
 
-def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OWNER_ID):
+def get_token_price_from_coinmarketcap_and_send_msg(coin: str, from_id=TG_BOT_OWNER_ID):
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_token_price_from_coinmarketcap_and_send_msg() is running ...')
 
@@ -201,7 +201,7 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
 
     CMC_LINK = f"https://coinmarketcap.com/currencies/{token_info['slug']}"
     title = f"[{coin}]({CMC_LINK}) | Rank {token_info['cmc_rank']}"
-    send_msg_markdown(title, chat_id)
+    send_msg_markdown(title, from_id)
 
     output_dict = {
         'Token_Name': token_info['name'],
@@ -216,7 +216,7 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, chat_id=TG_BOT_OW
     # 用 '\n' join k: v
     output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
 
-    if chat_id: send_msg(output_dict_str, chat_id)
+    if from_id: send_msg(output_dict_str, from_id)
 
     return True
 
@@ -417,7 +417,7 @@ def reboot_system(from_id):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    get_token_price_from_coinmarketcap_and_send_msg('RSR', chat_id=TG_BOT_OWNER_ID)
+    get_token_price_from_coinmarketcap_and_send_msg('RSR', from_id=TG_BOT_OWNER_ID)
 
     # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)

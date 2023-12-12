@@ -35,20 +35,6 @@ FUNCTIONS_TOOLS = [
                 "required": ["from_id", "date", "time", "spent", "category", "payment_method", "merchant", "item_name", "price", "card_number", "tax", "tips", "address", "receipt_image_url"]
             }
         }
-    }, {   
-        "type": "function",
-        "function": {
-            "name": "get_token_price_from_coinmarketcap_and_send_msg",
-            "description": "Get the price of a token from CoinMarketCap API",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "coin": {"type": "string", "description": "The token symbol in upper case, for example: BTC"},
-                    "from_id": {"type": "string", "description": "The user's telegram from_id"}
-                },
-                "required": ["coin", "from_id"]
-            }
-        }
     }, {
         "type": "function",
         "function": {
@@ -64,6 +50,104 @@ FUNCTIONS_TOOLS = [
                 "required": ["from_id", "query_year", 'query_month']
             }
         }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "add_coin_to_ignore_list",
+            "description": "Add a coin to the ignore_coin_list table",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coin": {"type": "string", "description": "The upper case coin symbol to be added to the ignore_coin_list table"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}
+                },
+                "required": ["coin", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_token_price_from_coinmarketcap_and_send_msg",
+            "description": "Get token / coin / crypto information from coinmarketcap and send message to user",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coin": {"type": "string", "description": "The upper case coin symbol, for example: BTC, ETH, RSR, OGN, ORDI"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}
+                },
+                "required": ["coin", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_ignore_list",
+            "description": "Read out ignore_list table and return a list of ignored coins",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "from_id": {"type": "string", "description": "The user's telegram id"}
+                },
+                "required": ["from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "funding_main_transfer_all_usdt",
+            "description": "Transfer all USDT from funding account to main account",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "from_id": {"type": "string", "description": "The user's telegram id"}
+                },
+                "required": ["from_id"] 
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "main_funding_transfer_with_check_and_send",
+            "description": "Transfer coin from main account to funding account",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coin": {"type": "string", "description": "The coin to transfer"},
+                    "amount": {"type": "number", "description": "The amount to transfer"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}
+
+                },
+                "required": ["coin", "amount", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_coin_deposit_address",
+            "description": "Get the deposit address of the given coin",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coin_and_network": {"type": "string", "description": "The coin and network of the deposit address, e.g. USDT TRX"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"},
+                },
+                "required": ["coin_and_network", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_btc_data_with_rsi",
+            "description": "Get BTC weeky, daily, or monthly data chart with RSI",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "timeframe": {"type": "string", "description": "The timeframe of the chart, '1d' for daily, '1w' for weekly, '1M' for monthly"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["timeframe", "from_id"]
+            }
+        }
     }
      
 ]
@@ -72,9 +156,9 @@ IMAGE_INPUT = '''
 Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." 
 If it is a receipt, read and extract the information as mush as possible.'''
 
-TEXT_INPUT = '''
-Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user.
+TEXT_INPUT = '''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user.'''
 
+ADITIONAL_INFO = '''
 - If user is asking for the price of a token, call function `get_token_price_from_coinmarketcap_and_send_msg`.
 - If user is asking for the total spend of a year or a month, call function `get_total_spend_of_any_year_any_month`.
 - If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''

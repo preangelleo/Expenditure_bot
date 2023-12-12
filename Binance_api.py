@@ -488,10 +488,10 @@ def main_funding_transfer(coin, amount):
 
 
 # 通过用户input 的 coin 和 amount，调用 get_user_asset() 获取 asset / coin 的余额，如果余额大于 amount，则调用 main_funding_transfer(coin, amount) 转账
-def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=TG_BOT_OWNER_ID):
+def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try: amount = float(amount)
-    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
+    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', from_id)
 
     df = get_user_asset()
     if not df.empty:
@@ -500,21 +500,22 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, chat_id=TG_BOT_O
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = main_funding_transfer(coin, amount)
-                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从现货账户转入到资金账户, tranId: \n{tranId}', chat_id)
-            else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
-        else: return send_msg(f'现货账户没有 {coin} 资产。', chat_id)
-    return send_msg(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
+                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从现货账户转入到资金账户, tranId: \n{tranId}', from_id)
+            else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
+        else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
+    return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
+
 
 
 # 通过 get_funding_asset 检查资金账户中的 USDT 余额，如果存在 USDT 余额，则调用 funding_main_transfer_with_check_and_send(coin, amount) 将所有 USDT 余额转入到现货账户
-def funding_main_transfer_all_usdt(chat_id=TG_BOT_OWNER_ID):
+def funding_main_transfer_all_usdt(from_id=TG_BOT_OWNER_ID):
     df = get_funding_asset()
     if not df.empty:
         df = df[df['asset'] == 'USDT']
         if not df.empty:
             amount = float(df['free'].values[0])
-            if amount > 0: return funding_main_transfer_with_check_and_send('USDT', amount, chat_id)
-    return send_msg(f'No USDT asset in funding account.', chat_id)
+            if amount > 0: return funding_main_transfer_with_check_and_send('USDT', amount, from_id)
+    return send_msg(f'No USDT asset in funding account.', from_id)
 
 
 # 通过 get_funding_asset() 获取所有 coin 的余额并返回一个 dict key is asset, value is free
@@ -845,7 +846,6 @@ def get_coin_deposit_address(coin_and_network: str, from_id=TG_BOT_OWNER_ID):
 
     if data: return send_msg(f"Binance Deposit Address for {coin} at {network}\n\n{address}\n\n{url}", from_id)
     else: return send_msg(f"Can't get {coin.upper()} deposit address.", from_id)
-
 
 '''
 权重(UID): 1 权重(IP): 1

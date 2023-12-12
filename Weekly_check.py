@@ -17,8 +17,8 @@ if __name__ == '__main__':
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Weekly_check.py is running ...')
 
 
-    try: get_btc_data_with_rsi(timeframe='1w', chat_id=TG_BOT_OWNER_ID)
+    try: get_btc_data_with_rsi(timeframe='1w', from_id=TG_BOT_OWNER_ID)
     except: pass
 
-    try: get_btc_data_with_rsi(timeframe='1M', chat_id=TG_BOT_OWNER_ID)
+    try: get_btc_data_with_rsi(timeframe='1M', from_id=TG_BOT_OWNER_ID)
     except: pass

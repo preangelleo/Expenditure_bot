@@ -1,14 +1,14 @@
 from Top_functions import *
 import matplotlib.dates as mpl_dates
 
-def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
+def get_btc_data_with_rsi(timeframe='1w', from_id=None):
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_btc_data_with_rsi() is running ...')
 
     timeframe = '1M' if timeframe == '1m' else '1w' if timeframe == '1W' else '1d' if timeframe == '1D' else timeframe
 
     # Validate and set the timeframe
     valid_timeframes = ['1d', '1w', '1M']
-    if timeframe not in valid_timeframes: return send_msg(chat_id, f'Invalid timeframe: {timeframe}')
+    if timeframe not in valid_timeframes: return send_msg(from_id, f'Invalid timeframe: {timeframe}')
     
     chart_title = f'BTC Weekly Chart with RSI' if timeframe == '1w' else f'BTC Daily Chart with RSI' if timeframe == '1d' else f'BTC Monthly Chart with RSI'
 
@@ -16,7 +16,7 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
 
     # check if file exists, if yes, return send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
     if os.path.exists(file_name): 
-        send_img(chat_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")}')
+        send_img(from_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")}')
         return file_name
 
     exchange = ccxt.binance()
@@ -68,14 +68,57 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     # get the price of BTC
     btc_price = df['close'].iloc[-1]
 
-    if chat_id: send_img(chat_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")} | {btc_price:.2f} usdt/btc')
+    if from_id: send_img(from_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")} | {btc_price:.2f} usdt/btc')
     return file_name
+FUNCTIONS_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "insert_new_expenditure_record",
+            "description": "Insert a item spending record into the table 'user_expenditures_record'",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "from_id": {"type": "string", "description": "The user's telegram id"},
+                    "date": {"type": "string", "description": "The date of the expenditure record in format 'YYYY-MM-DD'"},
+                    "time": {"type": "string", "description": "The time of the expenditure record in format 'HH:MM'"},
+                    "spent": {"type": "number", "description": "The total amount of the expenditure record"},
+                    "category": {"type": "string", "description": "The category of the expenditure record"},
+                    "payment_method": {"type": "string", "description": "The payment method of the expenditure record"},
+                    "merchant": {"type": "string", "description": "The merchant of the expenditure record"},
+                    "item_name": {"type": "string", "description": "The item name of the expenditure record"},
+                    "price": {"type": "number", "description": "The price of the expenditure record"},
+                    "card_number": {"type": "number", "description": "The last 4 digi of credit / debit card number"},
+                    "tax": {"type": "number", "description": "The tax of the expenditure record"},
+                    "tips": {"type": "number", "description": "The tips of the expenditure record"},
+                    "address": {"type": "string", "description": "The address of the merchant record"},
+                    "receipt_image_url": {"type": "string", "description": "The receipt image url of the expenditure record"}
+                },
+                "required": ["from_id", "date", "time", "spent", "category", "payment_method", "merchant", "item_name", "price", "card_number", "tax", "tips", "address", "receipt_image_url"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_btc_data_with_rsi",
+            "description": "Get BTC weeky, daily, or monthly data chart with RSI",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "timeframe": {"type": "string", "description": "The timeframe of the chart, '1d' for daily, '1w' for weekly, '1M' for monthly"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["timeframe", "from_id"]
+            }
+        }
+    }
+]
 
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    get_btc_data_with_rsi(timeframe='1d', chat_id=TG_BOT_OWNER_ID)
-    get_btc_data_with_rsi(timeframe='1w', chat_id=TG_BOT_OWNER_ID)
-    get_btc_data_with_rsi(timeframe='1M', chat_id=TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1w', from_id=TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1M', from_id=TG_BOT_OWNER_ID)
 
     

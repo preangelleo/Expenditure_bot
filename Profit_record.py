@@ -12,7 +12,7 @@ if __name__ == '__main__':
     try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=True)
     except: pass
 
-    try: get_btc_data_with_rsi(timeframe='1d', chat_id=TG_BOT_OWNER_ID)
+    try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
     except: pass
 
     try: get_token_price_from_coinmarketcap_and_send_msg('BTC', TG_BOT_OWNER_ID)

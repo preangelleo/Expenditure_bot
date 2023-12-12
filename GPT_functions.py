@@ -12,6 +12,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.utils.markdown import hbold
+from BTC_weekly import *
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -110,12 +111,18 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
     # Step 2: check if the model wanted to call a function
     if tool_calls:
         need_to_sum = False
-        send_msg('GPT is about to call the functions...', chat_id)
+        send_msg('GPT is calling the functions...', chat_id)
         # Step 3: call the function
         available_functions = {
             "insert_new_expenditure_record": insert_new_expenditure_record,
-            "get_token_price": get_token_price,
             "get_total_spend_of_any_year_any_month": get_total_spend_of_any_year_any_month,
+            "add_coin_to_ignore_list": add_coin_to_ignore_list,
+            "get_token_price_from_coinmarketcap_and_send_msg": get_token_price_from_coinmarketcap_and_send_msg,
+            "get_ignore_list": get_ignore_list,
+            "funding_main_transfer_all_usdt": funding_main_transfer_all_usdt,
+            "main_funding_transfer_with_check_and_send": main_funding_transfer_with_check_and_send,
+            'get_coin_deposit_address': get_coin_deposit_address,
+            "get_btc_data_with_rsi": get_btc_data_with_rsi
         } 
         for tool_call in tool_calls:
             function_name = tool_call.function.name
