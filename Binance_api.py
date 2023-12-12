@@ -1728,11 +1728,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
         print('df = pd.DataFrame(data, index=[0]): \n', df)
 
-        try:
-            df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-            send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
+        except Exception as e: print(f"An error occurred: {e}")
 
 
     return send_msg("ALL SET.", chat_id)
@@ -1875,7 +1872,7 @@ if __name__ == '__main__':
     print('Binance_api.py is running')
     # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
-    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+    binance_position_set_limit_sell(target_profit=0.1, chat_id=TG_BOT_OWNER_ID)
 
     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
     print(df)
