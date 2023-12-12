@@ -202,5 +202,5 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
+    binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
