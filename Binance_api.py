@@ -1482,10 +1482,13 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
     # check if the file exists, if yes, return the file name
     if os.path.isfile(filename): return send_img(chat_id, filename)
 
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} plot_net_profit_sum() is running ...')
+
     try:
         # Read data from the table into a DataFrame
         df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
-        print(df)
+        # print(df)
 
         # if the df is empty, return a default image
         if df.empty: return f"net_profit_daily_record/Leowang.net.jpg"
@@ -1499,7 +1502,7 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
         df['Date'] = pd.to_datetime(df['Date'])
 
         print(df)
-        
+
     except: return send_img(chat_id, f"net_profit_daily_record/Leowang.net.jpg")
 
     # Plotting

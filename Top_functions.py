@@ -232,19 +232,29 @@ def send_msg(message, chat_id=TG_BOT_OWNER_ID):
     except: return 
     
 # define a function to send telegram message to a chat_id using requests + telegram bot api in markdown format
-def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID):
-    # print(f"Sending message to chat_id: {chat_id}")
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        data = {
-            "chat_id": chat_id,
-            "text": message,
-            "parse_mode": "Markdown"
-        }
-        response = requests.post(url, data=data)
-        return response.json()
-    except Error as e: return {'error': str(e)}, 500    
+def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID, parse_mode='Markdown'):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
 
+    payload = {
+        "text": message,
+        "parse_mode": parse_mode,
+        "disable_web_page_preview": True,
+        "disable_notification": True,
+        "chat_id": chat_id
+    }
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+    try: requests.post(url, json=payload, headers=headers)
+    except Exception as e: return print(f"ERROR: send_msg_markdown() failed for:\n{e}\n\nOriginal message:\n{message}")
+
+    return True
+
+# Define a test function to test send_msg_markedown(), send a text with markdown format, a URL with a link to the owner
+def test_send_msg_markdown(chat_id=TG_BOT_OWNER_ID):
+    USER_TELEGRAM_LINK = 'https://leowang.net'
+    message = f"Hello, this is a test message with markdown format, [click here]({USER_TELEGRAM_LINK}) to contact the owner."
+    return send_msg_markdown(message, chat_id)
+    
 
 def send_file(chat_id, file_path, description=''):
     if not file_path or not chat_id: return
@@ -394,7 +404,7 @@ def reboot_bot(from_id):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-
+    test_send_msg_markdown(chat_id=TG_BOT_OWNER_ID)
 
     # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)
