@@ -1872,7 +1872,9 @@ if __name__ == '__main__':
     print('Binance_api.py is running')
     # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
-    binance_position_set_limit_sell(target_profit=0.1, chat_id=TG_BOT_OWNER_ID)
+    binance_position_set_limit_sell(target_profit=0, chat_id=TG_BOT_OWNER_ID)
 
-    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
+    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
+    # select * from binance_limit_sell_order where status is not 'CANCELED'
+    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
     print(df)
