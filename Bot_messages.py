@@ -21,7 +21,8 @@ def telegram_bot_commands_and_menu():
     # Define the list of commands
     COMMANDS = [
         {'command': 'start', 'description': 'Get started'},
-        {'command': 'reboot_the_bot', 'description': 'Reboot / restart / reload the bot'},
+        {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
+        {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
         {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
         {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
         {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
@@ -76,6 +77,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'open_orders_list': get_open_orders_list,
     'cancel_all_orders': binance_cancel_all_orders,
     'reboot_the_bot': reboot_bot,
+    'reboot_the_system': reboot_system,
     }
 
 ONE_PARAMETER_COMMAND_LIST = {
