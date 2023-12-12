@@ -1719,7 +1719,7 @@ def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
         limit_order_data = check_order_status(coin, clientOrderId)
         if limit_order_data:
             print(json.dumps(limit_order_data, indent=2))
-            
+
             # Check if the order is filled, if yes, do market sell
             if limit_order_data['status'] == 'FILLED':
 
@@ -1794,7 +1794,7 @@ def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
 
                 send_msg(reply_msg, from_id)
     
-    return profit
+    return
 
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
