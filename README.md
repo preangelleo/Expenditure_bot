@@ -103,6 +103,10 @@ Start the bot using the following command:
 3. Paste the copied content into the editor.
 4. To save and exit, press `Ctrl + X`, then press `Y` and `Enter` to confirm the crontab jobs.
 
+Or, you can quickly use below command to setup your crontab jobs:
+   ```bash
+   crontab /root/Expenditure_bot/crontab_template.txt
+   ```
 
 
 Now, everything is set up and ready to go!
