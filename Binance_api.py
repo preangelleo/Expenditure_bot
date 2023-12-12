@@ -1091,7 +1091,7 @@ def get_open_orders_list():
 
 # Define a function to sell all of the profit position
 def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 0" or "stp 0". This is equal to close all positive positions, calling market sell to close positions that are with 0 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0" or "sls 0", waiting for the price to reach the buy in price to sell.', from_id)
+    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 0" or "stp 0". This is equal to close all positive positions, calling market sell to close positions that are with 0 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
     
 
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
@@ -1247,6 +1247,8 @@ def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
 
     # get coin list for all open positions
     coin_list = df_balance['coin'].unique().tolist()
+
+    binance_cancel_all_orders(from_id)
 
     for coin in coin_list: do_market_sell(coin, from_id)
 
@@ -1742,7 +1744,7 @@ df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sel
 '''
 
 # Define cancel all of the open orders
-def binance_cancel_all_orders(chat_id=TG_BOT_OWNER_ID):
+def binance_cancel_all_orders(chat_id=None):
     current_orders = get_open_orders_list()
     for symbol, clientOrderId in current_orders.items():
         coin = symbol.replace('USDT', '')
@@ -1758,12 +1760,12 @@ def binance_cancel_all_orders(chat_id=TG_BOT_OWNER_ID):
                 print(f"An error occurred: {e}")
                 connection.rollback()
 
-        send_msg(f"Canceled order for: {coin} with clientOrderId: {clientOrderId}", chat_id)
+        if chat_id: send_msg(f"Canceled order for: {coin} with clientOrderId: {clientOrderId}", chat_id)
 
-    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
-    print(df)        
+    # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
+    # print(df)        
 
-    return send_msg("Canceled all open orders.", chat_id)
+    return 
 
 
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
