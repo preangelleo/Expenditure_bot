@@ -1733,8 +1733,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         }
         '''
 
-        if target_profit: send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
-        else: send_msg(f"Limit sell order is set for: {coin} at buy in price.", chat_id)
+        send_msg(f"Set limit sell order for: {coin} with amount: {amount} at price: {price}", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
@@ -1759,6 +1758,8 @@ df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sel
 # Define cancel all of the open orders
 def binance_cancel_all_orders(chat_id=None):
     current_orders = get_open_orders_list()
+    if not current_orders: return send_msg(f'No open orders', chat_id)
+
     for symbol, clientOrderId in current_orders.items():
         coin = symbol.replace('USDT', '')
         cancel_confirm = binance_cancel_order(coin, clientOrderId)
