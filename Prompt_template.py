@@ -205,6 +205,7 @@ BOT_COMMAND_DICT = {
     'funding_main': 'funding_main_transfer',
     'gwb': 'get_wallet_balance',
     'get_wallet': 'get_wallet_balance',
+    'bwb': 'get_wallet_balance',
     'get_balance': 'get_wallet_balance',
     'bpc': 'binance_position_check',
     'binance_position': 'binance_position_check',
