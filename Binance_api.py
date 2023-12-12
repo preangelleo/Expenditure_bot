@@ -1724,7 +1724,6 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
         df_dict = df.set_index('coin').to_dict()['clientOrderId']
 
         for coin, clientOrderId in df_dict.items():
-            print(f'binance_limit_order_status_check() for {coin}')
 
             limit_order_data = check_order_status(coin, clientOrderId)
             if limit_order_data:

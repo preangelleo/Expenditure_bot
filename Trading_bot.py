@@ -93,7 +93,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     
     # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
-    # from binance_position_buy find out the latested bought coins in the last 30 days, use UTC time
+    # from binance_position_buy find out the latested bought 30 coins
     df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 30')).fetchall())
     if df_30_days.empty: unique_coin_list = []
     else: unique_coin_list = list(set(df_30_days['coin'].values.tolist()))
@@ -122,9 +122,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     IGNORE_LIST = get_ignore_list()
     df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
 
-    # Keep the top 30 coins
-    df_ticker = df_ticker.head(30)
-
     # Ignore the coins in unique_coin_list
     df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
     if df_ticker.empty: return []
@@ -149,52 +146,24 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     # Filter out the coins with market_cap between 100M and 10B
     df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 10_000_000_000)]
 
-    if df_ticker.empty: return []
+    # add a new column 'turnover_by_priceChangePercent' = turnover_ratio / priceChangePercent
+    df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
 
-    df_ticker = df_ticker.reset_index(drop=True)
+    # sort by 'turnover_by_priceChangePercent' in descending order
+    df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
 
-    # Read out the latest update_id from 'binance_ticker_top_30' table
-    try: 
-        result = engine.connect().execute(text("SELECT MAX(update_id) FROM binance_ticker_top_30"))
-        df = pd.DataFrame(result.fetchall(), columns=result.keys())
-        update_id = df['MAX(update_id)'].values[0]
-    except: update_id = 0
-    update_id = int(update_id)
+    print(df_ticker)
 
-    df_ticker['update_id'] = update_id + 1
+    # Keep the top 30 coins
+    df_ticker = df_ticker.head(30)
 
-    # Append df_ticker to the 'binance_ticker_top_30' table
-    df_ticker.to_sql('binance_ticker_top_30', engine, if_exists='append', index=False)
-
-    # Read out the latest update_id from 'binance_ticker_top_30' table
-    df_ticker = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_ticker_top_30 WHERE update_id=:update_id"), {'update_id': update_id + 1}).fetchall())
-
-    # create today_hot_coin_list
+    # make a coin list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
-    # today_hot_coin_list_str = ', '.join(today_hot_coin_list)
-
-    # print(f"today_hot_coin_list: {today_hot_coin_list_str}")
+    if today_hot_coin_list: print(f"Today's hot coins are: {today_hot_coin_list}")
+    else: print('There is no hot coin today...')
 
     return today_hot_coin_list
-''' df_ticker
-       symbol  priceChangePercent  lastPrice  openPrice  highPrice  lowPrice   quoteVolume       openTime      closeTime   coin    market_cap  fully_diluted_market_cap     ratio
-0    LINAUSDT             -12.865   0.016858   0.019347   0.019950  0.016758  8.166821e+07  1685756785971  1685843185971   LINA  9.362306e+07              1.690495e+08  0.553820
-1    PEPEUSDT               0.000   0.000001   0.000001   0.000001  0.000001  2.805064e+07  1685756783945  1685843183945   PEPE  4.987895e+08              5.355822e+08  0.931303
-2    ARPAUSDT              -7.641   0.059110   0.064000   0.069590  0.057500  2.727382e+07  1685756784579  1685843184579   ARPA  7.361351e+07              1.184555e+08  0.621444
-3   COMBOUSDT             -15.364   1.548000   1.829000   1.834000  1.475000  2.414374e+07  1685756779956  1685843179956  COMBO  1.137270e+08              1.600623e+08  0.710517
-4     SXPUSDT               6.367   0.456100   0.428800   0.482900  0.428700  2.303637e+07  1685756786200  1685843186200    SXP  2.579746e+08              2.546665e+08  1.012990
-5     CFXUSDT              -4.640   0.269200   0.282300   0.284400  0.265400  2.010361e+07  1685756786075  1685843186075    CFX  7.774646e+08              1.422788e+09  0.546437
-6     EPXUSDT              21.801   0.000283   0.000232   0.000324  0.000231  1.886641e+07  1685756786279  1685843186279    EPX  1.903993e+07              3.780582e+07  0.503624
-7    RNDRUSDT               2.284   2.597000   2.539000   2.638000  2.534000  1.811841e+07  1685756783529  1685843183529   RNDR  9.506594e+08              1.393014e+09  0.682448
-8    SANDUSDT               0.053   0.567500   0.567200   0.582700  0.561600  1.635574e+07  1685756786288  1685843186288   SAND  1.053590e+09              1.705223e+09  0.617861
-9     INJUSDT               0.744   7.854000   7.796000   8.172000  7.770000  1.550012e+07  1685756785581  1685843185581    INJ  6.309396e+08              7.886198e+08  0.800056
-10    KEYUSDT              -7.082   0.007859   0.008458   0.008700  0.007800  1.543823e+07  1685756785128  1685843185128    KEY  4.179587e+07              4.727175e+07  0.884162
-11    MTLUSDT               9.604   1.107000   1.010000   1.130000  1.009000  1.267358e+07  1685756785918  1685843185918    MTL  7.366251e+07              7.366251e+07  1.000000
-12   MASKUSDT              -0.775   4.483000   4.518000   4.553000  4.407000  1.267285e+07  1685756780484  1685843180484   MASK  3.679589e+08              4.481156e+08  0.821125
-13    FTMUSDT              -0.219   0.319200   0.319900   0.327000  0.317200  1.265156e+07  1685756783652  1685843183652    FTM  8.921519e+08              1.014947e+09  0.879014
-14  MAGICUSDT              -2.043   1.006700   1.027700   1.059100  0.991300  1.207562e+07  1685756782567  1685843182567  MAGIC  2.177512e+08              3.501676e+08  0.621848
-'''
 
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
@@ -234,19 +203,4 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # today_hot_coin_list = binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
-    # print(today_hot_coin_list)
-    # binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
-    # try:
-    #     query = "SELECT DISTINCT coin FROM binance_ticker_top_30 WHERE openTime > :openTime"
-    #     params = {'openTime': int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000}
-    #     result = engine.connect().execute(text(query), params)
-    #     df_30_days = pd.DataFrame(result.fetchall(), columns=result.keys())
-    #     unique_coin_list = df_30_days['coin'].values.tolist()
-    # except: unique_coin_list = []
-    # print(unique_coin_list)
-    # print(type(unique_coin_list))
-    # IGNORE_LIST = get_ignore_list()
-    # print(IGNORE_LIST)
-    # print(type(IGNORE_LIST))
-    # drop binance_ticker_top_30 table
-    # engine.connect().execute(text("DROP TABLE binance_ticker_top_30"))
+
