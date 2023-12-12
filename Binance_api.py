@@ -1718,12 +1718,11 @@ def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
         coin = symbol.replace('USDT', '')
         limit_order_data = check_order_status(coin, clientOrderId)
         if limit_order_data:
-            print(json.dumps(limit_order_data, indent=2))
 
             # Check if the order is filled, if yes, do market sell
             if limit_order_data['status'] == 'FILLED':
 
-                # print(json.dumps(limit_order_data, indent=2))
+                print(json.dumps(limit_order_data, indent=2))
 
                 # create a dict akin to market sell data structure
                 data = {}
