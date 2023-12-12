@@ -27,7 +27,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
         {'command': 'get_expenditure_info', 'description': 'Get the total spend of this year and this month'},
-        {'command': 'hot_coins_check', 'description': 'Check and buy hot coins of today'},
+        {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
         {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
         {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
         {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
@@ -61,7 +61,7 @@ def telegram_bot_commands_and_menu():
 NONE_PARAMETER_COMMAND_LIST = {
     'get_ignore_list': get_ignore_list, 
     'get_expenditure_info': get_total_spend_of_any_year_any_month,
-    'hot_coins_check': binance_today_hot_coins_check,
+    'hot_coins_check': only_check_hot_coins,
     'funding_main_transfer': funding_main_transfer_all_usdt,
     'get_wallet_balance': get_coin_wallet_balance_all_str,
     'binance_position_check': bot_call_binance_position_check,

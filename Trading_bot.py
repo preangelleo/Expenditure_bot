@@ -90,7 +90,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = TG_BOT_OWNER_ID):
     
     # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
     # from binance_position_buy find out the latested bought 30 coins
@@ -160,8 +160,18 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT):
     # make a coin list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
-    if today_hot_coin_list: print(f"Today's hot coins are: {today_hot_coin_list}")
-    else: print('There is no hot coin today...')
+    if today_hot_coin_list and only_check: 
+        # make a reply string, format: "Coin | PriceChangePercent | QuoteVolume | TurnoverRatio | turnover_by_priceChangePercent"
+        reply_string = ''
+        for index, row in df_ticker.iterrows():
+            coin = row['coin']
+            priceChangePercent = row['priceChangePercent']
+            turnover_ratio = row['turnover_ratio']
+            turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
+            reply_string += f"{coin} | +{priceChangePercent}% | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent, 3)}\n"
+        
+        help_info = '\n First number is rais percentage, second number is the turnover ratio (trading volume / market cap), third number is the turnover_ratio / price_change.'
+        send_msg(f"CHECK ONLY: \n\nToday's hot coins are: \n{reply_string}{help_info}", from_id)
 
     return today_hot_coin_list
 
@@ -199,6 +209,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     return
 
 
+def only_check_hot_coins(from_id):
+    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id)
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
