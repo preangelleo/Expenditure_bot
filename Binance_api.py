@@ -2157,4 +2157,4 @@ if __name__ == '__main__':
 
     # binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID)
 
-    binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
+    binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=TG_BOT_OWNER_ID, crontab_profit_record=False)
