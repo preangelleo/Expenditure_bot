@@ -53,8 +53,10 @@ def get_btc_data_with_rsi(chat_id):
     plt.savefig(file_name)
     plt.close(fig)
 
-    if chat_id: send_img(chat_id, file_name)
+    # get the price of BTC
+    btc_price = df['close'].iloc[-1]
 
+    if chat_id: send_img(chat_id, file_name, f'Current Price of BTC: {btc_price:.2f} usdt')
     return file_name
 
 if __name__ == '__main__':
