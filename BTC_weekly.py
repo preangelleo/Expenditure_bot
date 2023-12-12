@@ -12,7 +12,7 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     
     chart_title = f'BTC Weekly Chart with RSI' if timeframe == '1w' else f'BTC Daily Chart with RSI' if timeframe == '1d' else f'BTC Monthly Chart with RSI'
 
-    file_name = f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png' if timeframe == '1d' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png' if timeframe == '1w' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png'
+    file_name = f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")} {chart_title}.png' if timeframe == '1d' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")} {chart_title}.png' if timeframe == '1w' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")} {chart_title}.png'
 
     # check if file exists, if yes, return send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
     if os.path.exists(file_name): 
