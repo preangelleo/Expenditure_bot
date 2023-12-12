@@ -67,7 +67,7 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     # get the price of BTC
     btc_price = df['close'].iloc[-1]
 
-    if chat_id: send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
+    if chat_id: send_img(chat_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")} | {btc_price:.2f} usdt/btc')
     return file_name
 
 
