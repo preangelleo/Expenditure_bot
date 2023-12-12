@@ -1071,6 +1071,8 @@ def get_open_orders_list():
     if r.status_code == 200:
         data = r.json()
         df = pd.DataFrame(data)
+        if df.empty: return
+        
         # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
         df = df.loc[:, ['symbol', 'clientOrderId']]
         df_dict = df.set_index('symbol').to_dict()['clientOrderId']
