@@ -22,6 +22,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'start', 'description': 'Get started'},
         {'command': 'reboot_the_bot', 'description': 'Reboot / restart / reload the bot'},
         {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
+        {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
         {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
@@ -69,6 +70,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'read_bot_status': read_trading_bot_status,
     'close_postive_positions': close_postive_positions,
     'read_target_profit': read_target_profit_default,
+    'open_orders_list': get_open_orders_list,
     'cancel_all_orders': binance_cancel_all_orders,
     'reboot_the_bot': reboot_bot,
     }

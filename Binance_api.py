@@ -1152,7 +1152,7 @@ timestamp	LONG	YES
 '''
 
 # Define a function to get open orders list for all coin and make it a dataframe
-def get_open_orders_list():
+def get_open_orders_list(from_id=None):
     PATH = '/api/v3/openOrders'
     timestamp = int(time.time() * 1000)
     params = {'timestamp': timestamp}
@@ -1169,6 +1169,11 @@ def get_open_orders_list():
         # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
         df = df.loc[:, ['symbol', 'clientOrderId']]
         df_dict = df.set_index('symbol').to_dict()['clientOrderId']
+
+        if from_id:
+            df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
+            send_msg(df_dict_string, from_id)
+
         return df_dict
     else: 
         print(r.json())
@@ -1702,7 +1707,7 @@ Got response from binance_exchange_info table.
 
 
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
+def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False):
 
     try: df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     except: return 'No open position for all coins'
@@ -1712,17 +1717,18 @@ def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
     if df.empty: return 'No open limit sell order'
 
+    # add a 'coin' column to df, coin is symbol without USDT
+    df['coin'] = df['symbol'].str.replace('USDT', '')
+
     # from df make a dict with {coin: clientOrderId}
-    df_dict = df.set_index('symbol').to_dict()['clientOrderId']
-    for symbol, clientOrderId in df_dict.items():
-        coin = symbol.replace('USDT', '')
+    df_dict = df.set_index('coin').to_dict()['clientOrderId']
+    for coin, clientOrderId in df_dict.items():
         limit_order_data = check_order_status(coin, clientOrderId)
         if limit_order_data:
+            print(json.dumps(limit_order_data, indent=2))
 
             # Check if the order is filled, if yes, do market sell
             if limit_order_data['status'] == 'FILLED':
-
-                print(json.dumps(limit_order_data, indent=2))
 
                 # create a dict akin to market sell data structure
                 data = {}
@@ -1791,8 +1797,26 @@ def binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID):
 
                 reply_msg = f'''{coin} Limit Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
 
-                send_msg(reply_msg, from_id)
+                send_msg(reply_msg, TG_BOT_OWNER_ID)
     
+    # make a coin list from df_balance_all
+    position_coin_list = df_balance_all['coin'].unique().tolist()
+
+    # make a coin list from df
+    limit_order_coin_list = df['coin'].unique().tolist()
+
+    # find out the coins in position_coin_list but not in limit_order_coin_list
+    coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
+
+    if not coin_list: 
+        print(f"All coins in position have limit order.")
+        return
+
+    print(f"Coins in position but not in limit order: {coin_list}")
+
+    try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
+    except: pass
+
     return
 
 
@@ -2105,4 +2129,4 @@ if __name__ == '__main__':
     # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
     # print(df)
 
-    binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID)
+    binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
