@@ -176,5 +176,10 @@ BOT_COMMAND_DICT = {
     'restart': 'reboot_the_bot',
     'sls': 'set_limit_sell',
     'cao': 'cancel_all_orders',
+    'cancel_all': 'cancel_all_orders',
     'ool': 'open_orders_list',
+    'orders_list': 'open_orders_list',
+    'open_orders': 'open_orders_list',
+    'gbw': 'get_btc_weekly',
+    'btc_weekly': 'get_btc_weekly',
     }

@@ -1,6 +1,7 @@
 from Trading_bot import *
 from Prompt_template import *
 from GPT_functions import *
+from BTC_weekly import *
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
@@ -21,6 +22,7 @@ def telegram_bot_commands_and_menu():
     COMMANDS = [
         {'command': 'start', 'description': 'Get started'},
         {'command': 'reboot_the_bot', 'description': 'Reboot / restart / reload the bot'},
+        {'command': 'get_btc_weekly', 'description': 'Get the weekly chart of BTC with RSI'},
         {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
         {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
         {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
@@ -62,6 +64,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_ignore_list': get_ignore_list, 
     'get_expenditure_info': get_total_spend_of_any_year_any_month,
     'hot_coins_check': only_check_hot_coins,
+    'get_btc_weekly': get_btc_data_with_rsi,
     'funding_main_transfer': funding_main_transfer_all_usdt,
     'get_wallet_balance': get_coin_wallet_balance_all_str,
     'binance_position_check': bot_call_binance_position_check,

@@ -170,8 +170,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
             reply_string += f"{coin} | +{priceChangePercent}% | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent, 3)}\n"
         
-        help_info = '\n First number is rais percentage, second number is the turnover ratio (trading volume / market cap), third number is the turnover_ratio / price_change.'
-        send_msg(f"CHECK ONLY: \n\nToday's hot coins are: \n{reply_string}{help_info}", from_id)
+        help_info = '\nThe first number is rais percentage, the second number is the turnover ratio (trading volume / market cap), third number is the turnover_ratio / price_change.'
+        send_msg(f"CHECK ONLY\nToday's hot coins are: \n\n{reply_string}{help_info}", from_id)
 
     return today_hot_coin_list
 
