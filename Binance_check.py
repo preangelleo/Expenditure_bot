@@ -13,3 +13,6 @@ if __name__ == '__main__':
     try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
     except: pass
 
+    # Check limit order status
+    try: binance_limit_order_status_check(from_id=TG_BOT_OWNER_ID)
+    except: pass
