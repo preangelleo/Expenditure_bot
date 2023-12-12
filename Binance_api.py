@@ -1012,8 +1012,7 @@ def binance_cancel_order(coin, clientOrderId):
         return
 
 
-'''
-当前挂单 (USER_DATA)
+'''当前挂单 (USER_DATA)
 响应
 
 [
@@ -1079,7 +1078,11 @@ def get_open_orders_list():
     else: 
         print(r.json())
         return
-
+'''
+{
+  "FTTUSDT": "7w4KnO7kH4A4kupqItZT5x"
+}
+'''
 
 
 
@@ -1635,6 +1638,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
     if df_balance.empty: return send_msg(f'No open position in binance', chat_id)
 
+    current_orders = get_open_orders_list()
+
     for i in range(df_balance.shape[0]):
         # ignore coin BNB
         coin = df_balance.iloc[i]['coin']
@@ -1647,13 +1652,42 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         coin = polished_parameters['coin']
         amount = polished_parameters['amount']
         price = polished_parameters['price']
+        symbol = coin + 'USDT'
 
-        #
-        cancel_confirm = binance_cancel_order(coin, clientOrderId)
-        print('cancel_confirm: ')
-        print(json.dumps(cancel_confirm, indent=2))
+        # Check if there is an open order for the coin, if yes, cancel it first
+        if symbol in current_orders:
+            clientOrderId = current_orders[symbol]
+            cancel_confirm = binance_cancel_order(coin, clientOrderId)
 
+            '''cancel_confirm
+            {
+            "symbol": "FTTUSDT",
+            "origClientOrderId": "7w4KnO7kH4A4kupqItZT5x",
+            "orderId": 693520320,
+            "orderListId": -1,
+            "clientOrderId": "ugNFO2rYpp0aJJe5f3USeX",
+            "transactTime": 1702341486234,
+            "price": "5.50040000",
+            "origQty": "1818.04000000",
+            "executedQty": "0.00000000",
+            "cummulativeQuoteQty": "0.00000000",
+            "status": "CANCELED",
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": "SELL",
+            "selfTradePreventionMode": "EXPIRE_MAKER"
+            }
+            '''
 
+            # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
+            with engine.connect() as connection:
+                try:
+                    # Execute the query with the updated update_id
+                    connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': cancel_confirm['status']})
+                    connection.commit()
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    connection.rollback()
 
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
@@ -1692,39 +1726,18 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
         print('df = pd.DataFrame(data, index=[0]): \n', df)
 
-        # Check if table binance_limit_sell_order exists, if not, df.to_sql create one; if yes, check if clientOrderId exists, if yes, update, if no, insert
-        try: df_check = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_limit_sell_order WHERE symbol = '{coin}USDT'")).fetchall())
-        except: 
-            print('binance_limit_sell_order table does not exist, Inserting new record to binance_limit_sell_order table...')
+        try:
             df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-            return 
-    
-        if df_check.empty: 
-            print('df_check is empty, Inserting new record to binance_limit_sell_order table...')
-            df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-        else:
-            # Check if clientOrderId exists
-            clientOrderId = df['clientOrderId'].values[0]
-            df_check = df_check[df_check['clientOrderId']==clientOrderId]
-            if df_check.empty: 
-                print('df_check clientOrderId is empty, Inserting new record to binance_limit_sell_order table...')
-                df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-            else:
-                with engine.connect() as connection:
-                    try:
-                        # Execute the query with the updated update_id
-                        connection.execute(text("UPDATE binance_limit_sell_order SET orderId = :orderId, transactTime = :transactTime, price = :price, origQty = :origQty, executedQty = :executedQty, cummulativeQuoteQty = :cummulativeQuoteQty, status = :status, timeInForce = :timeInForce, type = :type, side = :side, workingTime = :workingTime, selfTradePreventionMode = :selfTradePreventionMode WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'orderId': df['orderId'].values[0], 'transactTime': df['transactTime'].values[0], 'price': df['price'].values[0], 'origQty': df['origQty'].values[0], 'executedQty': df['executedQty'].values[0], 'cummulativeQuoteQty': df['cummulativeQuoteQty'].values[0], 'status': df['status'].values[0], 'timeInForce': df['timeInForce'].values[0], 'type': df['type'].values[0], 'side': df['side'].values[0], 'workingTime': df['workingTime'].values[0], 'selfTradePreventionMode': df['selfTradePreventionMode'].values[0]})
-                        connection.commit()
-                    except Exception as e:
-                        print(f"An error occurred: {e}")
-                        connection.rollback()
+            send_msg(f"Limit sell order is set for: {coin} at target profit: {target_profit*100}%", chat_id)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
 
     return send_msg("ALL SET.", chat_id)
 
 ''' READ TABLE binance_limit_sell_order
 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
 '''
-
 
 
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
@@ -1860,5 +1873,7 @@ if __name__ == '__main__':
     print('Binance_api.py is running')
     # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
-    r = get_open_orders_list()
-    print(json.dumps(r, indent=2))
+    binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
+
+    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
+    print(df)
