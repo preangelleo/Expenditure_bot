@@ -175,4 +175,5 @@ BOT_COMMAND_DICT = {
     'reload': 'reboot_the_bot',
     'restart': 'reboot_the_bot',
     'sls': 'set_limit_sell',
+    'cao': 'cancel_all_orders',
     }

@@ -21,6 +21,7 @@ def telegram_bot_commands_and_menu():
     COMMANDS = [
         {'command': 'start', 'description': 'Get started'},
         {'command': 'reboot_the_bot', 'description': 'Reboot / restart / reload the bot'},
+        {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
         {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
@@ -68,6 +69,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'read_bot_status': read_trading_bot_status,
     'close_postive_positions': close_postive_positions,
     'read_target_profit': read_target_profit_default,
+    'cancel_all_orders': binance_cancel_all_orders,
     'reboot_the_bot': reboot_bot,
     }
 
@@ -81,7 +83,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
-    'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /limit_sell_order 0.01'},
+    'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     }
 
 # Define a handler for telegram messages

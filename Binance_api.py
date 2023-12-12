@@ -841,6 +841,7 @@ def get_coin_deposit_address(coin_and_network: str, from_id=TG_BOT_OWNER_ID):
     if data: return send_msg(f"Binance Deposit Address for {coin} at {network}\n\n{address}\n\n{url}", from_id)
     else: return send_msg(f"Can't get {coin.upper()} deposit address.", from_id)
 
+
 '''
 权重(UID): 1 权重(IP): 1
 
@@ -864,6 +865,7 @@ strategyId	INT	NO
 strategyType	INT	NO	不能低于 1000000
 recvWindow	LONG	NO	赋值不能大于 60000
 timestamp	LONG	YES'''
+
 
 # 定义一个Market sell 交易功能 Input: coin, amount
 def binance_market_sell(coin, amount):
@@ -948,8 +950,8 @@ def binance_limit_sell(coin, amount, price):
 {'symbol': 'SANDUSDT', 'orderId': 2769384671, 'orderListId': -1, 'clientOrderId': 'GKVPOrFIkwz5IbsRhsx220', 'transactTime': 1702318694019, 'price': '0.55000000', 'origQty': '18230.00000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'SELL', 'workingTime': 1702318694019, 'fills': [], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
 '''
 
-'''
-撤销订单 (TRADE)
+
+'''撤销订单 (TRADE)
 响应
 
 {
@@ -1080,22 +1082,17 @@ def get_open_orders_list():
     else: 
         print(r.json())
         return {}
-'''
+''' Output dict:
 {
   "FTTUSDT": "7w4KnO7kH4A4kupqItZT5x"
 }
 '''
 
 
-
 # Define a function to sell all of the profit position
 def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    PATH = '/api/v3/openOrders'
-    timestamp = int(time.time() * 1000)
-    params = {
-        'timestamp': timestamp
-        }
-    query_string = urlencode(params)
+    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 0" or "stp 0". This is equal to close all positive positions, calling market sell to close positions that are with 0 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0" or "sls 0", waiting for the price to reach the buy in price to sell.', from_id)
+    
 
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
 def do_limit_sell(coin: str, target_profit_ratio=0.05):
@@ -1475,6 +1472,8 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     target_profit = read_target_profit_default() if chat_id else target_profit
     print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', f"{target_profit*100:.2f}% at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
+    current_orders = get_open_orders_list()
+
     book_value = 0
 
     for_reply = {}
@@ -1501,8 +1500,12 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 
         # If profit > target_profit, do market sell, close the position
         if reply_dict['up_ratio'] > target_profit: 
-            try: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
-            except: pass
+
+            # Check if current coin has open order, if yes, ignore market sell
+            symbol = reply_dict['coin'] + 'USDT'
+            if symbol not in current_orders: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
+            else: book_value += reply_dict['profit']
+
         else: book_value += reply_dict['profit']
 
     if chat_id or crontab_profit_record: 
@@ -1738,6 +1741,30 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
 '''
 
+# Define cancel all of the open orders
+def binance_cancel_all_orders(chat_id=TG_BOT_OWNER_ID):
+    current_orders = get_open_orders_list()
+    for symbol, clientOrderId in current_orders.items():
+        coin = symbol.replace('USDT', '')
+        cancel_confirm = binance_cancel_order(coin, clientOrderId)
+
+        # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
+        with engine.connect() as connection:
+            try:
+                # Execute the query with the updated update_id
+                connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': cancel_confirm['status']})
+                connection.commit()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                connection.rollback()
+
+        send_msg(f"Canceled order for: {coin} with clientOrderId: {clientOrderId}", chat_id)
+
+    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
+    print(df)        
+
+    return send_msg("Canceled all open orders.", chat_id)
+
 
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
 def update_net_profit_daily_record(date, net_profit):
@@ -1872,9 +1899,9 @@ if __name__ == '__main__':
     print('Binance_api.py is running')
     # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
 
-    binance_position_set_limit_sell(target_profit=0, chat_id=TG_BOT_OWNER_ID)
+    # binance_position_set_limit_sell(target_profit=0, chat_id=TG_BOT_OWNER_ID)
 
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
     # select * from binance_limit_sell_order where status is not 'CANCELED'
-    df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
-    print(df)
+    # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
+    # print(df)
