@@ -1,16 +1,25 @@
 from Top_functions import *
 import matplotlib.dates as mpl_dates
 
-
-def get_btc_data_with_rsi(chat_id):
-    # print current time string format and the function is running
+def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_btc_data_with_rsi() is running ...')
 
-    # Initialize Binance Client
     exchange = ccxt.binance()
 
-    # Fetch historical data for BTC/USDT
-    btc_data = exchange.fetch_ohlcv('BTC/USDT', timeframe='1w', limit=216)
+    # Validate and set the timeframe
+    valid_timeframes = ['1d', '1w', '1M']
+    if timeframe not in valid_timeframes: return send_msg(chat_id, f'Invalid timeframe: {timeframe}')
+    
+    chart_title = f'BTC Weekly Chart with RSI' if timeframe == '1w' else f'BTC Daily Chart with RSI' if timeframe == '1d' else f'BTC Monthly Chart with RSI'
+
+    file_name = f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png' if timeframe == '1d' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png' if timeframe == '1w' else f'net_profit_daily_record/{datetime.now().strftime("%Y-%m-%d")}_BTC_{chart_title}.png'
+
+    # check if file exists, if yes, return send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
+    if os.path.exists(file_name): 
+        send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
+        return file_name
+
+    btc_data = exchange.fetch_ohlcv('BTC/USDT', timeframe=timeframe, limit=365)
 
     # Convert to DataFrame
     df = pd.DataFrame(btc_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
@@ -37,7 +46,7 @@ def get_btc_data_with_rsi(chat_id):
     ax1.xaxis.set_major_formatter(mpl_dates.DateFormatter('%Y-%m-%d'))
     ax1.set_xlabel('Date')
     ax1.set_ylabel('BTC Price')
-    ax1.set_title('BTC Weekly Chart with RSI')
+    ax1.set_title(chart_title)
 
     # Create a secondary y-axis for the RSI
     ax2 = ax1.twinx()
@@ -50,7 +59,7 @@ def get_btc_data_with_rsi(chat_id):
     # Improve layout
     fig.tight_layout()
 
-    file_name = 'net_profit_daily_record/BTC_Weekly.png'
+    
     # Save plot to file
     plt.savefig(file_name)
     plt.close(fig)
@@ -58,12 +67,14 @@ def get_btc_data_with_rsi(chat_id):
     # get the price of BTC
     btc_price = df['close'].iloc[-1]
 
-    if chat_id: send_img(chat_id, file_name, f'Current Price of BTC: {btc_price:.2f} usdt')
+    if chat_id: send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
     return file_name
 
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    get_btc_data_with_rsi(TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1d', chat_id=TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1w', chat_id=TG_BOT_OWNER_ID)
+    get_btc_data_with_rsi(timeframe='1M', chat_id=TG_BOT_OWNER_ID)
 
     
