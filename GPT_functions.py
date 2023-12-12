@@ -114,11 +114,8 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
             "insert_new_expenditure_record": insert_new_expenditure_record,
             "get_total_spend_of_any_year_any_month": get_total_spend_of_any_year_any_month,
             "add_coin_to_ignore_list": add_coin_to_ignore_list,
-            "get_token_price_from_coinmarketcap_and_send_msg": get_token_price_from_coinmarketcap_and_send_msg,
             "get_ignore_list": get_ignore_list,
             "funding_main_transfer_all_usdt": funding_main_transfer_all_usdt,
-            "main_funding_transfer_with_check_and_send": main_funding_transfer_with_check_and_send,
-            'gpt_coin_deposit_address': gpt_coin_deposit_address,
             "get_btc_data_with_rsi": get_btc_data_with_rsi
         } 
         # List of available_functions [insert_new_expenditure_record, get_total_spend_of_any_year_any_month, add_coin_to_ignore_list, get_token_price_from_coinmarketcap_and_send_msg, get_ignore_list, funding_main_transfer_all_usdt, main_funding_transfer_with_check_and_send, get_coin_deposit_address, get_btc_data_with_rsi]

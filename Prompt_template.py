@@ -67,20 +67,6 @@ FUNCTIONS_TOOLS = [
     }, {
         "type": "function",
         "function": {
-            "name": "get_token_price_from_coinmarketcap_and_send_msg",
-            "description": "Get token / coin / crypto information from coinmarketcap and send message to user",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "coin": {"type": "string", "description": "The upper case coin symbol, for example: BTC, ETH, RSR, OGN, ORDI"},
-                    "from_id": {"type": "string", "description": "The user's telegram id"}
-                },
-                "required": ["coin", "from_id"]
-            }
-        }
-    }, {
-        "type": "function",
-        "function": {
             "name": "get_ignore_list",
             "description": "Read out ignore_list table and return a list of ignored coins",
             "parameters": {
@@ -107,37 +93,6 @@ FUNCTIONS_TOOLS = [
     }, {
         "type": "function",
         "function": {
-            "name": "main_funding_transfer_with_check_and_send",
-            "description": "Transfer coin from main account to funding account",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "coin": {"type": "string", "description": "The coin to transfer"},
-                    "amount": {"type": "number", "description": "The amount to transfer"},
-                    "from_id": {"type": "string", "description": "The user's telegram id"}
-
-                },
-                "required": ["coin", "amount", "from_id"]
-            }
-        }
-    }, {
-        "type": "function",
-        "function": {
-            "name": "gpt_coin_deposit_address",
-            "description": "Get the deposit address of the given coin for given network",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "coin": {"type": "string", "description": "The coin symbol, e.g. USDT"},
-                    "network": {"type": "string", "description": "The network of the coin, e.g. TRX, ETH, BSC, SOL, etc."},
-                    "from_id": {"type": "string", "description": "The user's telegram id"},
-                },
-                "required": ["coin", "network", "from_id"]
-            }
-        }
-    }, {
-        "type": "function",
-        "function": {
             "name": "get_btc_data_with_rsi",
             "description": "Get BTC weeky, daily, or monthly data chart with RSI",
             "parameters": {
@@ -158,11 +113,8 @@ List of available_functions:
 - insert_new_expenditure_record: Insert a item spending record into the table 'user_expenditures_record'
 - get_total_spend_of_any_year_any_month: Get the total spend of given year and given month
 - add_coin_to_ignore_list: Add a coin to the ignore_coin_list table
-- get_token_price_from_coinmarketcap_and_send_msg: Get token / coin / crypto information from coinmarketcap and send message to user
 - get_ignore_list: Read out ignore_list table and return a list of ignored coins
 - funding_main_transfer_all_usdt: Transfer all USDT from funding account to main account
-- main_funding_transfer_with_check_and_send: Transfer coin from main account to funding account
-- get_coin_deposit_address: Get the deposit address of the given coin for given network
 - get_btc_data_with_rsi: Get BTC weeky, daily, or monthly data chart with RSI
 '''
 
