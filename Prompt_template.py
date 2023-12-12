@@ -3,7 +3,26 @@ from time import strftime, localtime
 INITIAL_IGNORE_LIST = ['BTC', 'ETH', 'XRP', 'AMB', 'LTC', 'ARB', 'BTS', 'SOL', 'JST', 'ADA', 'TRX', 'LUNA', 'LUNC', 'BCH', 'USTC', 'EOS', 'XMR', 'XLM', 'XEM', 'DOGE', 'AVAX', 'OP', 'MATIC', 'APT', 'COCOS', 'BTT', 'BTTT', 'BTTB', 'EUR', 'SUI', 'QTUM', 'DASH', 'ZEC', 'ZEN', 'ZIL', 'ZRX', 'NEO', 'CELO', 'ANKR', 'BNB', 'OMG', 'TUSDT', 'ETC', 'ACA', 'STORJ', 'FTM', 'LQTY', 'OGN', 'RSR', 'VGX', 'MBL', 'COIN98', 'BLZ', 'MC', 'GAS']
 
 # Telegram
-WELCOME_FROM_TELEGRAM_BOT = "You could ask me anything or send your receipt.\nThis is GPT Assistant developed by \nLEOWANG.net" 
+WELCOME_FROM_TELEGRAM_BOT = '''You could ask me anything or send your receipt.
+
+Aside from the usual chatbot capabilities, this bot can also help you manage your finances and cryptocurrency investments efficiently. Here's what I can do for you:
+
+- Track Your Expenses: Easily insert any spending details into your expenditure record.
+
+- Monthly Spend Analysis: Get a quick summary of your total spending for any specific year and month.
+
+- Cryptocurrency Management: Add any coin to your ignore list, keeping your focus on preferred investments.
+
+- Review Ignored Coins: Retrieve and review your list of ignored coins whenever you need.
+
+- Funds Transfer: Conveniently transfer all your USDT from the funding account to the main account.
+
+- Bitcoin Data & Analysis: Get detailed Bitcoin data with RSI indicators for various timeframes, helping you make informed decisions.
+
+
+This GPT Assistant is developed by
+LEOWANG.net'''
+
 NOT_OWNER_ALERT = "Sorry, This bot is only for the owner.\n\nLEOWANG.net"
 
 CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others']
