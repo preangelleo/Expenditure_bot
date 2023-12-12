@@ -398,6 +398,11 @@ def read_trading_bot_status(from_id):
     return send_msg("Trading bot is OFF (NO more buying)!", from_id)
 
 
+# Set position_limit from bot import and send a message to the user
+def set_position_limit_by_user(position_limit, from_id):
+    if set_position_limit_default(position_limit): return send_msg(f"Position limit has been set to {get_position_limit()}!", from_id)
+    return send_msg("Failed to set position limit! Make sure your input format is like: /set_position_limit 5", from_id)
+
 # define a function to take command from the user and reboot the bot, send a message to the user before rebooting
 def reboot_bot(from_id):
     send_msg("Rebooting the bot...", from_id)

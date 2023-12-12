@@ -9,10 +9,6 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
-    target_profit = read_target_profit_default()
-
-    TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
-
     # try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
     # except: pass
 

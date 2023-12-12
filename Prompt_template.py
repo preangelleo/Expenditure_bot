@@ -185,4 +185,8 @@ BOT_COMMAND_DICT = {
     'btc_chart': 'btc_rsi_chart',
     'rsi_chart': 'btc_rsi_chart',
     'rsi': 'btc_rsi_chart',
+    'spl': 'set_position_limit',
+    'set_position': 'set_position_limit',
+    'set_limit': 'set_position_limit',
+    'position_limit': 'set_position_limit',
     }

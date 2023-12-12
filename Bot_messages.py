@@ -43,6 +43,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
         {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
         {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
+        {'command': 'set_position_limit', 'description': 'Set the position limit of the trading bot'},
         {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
         {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
         {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
@@ -89,6 +90,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
     'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
+    'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
     }
 
 # Define a handler for telegram messages

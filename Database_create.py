@@ -198,6 +198,7 @@ def create_target_profit_table():
     print("Table 'target_profit' created successfully!")
     return True
 
+
 # insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
 def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05))):
     # Create a new session
@@ -211,6 +212,63 @@ def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0
     conn.close()
     print(f"TARGET_PROFIT = {target_profit} inserted successfully!")
     return True
+
+# Creat a table 'position_limit' to set the position limit, integer
+def create_position_limit_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'position_limit'
+    cursor.execute("CREATE TABLE IF NOT EXISTS position_limit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, PositionLimit INTEGER)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'position_limit' created successfully!")
+    return True
+
+'''
+INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
+CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
+'''
+# insert POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE) into table 'position_limit'
+def set_position_limit_default(position_limit=None):
+    if position_limit is None: 
+        try:
+            INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
+            CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+            position_limit = int(INITIAL_FUND / CHECK_SIZE)
+        except: return False
+    else:
+        try: position_limit = int(float(position_limit))
+        except: return False
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Insert POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE) into table 'position_limit'
+    cursor.execute(f"INSERT INTO position_limit (Date, PositionLimit) VALUES (CURDATE(), {position_limit})")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"POSITIONS_LIMIT = {position_limit} inserted successfully!")
+    return True
+
+# read the latest record from table 'position_limit', return the PositionLimit
+def get_position_limit():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Read the latest record from table 'position_limit', return the PositionLimit
+    cursor.execute("SELECT PositionLimit FROM position_limit ORDER BY ID DESC LIMIT 1")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return result[0][0]
 
 # Create a table "trading_bot_switch" to record the trading bot switch status
 def create_trading_bot_switch_table():
@@ -308,7 +366,13 @@ if __name__ == '__main__':
     create_target_profit_table()
     set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05)))
 
-    # Initial Step 8: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
+    # Initial Step 8: Create position_limit tables
+    create_position_limit_table()
+
+    # Initial Step 9: Insert a new record into table "position_limit", make PositionLimit = int(INITIAL_FUND / CHECK_SIZE)
+    set_position_limit_default()
+
+    # Initial Step 10: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     trading_bot_switch_on()
 
     trading_bot_status = trading_bot_switch_status()
