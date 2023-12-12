@@ -16,7 +16,7 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
 
     # check if file exists, if yes, return send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
     if os.path.exists(file_name): 
-        send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
+        send_img(chat_id, file_name, f'{datetime.now().strftime("%Y-%m-%d")}')
         return file_name
 
     exchange = ccxt.binance()
