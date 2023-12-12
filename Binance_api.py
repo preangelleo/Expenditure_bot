@@ -1728,7 +1728,7 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
 
             limit_order_data = check_order_status(coin, clientOrderId)
             if limit_order_data:
-                print(json.dumps(limit_order_data, indent=2))
+                # print(json.dumps(limit_order_data, indent=2))
 
                 # Check if the order is filled, if yes, do market sell
                 if limit_order_data['status'] == 'FILLED':
@@ -1822,11 +1822,7 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
     # find out the coins in position_coin_list but not in limit_order_coin_list
     coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
 
-    if not coin_list: 
-        print(f"All coins in position have limit order.")
-        return
-
-    print(f"Coins in position but not in limit order: {coin_list}")
+    if not coin_list: return
 
     try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
     except: pass
