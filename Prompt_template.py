@@ -181,5 +181,8 @@ BOT_COMMAND_DICT = {
     'orders_list': 'open_orders_list',
     'open_orders': 'open_orders_list',
     'gbw': 'get_btc_weekly',
-    'btc_weekly': 'get_btc_weekly',
+    'brc': 'btc_rsi_chart',
+    'btc_chart': 'btc_rsi_chart',
+    'rsi_chart': 'btc_rsi_chart',
+    'rsi': 'btc_rsi_chart',
     }

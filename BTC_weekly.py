@@ -4,7 +4,7 @@ import matplotlib.dates as mpl_dates
 def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_btc_data_with_rsi() is running ...')
 
-    exchange = ccxt.binance()
+    timeframe = '1M' if timeframe == '1m' else '1w' if timeframe == '1W' else '1d' if timeframe == '1D' else timeframe
 
     # Validate and set the timeframe
     valid_timeframes = ['1d', '1w', '1M']
@@ -18,6 +18,8 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     if os.path.exists(file_name): 
         send_img(chat_id, file_name, f'Current Price: {btc_price:.2f} usdt')
         return file_name
+
+    exchange = ccxt.binance()
 
     btc_data = exchange.fetch_ohlcv('BTC/USDT', timeframe=timeframe, limit=365)
 
@@ -59,7 +61,6 @@ def get_btc_data_with_rsi(timeframe='1w', chat_id=None):
     # Improve layout
     fig.tight_layout()
 
-    
     # Save plot to file
     plt.savefig(file_name)
     plt.close(fig)
