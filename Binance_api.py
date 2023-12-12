@@ -1719,8 +1719,9 @@ def binance_limit_order_status_check():
     if df.empty: return 'No open limit sell order'
 
     # from df make a dict with {coin: clientOrderId}
-    df_dict = df.set_index('coin').to_dict()['clientOrderId']
-    for coin, clientOrderId in df_dict.items():
+    df_dict = df.set_index('symbol').to_dict()['clientOrderId']
+    for symbol, clientOrderId in df_dict.items():
+        coin = symbol.replace('USDT', '')
         data = check_order_status(coin, clientOrderId)
         if data:
             print(json.dumps(data, indent=2))
