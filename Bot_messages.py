@@ -123,6 +123,8 @@ async def handel_telegram_message(message: types.Message):
     
     if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
 
+    if text_prompt.lower() in ['help', '/help']: return await message.answer(BOT_HELP)
+
     # Extract the first word from the message, check if it's in COMMAND_LIST
     first_word = text_prompt.split()[0].lower()
     rest_word = text_prompt.split()[1:]

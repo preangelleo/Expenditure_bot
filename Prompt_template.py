@@ -20,8 +20,11 @@ Aside from the usual chatbot capabilities, this bot can also help you manage you
 - Bitcoin Data & Analysis: Get detailed Bitcoin data with RSI indicators for various timeframes, helping you make informed decisions.
 
 
-This GPT Assistant is developed by
-LEOWANG.net'''
+https://leowang.net/bot-help
+'''
+
+BOT_HELP = '''https://leowang.net/bot-help'''
+
 
 NOT_OWNER_ALERT = "Sorry, This bot is only for the owner.\n\nLEOWANG.net"
 
