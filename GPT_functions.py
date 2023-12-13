@@ -13,6 +13,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.utils.markdown import hbold
 from BTC_weekly import *
+from Top_functions import *
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -50,6 +51,12 @@ def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(date
     df = get_all_expenditure_records(from_id)
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
+
+    # sort the dataframe by date
+    df = df.sort_values(by='Date')
+
+    # save the dataframe to csv file
+    df.to_csv('net_profit_daily_record/expenditure_records.csv', index=False)
 
     # Convert year and month to int
     year = int(year)
