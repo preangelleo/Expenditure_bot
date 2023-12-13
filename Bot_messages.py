@@ -58,7 +58,7 @@ ONE_PARAMETER_COMMAND_LIST = {
 
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
-    'get_expenditure_info': {'function': get_total_spend_of_any_year_any_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
+    'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
