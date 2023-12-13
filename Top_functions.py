@@ -339,13 +339,38 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
             # Commit the transaction
             connection.commit()
 
-            send_msg(f'''Successfully inserted: \n\nName: {item_name}\nDate: {date}\nSpent: {spent}\nCategory: {category}\nMerchant: {merchant}''', from_id)
+            # Read the ID of the last inserted row
+            last_row_id = connection.execute("SELECT LAST_INSERT_ID()").scalar()
+
+            send_msg(f'''Successfully inserted: \n\nID: {last_row_id}\nName: {item_name}\nDate: {date}\nSpent: {spent}\nCategory: {category}\nMerchant: {merchant}\n\n/alter_record {last_row_id} Spent a_new_number''', from_id)
 
         except Exception as e:
             print(f"An error occurred: {e}")
             connection.rollback()
 
     return 
+
+
+# Alter the value in user_expenditures_record for a given ID and column name and new value
+def alter_expenditure_record(id, column_name, new_value, from_id=TG_BOT_OWNER_ID):
+    try: id = int(id)
+    except: return send_msg(f"ID has to be an integer, your input is {id}", from_id)
+
+    try: new_value = float(new_value)
+    except: return send_msg(f"New value has to be a number, your input is {new_value}", from_id)
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    try: cursor.execute(f"UPDATE user_expenditures_record SET {column_name} = {new_value} WHERE ID = {id}")
+    except Exception as e: return send_msg(f"No column name as {column_name} in the table.\n\n{e}", from_id)
+
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return send_msg(f"Successfully updated {column_name} to {format_number(new_value)} for ID {id}", from_id)
 
 
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe
@@ -428,4 +453,4 @@ if __name__ == '__main__':
 
     df = get_all_expenditure_records(from_id=TG_BOT_OWNER_ID)
     print(df)
-    
+

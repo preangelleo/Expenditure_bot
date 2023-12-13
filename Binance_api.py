@@ -833,10 +833,9 @@ def binance_get_coin_deposit_address(coin, network):
 '''{'coin': 'USDT', 'address': '0x34b940120aeb9cadbcc4131fb034ad3b83b0367d', 'tag': '', 'url': 'https://etherscan.io/address/0x34b940120aeb9cadbcc4131fb034ad3b83b0367d'}'''
 
 
-def get_coin_deposit_address(coin_and_network: str, from_id=TG_BOT_OWNER_ID):
-    coin_and_network_list = coin_and_network.split()
-    coin = coin_and_network_list[0].upper()
-    network = coin_and_network_list[1].upper() if len(coin_and_network_list) > 1 else 'ETH'
+def get_coin_deposit_address(coin: str, network: str, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    network = network.upper()
 
     data = binance_get_coin_deposit_address(coin.upper(), network)
     '''data : {'coin': 'USDT', 'address': 'TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV', 'tag': '', 'url': 'https://tronscan.org/#/address/TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV'}'''

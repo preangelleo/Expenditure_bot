@@ -31,6 +31,7 @@ def telegram_bot_commands_and_menu():
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
         {'command': 'get_expenditure_info', 'description': 'Get the total spend of this year and this month'},
+        {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
         {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
         {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
         {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
@@ -87,13 +88,20 @@ ONE_PARAMETER_COMMAND_LIST = {
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     'binance_market_sell': {'function': force_do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
     'binance_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
-    'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX, by default it is USDT ETH'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
     'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
+    }
+
+TWO_PARAMETER_COMMAND_LIST = {
+    'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
+    }
+
+THREE_PARAMETER_COMMAND_LIST = {
+    'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: /alter_expenditure_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
     }
 
 # Define a handler for telegram messages
@@ -136,8 +144,16 @@ async def handel_telegram_message(message: types.Message):
 
     if first_word in BOT_COMMAND_DICT: first_word = BOT_COMMAND_DICT[first_word]
 
+    elif first_word in NONE_PARAMETER_COMMAND_LIST:
+
+        # Get the corresponding function
+        func = NONE_PARAMETER_COMMAND_LIST[first_word]
+
+        # Call the function and return
+        return func(from_id)
+    
     # If the first word is in COMMAND_LIST, then call the corresponding function
-    if first_word in ONE_PARAMETER_COMMAND_LIST:
+    elif first_word in ONE_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
         if not rest_word: return await message.answer(ONE_PARAMETER_COMMAND_LIST[first_word]['description'])
@@ -150,19 +166,41 @@ async def handel_telegram_message(message: types.Message):
         # Call the function and return
         return func(rest_word.upper(), from_id)
 
-    elif first_word in NONE_PARAMETER_COMMAND_LIST:
+    elif first_word in TWO_PARAMETER_COMMAND_LIST:
+
+        # If there's no rest word, then reply the description of the command
+        if not rest_word: return await message.answer(TWO_PARAMETER_COMMAND_LIST[first_word]['description'])
+
+        first_parameter = rest_word[0]
+        second_parameter = rest_word[1]
 
         # Get the corresponding function
-        func = NONE_PARAMETER_COMMAND_LIST[first_word]
+        func = TWO_PARAMETER_COMMAND_LIST[first_word]['function']
 
         # Call the function and return
-        return func(from_id)
+        return func(first_parameter, second_parameter, from_id)
+    
+    elif first_word in THREE_PARAMETER_COMMAND_LIST:
+
+        # If there's no rest word, then reply the description of the command
+        if not rest_word: return await message.answer(THREE_PARAMETER_COMMAND_LIST[first_word]['description'])
+
+        first_parameter = rest_word[0]
+        second_parameter = rest_word[1]
+        third_parameter = rest_word[2]
+
+        # Get the corresponding function
+        func = THREE_PARAMETER_COMMAND_LIST[first_word]['function']
+
+        # Call the function and return
+        return func(first_parameter, second_parameter, third_parameter, from_id)
+    
     
     rest_word = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word}"
 
-
     await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt)
+
 
 if __name__ == '__main__':
     telegram_bot_commands_and_menu()

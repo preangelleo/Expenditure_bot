@@ -183,6 +183,9 @@ IGNORE_WORDS = ['傻屄', '傻b', '傻x', '傻吊', '傻逼', '傻屌', '傻比'
 
 EMOJI_REPLY = ['ding', 'hello', 'lol', 'hi', '你好', '你好啊', 'chatgpt', 'gpt', '机器人', 'openai', 'ai', 'nice', 'ok', 'great', 'cool', '你好呀', '你在干嘛', '嘛呢', '亲', '在吗', '睡了吗', '呵呵', '哈哈']
 
+EXPENDITURE_COLUMNS = ["ID", "From_id", "Date", "Time", "Spent", "Category", "PaymentMethod", "Merchant", "ItemName", "Price", "Card_Number", "Tax", "Tips", "Address", "Receipt_Image_URL"]
+EXPENDITURE_COLUMNS_STR = ', '.join(EXPENDITURE_COLUMNS)
+
 BOT_COMMAND_DICT = {
     'traderjoe': "Extract the receipt from Trader Joe's and call function: insert_new_expenditure_record to insert the record into the table\n",
     'costco': "Extract the receipt from Costco and call function: insert_new_expenditure_record to insert the record into the table\n",
@@ -273,4 +276,8 @@ BOT_COMMAND_DICT = {
     'set_position': 'set_position_limit',
     'set_limit': 'set_position_limit',
     'position_limit': 'set_position_limit',
+    'aer': 'alter_expenditure_record',
+    'alter_record': 'alter_expenditure_record',
+    'change_expenditure_record': 'alter_expenditure_record',
+    'cer': 'alter_expenditure_record',
     }
