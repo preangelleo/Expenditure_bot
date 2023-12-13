@@ -318,7 +318,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
             """)
 
             # Execute the query with the provided parameters
-            connection.execute(sql, {
+            result = connection.execute(sql, {
                 'from_id': from_id, 
                 'date': date, 
                 'time': time, 
@@ -339,7 +339,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
             connection.commit()
 
             # Read the ID of the last inserted row
-            last_row_id = connection.execute("SELECT LAST_INSERT_ID()").scalar()
+            last_row_id = result.lastrowid
 
             send_msg(f'''Successfully inserted: \n\nID: {last_row_id}\nName: {item_name}\nDate: {date}\nSpent: {spent}\nCategory: {category}\nMerchant: {merchant}\n\n/alter_record {last_row_id} Spent a_new_number''', from_id)
 
