@@ -381,9 +381,6 @@ def check_coin_network(coin, network):
         df = df[df['coin'] == coin]
         if not df.empty:
             df_networkList = pd.DataFrame(df['networkList'].values[0])
-            # make a list
-            networkList = df_networkList['network'].values
-            print(networkList)
 
             df_networkList = df_networkList[df_networkList['network'] == network]
             if not df_networkList.empty:
