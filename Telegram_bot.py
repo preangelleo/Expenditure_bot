@@ -18,8 +18,8 @@ async def command_start_handler(message: Message) -> None:
 @dp.message()
 async def echo_handler(message: types.Message) -> None:
 
-    if message.from_user.id != TG_BOT_OWNER_ID: return await message.answer(NOT_OWNER_ALERT)
-
+    if message.chat.id != TG_BOT_OWNER_ID: return
+    
     try: await handel_telegram_message(message)
     except Exception as e: await message.answer(f"Failed...\n\n{e}")
 

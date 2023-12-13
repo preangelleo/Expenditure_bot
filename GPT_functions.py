@@ -78,14 +78,16 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
 
     if image_url: 
         messages_list = [{"role": "system", "content": SYSTEM_PROMPT_WITH_IMAGE_INPUT}]
-        prompt = f"{NO_IMAGE_CAPTION_DEFAULT}\n{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
+        prompt = f"{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
         messages_list.append({"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]})
         send_msg("GPT is reading the image...", chat_id)
         prompt = await ask_gpt_vision(messages_list, DEFAULT_VISION_MODEL)
 
-        if "nice picture" in prompt.lower(): return send_msg(prompt, chat_id)
+        if "nice picture" in prompt.lower(): return send_msg("Nice picture!", chat_id)
 
-        prompt = f"receipt\n{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
+        send_msg(prompt, chat_id)
+
+        prompt = f"{PREFIX_PROMPT_FOR_RECEIPT_PROCESS}\n{prompt}\nimage_url: {image_url}"
 
 
     messages_list = [{"role": "system", "content": SYSTEM_PROMPT_TEXT_INPUT}]

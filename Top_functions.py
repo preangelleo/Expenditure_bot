@@ -339,7 +339,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
             # Commit the transaction
             connection.commit()
 
-            send_msg(f'''Successfully inserted: \n\n"Name: {item_name}\nPrice: {price}\nDate: {date}\nTime: {time}\nSpent: {spent}\nCategory: {category}\nPaymentMethod: {payment_method}\nMerchant: {merchant}\nCard_Number: {card_number}\nTax: {tax}\nTips: {tips}\nAddress: {address}\nReceipt_Image_URL: {receipt_image_url}"''', from_id)
+            send_msg(f'''Successfully inserted: \n\n"Name: {item_name}\nPrice: {price}\nDate: {date}\nTime: {time}\nSpent: {spent}\nCategory: {category}\nPaymentMethod: {payment_method}\nMerchant: {merchant}\nCard_Number: {card_number}\nTax: {tax}\nTips: {tips}\nAddress: {address}''', from_id)
 
         except Exception as e:
             print(f"An error occurred: {e}")

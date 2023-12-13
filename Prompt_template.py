@@ -1,4 +1,4 @@
-from time import strftime, localtime
+from datetime import datetime
 
 INITIAL_IGNORE_LIST = ['BTC', 'ETH', 'XRP', 'AMB', 'LTC', 'ARB', 'BTS', 'SOL', 'JST', 'ADA', 'TRX', 'LUNA', 'LUNC', 'BCH', 'USTC', 'EOS', 'XMR', 'XLM', 'XEM', 'DOGE', 'AVAX', 'OP', 'MATIC', 'APT', 'COCOS', 'BTT', 'BTTT', 'BTTB', 'EUR', 'SUI', 'QTUM', 'DASH', 'ZEC', 'ZEN', 'ZIL', 'ZRX', 'NEO', 'CELO', 'ANKR', 'BNB', 'OMG', 'TUSDT', 'ETC', 'ACA', 'STORJ', 'FTM', 'LQTY', 'OGN', 'RSR', 'VGX', 'MBL', 'COIN98', 'BLZ', 'MC', 'GAS']
 
@@ -138,7 +138,7 @@ List of available_functions:
 '''
 
 IMAGE_INPUT = '''
-Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." 
+Your task is to determine if the input image is a receipt. If it's not a receipt, and there's no specific prompt from the user, then respond just: Nice picture. 
 If it is a receipt, read and extract the information follow the guidlines.'''
 
 SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user. 
@@ -148,9 +148,9 @@ SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions
 
 RECEIPT_GUIDELINES = f'''Guidelines to polish the receipt information:
 
-0. Read only the total spent or cost of this entire receipt, igore the details of each item.
-1. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.
-3. Chose the closest category from list: ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others'].
+1. Read only the total spent or cost of this entire receipt, igore the details of each item.
+2. If the receipt lacks a date and time, use: `{datetime.now().strftime('%Y-%m-%d')}` and `{datetime.now().strftime('%H:%M')}` respectively.
+3. Chose the closest category from list: 'Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others'.
 4. If 'spent' is not specified, use the 'price' as the 'spent' value, vice versa.
 5. Default to 'Credit Card' if `payment_method` is unspecified.
 6. If the `merchant` is not mentioned, use 'Unknown'.
@@ -168,8 +168,9 @@ SYSTEM_PROMPT_WITH_IMAGE_INPUT = f'''
 {RECEIPT_GUIDELINES}
 '''
 
-NO_IMAGE_CAPTION_DEFAULT = '''Extract receipt information from this image and follow your system prompt instruction.'''
+NO_IMAGE_CAPTION_DEFAULT = '''Follow your system prompt instruction and extract needed information from this image.'''
 
+PREFIX_PROMPT_FOR_RECEIPT_PROCESS = 'Extract info from this receipt text and call function insert_new_expenditure_record to save the record in my table.'
 
 HAPPY_EMOJI = ['🤨', '😆', '😙', '🤫', '😅', '😚', '😋', '😗', '😃', '😍', '🙂', '🤪', '😄', '🤩', '🤔', '😁', '😉', '😊', '😎', '🤭', '😘', '🤗', '😂', '🙈']
 
@@ -180,6 +181,23 @@ IGNORE_WORDS = ['傻屄', '傻b', '傻x', '傻吊', '傻逼', '傻屌', '傻比'
 EMOJI_REPLY = ['ding', 'hello', 'lol', 'hi', '你好', '你好啊', 'chatgpt', 'gpt', '机器人', 'openai', 'ai', 'nice', 'ok', 'great', 'cool', '你好呀', '你在干嘛', '嘛呢', '亲', '在吗', '睡了吗', '呵呵', '哈哈']
 
 BOT_COMMAND_DICT = {
+    'traderjoe': "Extract the receipt from Trader Joe's and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'costco': "Extract the receipt from Costco and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'walmart': "Extract the receipt from Walmart and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'target': "Extract the receipt from Target and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'amazon': "Extract the receipt from Amazon and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'wholefoods': "Extract the receipt from Wholefoods and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'safeway': "Extract the receipt from Safeway and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'bestbuy': "Extract the receipt from Bestbuy and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'homedepot': "Extract the receipt from Home Depot and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'applestore': "Extract the receipt from Apple Store and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'restaurant': "Extract the receipt from a restaurant and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'diner': "Extract the receipt from a diner and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'lunch': "Extract the receipt from a lunch and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'breakfast': "Extract the receipt from a breakfast and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'furniture': "Extract the receipt from a furniture store and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'grocery': "Extract the receipt from a grocery store and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'cvs': "Extract the receipt from CVS and call function: insert_new_expenditure_record to insert the record into the table\n",
     'aic': 'add_ignore_coin',
     'add_ignore': 'add_ignore_coin',
     'add_coin': 'add_ignore_coin',
