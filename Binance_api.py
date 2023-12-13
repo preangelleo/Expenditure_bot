@@ -828,15 +828,14 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     if not r: return send_msg(f'{coin} does not support {network} network.', from_id)
     
     # Polish address to checksum address
-    try:
-        checksum_address = web3.to_checksum_address(address)
-        print(f"From {address} to {checksum_address}")
-    except: return send_msg(f'Invalid address: {address}', from_id)
+    if network in USDT_ETH_COMPATIBLE_NETWORK_LIST:
+        try: checksum_address = web3.to_checksum_address(address)
+        except Exception as e: return send_msg(f'Invalid address: {e}', from_id)
 
     print(f"Now ready to call binance_withdraw({amount}, {network}, {coin}, {checksum_address})")
     
     # data = binance_withdraw(amount, network, coin, address)
-    return 
+    return
 
 
 
@@ -2208,11 +2207,3 @@ if __name__ == '__main__':
     # read net_profit_daily_record table and print as df
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM net_profit_daily_record')).fetchall())
 
-    amount = 100
-    network = 'BSC'
-    coin = 'USDT'
-    address = '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'
-    binance_send_coin(amount, network, coin, address, from_id=TG_BOT_OWNER_ID)
-
-    try: checksum_address = web3.to_checksum_address('0xb411B974c0ac75C88E5039ea0bf63a84aa7Z5377')
-    except Exception as e: print(f"An error occurred: {e}")

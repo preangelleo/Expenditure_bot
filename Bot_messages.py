@@ -73,6 +73,10 @@ THREE_PARAMETER_COMMAND_LIST = {
     'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: \n/alter_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
     }
 
+FOUR_PARAMETER_COMMAND_LIST = {
+    'binance_send_coin': {'function': binance_send_coin, 'description': '/binance_send_coin 100 BSC USDT 0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'},
+    }
+
 # Define a handler for telegram messages
 async def handel_telegram_message(message: types.Message):
 
@@ -138,7 +142,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in TWO_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
-        if not rest_word: return await message.answer(TWO_PARAMETER_COMMAND_LIST[first_word]['description'])
+        if len(rest_word) < 2: return await message.answer(TWO_PARAMETER_COMMAND_LIST[first_word]['description'])
 
         first_parameter = rest_word[0]
         second_parameter = rest_word[1]
@@ -152,7 +156,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in THREE_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
-        if not rest_word: return await message.answer(THREE_PARAMETER_COMMAND_LIST[first_word]['description'])
+        if len(rest_word) < 3: return await message.answer(THREE_PARAMETER_COMMAND_LIST[first_word]['description'])
 
         first_parameter = rest_word[0]
         second_parameter = rest_word[1]
@@ -164,6 +168,21 @@ async def handel_telegram_message(message: types.Message):
         # Call the function and return
         return func(first_parameter, second_parameter, third_parameter, from_id)
     
+    elif first_word in FOUR_PARAMETER_COMMAND_LIST:
+            
+            # If there's no rest word, then reply the description of the command
+            if len(rest_word) < 4: return await message.answer(FOUR_PARAMETER_COMMAND_LIST[first_word]['description'])
+    
+            first_parameter = rest_word[0]
+            second_parameter = rest_word[1]
+            third_parameter = rest_word[2]
+            fourth_parameter = rest_word[3]
+    
+            # Get the corresponding function
+            func = FOUR_PARAMETER_COMMAND_LIST[first_word]['function']
+    
+            # Call the function and return
+            return func(first_parameter, second_parameter, third_parameter, fourth_parameter, from_id)
     
     rest_word = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word}"
