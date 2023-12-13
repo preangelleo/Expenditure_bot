@@ -129,7 +129,7 @@ FUNCTIONS_TOOLS = [
 
 LIST_OF_FUNCTIONS_WITH_DISCRIPTION = '''
 List of available_functions:
-- insert_new_expenditure_record: Insert a item spending record into the table 'user_expenditures_record'
+- insert_new_expenditure_record: Insert a spending record from a receipt into the table 'user_expenditures_record'
 - get_total_spend_of_any_year_any_month: Get the total spend of given year and given month
 - add_coin_to_ignore_list: Add a coin to the ignore_coin_list table
 - get_ignore_list: Read out ignore_list table and return a list of ignored coins
@@ -139,33 +139,29 @@ List of available_functions:
 
 IMAGE_INPUT = '''
 Your task is to determine if the input image is a receipt. If it's not a receipt, respond with only quoted words: "Nice picture." 
-If it is a receipt, read and extract the information as mush as possible.'''
+If it is a receipt, read and extract the information follow the guidlines.'''
 
 SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user. 
 
 {LIST_OF_FUNCTIONS_WITH_DISCRIPTION}'''
 
 
-ADITIONAL_INFO = '''
-- If user is asking for the price of a token, call function `get_token_price_from_coinmarketcap_and_send_msg`.
-- If user is asking for the total spend of a year or a month, call function `get_total_spend_of_any_year_any_month`.
-- If it is a receipt, read and extract the information and create parameters for function `insert_new_expenditure_record` to insert each item as a new row in the table. You could ignore the items that spend lower than 5 dollars if the list is too long, but make sure including other items comprehensively. Do not need to record total amount into the table. When you prepare the parameters, for each function call.'''
+RECEIPT_GUIDELINES = f'''Guidelines to polish the receipt information:
 
-RECEIPT_GUIDELINES = f'''Follow these guidelines to polish the receipt information:
-
-1. Use the provided `from_id` in the user prompt. If it's not provided, default to `9999999999`.
-2. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.
-3. If category info is not provided, then you can chose the closest one from list: ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others'].
-4. If 'spent' is not specified, use the 'price' as the 'spent' value.
+0. Read only the total spent or cost of this entire receipt, igore the details of each item.
+1. If the receipt lacks a date and time, use the current date and time in the format `{strftime('%Y-%m-%d', localtime())}` and `{strftime('%H:%M', localtime())}` respectively.
+3. Chose the closest category from list: ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others'].
+4. If 'spent' is not specified, use the 'price' as the 'spent' value, vice versa.
 5. Default to 'Credit Card' if `payment_method` is unspecified.
 6. If the `merchant` is not mentioned, use 'Unknown'.
-7. Use 'Unclear' for unspecified `item_name`.
+7. Use 'Multiple Items' for multiple items receipt; Use actually item name when there's only one item_name.
 8. Default `card_number` to '0000' if it's missing.
 9. Use 0 for `tax` if it's not provided.
 10. Default `tips` to 0 if absent.
 11. If the `address` is missing, use 'Unknown Address'.
 12. Use 'Unknown' if the `receipt_image_url` is not provided.
-13. Ignore the record if both 'spent' and 'price' are missing.'''
+13. Ignore the record if both 'spent' and 'price' are missing.
+'''
 
 SYSTEM_PROMPT_WITH_IMAGE_INPUT = f'''
 {IMAGE_INPUT}
