@@ -380,6 +380,44 @@ def get_all_expenditure_records(from_id):
     return df
 
 
+# Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
+def get_total_spend_of_given_year_and_month(year=str(datetime.now().year), month=str(datetime.now().month), from_id=TG_BOT_OWNER_ID):
+    df = get_all_expenditure_records(from_id)
+    # Convert the 'date' column to datetime type
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    # sort the dataframe by date
+    df = df.sort_values(by='Date')
+
+    # save the dataframe to csv file
+    df.to_csv('net_profit_daily_record/expenditure_records.csv', index=False)
+
+    try: send_file(from_id, 'net_profit_daily_record/expenditure_records.csv', description='Expenditure records')
+    except: pass
+
+    # Convert year and month to int
+    try: year = int(year)
+    except: return send_msg(f"Year has to be an integer, your input is {year}", from_id)
+
+    try: month = int(month)
+    except: return send_msg(f"Month has to be an integer, your input is {month}", from_id)
+
+    # Calculate the total spent of this year (sum the spent of this year)
+    total_spend_this_year = df[df['Date'].dt.year == year]['Spent'].sum()
+
+    # Calculate the total spent of this month in this year (sum the spent of this month)
+    total_spend_this_month = df[(df['Date'].dt.year == year) & (df['Date'].dt.month == month)]['Spent'].sum()
+
+    # round the total spend of this year and this month, only show inter.
+    total_spend_this_year = format_number(total_spend_this_year)
+    total_spend_this_month = format_number(total_spend_this_month)
+
+    # Inform user the total spent of this year and this month
+    send_msg(f"Total spent of year {year}: {total_spend_this_year} usd\nTotal spent of month {month}: {total_spend_this_month} usd", from_id)
+
+    return
+
+
 # Read out ignore_list table and return a list of ignored coins
 def get_ignore_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
@@ -439,6 +477,7 @@ def reboot_system(from_id):
     send_msg("Rebooting the system...", from_id)
     os.system("sudo reboot")
     return
+
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")

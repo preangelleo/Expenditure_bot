@@ -218,6 +218,7 @@ BOT_COMMAND_DICT = {
     'get_ignore': 'get_ignore_list',
     'gei': 'get_expenditure_info',
     'get_expenditure': 'get_expenditure_info',
+    'gen': 'get_expenditure_now',
     'hcc': 'hot_coins_check',
     'hot_coins': 'hot_coins_check',
     'fmt': 'funding_main_transfer',

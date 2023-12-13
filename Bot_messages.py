@@ -30,7 +30,8 @@ def telegram_bot_commands_and_menu():
         {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
         {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
         {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
-        {'command': 'get_expenditure_info', 'description': 'Get the total spend of this year and this month'},
+        {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
+        {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
         {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
         {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
         {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
@@ -66,7 +67,7 @@ def telegram_bot_commands_and_menu():
 
 NONE_PARAMETER_COMMAND_LIST = {
     'get_ignore_list': get_ignore_list, 
-    'get_expenditure_info': get_total_spend_of_any_year_any_month,
+    'get_expenditure_now': get_total_spend_of_any_year_any_month,
     'hot_coins_check': only_check_hot_coins,
     'funding_main_transfer': funding_main_transfer_all_usdt,
     'get_wallet_balance': get_coin_wallet_balance_all_str,
@@ -98,10 +99,11 @@ ONE_PARAMETER_COMMAND_LIST = {
 
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
+    'get_expenditure_info': {'function': get_total_spend_of_any_year_any_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
-    'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: /alter_expenditure_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
+    'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: \n/alter_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
     }
 
 # Define a handler for telegram messages
@@ -142,9 +144,9 @@ async def handel_telegram_message(message: types.Message):
     # Remove '/' from the first word
     first_word = first_word.replace('/', '')
 
-    if first_word in BOT_COMMAND_DICT: first_word = BOT_COMMAND_DICT[first_word]
+    first_word = BOT_COMMAND_DICT.get(first_word, first_word)
 
-    elif first_word in NONE_PARAMETER_COMMAND_LIST:
+    if first_word in NONE_PARAMETER_COMMAND_LIST:
 
         # Get the corresponding function
         func = NONE_PARAMETER_COMMAND_LIST[first_word]
@@ -158,13 +160,13 @@ async def handel_telegram_message(message: types.Message):
         # If there's no rest word, then reply the description of the command
         if not rest_word: return await message.answer(ONE_PARAMETER_COMMAND_LIST[first_word]['description'])
 
-        rest_word = ' '.join(rest_word)
+        first_parameter = rest_word[0]
 
         # Get the corresponding function
         func = ONE_PARAMETER_COMMAND_LIST[first_word]['function']
 
         # Call the function and return
-        return func(rest_word.upper(), from_id)
+        return func(first_parameter.upper(), from_id)
 
     elif first_word in TWO_PARAMETER_COMMAND_LIST:
 

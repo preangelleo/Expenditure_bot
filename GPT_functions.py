@@ -52,12 +52,6 @@ def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(date
     # Convert the 'date' column to datetime type
     df['Date'] = pd.to_datetime(df['Date'])
 
-    # sort the dataframe by date
-    df = df.sort_values(by='Date')
-
-    # save the dataframe to csv file
-    df.to_csv('net_profit_daily_record/expenditure_records.csv', index=False)
-
     # Convert year and month to int
     year = int(year)
     month = int(month)

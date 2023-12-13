@@ -847,19 +847,6 @@ def get_coin_deposit_address(coin: str, network: str, from_id=TG_BOT_OWNER_ID):
     else: return send_msg(f"Can't get {coin.upper()} deposit address.", from_id)
 
 
-def gpt_coin_deposit_address(coin: str, network: str, from_id=TG_BOT_OWNER_ID):
-    coin = coin.upper()
-    network = network.upper()
-
-    data = binance_get_coin_deposit_address(coin, network)
-    '''data : {'coin': 'USDT', 'address': 'TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV', 'tag': '', 'url': 'https://tronscan.org/#/address/TTiayzuQ6hA8spUtWTsmfFD7nMDxcw33hV'}'''
-
-    address = data['address']
-    url = data['url']
-
-    if data: return send_msg(f"Binance Deposit Address for {coin} at {network}\n\n{address}\n\n{url}", from_id)
-    else: return send_msg(f"Can't get {coin} deposit address.", from_id)
-
 '''
 权重(UID): 1 权重(IP): 1
 
