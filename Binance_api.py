@@ -803,6 +803,38 @@ def binance_withdraw(amount, network, coin, address):
 }
 '''
 
+# difine a binance_send_coin function for bot to call
+def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try: amount = float(amount)
+    except: return send_msg(f'You need to input a number for amount, but you input: {amount}', from_id)
+
+    df_usdt_balance = get_user_asset()
+    df_usdt_balance = df_usdt_balance[df_usdt_balance['asset']==coin]
+    if df_usdt_balance.empty: return send_msg(f'No {coin} in your binance wallet. \n\n/get_wallet_balance', from_id)
+    
+    balance = float(df_usdt_balance['free'].values[0])
+    if balance < amount: return send_msg(f'{coin} balance is {balance}, which is not sufficient for {format_number(amount)}.', from_id)
+
+    # change network name 
+    network = network_name_change(network)
+
+    # Check if the network is supported
+    r = check_coin_network(coin, network)
+    if not r: return send_msg(f'{coin} does not support {network} network.', from_id)
+    
+    # Polish address to checksum address
+    try:
+        checksum_address = web3.to_checksum_address(address)
+        print(f"From {address} to {checksum_address}")
+    except: return send_msg(f'Invalid address: {address}', from_id)
+
+    print(f"Now ready to call binance_withdraw({amount}, {network}, {coin}, {checksum_address})")
+    
+    # data = binance_withdraw(amount, network, coin, address)
+    return 
+
+
 
 '''获取充值地址 (支持多网络) (USER_DATA)
 GET /sapi/v1/capital/deposit/address (HMAC SHA256)
@@ -2171,3 +2203,9 @@ if __name__ == '__main__':
 
     # read net_profit_daily_record table and print as df
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM net_profit_daily_record')).fetchall())
+
+    amount = 100
+    network = 'BSC'
+    coin = 'USDT'
+    address = '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'.lower()
+    binance_send_coin(amount, network, coin, address, from_id=TG_BOT_OWNER_ID)

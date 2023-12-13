@@ -30,6 +30,42 @@ NOT_OWNER_ALERT = "Sorry, This bot is only for the owner.\n\nLEOWANG.net"
 
 CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others']
 
+COMMANDS = [
+    {'command': 'start', 'description': 'Get started'},
+    {'command': 'help', 'description': 'Get help information'},
+    {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
+    {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
+    {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
+    {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
+    {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
+    {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
+    {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
+    {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
+    {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
+    {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
+    {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
+    {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
+    {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
+    {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
+    {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
+    {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'},
+    {'command': 'binance_market_sell', 'description': 'Do market sell of a given coin in Binance'},
+    {'command': 'binance_market_buy', 'description': 'Do market buy of a given coin in Binance'},
+    {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
+    {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
+    {'command': 'switch_on_bot', 'description': 'Switch on the trading bot (start to buy hot coins))'},
+    {'command': 'switch_off_bot', 'description': 'Switch off the trading bot (sell only)'},
+    {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
+    {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
+    {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
+    {'command': 'set_position_limit', 'description': 'Set the position limit of the trading bot'},
+    {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
+    {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
+    {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
+    ]
+
+
+
 FUNCTIONS_TOOLS = [
     {
         "type": "function",
@@ -43,7 +79,7 @@ FUNCTIONS_TOOLS = [
                     "date": {"type": "string", "description": "The date of the expenditure record in format 'YYYY-MM-DD'"},
                     "time": {"type": "string", "description": "The time of the expenditure record in format 'HH:MM'"},
                     "spent": {"type": "number", "description": "The total amount of the expenditure record"},
-                    "category": {"type": "string", "description": "The category of the expenditure record"},
+                    "category": {"type": "string", "description": f"The category of the expenditure record, chose from: Groceries, Dining Out, Transportation, Utilities, Rent Mortgage, Entertainment, Healthcare, Clothing, Education, Travel, Personal Care, Home Maintenance, Gifts Donations, Savings Investments, Electronics, Kids, Pets, Fitness, Insurance, Others"},
                     "payment_method": {"type": "string", "description": "The payment method of the expenditure record"},
                     "merchant": {"type": "string", "description": "The merchant of the expenditure record"},
                     "item_name": {"type": "string", "description": "The item name of the expenditure record"},
@@ -144,9 +180,18 @@ IMAGE_INPUT = '''
 Your task is to determine if the input image is a receipt. If it's not a receipt, and there's no specific prompt from the user, then respond just: Nice picture. 
 If it is a receipt, read and extract the information follow the guidlines.'''
 
-SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions ready to be called. Determine which function to call based on the user input. If user prompt is not related with any function, then just follow the prompt and respond to the user. 
+SYSTEM_PROMPT_TEXT_INPUT = f'''You are a multifunctional GPT with many functions ready to be called. Determine which function below you could call based on the user input. 
 
-{LIST_OF_FUNCTIONS_WITH_DISCRIPTION}'''
+Functions you could call:
+{LIST_OF_FUNCTIONS_WITH_DISCRIPTION}
+
+If among above functions, you don't have any function to call to fulfill user's request, then check below commands list see if any of them might be suitable for the user's request. 
+
+- If any, tell user the command (the command must start with '/' in order to make the command clickable, for example: /btc_rsi_chart ) and don't forget provide a description. 
+- If not, then just respond with your own knowledge. You could answer sorry I don't know if you indeed don't know how to answer.
+
+Commands user could use by themselves:
+{COMMANDS}'''
 
 
 RECEIPT_GUIDELINES = f'''Guidelines to polish the receipt information:
@@ -185,6 +230,8 @@ EMOJI_REPLY = ['ding', 'hello', 'lol', 'hi', '你好', '你好啊', 'chatgpt', '
 
 EXPENDITURE_COLUMNS = ["ID", "From_id", "Date", "Time", "Spent", "Category", "PaymentMethod", "Merchant", "ItemName", "Price", "Card_Number", "Tax", "Tips", "Address", "Receipt_Image_URL"]
 EXPENDITURE_COLUMNS_STR = ', '.join(EXPENDITURE_COLUMNS)
+
+
 
 BOT_COMMAND_DICT = {
     'traderjoe': "Extract the receipt from Trader Joe's and call function: insert_new_expenditure_record to insert the record into the table\n",
@@ -281,4 +328,5 @@ BOT_COMMAND_DICT = {
     'alter_record': 'alter_expenditure_record',
     'change_expenditure_record': 'alter_expenditure_record',
     'cer': 'alter_expenditure_record',
+    'bsc': 'binance_send_coin',
     }

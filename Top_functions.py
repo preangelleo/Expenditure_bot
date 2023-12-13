@@ -30,7 +30,6 @@ import numpy as np
 from mplfinance.original_flavor import candlestick_ohlc
 
 
-
 # Load environment variables
 load_dotenv()
 
@@ -78,10 +77,10 @@ ETHERSCAN_TX_URL_PREFIX = 'https://etherscan.io/tx/'
 ETHERSCAN_TOKEN_URL_PREFIX = 'https://etherscan.io/token/'
 
 
-# INFURA_KEY = os.getenv('INFURA_KEY')
-# INFURA_URL = os.getenv('INFURA_URL')
-# INFURA = INFURA_URL + INFURA_KEY
-# web3 = Web3(Web3.HTTPProvider(INFURA))
+INFURA_KEY = os.getenv('INFURA_KEY')
+INFURA_URL = os.getenv('INFURA_URL')
+INFURA = INFURA_URL + INFURA_KEY
+web3 = Web3(Web3.HTTPProvider(INFURA))
 
 # USER_TELEGRAM_LINK = os.getenv("USER_TELEGRAM_LINK")
 # TELEGRAM_USERNAME = USER_TELEGRAM_LINK.split('/')[-1]
@@ -481,14 +480,7 @@ def reboot_system(from_id):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    # get_token_price_from_coinmarketcap_and_send_msg('RSR', from_id=TG_BOT_OWNER_ID)
 
-    # from_id = TG_BOT_OWNER_ID
-    # df = get_all_expenditure_records(from_id)
-    # print(df)
-
-    # token_info = get_token_info_from_coinmarketcap('RSR')
-    # print(json.dumps(token_info, indent=2))
 
     df = get_all_expenditure_records(from_id=TG_BOT_OWNER_ID)
     print(df)
