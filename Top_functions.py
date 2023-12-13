@@ -417,7 +417,7 @@ def reboot_system(from_id):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    get_token_price_from_coinmarketcap_and_send_msg('RSR', from_id=TG_BOT_OWNER_ID)
+    # get_token_price_from_coinmarketcap_and_send_msg('RSR', from_id=TG_BOT_OWNER_ID)
 
     # from_id = TG_BOT_OWNER_ID
     # df = get_all_expenditure_records(from_id)
@@ -425,3 +425,7 @@ if __name__ == '__main__':
 
     # token_info = get_token_info_from_coinmarketcap('RSR')
     # print(json.dumps(token_info, indent=2))
+
+    df = get_all_expenditure_records(from_id=TG_BOT_OWNER_ID)
+    print(df)
+    
