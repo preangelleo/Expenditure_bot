@@ -21,6 +21,7 @@ def telegram_bot_commands_and_menu():
     # Define the list of commands
     COMMANDS = [
         {'command': 'start', 'description': 'Get started'},
+        {'command': 'help', 'description': 'Get help information'},
         {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
         {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
         {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
