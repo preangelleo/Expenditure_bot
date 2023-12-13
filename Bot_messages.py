@@ -16,21 +16,13 @@ TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 # All handlers should be attached to the Router (or Dispatcher)
 dp = Dispatcher()
 
-def telegram_bot_commands_and_menu():
+# Function to set the bot commands
+def set_commands():
+    url = TELEGRAM_BASE_URL + 'setMyCommands'
+    response = requests.post(url, json={'commands': COMMANDS})
+    if response.status_code == 200: send_msg('Trading bot started...', TG_BOT_OWNER_ID)
+    else: send_msg(f'Failed to set commands...\n\n{response.text}', TG_BOT_OWNER_ID)
 
-    # Define the list of commands
-
-
-    # Function to set the bot commands
-    def set_commands():
-        url = TELEGRAM_BASE_URL + 'setMyCommands'
-        response = requests.post(url, json={'commands': COMMANDS})
-        if response.status_code == 200: send_msg('Trading bot started...', TG_BOT_OWNER_ID)
-        else: send_msg(f'Failed to set commands...\n\n{response.text}', TG_BOT_OWNER_ID)
-
-    # Call the function to set the commands
-    set_commands()
-    return 
 
 NONE_PARAMETER_COMMAND_LIST = {
     'get_ignore_list': get_ignore_list, 
@@ -191,4 +183,4 @@ async def handel_telegram_message(message: types.Message):
 
 
 if __name__ == '__main__':
-    telegram_bot_commands_and_menu()
+    print('Running Bot_message.py...')

@@ -34,6 +34,6 @@ async def main() -> None:
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     # # INFO:aiogram.dispatcher:Run polling for bot @leowang_bot id=6134874649 - 'Leowang.net'
-    telegram_bot_commands_and_menu()
+    set_commands()
     
     asyncio.run(main())
