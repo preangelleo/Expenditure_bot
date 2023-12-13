@@ -381,8 +381,10 @@ def check_coin_network(coin, network):
         df = df[df['coin'] == coin]
         if not df.empty:
             df_networkList = pd.DataFrame(df['networkList'].values[0])
-            print(df_networkList)
-            
+            # make a list
+            networkList = df_networkList['network'].values
+            print(networkList)
+
             df_networkList = df_networkList[df_networkList['network'] == network]
             if not df_networkList.empty:
                 df_networkList = df_networkList[df_networkList['withdrawEnable'] == True]
@@ -2209,5 +2211,8 @@ if __name__ == '__main__':
     amount = 100
     network = 'BSC'
     coin = 'USDT'
-    address = '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'.lower()
+    address = '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'
     binance_send_coin(amount, network, coin, address, from_id=TG_BOT_OWNER_ID)
+
+    try: checksum_address = web3.to_checksum_address('0xb411B974c0ac75C88E5039ea0bf63a84aa7Z5377')
+    except Exception as e: print(f"An error occurred: {e}")
