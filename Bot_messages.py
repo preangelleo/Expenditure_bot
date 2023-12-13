@@ -19,40 +19,7 @@ dp = Dispatcher()
 def telegram_bot_commands_and_menu():
 
     # Define the list of commands
-    COMMANDS = [
-        {'command': 'start', 'description': 'Get started'},
-        {'command': 'help', 'description': 'Get help information'},
-        {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
-        {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
-        {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
-        {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
-        {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
-        {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
-        {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
-        {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
-        {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
-        {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
-        {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
-        {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
-        {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
-        {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
-        {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
-        {'command': 'position_coin_check', 'description': 'Check the positions & profits of a given coin in Binance'},
-        {'command': 'binance_market_sell', 'description': 'Do market sell of a given coin in Binance'},
-        {'command': 'binance_market_buy', 'description': 'Do market buy of a given coin in Binance'},
-        {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
-        {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
-        {'command': 'switch_on_bot', 'description': 'Switch on the trading bot (start to buy hot coins))'},
-        {'command': 'switch_off_bot', 'description': 'Switch off the trading bot (sell only)'},
-        {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
-        {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
-        {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
-        {'command': 'set_position_limit', 'description': 'Set the position limit of the trading bot'},
-        {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
-        {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
-        {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
-        
-        ]
+
 
     # Function to set the bot commands
     def set_commands():

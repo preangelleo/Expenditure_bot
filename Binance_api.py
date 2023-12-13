@@ -381,10 +381,12 @@ def check_coin_network(coin, network):
         df = df[df['coin'] == coin]
         if not df.empty:
             df_networkList = pd.DataFrame(df['networkList'].values[0])
+            print(df_networkList)
+            
             df_networkList = df_networkList[df_networkList['network'] == network]
             if not df_networkList.empty:
                 df_networkList = df_networkList[df_networkList['withdrawEnable'] == True]
-                if not df_networkList.empty: return df_networkList
+                if not df_networkList.empty: return True
 '''
   network coin entityTag withdrawIntegerMultiple  isDefault  depositEnable  withdrawEnable depositDesc withdrawDesc specialTips              name  resetAddressStatus           addressRegex addressRule memoRegex withdrawFee withdrawMin  withdrawMax  minConfirm  unLockConfirm  sameAddress  estimatedArrivalTime   busy                                            country           contractAddressUrl                             contractAddress
 0     ETH  RSR      main              0.00000001       True           True            True                                       Ethereum (ERC20)               False  ^(0x)[0-9A-Fa-f]{40}$                              3531        7062  10000000000           6             64        False                     4  False  AE,BINANCE_BAHRAIN_BSC,KZ,FR,ES,PL,IT,SE,JP,NL...  https://etherscan.io/token/  0x320623b8e4ff03373931769a31fc52a4e78b5d70
