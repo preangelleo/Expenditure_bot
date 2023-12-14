@@ -30,7 +30,7 @@ Reference to my [ChatGPT Conversation](https://chat.openai.com/share/5640285f-4e
 # Step 1: Setting Up the Environment
 1. Navigate to the root directory:
    ```bash
-   cd /root
+   cd /home/your_working_folder
    ```
 2. Clone the Expenditure_bot repository:
    ```bash
@@ -112,7 +112,7 @@ Replace the actually path of your python to the crontab_template.txt files. Then
 
 Or, you can quickly use below command to setup your crontab jobs:
    ```bash
-   crontab /root/Expenditure_bot/crontab_template.txt
+   crontab /home/your_working_folder/Expenditure_bot/crontab_template.txt
    ```
 
 Ask ChatGPT if you don't know how to setup crontab jobs or don't know the time frequency format.
