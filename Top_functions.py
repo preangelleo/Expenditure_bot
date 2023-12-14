@@ -657,3 +657,4 @@ if __name__ == '__main__':
     # webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
     # print('all done')
 
+    drop_telegram_messages_table()
