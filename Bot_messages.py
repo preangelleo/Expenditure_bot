@@ -21,8 +21,8 @@ TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 def set_commands(from_id=TG_BOT_OWNER_ID):
     url = TELEGRAM_BASE_URL + 'setMyCommands'
     response = requests.post(url, json={'commands': COMMANDS})
-    if response.status_code == 200: send_msg('Trading bot started...', from_id)
-    else: send_msg(f'Failed to set commands...\n\n{response.text}', from_id)
+    if response.status_code == 200: send_msg('Trading bot menu reset...', from_id)
+    else: send_msg(f'Failed to set menu commands...\n\n{response.text}', from_id)
 
 
 NONE_PARAMETER_COMMAND_LIST = {
@@ -57,11 +57,13 @@ ONE_PARAMETER_COMMAND_LIST = {
     'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
+    'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
     }
 
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
     'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
+    'calculate_irr': {'function': calculate_irr, 'description': 'You need to input a year and a month after this command, for example, calulate a 7 folds return in 10 years: /calculate_irr 7 10'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {

@@ -1,5 +1,4 @@
-from Bot_messages import *
-from Top_functions import *
+from Tradingview_handler import *
 
 app = Flask(__name__)
 JUST_STARTED = True
@@ -11,24 +10,13 @@ def hello_world():
     return '<a href="https://leowang.net">LEOWANG.NET</a>'
 
 # Create a webhook to receive messages from Tradingview
-@app.route('/tv', methods=['POST'])
-def tv():
-    # Get the json data
-    data = request.json
-
-    print(data)
-    '''{"condition": "P", "message": "1234567"}'''
-
+@app.route(f'/{TRADINGVIEW_WEBHOOK}', methods=['POST'])
+def tv_webhook():
     try:
-        # Extract the message
-        message = data.get('message', 'None')
-        condition = data.get('condition', 'None').upper()
-    except: return {'message': 'Invalid data'}, 200
+        data = request.json
+        if data['token'] == TRADINGVIEW_WEBHOOK_TOKEN: tradingview_webhook_handler(data)
 
-    trading_bot_status = trading_bot_switch_status()
-
-    if not trading_bot_status and condition == 'P': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-    elif trading_bot_status and condition == 'N': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+    except: pass
 
     return {'message': 'Thanks'}, 200
 

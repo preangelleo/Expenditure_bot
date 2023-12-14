@@ -68,6 +68,8 @@ COMMANDS = [
     {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
     {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
     {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
+    {'command': 'get_fibonacci_sequence', 'description': 'Get the fibonacci sequence of a given number'},
+    {'command': 'calculate_irr', 'description': 'Calculate the IRR of a given return folds and years of investment'},
     ]
 
 
@@ -337,4 +339,10 @@ BOT_COMMAND_DICT = {
     'change_expenditure_record': 'alter_expenditure_record',
     'cer': 'alter_expenditure_record',
     'bsc': 'binance_send_coin',
+    'gfs': 'get_fibonacci_sequence',
+    'fibonacci_sequence': 'get_fibonacci_sequence',
+    'fibonacci': 'get_fibonacci_sequence',
+    'fib': 'get_fibonacci_sequence',
+    'cir': 'calculate_irr',
+    'irr': 'calculate_irr',
     }

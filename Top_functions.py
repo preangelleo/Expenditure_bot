@@ -43,6 +43,9 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_OWNER_FIRST_NAME = os.getenv('TELEGRAM_OWNER_FIRST_NAME')
 TELEGRAM_OWNER_USERNAME = os.getenv('TELEGRAM_OWNER_USERNAME')
 
+TRADINGVIEW_WEBHOOK = os.getenv('TRADINGVIEW_WEBHOOK')
+TRADINGVIEW_WEBHOOK_TOKEN = os.getenv('TRADINGVIEW_WEBHOOK_TOKEN')
+
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
 BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
 BINANCE_BASE_URL = os.getenv('BINANCE_BASE_URL')
@@ -648,6 +651,44 @@ def drop_telegram_messages_table():
     cursor.close()
     conn.close()
     return True
+
+
+# Define a function to create the give number of fibonacci numbers, return a list of fibonacci numbers from the first to the given number
+def fibonacci(n):
+    if n == 0: return [0]
+    if n == 1: return [0, 1]
+    if n > 1:
+        fib_list = [0, 1]
+        for i in range(2, n + 1):
+            fib_list.append(fib_list[i - 1] + fib_list[i - 2])
+        return fib_list
+
+# define a function to respond to the from_id with a fibonacci sequence in string format for the user given number
+def fibonacci_sequence(n, from_id):
+    try: n = int(n)
+    except: return send_msg(f"Your input has to be an integer, your input is {n}", from_id)
+
+    if n < 0: return send_msg(f"Your input has to be a positive integer, your input is {n}", from_id)
+
+    fib_list = fibonacci(n)
+    fib_list_str = ', '.join([str(i) for i in fib_list])
+    return send_msg(f"Fibonacci sequence for {n}:\n{fib_list_str}", from_id)
+
+
+# define a function to calculate the IRR for a give return x-fold and a years number, return the IRR as a xx.xx% format
+def calculate_irr(x, years, from_id):
+    try: x = float(x)
+    except: return send_msg(f"Your folds input has to be a float number, like 5.8, however your input is {x}", from_id)
+
+    try: years = int(years)
+    except: return send_msg(f"Your years input has to be an integer, however your input is {years}", from_id)
+
+    if x <= 0: return send_msg(f"Your folds input has to be a positive number, like 5.8, however your input is {x}", from_id)
+    if years <= 0: return send_msg(f"Your years input has to be a positive integer, however your input is {years}", from_id)
+
+    irr = (x ** (1 / years) - 1) * 100
+
+    return send_msg(f"IRR for {x} folds in {years} years is {irr:.2f}%", from_id)
 
 
 if __name__ == '__main__':
