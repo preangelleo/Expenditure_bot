@@ -66,8 +66,8 @@ def tg_webhook():
                     return jsonify({'status': 'success'})
                 if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})
                 if message['from']['username'] != TELEGRAM_OWNER_USERNAME: return jsonify({'status': 'success'})
-                
-                print(json.dumps(message, indent=2))
+
+                # print(json.dumps(message, indent=2))
 
                 try: handel_telegram_message_from_webhook(message)
                 except: pass
