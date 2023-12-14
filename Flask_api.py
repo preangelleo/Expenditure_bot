@@ -20,7 +20,9 @@ def home():
 @app.route('/tv', methods=['POST'])
 def tv():
     # Get the json data
-    data = request.get_json()
+    data = request.json
+
+    print(data)
     '''{"condition": "P", "message": "1234567"}'''
 
     try:
@@ -39,4 +41,4 @@ def tv():
 
 # Run the application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
