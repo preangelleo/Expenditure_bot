@@ -5,7 +5,7 @@ import pandas as pd
 from eth_account import Account
 from mnemonic import Mnemonic
 from web3 import Web3, EthereumTesterProvider
-from moralis import evm_api
+# from moralis import evm_api
 from sqlalchemy import create_engine, text
 from sqlalchemy.sql import text
 from urllib.parse import urlencode
