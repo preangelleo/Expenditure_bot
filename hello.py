@@ -44,35 +44,37 @@ def tg_webhook():
         if update:
             print(json.dumps(update, indent=2))
             update_id = update['update_id']
+            print(f'update_id = {update_id}')
 
             if 'message' in update:
 
                 latest_message_dict = get_latest_message_from_telegram_messages_table()
 
-                if update_id != latest_message_dict['update_id'] + 1 and not JUST_STARTED: return jsonify({'status': 'success'})
+                if update_id == latest_message_dict['update_id'] + 1 or JUST_STARTED: 
 
-                try: r = insert_telegram_message_from_webhook(update)
-                except: return jsonify({'status': 'success'})
+                    try: r = insert_telegram_message_from_webhook(update)
+                    except: return jsonify({'status': 'success'})
 
-                if not r: return jsonify({'status': 'success'})
+                    if not r: return jsonify({'status': 'success'})
 
-                message = update['message']
-                chat_id = message['chat']['id']
+                    message = update['message']
+                    chat_id = message['chat']['id']
 
-                # if it's not private chat, return
-                if message['chat']['type'] != 'private': return jsonify({'status': 'success'})
-                if message['from']['id'] != TG_BOT_OWNER_ID: 
-                    send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
-                    return jsonify({'status': 'success'})
-                if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})
-                if message['from']['username'] != TELEGRAM_OWNER_USERNAME: return jsonify({'status': 'success'})
+                    # if it's not private chat, return
+                    if message['chat']['type'] == 'private': 
+                        if message['from']['id'] != TG_BOT_OWNER_ID: 
+                            send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
+                            return jsonify({'status': 'success'})
+                        if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})
+                        if message['from']['username'] != TELEGRAM_OWNER_USERNAME: return jsonify({'status': 'success'})
 
-                # print(json.dumps(message, indent=2))
+                        # print(json.dumps(message, indent=2))
 
-                try: handel_telegram_message_from_webhook(message)
-                except: pass
+                        try: handel_telegram_message_from_webhook(message)
+                        except: pass
 
-                JUST_STARTED = False
+                        JUST_STARTED = False
+                        print(f'JUST_STARTED = {JUST_STARTED}')
 
     except: pass
 
