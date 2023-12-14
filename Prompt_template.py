@@ -255,6 +255,7 @@ BOT_COMMAND_DICT = {
     'furniture': "Extract the receipt from a furniture store and call function: insert_new_expenditure_record to insert the record into the table\n",
     'grocery': "Extract the receipt from a grocery store and call function: insert_new_expenditure_record to insert the record into the table\n",
     'cvs': "Extract the receipt from CVS and call function: insert_new_expenditure_record to insert the record into the table\n",
+    'glm': 'get_last_msg',
     'aic': 'add_ignore_coin',
     'add_ignore': 'add_ignore_coin',
     'add_coin': 'add_ignore_coin',

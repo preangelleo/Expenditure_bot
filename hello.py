@@ -45,11 +45,8 @@ def tg_webhook():
         if update:
             print(json.dumps(update, indent=2))
             update_id = update['update_id']
-            print(f'update_id = {update_id}')
 
             if 'message' in update:
-
-                # drop_telegram_messages_table()
 
                 latest_message_dict = get_latest_message_from_telegram_messages_table()
 
@@ -66,7 +63,6 @@ def tg_webhook():
                     # if it's not private chat, return
                     if message['chat']['type'] == 'private': 
                         if chat_id != TG_BOT_OWNER_ID: 
-                            print(f"NOT OWNER: chat_id: {chat_id}, TG_BOT_OWNER_ID: {TG_BOT_OWNER_ID}")
                             send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
                             return jsonify({'status': 'success'})
                         
@@ -77,7 +73,6 @@ def tg_webhook():
                         except: pass
 
                         JUST_STARTED = False
-                        print(f'JUST_STARTED = {JUST_STARTED}')
 
     except: pass
 

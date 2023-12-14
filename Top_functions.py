@@ -615,7 +615,7 @@ def update_text_for_a_given_message_id(message_id, text, from_id=TG_BOT_OWNER_ID
 
 
 # Define a function to get the latest message from the table 'telegram_messages'
-def get_latest_message_from_telegram_messages_table():
+def get_latest_message_from_telegram_messages_table(from_id=None):
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_latest_message_from_telegram_messages_table() is running ...')
 
@@ -631,7 +631,9 @@ def get_latest_message_from_telegram_messages_table():
 
     # Convert the dataframe to a dictionary
     latest_message_dict = df.to_dict(orient='records')[0]
+    if from_id: send_msg(f"Latest message from user:\nUpdate_id: {latest_message_dict.get('update_id')}\n\n{latest_message_dict.get('text')}", from_id)
     return latest_message_dict
+
 
 # drop telegram_messages table
 def drop_telegram_messages_table():
@@ -657,4 +659,4 @@ if __name__ == '__main__':
     # webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
     # print('all done')
 
-    drop_telegram_messages_table()
+
