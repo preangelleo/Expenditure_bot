@@ -36,7 +36,9 @@ def tv():
 @app.route('/tg', methods=['POST'])
 def tg():
     # Get the json data
-    message = request.json
+    data = request.json
+    message = data.get('message', None)
+    if not message: return {'message': 'Invalid data'}, 200
 
     print(json.dumps(message, indent=2))
 
