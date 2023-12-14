@@ -578,22 +578,12 @@ def reboot_system(from_id):
 # Define a function to convert telegram message to df and save to 'telegram_messages' table
 def insert_telegram_message_from_webhook(message):
     # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} handel_telegram_message_from_webhook() is running ...')
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} insert_telegram_message_from_webhook() is running ...')
 
     new_message_dict = {
         "update_id": message['update_id'],
         "message_id": message['message']['message_id'],
         "from_id": message['message']['from']['id'],
-        "from_is_bot": message['message']['from']['is_bot'],
-        "from_first_name": message['message']['from']['first_name'],
-        "from_username": message['message']['from']['username'],
-        "from_language_code": message['message']['from']['language_code'],
-        "from_is_premium": message['message']['from']['is_premium'],
-        "chat_id": message['message']['chat']['id'],
-        "chat_first_name": message['message']['chat']['first_name'],
-        "chat_username": message['message']['chat']['username'],
-        "chat_type": message['message']['chat']['type'],
-        "date": message['message']['date'],
         "text": message['message'].get('text', 'None')
     }
 
@@ -633,12 +623,6 @@ def get_latest_message_from_telegram_messages_table():
         "update_id": 1,
         "message_id": 1,
         "from_id": TG_BOT_OWNER_ID,
-        "from_first_name": TELEGRAM_OWNER_FIRST_NAME,
-        "from_username": TELEGRAM_OWNER_USERNAME,
-        "chat_id": TG_BOT_OWNER_ID,
-        "chat_first_name": TELEGRAM_OWNER_FIRST_NAME,
-        "chat_username": TELEGRAM_OWNER_USERNAME,
-        "chat_type": 'initial',
         "text": 'This is only for the initial value before the table was created'
     }
 
@@ -648,6 +632,20 @@ def get_latest_message_from_telegram_messages_table():
     # Convert the dataframe to a dictionary
     latest_message_dict = df.to_dict(orient='records')[0]
     return latest_message_dict
+
+# drop telegram_messages table
+def drop_telegram_messages_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    try: cursor.execute(f"DROP TABLE telegram_messages")
+    except Exception as e: return print(f"No table telegram_messages in the database.\n\n{e}")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
 
 
 if __name__ == '__main__':
