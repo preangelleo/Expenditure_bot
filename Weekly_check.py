@@ -11,7 +11,7 @@ from BTC_weekly import *
 
 if __name__ == '__main__':
     # Crontab job, run once a day at 00:00
-    '''30 6 * * 1 cd /root/Expenditure_bot && /root/anaconda3/envs/expenditure_ai/bin/python3 /root/Expenditure_bot/Weekly_check.py >> /root/Expenditure_bot/cron.log 2>&1'''
+    '''30 6 * * 1 cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Weekly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1'''
 
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Weekly_check.py is running ...')

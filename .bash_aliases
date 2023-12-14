@@ -1,11 +1,11 @@
-alias nb='nano /root/.bash_aliases'
+alias nb='nano /home/preangel/.bash_aliases'
 alias sb='source ~/.bashrc'
 alias sba='source ~/.bash_aliases'
 alias a='alias'
 alias ll='ls -alF'
 alias la='ls -A'
 alias c='clear'
-alias cb='cd /root/backup'
+alias cb='cd /home/preangel/backup'
 
 alias pip='pip3'
 alias pm='pm2'
@@ -28,4 +28,4 @@ alias prep='pm2 restart ep'
 
 alias cflask='chmod +x start_flask.sh'
 
-alias ceai='cd /root/Expenditure_bot && conda activate expenditure_ai'
+alias ceai='cd /home/preangel/Expenditure_bot && conda activate expenditure_ai'
