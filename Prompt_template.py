@@ -37,6 +37,7 @@ CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mo
 COMMANDS = [
     {'command': 'start', 'description': 'Get started'},
     {'command': 'help', 'description': 'Get help information'},
+    {'command': 'set_bot_menu', 'description': "Set the bot's menu"},
     {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
     {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
     {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
@@ -257,6 +258,7 @@ BOT_COMMAND_DICT = {
     'grocery': "Extract the receipt from a grocery store and call function: insert_new_expenditure_record to insert the record into the table\n",
     'cvs': "Extract the receipt from CVS and call function: insert_new_expenditure_record to insert the record into the table\n",
     'glm': 'get_last_msg',
+    'sbm': 'set_bot_menu',
     'aic': 'add_ignore_coin',
     'add_ignore': 'add_ignore_coin',
     'add_coin': 'add_ignore_coin',

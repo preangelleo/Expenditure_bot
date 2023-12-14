@@ -18,15 +18,15 @@ TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 # dp = Dispatcher()
 
 # Function to set the bot commands
-def set_commands():
+def set_commands(from_id=TG_BOT_OWNER_ID):
     url = TELEGRAM_BASE_URL + 'setMyCommands'
     response = requests.post(url, json={'commands': COMMANDS})
-    if response.status_code == 200: send_msg('Trading bot started...', TG_BOT_OWNER_ID)
-    else: send_msg(f'Failed to set commands...\n\n{response.text}', TG_BOT_OWNER_ID)
+    if response.status_code == 200: send_msg('Trading bot started...', from_id)
+    else: send_msg(f'Failed to set commands...\n\n{response.text}', from_id)
 
-set_commands()
 
 NONE_PARAMETER_COMMAND_LIST = {
+    'set_bot_menu': set_commands,
     'get_ignore_list': get_ignore_list, 
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
     'get_last_msg': get_latest_message_from_telegram_messages_table,
