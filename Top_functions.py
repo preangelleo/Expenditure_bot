@@ -532,6 +532,7 @@ def reboot_bot(from_id):
 def reboot_system(from_id):
     send_msg("Rebooting the system...", from_id)
     # os.system("sudo reboot")
+    os.system("pm2 restart ep")
     return
 
 
