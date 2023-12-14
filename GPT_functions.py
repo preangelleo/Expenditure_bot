@@ -91,7 +91,15 @@ def insert_new_gpt_response_record(from_id, message_id, prompt, response):
 
 # define a function to read the latest message from 'telegram_messages' table
 def get_latest_message_from_telegram_messages_table():
-    df = pd.read_sql('telegram_messages', engine)
+    query = text("select * from telegram_messages where message_id = (select max(message_id) from telegram_messages)")
+    df = pd.DataFrame(engine.connect().execute(query).fetchall())
+    latest_message_dict = df.iloc[-1].to_dict()
+    return latest_message_dict
+
+# define a function to read the latest message from 'gpt_response' table
+def get_latest_message_from_gpt_response_table():
+    query = text("select * from gpt_response where message_id = (select max(message_id) from gpt_response)")
+    df = pd.DataFrame(engine.connect().execute(query).fetchall())
     latest_message_dict = df.iloc[-1].to_dict()
     return latest_message_dict
 
@@ -181,5 +189,10 @@ if __name__ == '__main__':
 
     try: 
         r = get_latest_message_from_telegram_messages_table()
+        print(json.dumps(r, indent=2))
+    except: pass
+
+    try:
+        r = get_latest_message_from_gpt_response_table()
         print(json.dumps(r, indent=2))
     except: pass
