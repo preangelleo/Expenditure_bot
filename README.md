@@ -117,6 +117,8 @@ Or, you can quickly use below command to setup your crontab jobs:
 
 Ask ChatGPT if you don't know how to setup crontab jobs or don't know the time frequency format.
 
+How to install PM2? 
+https://chat.openai.com/share/3ffa9743-98eb-46e8-8d70-958c33b00117 
 
 Now, everything is set up and ready to go!
 

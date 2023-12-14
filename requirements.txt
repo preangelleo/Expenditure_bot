@@ -1,3 +1,4 @@
+openai
 aiodns
 aiofiles
 aiogram
@@ -54,13 +55,11 @@ magic-filter
 MarkupSafe
 matplotlib
 mnemonic
-moralis
 MoralisPy
 mplfinance
 multidict
 mysql-connector-python
 numpy
-openai
 packaging
 pandas
 parsimonious

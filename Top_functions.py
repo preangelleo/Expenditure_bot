@@ -531,7 +531,7 @@ def reboot_bot(from_id):
 # define a function to take command from the user and reboot the bot, send a message to the user before rebooting
 def reboot_system(from_id):
     send_msg("Rebooting the system...", from_id)
-    os.system("sudo reboot")
+    # os.system("sudo reboot")
     return
 
 
