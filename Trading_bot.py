@@ -173,10 +173,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
             token_slug = row['token_slug']
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent, 3)}"
+            reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
             send_msg_markdown(reply_string, from_id)
         
-        help_info = 'The 1) number is price, 2) is price change, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
+        help_info = 'The 1) number is price change, 2) is price, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
         send_msg(help_info, from_id)
 
     return today_hot_coin_list

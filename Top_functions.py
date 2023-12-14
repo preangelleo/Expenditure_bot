@@ -379,7 +379,7 @@ def get_all_expenditure_records(from_id):
     return df
 
 
-# Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
+# Define a function to pull all of the expdenditure records of given year and month, calculate the total spend of that month and that year
 def get_total_spend_of_given_year_and_month(year=str(datetime.now().year), month=str(datetime.now().month), from_id=TG_BOT_OWNER_ID):
     df = get_all_expenditure_records(from_id)
     # Convert the 'date' column to datetime type
@@ -415,6 +415,50 @@ def get_total_spend_of_given_year_and_month(year=str(datetime.now().year), month
     send_msg(f"Total spent of year {year}: {total_spend_this_year} usd\nTotal spent of month {month}: {total_spend_this_month} usd", from_id)
 
     return
+
+# Define a function to pull all of the expdenditure records of given year and month, calculate the total spend of that month and that year for a given category and merchant
+def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(year=str(datetime.now().year), month=str(datetime.now().month), category='ALL', merchant='ALL', from_id=TG_BOT_OWNER_ID):
+    '''Groceries, Dining Out, Transportation, Utilities, Rent Mortgage, Entertainment, Healthcare, Clothing, Education, Travel, Personal Care, Home Maintenance, Gifts Donations, Savings Investments, Electronics, Kids, Pets, Fitness, Insurance, Others'''
+
+    # Check if the input category upper case is 'ALL'
+    if category.upper() == 'ALL' or merchant.upper() == 'ALL': return get_total_spend_of_given_year_and_month(year, month, from_id)
+
+    # Make a unique list of the current category value, and make a unique list of the current merchant value
+    df = get_all_expenditure_records(from_id)
+    category_list = df['Category'].unique().tolist()
+    merchant_list = df['Merchant'].unique().tolist()
+
+    # add 'ALL' to the category list and merchant list
+    category_list.append('ALL') 
+    merchant_list.append('ALL')
+
+    # Make a dic, key is lower case of category, value is the original category
+    category_dic = {k.lower(): k for k in category_list}
+    # Make a dic, key is lower case of merchant, value is the original merchant
+    merchant_dic = {k.lower(): k for k in merchant_list}
+
+    print(f"{json.dumps(category_dic, indent=4)}\n\n{json.dumps(merchant_dic, indent=4)}")
+
+    category = category.lower()
+    merchant = merchant.lower()
+
+    # Check if the input category and merchant are in the list
+    if category not in category_dic: return send_msg(f"Category has to be one of the following:\n{category_list}", from_id)
+    if merchant not in merchant_dic: return send_msg(f"Merchant has to be one of the following:\n{merchant_list}", from_id)
+
+    # Translate the category and merchant to the original category and merchant
+    category_correct = category_dic[category]
+    merchant_correct = merchant_dic[merchant]
+
+    query = f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}' AND Category = '{category}' AND Merchant = '{merchant}' AND Date LIKE '{year}-{month}%'" if category_correct != 'ALL' and merchant_correct != 'ALL' else f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}' AND Merchant = '{merchant}' AND Date LIKE '{year}-{month}%'" if category_correct == 'ALL' and merchant_correct != 'ALL' else f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}' AND Category = '{category}' AND Date LIKE '{year}-{month}%'" if category_correct != 'ALL' and merchant_correct == 'ALL' else None
+
+    if not query: return send_msg("Something wrong with the query, please check the code", from_id)
+
+    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+
+    print(df)
+
+
 
 
 # Read out ignore_list table and return a list of ignored coins
@@ -453,6 +497,19 @@ def switch_off_bot(from_id):
     if trading_bot_switch_off(): return send_msg("Trading bot has been switched OFF!", from_id)
     return send_msg("Failed to switch off trading bot!", from_id)
 
+
+# define a function to switch on the trading bot and send a message to the user
+def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
+    if trading_bot_switch_on(): return send_msg(f"TradingView webhook has switched ON the bot!\n\n{msg}", from_id)
+    return send_msg(f"TradingView webhook failed to switch on the bot!\n\n{msg}", from_id)
+
+
+# define a function to switch off the trading bot and send a message to the user
+def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
+    if trading_bot_switch_off(): return send_msg(f"TradingView webhook has switched OFF the bot!\n\n{msg}", from_id)
+    return send_msg(f"TradingView webhook failed to switch off the bot!\n\n{msg}", from_id)
+
+
 # define a function to read the trading bot switch status from the database
 def read_trading_bot_status(from_id):
     status = trading_bot_switch_status()
@@ -482,6 +539,8 @@ if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 
 
-    df = get_all_expenditure_records(from_id=TG_BOT_OWNER_ID)
-    print(df)
+    # webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
+    # time.sleep(2)
+    # webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
+    # print('all done')
 
