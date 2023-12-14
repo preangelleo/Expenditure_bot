@@ -8,13 +8,13 @@ from BTC_weekly import *
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = os.getenv('TELEGRAM_TOKEN')
-bot = Bot(token=TOKEN)
+# bot = Bot(token=TOKEN)
 TG_BOT_OWNER_ID = int(os.getenv('TG_BOT_OWNER_ID'))
 
 TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 
 # All handlers should be attached to the Router (or Dispatcher)
-dp = Dispatcher()
+# dp = Dispatcher()
 
 # Function to set the bot commands
 def set_commands():
@@ -69,35 +69,40 @@ FOUR_PARAMETER_COMMAND_LIST = {
     'binance_send_coin': {'function': binance_send_coin, 'description': '/binance_send_coin 100 BSC USDT 0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'},
     }
 
-# Define a handler for telegram messages
-async def handel_telegram_message(message: types.Message):
+
+# Define a handler for telegram messages from webhook
+def handel_telegram_message_from_webhook(message):
 
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
-    from_id = message.from_user.id
-    text_prompt = message.text 
+    from_id = message['chat']['id']
+    text_prompt = message.get('text', None)
     image_url = None
 
     # check if the message is a photo
-    if message.photo:
+    if 'photo' in message:
         # if from_id != TG_BOT_OWNER_ID: return
 
         '''file_id='AgACAgUAAxkBAAIVx2Vx-uODMrGVAAEL5Q9U1d9w2ECsLAAC5rgxG5oKkFc2W-bswf4s-gEAAwIAA3gAAzME' file_unique_id='AQAD5rgxG5oKkFd9' width=800 height=620 file_size=117042'''
         '''File path: photos/file_53.jpg'''
         '''File url: https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_53.jpg'''
 
-        file_id = message.photo[-1].file_id  # get the file_id of the largest size photo
-        file_info = await bot.get_file(file_id)  # get File object
-        file_path = file_info.file_path  # get file_path from File object
+        caption = message.get('caption', '')
+
+        file_id = message.get('photo')[-1]['file_id']  # get file_id from message
+
+        # get File object from file_id
+        file_info = tg_get_file_path(file_id)
+        file_path = file_info.get('file_path', '')
         image_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"  # construct file url
-        text_prompt = f"{message.caption}\n{text_prompt}" if message.caption else NO_IMAGE_CAPTION_DEFAULT
+        text_prompt = f"{caption}\n{text_prompt}" if caption else NO_IMAGE_CAPTION_DEFAULT
 
-    if not text_prompt: return await message.answer(random.choice(HAPPY_EMOJI))
+    if not text_prompt: return send_msg(random.choice(HAPPY_EMOJI), from_id)
 
-    if text_prompt in IGNORE_WORDS: return await message.answer(random.choice(UNHAPPY_EMOJI))
+    if text_prompt in IGNORE_WORDS: send_msg(random.choice(UNHAPPY_EMOJI), from_id)
     
-    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return await message.answer(random.choice(HAPPY_EMOJI))
+    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return send_msg(random.choice(HAPPY_EMOJI), from_id)
 
-    if text_prompt.lower() in ['help', '/help']: return await message.answer(BOT_HELP)
+    if text_prompt.lower() in ['help', '/help']: return send_msg(BOT_HELP, from_id)
 
     # Extract the first word from the message, check if it's in COMMAND_LIST
     first_word = text_prompt.split()[0].lower()
@@ -121,7 +126,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in ONE_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
-        if not rest_word: return await message.answer(ONE_PARAMETER_COMMAND_LIST[first_word]['description'])
+        if not rest_word: return send_msg(ONE_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
 
         first_parameter = rest_word[0]
 
@@ -134,7 +139,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in TWO_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
-        if len(rest_word) < 2: return await message.answer(TWO_PARAMETER_COMMAND_LIST[first_word]['description'])
+        if len(rest_word) < 2: return send_msg(TWO_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
 
         first_parameter = rest_word[0]
         second_parameter = rest_word[1]
@@ -148,7 +153,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in THREE_PARAMETER_COMMAND_LIST:
 
         # If there's no rest word, then reply the description of the command
-        if len(rest_word) < 3: return await message.answer(THREE_PARAMETER_COMMAND_LIST[first_word]['description'])
+        if len(rest_word) < 3: return send_msg(THREE_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
 
         first_parameter = rest_word[0]
         second_parameter = rest_word[1]
@@ -163,7 +168,7 @@ async def handel_telegram_message(message: types.Message):
     elif first_word in FOUR_PARAMETER_COMMAND_LIST:
             
             # If there's no rest word, then reply the description of the command
-            if len(rest_word) < 4: return await message.answer(FOUR_PARAMETER_COMMAND_LIST[first_word]['description'])
+            if len(rest_word) < 4: return send_msg(FOUR_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
     
             first_parameter = rest_word[0]
             second_parameter = rest_word[1]
@@ -179,7 +184,8 @@ async def handel_telegram_message(message: types.Message):
     rest_word = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word}"
 
-    await run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt)
+    try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt)
+    except Exception as e: send_msg(f"Failed...\n\n{e}", from_id)
 
 
 if __name__ == '__main__':

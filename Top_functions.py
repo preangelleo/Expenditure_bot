@@ -36,6 +36,9 @@ load_dotenv()
 # Create database engine
 engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
 
+PRIVKEY = os.getenv('PRIVKEY')
+FULLCHAIN = os.getenv('FULLCHAIN')
+
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
@@ -219,6 +222,17 @@ def get_token_price_from_coinmarketcap_and_send_msg(coin: str, from_id=TG_BOT_OW
 
     return True
 
+
+def tg_get_file_path(file_id):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getFile"
+    payload = { "file_id": file_id}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code != 200: return
+        return response.json()['result']
+    except Exception as e: return print(f"ERROR: tg_get_file_path() failed: \n{e}")
+    
 
 # difine a function to send telegram message to a chat_id using requests + telegram bot api
 def send_msg(message, chat_id=TG_BOT_OWNER_ID):
