@@ -40,6 +40,7 @@ COMMANDS = [
     {'command': 'reboot_the_bot', 'description': 'Reboot only the trading bot (fast)'},
     {'command': 'reboot_the_system', 'description': 'Reboot / restart / reload the system (slow)'},
     {'command': 'btc_rsi_chart', 'description': 'Get the BTC 1M, 1w or 1d chart with RSI'},
+    {'command': 'get_last_msg', 'description': 'Get the last message from the telegram_messages table'},
     {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
     {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
     {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},

@@ -626,11 +626,11 @@ def get_latest_message_from_telegram_messages_table(from_id=None):
         "text": 'This is only for the initial value before the table was created'
     }
 
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM telegram_messages ORDER BY update_id DESC LIMIT 1')).fetchall())
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM telegram_messages ORDER BY update_id DESC LIMIT 2')).fetchall())
     except: return latest_message_dict
 
-    # Convert the dataframe to a dictionary
-    latest_message_dict = df.to_dict(orient='records')[0]
+    # Convert the 2 row dataframe to a dictionary
+    latest_message_dict = df.to_dict(orient='records')[1]
     if from_id: send_msg(f"Latest message from user:\nUpdate_id: {latest_message_dict.get('update_id')}\n\n{latest_message_dict.get('text')}", from_id)
     return latest_message_dict
 
