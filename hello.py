@@ -49,6 +49,8 @@ def tg_webhook():
 
             if 'message' in update:
 
+                drop_telegram_messages_table()
+
                 latest_message_dict = get_latest_message_from_telegram_messages_table()
 
                 if update_id == latest_message_dict['update_id'] + 1 or JUST_STARTED: 
