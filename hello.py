@@ -51,6 +51,11 @@ def tg_webhook():
 
                 if update_id != latest_message_dict['update_id'] + 1 and not JUST_STARTED: return jsonify({'status': 'success'})
 
+                try: r = insert_telegram_message_from_webhook(update)
+                except: return jsonify({'status': 'success'})
+
+                if not r: return jsonify({'status': 'success'})
+
                 message = update['message']
                 chat_id = message['chat']['id']
 
@@ -61,11 +66,6 @@ def tg_webhook():
                 if message['from']['id'] != TG_BOT_OWNER_ID: 
                     send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
                     return jsonify({'status': 'success'})
-
-                try: r = insert_telegram_message_from_webhook(update)
-                except: return jsonify({'status': 'success'})
-
-                if not r: return jsonify({'status': 'success'})
 
                 print(json.dumps(message, indent=2))
 
