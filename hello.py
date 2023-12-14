@@ -1,4 +1,5 @@
 from Bot_messages import *
+from Top_functions import *
 
 app = Flask(__name__)
 JUST_STARTED = True
@@ -62,13 +63,13 @@ def tg_webhook():
 
                     # if it's not private chat, return
                     if message['chat']['type'] == 'private': 
-                        if message['from']['id'] != TG_BOT_OWNER_ID: 
+                        if chat_id != TG_BOT_OWNER_ID: 
+                            print(f"NOT OWNER: chat_id: {chat_id}, TG_BOT_OWNER_ID: {TG_BOT_OWNER_ID}")
                             send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
                             return jsonify({'status': 'success'})
+                        
                         if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})
                         if message['from']['username'] != TELEGRAM_OWNER_USERNAME: return jsonify({'status': 'success'})
-
-                        # print(json.dumps(message, indent=2))
 
                         try: handel_telegram_message_from_webhook(message)
                         except: pass
