@@ -24,7 +24,7 @@ alias py='python3'
 
 alias gflask='gunicorn -w 4 -b 0.0.0.0:8000 hello:app'
 alias rguni='sudo systemctl restart gunicorn'
-
+alias lguni='sudo journalctl -u gunicorn --no-pager'
 alias pmep='pm2 start Telegram_bot.py --name ep --interpreter python3'
 alias prep='pm2 restart ep'
 

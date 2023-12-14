@@ -74,8 +74,12 @@ FOUR_PARAMETER_COMMAND_LIST = {
 def handel_telegram_message_from_webhook(message):
 
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
-    from_id = message['chat']['id']
+    from_id = message['from']['id']
     text_prompt = message.get('text', None)
+    print(f"from_id: {from_id}, text_prompt: {text_prompt}")
+
+    send_msg(f"from_id: {from_id}, text_prompt: {text_prompt}", from_id)
+
     image_url = None
 
     # check if the message is a photo
@@ -117,6 +121,7 @@ def handel_telegram_message_from_webhook(message):
     if first_word in NONE_PARAMETER_COMMAND_LIST:
 
         # Get the corresponding function
+
         func = NONE_PARAMETER_COMMAND_LIST[first_word]
 
         # Call the function and return

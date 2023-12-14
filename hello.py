@@ -2,6 +2,7 @@ from Bot_messages import *
 
 app = Flask(__name__)
 
+previous_update_id = -1
 
 @app.route("/")
 def hello_world():
@@ -35,24 +36,31 @@ def tv():
 # Create a webhook to receive messages from Telegram
 @app.route('/tg', methods=['POST'])
 def tg():
-    # Get the json data
-    data = request.json
-    message = data.get('message', None)
-    if not message: return {'message': 'Invalid data'}, 200
+    # Get the message from Telegram
+    update = request.get_json()
 
-    print(json.dumps(message, indent=2))
+    if update:
+        # Process the update here
+        # For example, you can print the message
+        if 'message' in update:
+            if update['update_id'] <= previous_update_id: return jsonify({'status': 'success'})
+            else: previous_update_id = update['update_id']
 
-    chat_id = message['message']['chat']['id']
+            message = update['message']
 
-    # Check if the chat_id is valid
-    if chat_id != TG_BOT_OWNER_ID: 
-        print(f"chat_id: {chat_id}, message: {message}")
-        return {'message': 'Owner Only'}, 200
+            print(json.dumps(message, indent=2))
 
-    try: handel_telegram_message_from_webhook(message)
-    except: pass
+            chat_id = message['message']['chat']['id']
 
-    return {'message': 'Thanks'}, 200
+            # Check if the chat_id is valid
+            if chat_id == TG_BOT_OWNER_ID: 
+                print(f"chat_id: {chat_id}, message: {message}")
+
+                try: handel_telegram_message_from_webhook(message)
+                except: pass
+            else: send_msg(f'chat_id type is {type(chat_id)} but TG_BOT_OWNER_ID type is {type(TG_BOT_OWNER_ID)}', TG_BOT_OWNER_ID)
+            
+    return jsonify({'status': 'success'})
 
 
 # Run the application
