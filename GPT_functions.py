@@ -72,10 +72,35 @@ def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(date
     return total_spend_this_year, total_spend_this_month
 
 
+# Instert a new row into 'gpt_response' table from input message_id, chat_id, prompt, response
+def insert_new_gpt_response_record(from_id, message_id, prompt, response):
+    if not message_id or not prompt or not response or not from_id: return
+
+    new_response_dict = {
+        'message_id': message_id,
+        'from_id': from_id,
+        'prompt': prompt,
+        'response': response
+    }
+
+    df = pd.DataFrame([new_response_dict])
+    df.to_sql('gpt_response', engine, if_exists='append', index=False)
+
+    return True
+
+
+# define a function to read the latest message from 'telegram_messages' table
+def get_latest_message_from_telegram_messages_table():
+    df = pd.read_sql('telegram_messages', engine)
+    latest_message_dict = df.iloc[-1].to_dict()
+    return latest_message_dict
+
+
 @retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
-def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None):
+def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None, message_id=None):
 
     if not prompt and not image_url: return
+    from_id = chat_id
 
     if image_url: 
         messages_list = [{"role": "system", "content": SYSTEM_PROMPT_WITH_IMAGE_INPUT}]
@@ -104,7 +129,10 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
     response_message = response.choices[0].message
 
     # If there's content in the response, send it to the user
-    if response_message.content: send_msg(response_message.content, chat_id)
+    if response_message.content: 
+        send_msg(response_message.content, chat_id)
+        try: insert_new_gpt_response_record(from_id, message_id, prompt, response_message.content)
+        except: pass
 
     tool_calls = response_message.tool_calls
 
@@ -131,6 +159,9 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
             try: function_to_call(**function_args)
             except: pass
 
+            try: insert_new_gpt_response_record(from_id, message_id, prompt, function_name)
+            except: pass
+
         if need_to_sum:
             # Calculate the total spent of this year (sum the spent of this year)
             try: get_total_spend_of_any_year_any_month(from_id=chat_id, year=str(datetime.now().year), month=str(datetime.now().month))
@@ -146,4 +177,9 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
 if __name__ == '__main__':
     print("GPT_functions.py is running directly")
     
-    get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month))
+    # get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month))
+
+    try: 
+        r = get_latest_message_from_telegram_messages_table()
+        print(json.dumps(r, indent=2))
+    except: pass

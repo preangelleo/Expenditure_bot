@@ -8,8 +8,9 @@ from BTC_weekly import *
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = os.getenv('TELEGRAM_TOKEN')
-# bot = Bot(token=TOKEN)
-TG_BOT_OWNER_ID = int(os.getenv('TG_BOT_OWNER_ID'))
+
+
+TELEGRAM_BOT_WEBHOOK_TOKEN = os.getenv('TELEGRAM_BOT_WEBHOOK_TOKEN')
 
 TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 
@@ -75,6 +76,7 @@ def handel_telegram_message_from_webhook(message):
 
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
     from_id = message['from']['id']
+    message_id = message['message_id']
     text_prompt = message.get('text', None)
     # print(f"from_id: {from_id}, text_prompt: {text_prompt}")
 
@@ -189,7 +191,10 @@ def handel_telegram_message_from_webhook(message):
     rest_word = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word}"
 
-    try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt)
+    try: update_text_for_a_given_message_id(message_id, new_prompt, from_id)
+    except: pass
+
+    try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt, message_id=message_id)
     except Exception as e: send_msg(f"Failed...\n\n{e}", from_id)
 
 

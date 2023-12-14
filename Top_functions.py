@@ -40,6 +40,8 @@ PRIVKEY = os.getenv('PRIVKEY')
 FULLCHAIN = os.getenv('FULLCHAIN')
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+TELEGRAM_OWNER_FIRST_NAME = os.getenv('TELEGRAM_OWNER_FIRST_NAME')
+TELEGRAM_OWNER_USERNAME = os.getenv('TELEGRAM_OWNER_USERNAME')
 
 BINANCE_API = os.getenv('BINANCE_LTD_API_KEY')
 BINANCE_SECRET = os.getenv('BINANCE_LTD_API_SECRET')
@@ -60,7 +62,7 @@ TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'
 BTC_REGEX = r'^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[bc1q|bc1p][0-9A-Za-z]{37,62}$'
 EMAIL_ADDRESS_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
 
-TG_BOT_OWNER_ID = os.getenv('TG_BOT_OWNER_ID')
+TG_BOT_OWNER_ID = int(os.getenv('TG_BOT_OWNER_ID'))
 # BOTCREATER_CHAT_ID = os.getenv('BOTCREATER_CHAT_ID')
 CMC_PA_API = os.getenv('CMC_PA_API')
 
@@ -548,6 +550,104 @@ def reboot_system(from_id):
     # os.system("sudo reboot")
     os.system("pm2 restart ep")
     return
+
+'''
+{
+  "update_id": 686490333,
+  "message": {
+    "message_id": 9976,
+    "from": {
+      "id": 2118900665,
+      "is_bot": false,
+      "first_name": "Old_Bro_Leo",
+      "username": "laogege6",
+      "language_code": "en",
+      "is_premium": true
+    },
+    "chat": {
+      "id": 2118900665,
+      "first_name": "Old_Bro_Leo",
+      "username": "laogege6",
+      "type": "private"
+    },
+    "date": 2118900665,
+    "text": "how are you today"
+  }
+}
+'''
+# Define a function to convert telegram message to df and save to 'telegram_messages' table
+def insert_telegram_message_from_webhook(message):
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} handel_telegram_message_from_webhook() is running ...')
+
+    new_message_dict = {
+        "update_id": message['update_id'],
+        "message_id": message['message']['message_id'],
+        "from_id": message['message']['from']['id'],
+        "from_is_bot": message['message']['from']['is_bot'],
+        "from_first_name": message['message']['from']['first_name'],
+        "from_username": message['message']['from']['username'],
+        "from_language_code": message['message']['from']['language_code'],
+        "from_is_premium": message['message']['from']['is_premium'],
+        "chat_id": message['message']['chat']['id'],
+        "chat_first_name": message['message']['chat']['first_name'],
+        "chat_username": message['message']['chat']['username'],
+        "chat_type": message['message']['chat']['type'],
+        "date": message['message']['date'],
+        "text": message['message'].get('text', 'None')
+    }
+
+    # Convert the message to a dataframe
+    df = pd.DataFrame([new_message_dict])
+
+    # Save the dataframe to the table 'telegram_messages'
+    df.to_sql('telegram_messages', engine, if_exists='append', index=False)
+    return True
+
+
+# UPDATE text for a given message_id
+def update_text_for_a_given_message_id(message_id, text, from_id=TG_BOT_OWNER_ID):
+    try: message_id = int(message_id)
+    except: return send_msg(f"Message_id has to be an integer, your input is {message_id}", from_id)
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    try: cursor.execute(f"UPDATE telegram_messages SET text = '{text}' WHERE message_id = {message_id}")
+    except Exception as e: return send_msg(f"No message_id as {message_id} in the table.\n\n{e}", from_id)
+
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
+
+
+# Define a function to get the latest message from the table 'telegram_messages'
+def get_latest_message_from_telegram_messages_table():
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_latest_message_from_telegram_messages_table() is running ...')
+
+    latest_message_dict = {
+        "update_id": 1,
+        "message_id": 1,
+        "from_id": TG_BOT_OWNER_ID,
+        "from_first_name": TELEGRAM_OWNER_FIRST_NAME,
+        "from_username": TELEGRAM_OWNER_USERNAME,
+        "chat_id": TG_BOT_OWNER_ID,
+        "chat_first_name": TELEGRAM_OWNER_FIRST_NAME,
+        "chat_username": TELEGRAM_OWNER_USERNAME,
+        "chat_type": 'initial',
+        "text": 'This is only for the initial value before the table was created'
+    }
+
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM telegram_messages ORDER BY update_id DESC LIMIT 1')).fetchall())
+    except: return latest_message_dict
+
+    # Convert the dataframe to a dictionary
+    latest_message_dict = df.to_dict(orient='records')[0]
+    return latest_message_dict
 
 
 if __name__ == '__main__':

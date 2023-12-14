@@ -1,8 +1,7 @@
 from Bot_messages import *
 
 app = Flask(__name__)
-
-previous_update_id = -1
+JUST_STARTED = True
 
 @app.route("/")
 def hello_world():
@@ -34,37 +33,51 @@ def tv():
 
 
 # Create a webhook to receive messages from Telegram
-@app.route('/tg', methods=['POST'])
-def tg():
-    global previous_update_id
+@app.route(f'/{TELEGRAM_BOT_WEBHOOK_TOKEN}', methods=['POST'])
+def tg_webhook():
+    global JUST_STARTED
 
-    # Get the message from Telegram
-    update = request.get_json()
+    try:
+        # Get the message from Telegram
+        update = request.get_json()
 
-    if update:
-        # Process the update here
-        # For example, you can print the message
-        if 'message' in update:
-            message = update['message']
-            
-            if update['update_id'] <= previous_update_id: return jsonify({'status': 'success'})
+        if update:
+            print(json.dumps(update, indent=2))
+            update_id = update['update_id']
 
-            print(json.dumps(message, indent=2))
+            if 'message' in update:
 
-            chat_id = message['chat']['id']
+                latest_message_dict = get_latest_message_from_telegram_messages_table()
 
-            # Check if the chat_id is valid
-            if chat_id == TG_BOT_OWNER_ID: 
-                # print(f"chat_id: {chat_id}, message: {message}")
+                if update_id != latest_message_dict['update_id'] + 1 and not JUST_STARTED: return jsonify({'status': 'success'})
+
+                message = update['message']
+                chat_id = message['chat']['id']
+
+                # if it's not private chat, return
+                if message['chat']['type'] != 'private': return jsonify({'status': 'success'})
+                if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})
+                if message['from']['username'] != TELEGRAM_OWNER_USERNAME: return jsonify({'status': 'success'})
+                if message['from']['id'] != TG_BOT_OWNER_ID: 
+                    send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
+                    return jsonify({'status': 'success'})
+
+                try: r = insert_telegram_message_from_webhook(update)
+                except: return jsonify({'status': 'success'})
+
+                if not r: return jsonify({'status': 'success'})
+
+                print(json.dumps(message, indent=2))
 
                 try: handel_telegram_message_from_webhook(message)
                 except: pass
 
-            else: send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
-        
-        previous_update_id = update['update_id']
+                JUST_STARTED = False
+
+    except: pass
 
     return jsonify({'status': 'success'})
+
 
 
 # Run the application
