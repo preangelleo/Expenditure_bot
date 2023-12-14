@@ -49,7 +49,7 @@ def tg_webhook():
 
             if 'message' in update:
 
-                drop_telegram_messages_table()
+                # drop_telegram_messages_table()
 
                 latest_message_dict = get_latest_message_from_telegram_messages_table()
 
