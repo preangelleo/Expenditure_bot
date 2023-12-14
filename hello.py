@@ -36,6 +36,8 @@ def tv():
 # Create a webhook to receive messages from Telegram
 @app.route('/tg', methods=['POST'])
 def tg():
+    global previous_update_id
+    
     # Get the message from Telegram
     update = request.get_json()
 
@@ -43,6 +45,7 @@ def tg():
         # Process the update here
         # For example, you can print the message
         if 'message' in update:
+            
             if update['update_id'] <= previous_update_id: return jsonify({'status': 'success'})
 
             message = update['message']
@@ -66,4 +69,6 @@ def tg():
 
 # Run the application
 if __name__ == '__main__':
+    send_msg('Bot started...', TG_BOT_OWNER_ID)
+
     app.run(host='0.0.0.0', port=80)
