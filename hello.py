@@ -59,7 +59,7 @@ def tg():
 
                 try: handel_telegram_message_from_webhook(message)
                 except: pass
-                
+
             else: send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
         
         previous_update_id = update['update_id']
@@ -69,6 +69,6 @@ def tg():
 
 # Run the application
 if __name__ == '__main__':
-    send_msg('Bot started...', TG_BOT_OWNER_ID)
+    # send_msg('Bot started...', TG_BOT_OWNER_ID)
 
     app.run()

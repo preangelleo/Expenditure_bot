@@ -3,7 +3,7 @@ from Binance_api import *
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import requests
 from Prompt_template import *
-import asyncio
+# import asyncio
 import logging
 import sys
 import os
@@ -21,7 +21,7 @@ DEFAULT_MODEL = 'gpt-4-1106-preview'
 DEFAULT_VISION_MODEL = 'gpt-4-vision-preview'
 
 # # define GPT function with input prompt and image url
-async def ask_gpt_vision(messages_list, model=DEFAULT_MODEL):
+def ask_gpt_vision(messages_list, model=DEFAULT_MODEL):
     response = client.chat.completions.create(
         model=model,
         messages=messages_list,
@@ -32,7 +32,7 @@ async def ask_gpt_vision(messages_list, model=DEFAULT_MODEL):
 
 
 # # define GPT function with input prompt only
-async def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
+def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -73,7 +73,7 @@ def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(date
 
 
 @retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
-async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None):
+def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None):
 
     if not prompt and not image_url: return
 
@@ -82,7 +82,7 @@ async def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT
         prompt = f"{prompt}\nfrom_id: {chat_id}\nimage_url: {image_url}"
         messages_list.append({"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]})
         send_msg("GPT is reading the image...", chat_id)
-        prompt = await ask_gpt_vision(messages_list, DEFAULT_VISION_MODEL)
+        prompt = ask_gpt_vision(messages_list, DEFAULT_VISION_MODEL)
 
         if "nice picture" in prompt.lower(): return send_msg("Nice picture!", chat_id)
 
