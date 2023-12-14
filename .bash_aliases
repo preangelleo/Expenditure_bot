@@ -21,9 +21,11 @@ alias pml='pm2 list'
 alias pmlg='pm2 logs'
 alias py='python3'
 
-alias pmwh='pm2 start hello.py --name wh --interpreter python3'
+alias pmwh='pm2 start start_flask.sh'
 alias prwh='pm2 restart wh'
 alias pmep='pm2 start Telegram_bot.py --name ep --interpreter python3'
 alias prep='pm2 restart ep'
+
+alias cflask='chmod +x start_flask.sh'
 
 alias ceai='cd /root/Expenditure_bot && conda activate expenditure_ai'
