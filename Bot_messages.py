@@ -76,9 +76,9 @@ def handel_telegram_message_from_webhook(message):
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
     from_id = message['from']['id']
     text_prompt = message.get('text', None)
-    print(f"from_id: {from_id}, text_prompt: {text_prompt}")
+    # print(f"from_id: {from_id}, text_prompt: {text_prompt}")
 
-    send_msg(f"from_id: {from_id}, text_prompt: {text_prompt}", from_id)
+    # send_msg(f"from_id: {from_id}, text_prompt: {text_prompt}", from_id)
 
     image_url = None
 

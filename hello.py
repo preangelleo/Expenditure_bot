@@ -55,11 +55,12 @@ def tg():
 
             # Check if the chat_id is valid
             if chat_id == TG_BOT_OWNER_ID: 
-                print(f"chat_id: {chat_id}, message: {message}")
+                # print(f"chat_id: {chat_id}, message: {message}")
 
                 try: handel_telegram_message_from_webhook(message)
                 except: pass
-            else: send_msg(f'chat_id type is {type(chat_id)} but TG_BOT_OWNER_ID type is {type(TG_BOT_OWNER_ID)}', TG_BOT_OWNER_ID)
+                
+            else: send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
         
         previous_update_id = update['update_id']
 
