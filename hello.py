@@ -44,7 +44,6 @@ def tg():
         # For example, you can print the message
         if 'message' in update:
             if update['update_id'] <= previous_update_id: return jsonify({'status': 'success'})
-            else: previous_update_id = update['update_id']
 
             message = update['message']
 
@@ -59,7 +58,9 @@ def tg():
                 try: handel_telegram_message_from_webhook(message)
                 except: pass
             else: send_msg(f'chat_id type is {type(chat_id)} but TG_BOT_OWNER_ID type is {type(TG_BOT_OWNER_ID)}', TG_BOT_OWNER_ID)
-            
+        
+        previous_update_id = update['update_id']
+
     return jsonify({'status': 'success'})
 
 
