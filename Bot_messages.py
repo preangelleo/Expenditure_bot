@@ -24,6 +24,7 @@ def set_commands():
     if response.status_code == 200: send_msg('Trading bot started...', TG_BOT_OWNER_ID)
     else: send_msg(f'Failed to set commands...\n\n{response.text}', TG_BOT_OWNER_ID)
 
+set_commands()
 
 NONE_PARAMETER_COMMAND_LIST = {
     'get_ignore_list': get_ignore_list, 

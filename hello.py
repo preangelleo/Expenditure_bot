@@ -82,7 +82,4 @@ def tg_webhook():
 
 # Run the application
 if __name__ == '__main__':
-    
-    set_commands()
-    send_msg(f'{datetime.now().strftime("%Y-%m-%d %H:%M")}Bot started...', TG_BOT_OWNER_ID)
     app.run()
