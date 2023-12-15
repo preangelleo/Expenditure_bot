@@ -572,7 +572,10 @@ def switch_off_bot(from_id):
 
 # define a function to switch on the trading bot and send a message to the user
 def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
-    if trading_bot_switch_on(): return send_msg(f"TradingView webhook has switched ON the bot!\n\n{msg}", from_id)
+    if trading_bot_switch_on(): 
+        target_profit = float(os.getenv('TARGET_PROFIT', 0.05))
+        set_target_profit_default(target_profit)
+        return send_msg(f"TradingView webhook has switched ON the bot!\n\n{msg}", from_id)
     return send_msg(f"TradingView webhook failed to switch on the bot!\n\n{msg}", from_id)
 
 
