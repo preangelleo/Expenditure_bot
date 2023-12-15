@@ -1650,7 +1650,7 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         for_reply['Coin'] = reply_dict['coin']
         for_reply['Amount'] = format_number(reply_dict['executedQty'])
         for_reply['Profit'] = format_number(reply_dict['profit'])
-        for_reply['Up_Ratio'] = f"{reply_dict['up_ratio']:.2f}%"
+        for_reply['Up_Ratio'] = f"{round(float(reply_dict['up_ratio'])*100, 2)}%"
         for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
         for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
         for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
