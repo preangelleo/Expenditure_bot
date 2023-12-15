@@ -2059,20 +2059,18 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
     if df_balance.empty: 
         if coin: return f'No open position for {coin}'
         else: return 'No open position for all coins'
-    print(df_balance)
+
     ''' df = binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3)
         symbol     orderId  orderListId           clientOrderId   transactTime     price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
     0  SANDUSDT  2766936618           -1  k4H1XOehj8sOh3Z9FJpXCS  1702238418107  0.548528  18230.00000000  18230.00000000       9999.66300000  FILLED         GTC  MARKET  BUY  1702238418107            EXPIRE_MAKER  SAND      0.031214          240.1          5          0
     1  RUNEUSDT  1250812918           -1  UzouLOzpJKumY2DB2C5kOz  1702238420773  6.598612   1515.40000000   1515.40000000       9999.53610000  FILLED         GTC  MARKET  BUY  1702238420773            EXPIRE_MAKER  RUNE      0.031195          240.0          6          0
     2  NEARUSDT  2093406069           -1  1ZZzoE6tk23VD2bRUCFu9W  1702252815737  2.524769   3960.70000000   3960.70000000       9999.85100000  FILLED         GTC  MARKET  BUY  1702252815737            EXPIRE_MAKER  NEAR      0.031232          239.8          8          0
     '''
-    # current_orders = get_open_orders_list()
 
     # get open orders from table binance_limit_sell_order
     try: df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
     except: return 'binance_limit_sell_order table does not exist'
 
-    print(df_current_openorders)
     ''' df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
         symbol     orderId  orderListId           clientOrderId   transactTime         price         origQty executedQty cummulativeQuoteQty status timeInForce   type  side    workingTime selfTradePreventionMode
     0   FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702353638922    5.50040000   1818.04000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353638922            EXPIRE_MAKER
@@ -2089,7 +2087,7 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
         coin = row['coin']
         buy_price = float(row['price'])
 
-        print(f"COIN: {coin} BUY_PRICE: {buy_price} has been holding for {transactTime} days, trying to reset limit order to {target_profit*100:.2f}%")
+        print(f"COIN: {coin} has been holden for {transactTime} days, trying to reset limit order to {target_profit*100:.2f}%")
 
         # Check if there is an existing order for this coin
         existing_order = df_current_openorders[df_current_openorders['symbol'] == symbol]
@@ -2099,12 +2097,12 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
             price_diff = existing_order_price - buy_price
             current_order_target_profit = price_diff / buy_price
             if  round(current_order_target_profit, 2) == round(target_profit, 2): 
-                print(f"COIN: {coin} current order target_profit: {current_order_target_profit*100:.2f}% is same as new target_profit: {target_profit*100:.2f}%, no need to reset limit order")
+                print(f"COIN: {coin} current order target_profit is same as new target_profit, no need to reset limit order")
                 continue
 
             clientOrderId = existing_order.iloc[0]['clientOrderId']
             cancel_confirm = binance_cancel_order(coin, clientOrderId)
-            print(f"COIN: {coin} BUY_PRICE: {buy_price} has been holding for {transactTime} days, canceled order with clientOrderId: {clientOrderId} with cancel_confirm: \n\n{cancel_confirm}")
+            print(f"COIN: {coin} limit order has been canceled and about to reset limit order at {target_profit*100:.2f}%")
 
             '''cancel_confirm
             {
@@ -2132,9 +2130,9 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
                     # Execute the query with the updated update_id
                     connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': cancel_confirm['status']})
                     connection.commit()
-                    print(f"{coin} order in table binance_limit_sell_order has been updated for from status: 'NEW' to status: 'CANCELED'")
+                    print(f"COIN: {coin} status in binance_limit_sell_order table has been updated for from 'NEW' to 'CANCELED'")
                 except Exception as e:
-                    print(f"An error occurred: {e}")
+                    print(f"COIN: {coin} status in binance_limit_sell_order table updating encountered an error: \n\n{e}\n\n")
                     connection.rollback()
         
         # Set limit sell order at target_profit
@@ -2157,9 +2155,8 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
         if df.empty: continue
 
         try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-        except Exception as e: print(f"An error occurred: {e}")
+        except Exception as e: print(f"binance_position_reset_limit_sell() got an error occurred when update binance_limit_sell_order table: \n\n{e}\n\n")
 
-    print(f"Coins holding for more than {transactTime} days, all checked.")
     return
 
 
