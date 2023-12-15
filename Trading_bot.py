@@ -90,6 +90,39 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
+def is_coin_recently_listed(symbol: str):
+    # Binance API endpoint for K-line data
+    url = "https://api.binance.com/api/v3/klines"
+
+    # if symbol is not endsweith 'USDT', add 'USDT' to the end, if symbol is endsweith USDT, do nothing
+    if not symbol.endswith('USDT'): symbol = symbol + 'USDT'
+
+    # Calculate timestamps for 7 days ago and now
+    end_time = int(time.time() * 1000)  # Current time in milliseconds
+    start_time = end_time - 7 * 24 * 60 * 60 * 1000  # 7 days ago in milliseconds
+
+    # Parameters for the API request
+    params = {
+        'symbol': symbol,
+        'interval': '1d',  # Daily intervals
+        'startTime': start_time,
+        'endTime': end_time,
+        'limit': 7  # Maximum number of days to fetch
+    }
+
+    # Send the request
+    response = requests.get(url, params=params)
+    
+    # Check if the response is successful
+    if response.status_code == 200:
+        data = response.json()
+        # If less than 7 days of data is returned, the coin is recently listed
+        return len(data) < 7
+    else:
+        raise Exception("Error fetching data from Binance API")
+
+
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = TG_BOT_OWNER_ID):
     
     # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
@@ -99,6 +132,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     else: unique_coin_list = list(set(df_30_days['coin'].values.tolist()))
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
+
+    # Filter out the coins listed only in the last 2 days
+    df_ticker = df_ticker[df_ticker['openTime'] < (time.time() - 24*60*60*2) * 1000]
 
     # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
@@ -175,9 +211,11 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
             reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
             send_msg_markdown(reply_string, from_id)
+            broadcast_markdown(reply_string)
         
         help_info = 'The 1) number is price change, 2) is price, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
-        send_msg(help_info, from_id)
+        # send_msg(help_info, from_id)
+        broadcast_text(help_info)
 
     return today_hot_coin_list
 
@@ -219,7 +257,13 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 def only_check_hot_coins(from_id):
     return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id)
 
+
+
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
+    # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
+    # Example usage
+    symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
+    is_recent = is_coin_recently_listed(symbol)
+    print(f"Is {symbol} recently listed? {is_recent}")

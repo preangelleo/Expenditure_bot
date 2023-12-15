@@ -270,11 +270,58 @@ def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID, parse_mode='Markdown'):
 
     return True
 
+
+# TELEGRAM BROADCAST BOT
+TG_BROADCAST_BOT_TOKEN= os.getenv('TG_BROADCAST_BOT_TOKEN')
+TG_BROADCAST_BOT_BASE_URL = f"https://api.telegram.org/bot{TG_BROADCAST_BOT_TOKEN}/"
+TG_BROADCAST_BOT_HANDLER = os.getenv('TG_BROADCAST_BOT_HANDLER')
+
+# TELEGRAM CHANNEL
+TG_BROADCAST_CHANNEL_CHAT_ID = int(os.getenv('TG_BROADCAST_CHANNEL_CHAT_ID'))
+TG_BROADCAST_CHANNEL_TITLE = os.getenv('TG_BROADCAST_CHANNEL_TITLE')
+TG_BROADCAST_CHANNEL_USERNAME = os.getenv('TG_BROADCAST_CHANNEL_USERNAME')
+TG_BROADCAST_CHANNEL_LINK = os.getenv('TG_BROADCAST_CHANNEL_LINK')
+
+# define a function to use TG_BROADCAST_BOT_BASE_URL send broadcast message to the TG_BROADCAST_CHANNEL_CHAT_ID
+def broadcast_markdown(message):
+    url = f"https://api.telegram.org/bot{TG_BROADCAST_BOT_TOKEN}/sendMessage"
+
+    payload = {
+        "text": message,
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True,
+        "disable_notification": True,
+        "chat_id": TG_BROADCAST_CHANNEL_CHAT_ID
+    }
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+    try: requests.post(url, json=payload, headers=headers)
+    except Exception as e: return print(f"ERROR: send_broadcast_msg_markdown() failed for:\n{e}\n\nOriginal message:\n{message}")
+
+    return True
+
+def broadcast_text(message):
+    url = TG_BROADCAST_BOT_BASE_URL + "sendMessage"
+
+    payload = {
+        "text": message,
+        "disable_web_page_preview": True,
+        "disable_notification": True,
+        "chat_id": TG_BROADCAST_CHANNEL_CHAT_ID
+    }
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+    try: requests.post(url, json=payload, headers=headers)
+    except Exception as e: return print(f"ERROR: send_broadcast_msg_markdown() failed for:\n{e}\n\nOriginal message:\n{message}")
+
+    return True
+
+
 # Define a test function to test send_msg_markedown(), send a text with markdown format, a URL with a link to the owner
-def test_send_msg_markdown(chat_id=TG_BOT_OWNER_ID):
+def test_send_msg_markdown():
     USER_TELEGRAM_LINK = 'https://leowang.net'
     message = f"Hello, this is a test message with markdown format, [click here]({USER_TELEGRAM_LINK}) to contact the owner."
-    return send_msg_markdown(message, chat_id)
+    return broadcast_text(message)
     
 
 def send_file(chat_id, file_path, description=''):
@@ -709,3 +756,4 @@ if __name__ == '__main__':
     # print('all done')
 
 
+    # test_send_msg_markdown()
