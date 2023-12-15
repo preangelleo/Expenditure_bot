@@ -267,3 +267,7 @@ if __name__ == '__main__':
     symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
     is_recent = is_coin_recently_listed(symbol)
     print(f"Is {symbol} recently listed? {is_recent}")
+
+    symbol = 'WOO'  # Replace with the actual symbol you want to check
+    is_recent = is_coin_recently_listed(symbol)
+    print(f"Is {symbol} recently listed? {is_recent}")
