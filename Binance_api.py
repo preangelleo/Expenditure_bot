@@ -2096,7 +2096,7 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
             existing_order_price = float(existing_order.iloc[0]['price'])
             price_diff = existing_order_price - buy_price
             current_order_target_profit = price_diff / buy_price
-            if  round(current_order_target_profit, 2) == round(target_profit, 2): 
+            if  round(current_order_target_profit, 2) <= round(target_profit, 2): 
                 print(f"COIN: {coin} current order target_profit is same as new target_profit, no need to reset limit order")
                 continue
 
