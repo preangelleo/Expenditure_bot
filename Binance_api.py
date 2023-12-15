@@ -2098,8 +2098,8 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
             existing_order_price = float(existing_order.iloc[0]['price'])
             price_diff = existing_order_price - buy_price
             current_order_target_profit = price_diff / buy_price
-            if  round(current_order_target_profit, 2) < round(target_profit, 2): 
-                print(f"COIN: {coin} BUY_PRICE: {buy_price} has been holding for {transactTime} days, but current order target_profit: {current_order_target_profit*100:.2f}% is lower than new target_profit: {target_profit*100:.2f}%")
+            if  round(current_order_target_profit, 2) == round(target_profit, 2): 
+                print(f"COIN: {coin} current order target_profit: {current_order_target_profit*100:.2f}% is same as new target_profit: {target_profit*100:.2f}%, no need to reset limit order")
                 continue
 
             clientOrderId = existing_order.iloc[0]['clientOrderId']
@@ -2159,7 +2159,7 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
         try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
         except Exception as e: print(f"An error occurred: {e}")
 
-    print(f"binance_position_reset_limit_sell() finished for dealing with coins holding for more than {transactTime} days")
+    print(f"Coins holding for more than {transactTime} days, all checked.")
     return
 
 
