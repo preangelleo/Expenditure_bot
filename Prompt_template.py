@@ -6,6 +6,36 @@ USDT_ETH_COMPATIBLE_NETWORK_LIST = ['ETH', 'BSC', 'MATIC', 'AVAXC', 'ARBITRUM', 
 
 INITIAL_IGNORE_LIST = ['BTC', 'ETH', 'XRP', 'AMB', 'LTC', 'ARB', 'BTS', 'SOL', 'JST', 'ADA', 'TRX', 'LUNA', 'LUNC', 'BCH', 'USTC', 'EOS', 'XMR', 'XLM', 'XEM', 'DOGE', 'AVAX', 'OP', 'MATIC', 'APT', 'COCOS', 'BTT', 'BTTT', 'BTTB', 'EUR', 'SUI', 'QTUM', 'DASH', 'ZEC', 'ZEN', 'ZIL', 'ZRX', 'NEO', 'CELO', 'ANKR', 'BNB', 'OMG', 'TUSDT', 'ETC', 'ACA', 'STORJ', 'FTM', 'LQTY', 'OGN', 'RSR', 'VGX', 'MBL', 'COIN98', 'BLZ', 'MC', 'GAS']
 
+ENGLISH_SYSTEM_PROMPT='''Act as an English teacher and dictionary for Chinese students, providing explanations of words, phrases, as well as grammar rules, use case sentences in both English and Chinese, and other relevant information if needed. Indicators : 释义、同义词、例句、笔记 always in Chinese. 笔记 is optional. But if you include it, please make sure put a Chinese translation after. If user send a word with typo, please correct it and reply with the correct word. But if you don't know the correct word, please reply with : Sorry, I don't know this word. If user prompt is a technical term or abbreviation or jargon or terminology or lingo, please reply what it stands for and the meaning in both English and Chinese. '''
+
+ENGLISH_USER_PROMPT = '''ostentatious'''
+
+ENGLISH_ASSISTANT_PROMPT = '''
+Ostentatious [ˌɑːstenˈteɪʃəs] 
+(adj.) - 炫耀的, 卖弄的, 招摇的
+
+释义: 
+Ostentatious describes something or someone that is showy, pretentious, or seeks to attract attention through an extravagant display of wealth, style, or knowledge.
+用来形容某物或某人显眼、矫饰或试图通过展示财富、风格或知识的奢华来吸引注意力。
+
+同义词:
+pretentious, pompous, showy, bombastic, grandiloquent
+
+例句:
+Her ostentatious dress made her stand out at the party.
+她在派对上穿着炫耀的裙子, 非常引人注目。
+
+The billionaire's ostentatious lifestyle was criticized in the media.
+那位亿万富翁炫耀的生活方式受到了媒体的批评。
+
+词源：
+Ostentatious 源于拉丁语 ostentatiōsus, 该词形容词形式来自 ostentatiō, 意为"炫耀"或者"展示"。在英语中, 它的第一个已知使用是在1590年代, 在17世纪和18世纪, 它在文学作品和日常语言中成为一个更常见的词汇, 并且不断发展成为一个更多样化, 更富文化内涵和 metaphorical 意义的词汇。
+
+笔记:
+The word "ostentatious" is often used to describe people, clothing, events, or objects that are excessively showy or attention-seeking. It generally carries a negative connotation, implying that the display is unnecessary or in poor taste.
+“炫耀”这个词经常用来形容过分炫耀或寻求关注的人、服装、活动或物品。它通常带有负面含义, 暗示这种展示是不必要的或品味不高。
+'''
+
 # Telegram
 WELCOME_FROM_TELEGRAM_BOT = '''You could ask me anything or send your receipt.
 
@@ -43,7 +73,8 @@ COMMANDS = [
     {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
     {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
     {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
-    {'command': 'get_coin_info', 'description': 'Get the information of a given coin'},
+    {'command': 'get_coin_info', 'description': 'Get the information of a given coin symbol'},
+    {'command': 'get_stock_info', 'description': 'Get the information of a given stock symbol'},
     {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
     {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
     {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
@@ -169,6 +200,34 @@ FUNCTIONS_TOOLS = [
                 "required": ["timeframe", "from_id"]
             }
         }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_stock_info",
+            "description": "Get the information of a given stock symbol",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string", "description": "The symbol of the stock, for example: AAPL, if user input a company name, convert it to symbol"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["symbol", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_token_info",
+            "description": "Get the infomation of a given token from coinmarketcap and send to user, information include marke cap, trading volume, current price, ranking, coinmarketcap url, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "coin": {"type": "string", "description": "The coin symbol, for example: BTC, ETH, SOL, etc."},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["coin", "from_id"]
+            }
+        }
     }
      
 ]
@@ -181,6 +240,8 @@ List of available_functions:
 - get_ignore_list: Read out ignore_list table and return a list of ignored coins
 - funding_main_transfer_all_usdt: Transfer all USDT from funding account to main account
 - get_btc_data_with_rsi: Get BTC weeky, daily, or monthly data chart with RSI
+- get_stock_info: Get the information of a given stock symbol from yahoo finance, information include marke cap, trading volume, current price, sector, industry, etc.
+- get_token_info: Get the infomation of a given token from coinmarketcap and send to user, information include marke cap, trading volume, current price, ranking, coinmarketcap url, etc.
 '''
 
 IMAGE_INPUT = '''
@@ -269,7 +330,13 @@ BOT_COMMAND_DICT = {
     'gci': 'get_coin_info',
     'get_coin': 'get_coin_info',
     'get_info': 'get_coin_info',
+    'coin_info': 'get_coin_info',
     'cmc': 'get_coin_info',
+    'token_info': 'get_coin_info',
+    'coinmarketcap': 'get_coin_info',
+    'coin': 'get_coin_info',
+    'crypto': 'get_coin_info',
+    'token': 'get_coin_info',
     'gil': 'get_ignore_list',
     'get_ignore': 'get_ignore_list',
     'gei': 'get_expenditure_info',
@@ -346,4 +413,8 @@ BOT_COMMAND_DICT = {
     'sum_category': 'sum_category_merchant',
     'sum': 'sum_category_merchant',
     'smc': 'sum_category_merchant',
+    'gsi': 'get_stock_info',
+    'get_stock': 'get_stock_info',
+    'stock_info': 'get_stock_info',
+    'stock': 'get_stock_info',
     }

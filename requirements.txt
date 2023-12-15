@@ -1,4 +1,5 @@
 openai
+yfinance
 gunicorn
 aiodns
 aiofiles

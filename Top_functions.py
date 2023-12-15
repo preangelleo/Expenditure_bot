@@ -24,7 +24,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import ccxt
-
+import yfinance as yf
 import numpy as np
 
 from mplfinance.original_flavor import candlestick_ohlc
@@ -70,7 +70,7 @@ TG_BOT_OWNER_ID = int(os.getenv('TG_BOT_OWNER_ID'))
 CMC_PA_API = os.getenv('CMC_PA_API')
 
 # BOTCREATER_TELEGRAM_HANDLE = os.getenv('BOTCREATER_TELEGRAM_HANDLE')
-# DEBANK_API = os.getenv('DEBANK_API')
+DEBANK_API = os.getenv('DEBANK_API')
 
 # MORALIS_API = os.getenv('MORALIS_API')
 # ETHERSCAN_API = os.getenv('ETHERSCAN_API')
@@ -89,6 +89,7 @@ INFURA_KEY = os.getenv('INFURA_KEY')
 INFURA_URL = os.getenv('INFURA_URL')
 INFURA = INFURA_URL + INFURA_KEY
 web3 = Web3(Web3.HTTPProvider(INFURA))
+w3 = web3
 
 # USER_TELEGRAM_LINK = os.getenv("USER_TELEGRAM_LINK")
 # TELEGRAM_USERNAME = USER_TELEGRAM_LINK.split('/')[-1]
@@ -199,9 +200,9 @@ def get_turnover_ratio_from_coinmarketcap(coin='ETH'):
     return turnover_ratio
 
 
-def get_token_price_from_coinmarketcap_and_send_msg(coin: str, from_id=TG_BOT_OWNER_ID):
+def get_token_info(coin: str, from_id=TG_BOT_OWNER_ID):
     # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_token_price_from_coinmarketcap_and_send_msg() is running ...')
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_token_info() is running ...')
 
     token_info = get_token_info_from_coinmarketcap(coin.upper())
     if not token_info: return 
@@ -752,14 +753,105 @@ def calculate_irr(x, years, from_id):
     return send_msg(f"IRR for {x} folds in {years} years is {irr:.2f}%", from_id)
 
 
+# Define a function to connect to the remote database and return the connection
+def get_remote_db_connection():
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_db_connection() is running ...')
+
+    # Define the database connection parameters
+    db_host = os.getenv('UBUNTU_SERVER_JP_DB_HOST')
+    db_port = os.getenv('UBUNTU_SERVER_JP_DB_PORT')
+    db_user = os.getenv('UBUNTU_SERVER_JP_DB_USER')
+    db_password = os.getenv('UBUNTU_SERVER_JP_DB_PASSWORD')
+    db_name = os.getenv('UBUNTU_SERVER_JP_DB_NAME')
+
+    # Create the connection
+    remote_engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}')
+    return remote_engine
+
+
+def get_stock_info(symbol = None, from_id = TG_BOT_OWNER_ID):
+    if not symbol: return
+
+    symbol = symbol.upper()
+
+    # Fetch data for the given symbol
+    stock = yf.Ticker(symbol)
+    
+    # Get stock info
+    info = stock.info
+    ''' info
+    {'address1': 'One Apple Park Way', 'city': 'Cupertino', 'state': 'CA', 'zip': '95014', 'country': 'United States', 'phone': '408 996 1010', 'website': 'https://www.apple.com', 'industry': 'Consumer Electronics', 'industryKey': 'consumer-electronics', 'industryDisp': 'Consumer Electronics', 'sector': 'Technology', 'sectorKey': 'technology', 'sectorDisp': 'Technology', 'longBusinessSummary': 'Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, a line of smartphones; Mac, a line of personal computers; iPad, a line of multi-purpose tablets; and wearables, home, and accessories comprising AirPods, Apple TV, Apple Watch, Beats products, and HomePod. It also provides AppleCare support and cloud services; and operates various platforms, including the App Store that allow customers to discover and download applications and digital content, such as books, music, video, games, and podcasts. In addition, the company offers various services, such as Apple Arcade, a game subscription service; Apple Fitness+, a personalized fitness service; Apple Music, which offers users a curated listening experience with on-demand radio stations; Apple News+, a subscription news and magazine service; Apple TV+, which offers exclusive original content; Apple Card, a co-branded credit card; and Apple Pay, a cashless payment service, as well as licenses its intellectual property. The company serves consumers, and small and mid-sized businesses; and the education, enterprise, and government markets. It distributes third-party applications for its products through the App Store. The company also sells its products through its retail and online stores, and direct sales force; and third-party cellular network carriers, wholesalers, retailers, and resellers. Apple Inc. was founded in 1976 and is headquartered in Cupertino, California.', 'fullTimeEmployees': 161000, 'companyOfficers': [{'maxAge': 1, 'name': 'Mr. Timothy D. Cook', 'age': 61, 'title': 'CEO & Director', 'yearBorn': 1961, 'fiscalYear': 2022, 'totalPay': 16425933, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Mr. Luca  Maestri', 'age': 59, 'title': 'CFO & Senior VP', 'yearBorn': 1963, 'fiscalYear': 2022, 'totalPay': 5019783, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Mr. Jeffrey E. Williams', 'age': 58, 'title': 'Chief Operating Officer', 'yearBorn': 1964, 'fiscalYear': 2022, 'totalPay': 5018337, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Ms. Katherine L. Adams', 'age': 58, 'title': 'Senior VP, General Counsel & Secretary', 'yearBorn': 1964, 'fiscalYear': 2022, 'totalPay': 5015208, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': "Ms. Deirdre  O'Brien", 'age': 55, 'title': 'Senior Vice President of Retail', 'yearBorn': 1967, 'fiscalYear': 2022, 'totalPay': 5019783, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Mr. Chris  Kondo', 'title': 'Senior Director of Corporate Accounting', 'fiscalYear': 2022, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Mr. James  Wilson', 'title': 'Chief Technology Officer', 'fiscalYear': 2022, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Ms. Mary  Demby', 'title': 'Chief Information Officer', 'fiscalYear': 2022, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Suhasini  Chandramouli', 'title': 'Director of Investor Relations', 'fiscalYear': 2022, 'exercisedValue': 0, 'unexercisedValue': 0}, {'maxAge': 1, 'name': 'Mr. Greg  Joswiak', 'title': 'Senior Vice President of Worldwide Marketing', 'fiscalYear': 2022, 'exercisedValue': 0, 'unexercisedValue': 0}], 'auditRisk': 4, 'boardRisk': 1, 'compensationRisk': 6, 'shareHolderRightsRisk': 1, 'overallRisk': 1, 'governanceEpochDate': 1701388800, 'compensationAsOfEpochDate': 1672444800, 'maxAge': 86400, 'priceHint': 2, 'previousClose': 198.11, 'open': 197.53, 'dayLow': 197.02, 'dayHigh': 198.3999, 'regularMarketPreviousClose': 198.11, 'regularMarketOpen': 197.53, 'regularMarketDayLow': 197.02, 'regularMarketDayHigh': 198.3999, 'dividendRate': 0.96, 'dividendYield': 0.0047999998, 'exDividendDate': 1699574400, 'payoutRatio': 0.1533, 'fiveYearAvgDividendYield': 0.82, 'beta': 1.308, 'trailingPE': 32.28268, 'forwardPE': 27.632168, 'volume': 114815314, 'regularMarketVolume': 114815314, 'averageVolume': 54029619, 'averageVolume10days': 54847430, 'averageDailyVolume10Day': 54847430, 'bid': 197.42, 'ask': 197.46, 'bidSize': 1000, 'askSize': 800, 'marketCap': 3072766771200, 'fiftyTwoWeekLow': 124.17, 'fiftyTwoWeekHigh': 199.62, 'priceToSalesTrailing12Months': 8.016924, 'fiftyDayAverage': 183.3344, 'twoHundredDayAverage': 177.3107, 'trailingAnnualDividendRate': 0.94, 'trailingAnnualDividendYield': 0.004744839, 'currency': 'USD', 'enterpriseValue': 3143530708992, 'profitMargins': 0.25305998, 'floatShares': 15535488445, 'sharesOutstanding': 15552799744, 'sharesShort': 110653413, 'sharesShortPriorMonth': 98190963, 'sharesShortPreviousMonthDate': 1698710400, 'dateShortInterest': 1701302400, 'sharesPercentSharesOut': 0.0070999996, 'heldPercentInsiders': 0.00074, 'heldPercentInstitutions': 0.61662996, 'shortRatio': 2.13, 'shortPercentOfFloat': 0.0070999996, 'impliedSharesOutstanding': 15552799744, 'bookValue': 3.997, 'priceToBook': 49.429573, 'lastFiscalYearEnd': 1696032000, 'nextFiscalYearEnd': 1727654400, 'mostRecentQuarter': 1696032000, 'earningsQuarterlyGrowth': 0.108, 'netIncomeToCommon': 96995000320, 'trailingEps': 6.12, 'forwardEps': 7.15, 'pegRatio': 4.91, 'lastSplitFactor': '4:1', 'lastSplitDate': 1598832000, 'enterpriseToRevenue': 8.202, 'enterpriseToEbitda': 24.984, '52WeekChange': 0.47282732, 'SandP52WeekChange': 0.22510612, 'lastDividendValue': 0.24, 'lastDividendDate': 1699574400, 'exchange': 'NMS', 'quoteType': 'EQUITY', 'symbol': 'AAPL', 'underlyingSymbol': 'AAPL', 'shortName': 'Apple Inc.', 'longName': 'Apple Inc.', 'firstTradeDateEpochUtc': 345479400, 'timeZoneFullName': 'America/New_York', 'timeZoneShortName': 'EST', 'uuid': '8b10e4ae-9eeb-3684-921a-9ab27e4d87aa', 'messageBoardId': 'finmb_24937', 'gmtOffSetMilliseconds': -18000000, 'currentPrice': 197.57, 'targetHighPrice': 250.0, 'targetLowPrice': 159.0, 'targetMeanPrice': 198.52, 'targetMedianPrice': 200.0, 'recommendationMean': 2.1, 'recommendationKey': 'buy', 'numberOfAnalystOpinions': 39, 'totalCash': 61554999296, 'totalCashPerShare': 3.958, 'ebitda': 125820002304, 'totalDebt': 123930001408, 'quickRatio': 0.843, 'currentRatio': 0.988, 'totalRevenue': 383285002240, 'debtToEquity': 199.418, 'revenuePerShare': 24.344, 'returnOnAssets': 0.20256001, 'returnOnEquity': 1.7195, 'grossProfits': 170782000000, 'freeCashflow': 82179997696, 'operatingCashflow': 110543003648, 'earningsGrowth': 0.135, 'revenueGrowth': -0.007, 'grossMargins': 0.44131002, 'ebitdaMargins': 0.32827, 'operatingMargins': 0.30134, 'financialCurrency': 'USD', 'trailingPegRatio': 2.3747}'''
+
+    # Extract the key information from the info dictionary and make a dictionary
+    info = {
+        'Symbol': info['symbol'],
+        'Price': f"{format_number(info['currentPrice'])} {info['currency']}",
+        'Market Cap': format_number(info['marketCap']),
+        'Volume': format_number(info['volume']),
+        'Sector': info['sector'],
+        'Industry': info['industry'],
+        'Full Name': info['longName'],
+        'Current Time': datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+
+    # make a string of the info dictionary
+    info_str = '\n'.join([f"{k}: {v}" for k, v in info.items()])
+    return send_msg(info_str, from_id)
+
+
+# check eth balance of a given address and convert the balance from wei to eth
+def check_eth_balance(address):
+    # get the balance of the address
+    balance = w3.eth.get_balance(address)
+    # convert the balance from wei to eth
+    return balance / 10**18
+
+
+# check erc20 token balance of a given address and convert the balance from wei to token
+def check_address_token_balance(address, token_address, chain='eth'):
+    base_url = "https://pro-openapi.debank.com"
+
+    headers = {"AccessKey": DEBANK_API, "content-type": "application/json"}
+
+    method = "GET"
+    path = "/v1/user/token"
+    _params = {
+        "id": address,
+        'token_id': token_address,
+        'chain_id': chain
+        }
+    params = urlencode(_params)
+    URL = base_url + path + "?" + params
+    r = requests.request(method, URL, headers=headers)
+
+    return 0 if r.status_code != 200 else r.json().get('amount', 0)
+
+
+def check_address_balance(address):
+    # convert the balance from wei to eth
+    eth_balance = check_eth_balance(address)
+
+    # get the USDT balance of the address
+    usdt_balance = check_address_token_balance(address, USDT_ERC20, chain='eth')
+
+    # get the USDC balance of the address
+    usdc_balance = check_address_token_balance(address, USDC_ERC20, chain='eth')
+
+    return {'ETH': eth_balance, 'USDT': usdt_balance, 'USDC': usdc_balance}
+
+
+def check_address_balance_return_str(address, from_id=TG_BOT_OWNER_ID):
+    # convert address to checksum address
+    try: address = w3.to_checksum_address(address)
+    except: return send_msg(f"Your address {address} is not a valid address!", from_id)
+
+    balance_dic = check_address_balance(address)
+    balance_str = '\n'.join([f"{k}: {format_number(v)}" for k, v in balance_dic.items()])
+    return send_msg(balance_str, from_id)
+
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 
+    address = '0x7bc198266f1552223A17a6a7660f3feF9171B888'
 
-    # webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
-    # time.sleep(2)
-    # webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID)
-    # print('all done')
-
-
-    # test_send_msg_markdown()

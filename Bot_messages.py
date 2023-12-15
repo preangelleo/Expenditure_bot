@@ -1,7 +1,6 @@
 from Trading_bot import *
-from Prompt_template import *
-from GPT_functions import *
-from BTC_weekly import *
+from English_bot import *
+
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
@@ -46,7 +45,8 @@ NONE_PARAMETER_COMMAND_LIST = {
 
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
-    'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
+    'get_coin_info': {'function': get_token_info, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
+    'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     'binance_market_sell': {'function': force_do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
     'binance_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
@@ -120,8 +120,12 @@ def handel_telegram_message_from_webhook(message):
     rest_word = text_prompt.split()[1:]
     # the type of rest_word is list
 
-    # Remove '/' from the first word
-    first_word = first_word.replace('/', '')
+    is_command = False
+    # check if first_word starts with '/'
+    if first_word.startswith('/'): 
+        # Remove '/' from the first word
+        first_word = first_word.replace('/', '')
+        is_command = True
 
     first_word = BOT_COMMAND_DICT.get(first_word, first_word)
 
@@ -179,20 +183,33 @@ def handel_telegram_message_from_webhook(message):
     
     elif first_word in FOUR_PARAMETER_COMMAND_LIST:
             
-            # If there's no rest word, then reply the description of the command
-            if len(rest_word) < 4: return send_msg(FOUR_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
+        # If there's no rest word, then reply the description of the command
+        if len(rest_word) < 4: return send_msg(FOUR_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
+
+        first_parameter = rest_word[0]
+        second_parameter = rest_word[1]
+        third_parameter = rest_word[2]
+        fourth_parameter = rest_word[3]
+
+        # Get the corresponding function
+        func = FOUR_PARAMETER_COMMAND_LIST[first_word]['function']
+
+        # Call the function and return
+        return func(first_parameter, second_parameter, third_parameter, fourth_parameter, from_id)
     
-            first_parameter = rest_word[0]
-            second_parameter = rest_word[1]
-            third_parameter = rest_word[2]
-            fourth_parameter = rest_word[3]
-    
-            # Get the corresponding function
-            func = FOUR_PARAMETER_COMMAND_LIST[first_word]['function']
-    
-            # Call the function and return
-            return func(first_parameter, second_parameter, third_parameter, fourth_parameter, from_id)
-    
+    elif not is_command and not rest_word:
+
+        if first_word.lower().startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
+
+        if len(first_word) < 10:
+            r = find_words_for_bot_user(first_word, from_id)
+            if not r and len(first_word) <= 5 and len(first_word) >= 3: 
+                try: get_token_info(first_word, from_id)
+                except: pass
+                try: get_stock_info(first_word, from_id)
+                except: pass
+        return
+
     rest_word = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word}"
 
@@ -203,5 +220,10 @@ def handel_telegram_message_from_webhook(message):
     except Exception as e: send_msg(f"Failed...\n\n{e}", from_id)
 
 
+
+
 if __name__ == '__main__':
     print('Running Bot_message.py...')
+    # from_id = TG_BOT_OWNER_ID
+    # first_word = 'ETH'
+    # find_words_for_bot_user(first_word, from_id)

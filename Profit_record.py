@@ -15,8 +15,8 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_btc_data_with_rsi() error:\n\n{e}\n\n')
 
-    try: get_token_price_from_coinmarketcap_and_send_msg('BTC', TG_BOT_OWNER_ID)
-    except Exception as e: print(f'get_token_price_from_coinmarketcap_and_send_msg() error:\n\n{e}\n\n')
+    try: get_token_info('BTC', TG_BOT_OWNER_ID)
+    except Exception as e: print(f'get_token_info() error:\n\n{e}\n\n')
 
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')

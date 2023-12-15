@@ -46,6 +46,22 @@ def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
     return send_msg(response.choices[0].message.content, from_id)
 
 
+def chat_gpt_english(prompt, gpt_model=DEFAULT_MODEL):
+    print(f"CALLING: chat_gpt_english() for '{prompt}' ...")
+    response = client.chat.completions.create(
+        model=gpt_model,
+        messages=[
+            {"role": "system", "content": ENGLISH_SYSTEM_PROMPT},
+            {"role": "user", "content": ENGLISH_USER_PROMPT},
+            {"role": "assistant", "content": ENGLISH_ASSISTANT_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=2000,
+    )
+    return response.choices[0].message.content
+
+
+
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
 def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month)):
     df = get_all_expenditure_records(from_id)
