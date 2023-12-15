@@ -589,10 +589,12 @@ def get_coin_wallet_balance_with_locked():
     if not df.empty: return dict(zip(df['asset'].values, df['free'].values + df['locked'].values))
     else: return {}
 
+
 def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
     data = get_coin_wallet_balance_with_locked()
     if data: return send_msg('\n'.join([f'{key}: {format_number(value)}' for key, value in data.items()]), chat_id)
     else: return send_msg("No coin in your wallet.", chat_id)
+
 
 # 通过 get_user_asset() 获取某个 coin 的余额
 def get_coin_wallet_balance(coin):
@@ -1455,6 +1457,8 @@ def binance_market_buy(coin, value):
 
 
 def do_market_buy(coin: str, value):
+    print(f"Calling do_market_buy for {coin} with checksize: {value} usdt")
+    
     coin = coin.upper()
     reply_msg = ''
     # check USDT balance see if it is bigger than value
@@ -1937,11 +1941,18 @@ def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_
 
 
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
-def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID):
+def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None):
     try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     except: return 'binance_position_buy table does not exist'
 
-    if df_balance.empty: return send_msg(f'No open position in binance', chat_id)
+    # if coin is given, filter df_balance with coin
+    if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
+
+    if df_balance.empty: 
+        if chat_id: 
+            if coin: send_msg(f'No open position for {coin}', chat_id)
+            else: send_msg(f'No open position for all coins', chat_id)
+        return 
 
     current_orders = get_open_orders_list()
 
@@ -2018,7 +2029,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         }
         '''
 
-        send_msg(f"Set {format_number(amount)} {coin} at: {price} usdt/{coin.lower()}", chat_id)
+        if chat_id: send_msg(f"Set {format_number(amount)} {coin} at: {price} usdt/{coin.lower()}", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
@@ -2029,8 +2040,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
         try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
         except Exception as e: print(f"An error occurred: {e}")
 
-
-    return send_msg("ALL SET.", chat_id)
+    return
 
 ''' READ TABLE binance_limit_sell_order
 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
@@ -2194,9 +2204,6 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    # binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID)
-
-    # binance_position_set_limit_sell(target_profit=0, chat_id=TG_BOT_OWNER_ID)
 
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
     # select * from binance_limit_sell_order where status is not 'CANCELED'

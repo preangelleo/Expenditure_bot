@@ -90,7 +90,10 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
-def is_coin_recently_listed(symbol: str):
+def is_coin_recently_listed(symbol: str, days=7):
+    try: days = int(days)
+    except: days = 7
+
     # Binance API endpoint for K-line data
     url = "https://api.binance.com/api/v3/klines"
 
@@ -99,7 +102,7 @@ def is_coin_recently_listed(symbol: str):
 
     # Calculate timestamps for 7 days ago and now
     end_time = int(time.time() * 1000)  # Current time in milliseconds
-    start_time = end_time - 7 * 24 * 60 * 60 * 1000  # 7 days ago in milliseconds
+    start_time = end_time - 24 * 60 * 60 * 1000 * days  # 7 days ago
 
     # Parameters for the API request
     params = {
@@ -107,7 +110,7 @@ def is_coin_recently_listed(symbol: str):
         'interval': '1d',  # Daily intervals
         'startTime': start_time,
         'endTime': end_time,
-        'limit': 7  # Maximum number of days to fetch
+        'limit': days
     }
 
     # Send the request
@@ -116,10 +119,12 @@ def is_coin_recently_listed(symbol: str):
     # Check if the response is successful
     if response.status_code == 200:
         data = response.json()
-        # If less than 7 days of data is returned, the coin is recently listed
-        return len(data) < 7
-    else:
-        raise Exception("Error fetching data from Binance API")
+        if len(data) < days: 
+            print(f'{symbol[:-4]} is recently listed in less than {days} days.')
+            return True
+        else: return False
+
+    return True
 
 
 
@@ -128,8 +133,18 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
     # from binance_position_buy find out the latested bought 30 coins
     df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 30')).fetchall())
-    if df_30_days.empty: unique_coin_list = []
-    else: unique_coin_list = list(set(df_30_days['coin'].values.tolist()))
+    if df_30_days.empty: unique_coin_set = set()
+    else: unique_coin_set = set(df_30_days['coin'].values.tolist())
+
+
+    # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
+    try: 
+        df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+        yesterday_hot_coin_set = set(df_hot_coin_history['coin'].values.tolist())
+    except: yesterday_hot_coin_set = set()
+
+    # make a unique coin list
+    unique_coin_list = list(unique_coin_set.union(yesterday_hot_coin_set))
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -199,16 +214,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
     if today_hot_coin_list and only_check: 
 
-        # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
-        try: 
-            df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
-            yesterday_hot_coin_list = df_hot_coin_history['coin'].values.tolist()
-        except: yesterday_hot_coin_list = []
-
-        today_unique_hot_coin_list = list(set(today_hot_coin_list) - set(yesterday_hot_coin_list))
-        if not today_unique_hot_coin_list: return []
-
-        counts_of_hot_coins = len(today_unique_hot_coin_list)
+        counts_of_hot_coins = len(today_hot_coin_list)
 
         i = 0
         for index, row in df_ticker.iterrows():
@@ -249,7 +255,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     return today_hot_coin_list
 
 
-def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE):
+def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT):
 
     coin_in_positions = []
     try:
@@ -262,9 +268,14 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
-    if not today_hot_coin_list and not crontab: 
-        send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} our of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
+    if not today_hot_coin_list:
+        if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
         return
+
+    target_profit_in_db = read_target_profit_default()
+
+    # compare target_profit_in_db with 0.01, if target_profit_in_db < 0.01, set target_profit_in_db = 0.01
+    if target_profit_in_db < 0.01: target_profit_in_db = 0.01
 
     # query_list  = []
     for coin in today_hot_coin_list:
@@ -272,26 +283,14 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         # Check if coin in coin_in_positions, if yes, ignore this coin
         if coin in coin_in_positions: continue
 
-        # Check coin information from coinmarketcap, if no information, ignore this coin
-        if not get_token_price_from_coinmarketcap_and_send_msg(coin, from_id=None): continue
-
         # Check if coin is recently listed, if yes, ignore this coin
-        if is_coin_recently_listed(coin): continue
+        if is_coin_recently_listed(coin, 7): continue
 
-        try: do_market_buy_one_unit(coin, chat_id)
-        except Exception as e: 
-            if not crontab: send_msg(f"{user_nick_name}, Failed to buy {coin}...\n\n{e}", chat_id)
+        try: 
+            do_market_buy_one_unit(coin, chat_id)
+            binance_position_set_limit_sell(target_profit, chat_id, coin)
+        except Exception as e: print(f'Failed to buy {coin} or set limit order...\n\n{e}')
 
-    target_profit_in_db = read_target_profit_default()
-
-    # compare target_profit_in_db with 0.01, if target_profit_in_db < 0.01, set target_profit_in_db = 0.01
-    if target_profit_in_db < 0.01: target_profit_in_db = 0.01
-
-    try: binance_position_set_limit_sell(target_profit, chat_id=TG_BOT_OWNER_ID)
-    except Exception as e: 
-        if not crontab: send_msg(f"{user_nick_name}, Failed to set limit sell...\n\n{e}", chat_id)
-
-    if not crontab: send_msg('All done! 😘', chat_id)
     return
 
 
@@ -305,13 +304,13 @@ if __name__ == '__main__':
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
     # # Example usage
-    # symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
-    # is_recent = is_coin_recently_listed(symbol)
-    # print(f"Is {symbol} recently listed? {is_recent}")
+    symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
+    is_recent = is_coin_recently_listed(symbol, days=14)
+    print(f"Is {symbol} recently listed? {is_recent}")
 
-    # symbol = 'WOO'  # Replace with the actual symbol you want to check
-    # is_recent = is_coin_recently_listed(symbol)
-    # print(f"Is {symbol} recently listed? {is_recent}")
+    symbol = 'WOO'  # Replace with the actual symbol you want to check
+    is_recent = is_coin_recently_listed(symbol, days=14)
+    print(f"Is {symbol} recently listed? {is_recent}")
 
     df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
     print(df_hot_coin_history)

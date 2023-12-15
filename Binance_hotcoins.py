@@ -12,5 +12,5 @@ if __name__ == '__main__':
     trading_bot_status = trading_bot_switch_status()
     if trading_bot_status:
         # If trading bot is on, check hot coins
-        try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT, check_size = CHECK_SIZE)
+        try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
         except: pass
