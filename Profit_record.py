@@ -1,5 +1,5 @@
-from Binance_api import *
 from BTC_weekly import *
+from Trading_bot import *
 
 if __name__ == '__main__':
     # Crontab job, run once a day at 00:00
@@ -21,3 +21,5 @@ if __name__ == '__main__':
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except: pass
 
+    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
+    except: pass
