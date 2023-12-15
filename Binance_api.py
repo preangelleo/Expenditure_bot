@@ -2318,6 +2318,63 @@ def binance_daily_account_snapshot(type='SPOT', startTime=None, endTime=None, li
         return
     
 
+def binance_market_buy_quantity(coin, quantity):
+    coin = coin.upper()
+    PATH = '/api/v3/order'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'symbol': coin + 'USDT',
+        'side': 'BUY',
+        'type': 'MARKET',
+        'quantity': quantity,  # Changed from 'quoteOrderQty' to 'quantity'
+        'timestamp': timestamp
+    }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.post(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        return data
+    else: 
+        print(r.reason)
+        return None
+    
+
+# Check if bnb balance is less than 1, if yes, buy 1 bnb
+def check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+
+    try: check_limit = float(check_limit)
+    except: return send_msg(f'check_limit: {check_limit} is not a number', chat_id)
+
+    # get bnb balance
+    bnb_balance = get_coin_wallet_balance_all()
+    '''{'AKRO': '124370', 'API3': '585.1', 'ASTR': '13229.6', 'BNB': '3.1130512', 'CELO': '1560', 'FLOW': '1210.65', 'MANA': '2107', 'OMG': '1331.5', 'SXP': '2402.3', 'USDT': '35404.13927066', 'XEC': '28953771'}'''
+    bnb_balance = bnb_balance.get(coin, 0)
+    bnb_balance = float(bnb_balance)
+    if bnb_balance > check_limit:
+        print(f'bnb_balance: {bnb_balance} is less than check_limit: {check_limit}, trying to buy {check_limit} {coin}')
+        data = binance_market_buy_quantity(coin, check_limit)
+        if not data: return send_msg(f'Failed to market buy: {check_limit} {coin}', chat_id)
+        
+        # delete fills from data
+        del data['fills']
+
+        # convert data to dataframe
+        df_buyin = pd.DataFrame(data, index=[0])
+
+        # If table binance_position_buy does not exist, create one, else append df_buyin_result to binance_position_buy
+        df_buyin.to_sql(f'check_and_buy_{coin}', engine, if_exists='append', index=False)
+
+        send_msg(f'DONE: Market buy {check_limit} {coin}', chat_id)
+
+        # pd read out the table lasest row
+        df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM check_and_buy_{coin}')).fetchall())
+        print(df)
+    
+    return
+    
     
 if __name__ == '__main__':
     print('Binance_api.py is running')
@@ -2334,4 +2391,6 @@ if __name__ == '__main__':
     # read net_profit_daily_record table and print as df
     # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM net_profit_daily_record')).fetchall())
 
-    binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
+    # binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
+
+    check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
