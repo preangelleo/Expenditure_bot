@@ -304,13 +304,13 @@ if __name__ == '__main__':
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
     # # Example usage
-    symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
-    is_recent = is_coin_recently_listed(symbol, days=14)
-    print(f"Is {symbol} recently listed? {is_recent}")
+    # symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
+    # is_recent = is_coin_recently_listed(symbol, days=14)
+    # print(f"Is {symbol} recently listed? {is_recent}")
 
-    symbol = 'WOO'  # Replace with the actual symbol you want to check
-    is_recent = is_coin_recently_listed(symbol, days=14)
-    print(f"Is {symbol} recently listed? {is_recent}")
+    # symbol = 'WOO'  # Replace with the actual symbol you want to check
+    # is_recent = is_coin_recently_listed(symbol, days=14)
+    # print(f"Is {symbol} recently listed? {is_recent}")
 
-    df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
-    print(df_hot_coin_history)
+    # df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+    # print(df_hot_coin_history)
