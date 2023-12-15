@@ -133,9 +133,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
-    # Filter out the coins listed only in the last 2 days
-    df_ticker = df_ticker[df_ticker['openTime'] < (time.time() - 24*60*60*2) * 1000]
-
     # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
 
@@ -246,9 +243,21 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         # Check coin information from coinmarketcap, if no information, ignore this coin
         if not get_token_price_from_coinmarketcap_and_send_msg(coin, from_id=None): continue
 
+        # Check if coin is recently listed, if yes, ignore this coin
+        if is_coin_recently_listed(coin): continue
+
         try: do_market_buy_one_unit(coin, chat_id)
         except Exception as e: 
             if not crontab: send_msg(f"{user_nick_name}, Failed to buy {coin}...\n\n{e}", chat_id)
+
+    target_profit_in_db = read_target_profit_default()
+
+    # compare target_profit_in_db with 0.01, if target_profit_in_db < 0.01, set target_profit_in_db = 0.01
+    if target_profit_in_db < 0.01: target_profit_in_db = 0.01
+
+    try: binance_position_set_limit_sell(target_profit, chat_id=TG_BOT_OWNER_ID)
+    except Exception as e: 
+        if not crontab: send_msg(f"{user_nick_name}, Failed to set limit sell...\n\n{e}", chat_id)
 
     if not crontab: send_msg('All done! 😘', chat_id)
     return
@@ -263,11 +272,11 @@ if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
-    # Example usage
-    symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
-    is_recent = is_coin_recently_listed(symbol)
-    print(f"Is {symbol} recently listed? {is_recent}")
+    # # Example usage
+    # symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
+    # is_recent = is_coin_recently_listed(symbol)
+    # print(f"Is {symbol} recently listed? {is_recent}")
 
-    symbol = 'WOO'  # Replace with the actual symbol you want to check
-    is_recent = is_coin_recently_listed(symbol)
-    print(f"Is {symbol} recently listed? {is_recent}")
+    # symbol = 'WOO'  # Replace with the actual symbol you want to check
+    # is_recent = is_coin_recently_listed(symbol)
+    # print(f"Is {symbol} recently listed? {is_recent}")

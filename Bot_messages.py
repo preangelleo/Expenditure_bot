@@ -43,6 +43,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'cancel_all_orders': binance_cancel_all_orders,
     }
 
+
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'get_coin_info': {'function': get_token_price_from_coinmarketcap_and_send_msg, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
@@ -57,6 +58,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
     'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
     }
+
 
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
