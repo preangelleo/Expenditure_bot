@@ -635,6 +635,8 @@ def get_latest_message_from_telegram_messages_table(from_id=None):
     # Convert the 2 row dataframe to a dictionary
     latest_message_dict = df.to_dict(orient='records')[1]
     if from_id: send_msg(f"Latest message from user:\nUpdate_id: {latest_message_dict.get('update_id')}\n\n{latest_message_dict.get('text')}", from_id)
+    
+    latest_message_dict = df.to_dict(orient='records')[0]
     return latest_message_dict
 
 
