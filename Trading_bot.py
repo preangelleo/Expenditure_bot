@@ -139,10 +139,13 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
-    # Filter out the coins with priceChangePercent > 0 and quoteVolume > trading_volume_limit
+    # Select only the coins with priceChangePercent > 0 and quoteVolume > trading_volume_limit
     df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 0) & (df_ticker['quoteVolume'] > trading_volume_limit)]
 
-    # Filter out the coins with lastPrice between 0.0001 and 1000
+    # Select only the priceChangePercent less than 50%
+    df_ticker = df_ticker[df_ticker['priceChangePercent'] < 50]
+
+    # Select only the coins with lastPrice between 0.0001 and 1000
     df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
 
     df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
@@ -195,7 +198,18 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     today_hot_coin_list = df_ticker['coin'].values.tolist()
 
     if today_hot_coin_list and only_check: 
-        counts_of_hot_coins = len(today_hot_coin_list)
+
+        # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
+        try: 
+            df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+            yesterday_hot_coin_list = df_hot_coin_history['coin'].values.tolist()
+        except: yesterday_hot_coin_list = []
+
+        today_unique_hot_coin_list = list(set(today_hot_coin_list) - set(yesterday_hot_coin_list))
+        if not today_unique_hot_coin_list: return []
+
+        counts_of_hot_coins = len(today_unique_hot_coin_list)
+
         i = 0
         for index, row in df_ticker.iterrows():
             i += 1
@@ -207,9 +221,27 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             token_slug = row['token_slug']
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
             reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
+
+            # make a dictionary of this coin and append to "hot_coin_history"
+            hot_coin_history = {
+                'coin': coin, 
+                'priceChangePercent': priceChangePercent, 
+                'price': price, 
+                'turnover_ratio': turnover_ratio, 
+                'turnover_by_priceChangePercent': turnover_by_priceChangePercent,
+                'token_slug': token_slug,
+                'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                }
+
+            # make dictionary to dataframe
+            df_hot_coin_history = pd.DataFrame(hot_coin_history, index=[0])
+            
+            # append df_hot_coin_history to hot_coin_history table
+            df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
+
             send_msg_markdown(reply_string, from_id)
             broadcast_markdown(reply_string)
-        
+
         help_info = 'The 1) number is price change, 2) is price, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
         # send_msg(help_info, from_id)
         broadcast_text(help_info)
@@ -280,3 +312,6 @@ if __name__ == '__main__':
     # symbol = 'WOO'  # Replace with the actual symbol you want to check
     # is_recent = is_coin_recently_listed(symbol)
     # print(f"Is {symbol} recently listed? {is_recent}")
+
+    df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+    print(df_hot_coin_history)
