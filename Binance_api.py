@@ -1942,6 +1942,9 @@ def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_
 
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None):
+
+    target_profit = read_target_profit_default() if not target_profit else float(target_profit)
+
     try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     except: return 'binance_position_buy table does not exist'
 
@@ -1961,7 +1964,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         coin = df_balance.iloc[i]['coin']
         amount = df_balance.iloc[i]['executedQty']
         price = df_balance.iloc[i]['price']
-        if target_profit: price = price * (1 + float(target_profit))
+        price = price * (1 + float(target_profit))
 
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
 
@@ -2029,7 +2032,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         }
         '''
 
-        if chat_id: send_msg(f"Set {format_number(amount)} {coin} at: {price} usdt/{coin.lower()}", chat_id)
+        if chat_id: send_msg(f"Set {format_number(amount)} of {coin} at: {price} usdt/{coin.lower()} for a target profit of {target_profit*100:.2f}%", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
