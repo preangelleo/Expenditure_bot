@@ -41,8 +41,6 @@ NONE_PARAMETER_COMMAND_LIST = {
     'read_target_profit': read_target_profit_default,
     'open_orders_list': get_open_orders_list,
     'cancel_all_orders': binance_cancel_all_orders,
-    'reboot_the_bot': reboot_bot,
-    'reboot_the_system': reboot_system,
     }
 
 ONE_PARAMETER_COMMAND_LIST = {
