@@ -477,7 +477,10 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 
     print(df)
 
-
+    # Calculate the sum of the spent column
+    total_spend = df['Spent'].sum()
+    send_msg(f"Total spent of year {year} and month {month} for category {category_correct} and merchant {merchant_correct} is {format_number(total_spend)} usd", from_id)
+    return True
 
 
 # Read out ignore_list table and return a list of ignored coins

@@ -50,6 +50,7 @@ COMMANDS = [
     {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
     {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
     {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
+    {'command': 'sum_category_merchant', 'description': 'Sum the total spend of a given category and merchant'},
     {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
     {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
     {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
@@ -345,4 +346,10 @@ BOT_COMMAND_DICT = {
     'fib': 'get_fibonacci_sequence',
     'cir': 'calculate_irr',
     'irr': 'calculate_irr',
+    'scm': 'sum_category_merchant',
+    'cms': 'sum_category_merchant',
+    'sum_merchant': 'sum_category_merchant',
+    'sum_category': 'sum_category_merchant',
+    'sum': 'sum_category_merchant',
+    'smc': 'sum_category_merchant',
     }
