@@ -201,13 +201,14 @@ def handel_telegram_message_from_webhook(message):
 
         if first_word.lower().startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
 
-        if len(first_word) < 10:
+        if len(first_word) < 20:
             r = find_words_for_bot_user(first_word, from_id)
             if not r and len(first_word) <= 5 and len(first_word) >= 3: 
                 try: get_token_info(first_word, from_id)
                 except: pass
                 try: get_stock_info(first_word, from_id)
                 except: pass
+
         return
 
     rest_word = ' '.join(rest_word)

@@ -850,6 +850,9 @@ def check_address_balance_return_str(address, from_id=TG_BOT_OWNER_ID):
     balance_str = '\n'.join([f"{k}: {format_number(v)}" for k, v in balance_dic.items()])
     return send_msg(balance_str, from_id)
 
+
+
+
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 
