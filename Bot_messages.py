@@ -1,6 +1,6 @@
 from Trading_bot import *
 from English_bot import *
-
+from Gemini_gpt import *
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
@@ -73,6 +73,12 @@ THREE_PARAMETER_COMMAND_LIST = {
 FOUR_PARAMETER_COMMAND_LIST = {
     'binance_send_coin': {'function': binance_send_coin, 'description': '/binance_send_coin 100 BSC USDT 0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'},
     'sum_category_merchant': {'function': get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant, 'description': 'You need to input a year, a month, a category and a merchant after this command, for example: /sum_category_merchant 2022 12 Electronics Amazon or /sum 2023 12 Electronics ALL or /scm 2023 12 ALL Amazon'},
+    }
+
+SENTENCE_AS_PARAMETER_COMMAND_LIST = {
+    'gemini': {"function": gemini_gpt, "description": "You need to input a sentence after this command, for example: /gemini What's the meaning of marriage?"},
+    'hash_sha256': {"function": hash_sha256_bot, "description": "You need to input a sentence after this command, for example: /hash_sha256_bot Here's the information you want to get hashed by sha256."},
+    'hash_md5': {"function": hash_md5_bot, "description": "You need to input a sentence after this command, for example: /hash_md5_bot Here's the information you want to get hashed by md5."},
     }
 
 
@@ -210,9 +216,23 @@ def handel_telegram_message_from_webhook(message):
                 except: pass
 
         return
+    
+    elif first_word in SENTENCE_AS_PARAMETER_COMMAND_LIST:
 
-    rest_word = ' '.join(rest_word)
-    new_prompt = f"{first_word} {rest_word}"
+        # If there's no rest word, then reply the description of the command
+        if not rest_word: return send_msg(SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
+
+        # Get the corresponding function
+        func = SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]
+
+        rest_word = ' '.join(rest_word)
+
+        # Call the function and return
+        return func(rest_word, from_id)
+    
+
+    rest_word_joined = ' '.join(rest_word)
+    new_prompt = f"{first_word} {rest_word_joined}"
 
     try: update_text_for_a_given_message_id(message_id, new_prompt, from_id)
     except: pass

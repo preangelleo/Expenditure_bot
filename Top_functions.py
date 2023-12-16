@@ -156,6 +156,17 @@ def hash_sha256(content):
     hashed_content = hashlib.sha256(str(content).encode('utf-8')).hexdigest()
     return hashed_content
 
+def hash_md5_bot(content, from_id=TG_BOT_OWNER_ID):
+    hashed_content = hashlib.md5(str(content).encode('utf-8')).hexdigest()
+    if from_id: send_msg(f"Original Content: \n{content}\n\nMD5 Hashed: \n{hashed_content}", from_id)
+    return hashed_content
+
+
+def hash_sha256_bot(content, from_id=TG_BOT_OWNER_ID):
+    hashed_content = hashlib.sha256(str(content).encode('utf-8')).hexdigest()
+    if from_id: send_msg(f"Original Content: \n{content}\n\nSHA256 Hashed: \n{hashed_content}", from_id)
+    return hashed_content
+
 def markdown_wallet_address(wallet_address):
     markdown_address = f'[{wallet_address[:6]}...{wallet_address[-7:]}]({ETHERSCAN_WALLET_URL_PREFIX}{wallet_address})'
     return markdown_address
