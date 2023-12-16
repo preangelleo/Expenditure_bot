@@ -13,6 +13,7 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generate
 
 # define a function to use requests to generate text from googleapis
 def generate_text(prompt, model_name='gemini-pro'):
+    print(f"CALLING generate_text() to generate text answer for prompt: {prompt}...")
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}'
     headers = {'Content-Type': 'application/json'}
     data = {'contents': [{'parts': [{'text': prompt}]}]}
@@ -73,6 +74,7 @@ def generate_text(prompt, model_name='gemini-pro'):
     }
     '''
     response_text = response.json()['candidates'][0]['content']['parts'][0]['text']
+    print(f"GEMINI API RESPONSE TEXT: \n\n{response_text}\n\n")
     return response_text
 
 
@@ -84,5 +86,5 @@ def gemini_gpt(prompt, from_id=TG_BOT_OWNER_ID):
 
 
 if __name__ == '__main__':
-    response_text = generate_text("What's the meaning of marriage?")
+    response_text = generate_text("when was google founded")
     print(response_text)

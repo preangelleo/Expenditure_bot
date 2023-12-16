@@ -32,18 +32,20 @@ def ask_gpt_vision(messages_list, model=DEFAULT_MODEL):
 
 
 # # define GPT function with input prompt only
-def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL):
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            { 
-                "role": "user",
-                "content": [{"type": "text", "text": prompt}]
-            }
-        ],
-        max_tokens=2000,
-    )
-    return send_msg(response.choices[0].message.content, from_id)
+def ask_gpt(prompt, from_id=TG_BOT_OWNER_ID):
+    try:
+        response = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            messages=[
+                { 
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}]
+                }
+            ],
+            max_tokens=2000,
+        )
+        return send_msg(response.choices[0].message.content, from_id)
+    except: return
 
 
 def chat_gpt_english(prompt, gpt_model=DEFAULT_MODEL):
@@ -104,13 +106,6 @@ def insert_new_gpt_response_record(from_id, message_id, prompt, response):
 
     return True
 
-
-# define a function to read the latest message from 'telegram_messages' table
-# def get_latest_message_from_telegram_messages_table():
-#     query = text("select * from telegram_messages where message_id = (select max(message_id) from telegram_messages)")
-#     df = pd.DataFrame(engine.connect().execute(query).fetchall())
-#     latest_message_dict = df.iloc[-1].to_dict()
-#     return latest_message_dict
 
 # define a function to read the latest message from 'gpt_response' table
 def get_latest_message_from_gpt_response_table():

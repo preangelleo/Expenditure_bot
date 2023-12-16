@@ -126,8 +126,6 @@ def handel_telegram_message_from_webhook(message):
     rest_word = text_prompt.split()[1:]
     # the type of rest_word is list
 
-    print(f"DEBUG: 1) first_word: {first_word}, rest_word: {rest_word}")
-
     is_command = False
     # check if first_word starts with '/'
     if first_word.startswith('/'): 
@@ -206,7 +204,6 @@ def handel_telegram_message_from_webhook(message):
         return func(first_parameter, second_parameter, third_parameter, fourth_parameter, from_id)
     
     elif first_word in SENTENCE_AS_PARAMETER_COMMAND_LIST:
-        print(f"DEBUG: 2) in 'SENTENCE_AS_PARAMETER_COMMAND_LIST', first_word: {first_word}")
 
         # If there's no rest word, then reply the description of the command
         if not rest_word: return send_msg(SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
@@ -216,11 +213,8 @@ def handel_telegram_message_from_webhook(message):
 
         rest_word = ' '.join(rest_word)
 
-        print(f"DEBUG: 3) in 'SENTENCE_AS_PARAMETER_COMMAND_LIST', rest_word: {rest_word}")
-
         # Call the function and return
         return func(rest_word, from_id)
-
 
     elif not is_command and not rest_word:
 
@@ -235,11 +229,10 @@ def handel_telegram_message_from_webhook(message):
                 except: pass
         return
     
-
     rest_word_joined = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word_joined}"
 
-    print(f"DEBUG: 4) new_prompt: {new_prompt}")
+    if new_prompt.split()[0].lower() in ['translate', 'refine', 'revise', 'concisely', 'summarize']: return ask_gpt(new_prompt, from_id)
 
     try: update_text_for_a_given_message_id(message_id, new_prompt, from_id)
     except: pass
