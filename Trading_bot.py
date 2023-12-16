@@ -130,22 +130,6 @@ def is_coin_recently_listed(symbol: str, days=7):
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = TG_BOT_OWNER_ID):
     
-    # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
-    # from binance_position_buy find out the latested bought 30 coins
-    df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 30')).fetchall())
-    if df_30_days.empty: unique_coin_set = set()
-    else: unique_coin_set = set(df_30_days['coin'].values.tolist())
-
-
-    # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
-    try: 
-        df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
-        yesterday_hot_coin_set = set(df_hot_coin_history['coin'].values.tolist())
-    except: yesterday_hot_coin_set = set()
-
-    # make a unique coin list
-    unique_coin_list = list(unique_coin_set.union(yesterday_hot_coin_set))
-
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
     # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
@@ -154,16 +138,14 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
-    # Select only the coins with priceChangePercent > 0 and quoteVolume > trading_volume_limit
-    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 0) & (df_ticker['quoteVolume'] > trading_volume_limit)]
+    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
 
-    # Select only the priceChangePercent less than 50%
-    df_ticker = df_ticker[df_ticker['priceChangePercent'] < 50]
+    if df_ticker.empty:
+        print(f"1) No hot coin today after filtering the coins with priceChangePercent > 1 and quoteVolume > {trading_volume_limit} and priceChangePercent < 20 and lastPrice between 0.0001 and 1000")
+        if only_check: broadcast_text(f"No hot coin today after filtering the coins with 20% > priceChangePercent > 1% and quoteVolume > {format_number(trading_volume_limit)} and lastPrice between 0.0001 and 1000")
+        return []
 
-    # Select only the coins with lastPrice between 0.0001 and 1000
-    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-
-    df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
+    # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
 
     # Eliminate the coins with 'USD' in coin name
@@ -173,9 +155,32 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     IGNORE_LIST = get_ignore_list()
     df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
 
+    if df_ticker.empty:
+        print(f"2) No hot coin today after eliminating the coins in IGNORE_LIST")
+        if only_check: broadcast_text(f"No hot coin today after eliminating the coins in IGNORE_LIST")
+        return []
+    
+    # pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy')).fetchall())
+    # from binance_position_buy find out the latested bought 30 coins
+    try:
+        df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 30')).fetchall())
+        unique_coin_set = set(df_30_days['coin'].values.tolist())
+    except: unique_coin_set = set()
+
+    # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
+    try: 
+        df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+        yesterday_hot_coin_set = set(df_hot_coin_history['coin'].values.tolist())
+    except: yesterday_hot_coin_set = set()
+
+    # make a unique coin list of unique_coin_set and yesterday_hot_coin_set together
+    unique_coin_list = list(unique_coin_set | yesterday_hot_coin_set)
+
     # Ignore the coins in unique_coin_list
     df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
-    if df_ticker.empty: return []
+    if df_ticker.empty: 
+        print(f"3) No hot coin today, after ignore the latest hot coin list: {unique_coin_list}")
+        return []
 
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
 
@@ -195,16 +200,19 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
         else: df_ticker.drop(index, inplace=True)
 
-    # Filter out the coins with market_cap between 100M and 10B
-    df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 10_000_000_000)]
+    # Filter out the coins with market_cap between 100M and 5B
+    df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 5_000_000_000)]
+
+    if df_ticker.empty:
+        print(f"4) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
+        if only_check: broadcast_text(f"No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
+        return []
 
     # add a new column 'turnover_by_priceChangePercent' = turnover_ratio / priceChangePercent
     df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
 
     # sort by 'turnover_by_priceChangePercent' in descending order
     df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
-
-    print(df_ticker)
 
     # Keep the top 30 coins
     df_ticker = df_ticker.head(10)
@@ -214,7 +222,13 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
     if today_hot_coin_list and only_check: 
 
+        if from_id: send_msg(f"Today's hot coins are: {', '.join(today_hot_coin_list)}", from_id)
+
         counts_of_hot_coins = len(today_hot_coin_list)
+
+        strategy_info = f'''STRATEGY: \n\nFiltering the coins with 'Daily Trading Volume' > {format_number(trading_volume_limit)} USD and PriceChangePercent between 1% ~ 20% and lastPrice between 0.0001 ~ 1000 and market_cap between 100M ~ 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {int(CIRCULATION_RATIO*100)}%, then eliminate the coins in IGNORE_LIST and the coins in the latest 30 days positions and ignore yesterday's hot coins, then sort by 'turnover_ratio / priceChangePercent' in descending order and keep the top 10 coins. We got {counts_of_hot_coins} hot coin(s) for today.'''
+        print(strategy_info)
+        broadcast_text(strategy_info)
 
         i = 0
         for index, row in df_ticker.iterrows():
@@ -245,12 +259,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             # append df_hot_coin_history to hot_coin_history table
             df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
 
-            send_msg_markdown(reply_string, from_id)
+            # send_msg_markdown(reply_string, from_id)
             broadcast_markdown(reply_string)
-
-        help_info = 'The 1) number is price change, 2) is price, 3) is the turnover, 4) is turnover_ratio / price_change. Sorted by 4) and show no more than 10 coins.'
-        # send_msg(help_info, from_id)
-        broadcast_text(help_info)
 
     return today_hot_coin_list
 
