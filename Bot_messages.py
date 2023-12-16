@@ -126,6 +126,8 @@ def handel_telegram_message_from_webhook(message):
     rest_word = text_prompt.split()[1:]
     # the type of rest_word is list
 
+    print(f"DEBUG: 1) first_word: {first_word}, rest_word: {rest_word}")
+
     is_command = False
     # check if first_word starts with '/'
     if first_word.startswith('/'): 
@@ -203,6 +205,23 @@ def handel_telegram_message_from_webhook(message):
         # Call the function and return
         return func(first_parameter, second_parameter, third_parameter, fourth_parameter, from_id)
     
+    elif first_word in SENTENCE_AS_PARAMETER_COMMAND_LIST:
+        print(f"DEBUG: 2) in 'SENTENCE_AS_PARAMETER_COMMAND_LIST', first_word: {first_word}")
+
+        # If there's no rest word, then reply the description of the command
+        if not rest_word: return send_msg(SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
+
+        # Get the corresponding function
+        func = SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]['function']
+
+        rest_word = ' '.join(rest_word)
+
+        print(f"DEBUG: 3) in 'SENTENCE_AS_PARAMETER_COMMAND_LIST', rest_word: {rest_word}")
+
+        # Call the function and return
+        return func(rest_word, from_id)
+
+
     elif not is_command and not rest_word:
 
         if first_word.lower().startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
@@ -214,25 +233,13 @@ def handel_telegram_message_from_webhook(message):
                 except: pass
                 try: get_stock_info(first_word, from_id)
                 except: pass
-
         return
-    
-    elif first_word in SENTENCE_AS_PARAMETER_COMMAND_LIST:
-
-        # If there's no rest word, then reply the description of the command
-        if not rest_word: return send_msg(SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]['description'], from_id)
-
-        # Get the corresponding function
-        func = SENTENCE_AS_PARAMETER_COMMAND_LIST[first_word]
-
-        rest_word = ' '.join(rest_word)
-
-        # Call the function and return
-        return func(rest_word, from_id)
     
 
     rest_word_joined = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word_joined}"
+
+    print(f"DEBUG: 4) new_prompt: {new_prompt}")
 
     try: update_text_for_a_given_message_id(message_id, new_prompt, from_id)
     except: pass
@@ -245,6 +252,27 @@ def handel_telegram_message_from_webhook(message):
 
 if __name__ == '__main__':
     print('Running Bot_message.py...')
-    # from_id = TG_BOT_OWNER_ID
-    # first_word = 'ETH'
-    # find_words_for_bot_user(first_word, from_id)
+    update = {
+        "update_id": 686490310,
+        "message": {
+            "message_id": 7684,
+            "from": {
+            "id": 2118900665,
+            "is_bot": False,
+            "first_name": "Old_Bro_Leo",
+            "username": "laogege6",
+            "language_code": "zh-hans",
+            "is_premium": True
+            },
+            "chat": {
+            "id": 2118900665,
+            "first_name": "Old_Bro_Leo",
+            "username": "laogege6",
+            "type": "private"
+            },
+            "date": 1702697072,
+            "text": "hs i love you"
+        }
+        }
+    message = update['message']
+    handel_telegram_message_from_webhook(message)

@@ -157,12 +157,14 @@ def hash_sha256(content):
     return hashed_content
 
 def hash_md5_bot(content, from_id=TG_BOT_OWNER_ID):
+    print(f"CALLING hash_md5_bot() for {content}")
     hashed_content = hashlib.md5(str(content).encode('utf-8')).hexdigest()
     if from_id: send_msg(f"Original Content: \n{content}\n\nMD5 Hashed: \n{hashed_content}", from_id)
     return hashed_content
 
 
 def hash_sha256_bot(content, from_id=TG_BOT_OWNER_ID):
+    print(f"CALLING hash_sha256_bot() for {content}")
     hashed_content = hashlib.sha256(str(content).encode('utf-8')).hexdigest()
     if from_id: send_msg(f"Original Content: \n{content}\n\nSHA256 Hashed: \n{hashed_content}", from_id)
     return hashed_content

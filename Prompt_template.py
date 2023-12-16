@@ -100,7 +100,10 @@ COMMANDS = [
     {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
     {'command': 'get_fibonacci_sequence', 'description': 'Get the fibonacci sequence of a given number'},
     {'command': 'calculate_irr', 'description': 'Calculate the IRR of a given return folds and years of investment'},
-    ]
+    {"command": "gemini", "description": "Calling Gemini API of Google to generate the answer"},
+    {"command": "hash_sha256", "description": "Hash the input string with sha256"},
+    {"command": "hash_md5", "description": "Hash the input string with md5"},
+]
 
 
 
