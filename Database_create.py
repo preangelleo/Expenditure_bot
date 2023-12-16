@@ -268,6 +268,22 @@ def drop_table(table_name):
     return True
 
 
+# define a function to create a 'trivial_records' table to save the trivial save records, only two columns: ID as a Key auto increment, Info as TEXT
+def create_trivial_records_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'trivial_records'
+    cursor.execute("CREATE TABLE IF NOT EXISTS trivial_records (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Info TEXT)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'trivial_records' created successfully!")
+    return True
+
+
+
 if __name__ == '__main__':
     print("Create database and tables...")
     # Initial Step 1: Create database
@@ -300,6 +316,9 @@ if __name__ == '__main__':
 
     # Initial Step 10: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     trading_bot_switch_on()
+
+    # Initial Step 11: Create trivial_records tables
+    create_trivial_records_table()
 
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")

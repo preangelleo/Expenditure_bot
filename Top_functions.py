@@ -864,6 +864,74 @@ def check_address_balance_return_str(address, from_id=TG_BOT_OWNER_ID):
     return send_msg(balance_str, from_id)
 
 
+'''CREATE TABLE IF NOT EXISTS trivial_records (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Info TEXT)'''
+# Define a function to insert a new record into the table 'trivial_records'
+def save_trivial_record(info, from_id=TG_BOT_OWNER_ID):
+
+    # make sure info is text
+    info = str(info)
+
+    # append current into the info
+    info = f"{info}\n\n{datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+
+    # Assuming engine is already created as shown in previous examples
+    with engine.connect() as connection:
+        try:
+            # Define your SQL query using SQLAlchemy's text function
+            sql = text("""
+                INSERT INTO trivial_records (Info) VALUES (:info)
+            """)
+
+            # Execute the query with the provided parameters
+            result = connection.execute(sql, {'info': info})
+
+            # Commit the transaction
+            connection.commit()
+
+            # Read the ID of the last inserted row
+            last_row_id = result.lastrowid
+
+            send_msg(f"Successfully inserted: \n\nID: {last_row_id}\nInfo: {info}", from_id)
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+
+    return
+
+
+# Define a function to search a key word from the table 'trivial_records', get all of the like results and get a list, then join the list to a string and send to the user
+def search_trivial_records(key_word, from_id=TG_BOT_OWNER_ID):
+    # Assuming engine is already created as shown in previous examples
+    with engine.connect() as connection:
+        try:
+            # Define your SQL query using SQLAlchemy's text function
+            sql = text(f"""
+                SELECT * FROM trivial_records WHERE Info LIKE '%{key_word}%'
+            """)
+
+            # Execute the query with the provided parameters
+            result = connection.execute(sql)
+
+            # Commit the transaction
+            connection.commit()
+
+            # Read the ID of the last inserted row
+            result_list = result.fetchall()
+
+            # if no result, return
+            if not result_list: return send_msg(f"No result for: {key_word}", from_id)
+
+            # convert the result list to a string
+            result_str = '\n\n'.join([f"ID: {i[0]}\nInfo: {i[1]}" for i in result_list])
+
+            send_msg(f"Search result for {key_word}:\n\n{result_str}", from_id)
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+
+    return
 
 
 if __name__ == '__main__':

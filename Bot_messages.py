@@ -79,6 +79,8 @@ SENTENCE_AS_PARAMETER_COMMAND_LIST = {
     'gemini': {"function": gemini_gpt, "description": "You need to input a sentence after this command, for example: /gemini What's the meaning of marriage?"},
     'hash_sha256': {"function": hash_sha256_bot, "description": "You need to input a sentence after this command, for example: /hash_sha256_bot Here's the information you want to get hashed by sha256."},
     'hash_md5': {"function": hash_md5_bot, "description": "You need to input a sentence after this command, for example: /hash_md5_bot Here's the information you want to get hashed by md5."},
+    'save_trivial_record': {"function": save_trivial_record, "description": "You need to input the information you want to be saved after this command, for example: /save_trivial_record I bought 1 BTC on Dec 1, 2023."},
+    'search_trivial_records': {"function": search_trivial_records, "description": "You need to input the keywords you want to search after this command, for example: /search_trivial_records BTC"},
     }
 
 

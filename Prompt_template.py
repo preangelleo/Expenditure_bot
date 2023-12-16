@@ -103,6 +103,8 @@ COMMANDS = [
     {"command": "gemini", "description": "Calling Gemini API of Google to generate the answer"},
     {"command": "hash_sha256", "description": "Hash the input string with sha256"},
     {"command": "hash_md5", "description": "Hash the input string with md5"},
+    {"command": "save_trivial_record", "description": "Save some information into the table 'trivial_records'"},
+    {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
 ]
 
 
@@ -231,6 +233,34 @@ FUNCTIONS_TOOLS = [
                 "required": ["coin", "from_id"]
             }
         }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "save_trivial_record",
+            "description": "Save given information into the table 'trivial_records' (for notes only, not for expenditure records)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "info": {"type": "string", "description": "The information to be saved"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["info", "from_id"]
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "search_trivial_records",
+            "description": "Search the information by keywords from the table 'trivial_records' (for notes only, not for expenditure records)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "key_word": {"type": "string", "description": "The key word to search"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["key_word", "from_id"]
+            }
+        }
     }
      
 ]
@@ -328,6 +358,10 @@ BOT_COMMAND_DICT = {
     'refine': "Refine the below text in same language but in a cincise and delicate way\n",
     'concise': 'Concisely revise the below text in same language in a delicate way\n',
     'summarize': 'Summarize the below text concisely in the same language with bullet points.\n',
+    'save': 'save_trivial_record',
+    'str': 'save_trivial_record',
+    'search': 'search_trivial_records',
+    'find': 'search_trivial_records',
     'hs': 'hash_sha256',
     'sha': 'hash_sha256',
     'md': 'hash_md5',
