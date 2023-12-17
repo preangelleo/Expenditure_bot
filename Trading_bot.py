@@ -80,7 +80,7 @@ def get_kline_data(symbol, interval):
     data = response.json()
     df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
     df['Close'] = pd.to_numeric(df['Close'])
-    print(df)
+    # print(df)
     return df
 
 
@@ -98,26 +98,47 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def analyze_data(df, sma_period, rsi_period):
+def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
     
     latest = df.iloc[-1]
-    if latest['Close'] < latest['SMA'] or latest['RSI'] < latest['RSI_SMA']:
-        if latest['Close'] < latest['SMA']: print(f"Close price {latest['Close']} is below SMA {latest['SMA']}")
-        if latest['RSI'] < latest['RSI_SMA']: print(f"RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
+
+    if latest['Close'] < latest['SMA']: 
+        print(f"{coin} close price {latest['Close']} is below SMA {latest['SMA']}")
+        if from_id: send_msg(f"{coin} close price {latest['Close']} is below SMA {latest['SMA']}", from_id)
         return False
+
+    if latest['RSI'] < latest['RSI_SMA']: 
+        print(f"{coin} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
+        if from_id: send_msg(f"{coin} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}", from_id)
+        return False
+    
+    # Additional volume check for 5-minute interval
+    if interval == '5m' and latest['Volume'] < 100_000:
+        print(f"{coin} {interval} interval trading volume {latest['Volume']} is below 100,000 USDT")
+        if from_id: send_msg(f"{coin} {interval} interval trading volume {latest['Volume']} is below 100,000 USDT", from_id)
+        return False
+
     return True
 
-def analyze_symbol(symbol):
+
+def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+
     for interval in ['4h', '1h', '15m', '5m']:
-        print(f"Analyzing {symbol} for {interval}...")
+        print(f"Analyzing {symbol[:-4]} for {interval}...")
         df = get_kline_data(symbol, interval)
-        if not analyze_data(df, 34, 14):
-            return False
+        if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
+        
     return True
 
+
+def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
+    result = analyze_symbol(symbol, from_id)
+    if result: send_msg(f"{symbol[:-4]} is a good coin to buy now.", from_id)
+    return
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
@@ -276,23 +297,24 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
         if from_id: send_msg(f"Today's hot coins are: {', '.join(today_hot_coin_list)}", from_id)
 
-        counts_of_hot_coins = len(today_hot_coin_list)
-
-        strategy_info = f'''STRATEGY: \n\nFiltering the coins with 'Daily Trading Volume' > {format_number(trading_volume_limit)} USD and PriceChangePercent between 1% ~ 20% and lastPrice between 0.0001 ~ 1000 and market_cap between 100M ~ 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {int(CIRCULATION_RATIO*100)}%, then eliminate the coins in IGNORE_LIST and the coins in the latest 30 days positions and ignore yesterday's hot coins, then sort by 'turnover_ratio / priceChangePercent' in descending order and keep the top 10 coins. We got {counts_of_hot_coins} hot coin(s) for today.'''
-        print(strategy_info)
-        broadcast_text(strategy_info)
+        # strategy_info = f'''STRATEGY: \n\nFiltering the coins with 'Daily Trading Volume' > {format_number(trading_volume_limit)} USD and PriceChangePercent between 1% ~ 20% and lastPrice between 0.0001 ~ 1000 and market_cap between 100M ~ 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {int(CIRCULATION_RATIO*100)}%, then eliminate the coins in IGNORE_LIST and the coins in the latest 30 days positions and ignore yesterday's hot coins, then sort by 'turnover_ratio / priceChangePercent' in descending order and keep the top 10 coins.'''
+        # print(strategy_info)
+        # broadcast_text(strategy_info)
 
         i = 0
         for index, row in df_ticker.iterrows():
-            i += 1
+            
             coin = row['coin']
+            if not analyze_symbol(symbol, None): continue
+            i += 1
+
             price = row['lastPrice']
             priceChangePercent = row['priceChangePercent']
             turnover_ratio = row['turnover_ratio']
             turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
             token_slug = row['token_slug']
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"{i}/{counts_of_hot_coins} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
+            reply_string = f"{i} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
 
             # make a dictionary of this coin and append to "hot_coin_history"
             hot_coin_history = {
@@ -313,6 +335,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
             # send_msg_markdown(reply_string, from_id)
             broadcast_markdown(reply_string)
+        if not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
     return today_hot_coin_list
 
@@ -365,25 +388,12 @@ if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
-    # # Example usage
-    # symbol = '1000SATSUSDT'  # Replace with the actual symbol you want to check
-    # is_recent = is_coin_recently_listed(symbol, days=14)
-    # print(f"Is {symbol} recently listed? {is_recent}")
-
-    # symbol = 'WOO'  # Replace with the actual symbol you want to check
-    # is_recent = is_coin_recently_listed(symbol, days=14)
-    # print(f"Is {symbol} recently listed? {is_recent}")
-
-    # df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
-    # print(df_hot_coin_history)
-
     # Example Usage
     while True:
         symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
         if symbol.lower() == 'c': continue
         if symbol.lower() == 'q': break
 
-        symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
         result = analyze_symbol(symbol)
         print("Analysis Result:", result)
 

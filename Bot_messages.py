@@ -57,6 +57,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
     'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
+    'analyze_symbol': {'function': analyze_symbol_for_user, 'description': 'You need to input a coin symbol after this command, for example: /analyze_symbol BTC'},
     }
 
 

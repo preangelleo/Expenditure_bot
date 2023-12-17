@@ -81,6 +81,7 @@ COMMANDS = [
     {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
     {'command': 'sum_category_merchant', 'description': 'Sum the total spend of a given category and merchant'},
     {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
+    {'command': 'analyze_symbol', 'description': 'Analyze if current time is positive to buy a given coin'},
     {'command': 'funding_main_transfer', 'description': 'Transfer all USDT from Funding to Main account'},
     {'command': 'get_wallet_balance', 'description': 'Get the balance of all coins in the wallet'},
     {'command': 'binance_position_check', 'description': 'Check the positions & profits in Binance'},
@@ -261,6 +262,20 @@ FUNCTIONS_TOOLS = [
                 "required": ["key_word", "from_id"]
             }
         }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "analyze_symbol_for_user",
+            "description": "Analyze if current time is positive to buy a given coin",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string", "description": "The symbol of the coin, for example: BTC, ETH, SOL, etc."},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["symbol", "from_id"]
+            }
+        }
     }
      
 ]
@@ -275,6 +290,9 @@ List of available_functions:
 - get_btc_data_with_rsi: Get BTC weeky, daily, or monthly data chart with RSI
 - get_stock_info: Get the information of a given stock symbol from yahoo finance, information include marke cap, trading volume, current price, sector, industry, etc.
 - get_token_info: Get the infomation of a given token from coinmarketcap and send to user, information include marke cap, trading volume, current price, ranking, coinmarketcap url, etc.
+- save_trivial_record: Save given information into the table 'trivial_records' (for notes only, not for expenditure records)
+- search_trivial_records: Search the information by keywords from the table 'trivial_records' (for notes only, not for expenditure records)
+- analyze_symbol_for_user: Analyze if current time is positive to buy a given coin
 '''
 
 IMAGE_INPUT = '''
@@ -465,4 +483,6 @@ BOT_COMMAND_DICT = {
     'get_stock': 'get_stock_info',
     'stock_info': 'get_stock_info',
     'stock': 'get_stock_info',
+    'as': 'analyze_symbol',
+    'ac': 'analyze_symbol',
     }
