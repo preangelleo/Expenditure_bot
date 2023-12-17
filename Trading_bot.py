@@ -131,14 +131,13 @@ def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
         print(f"Analyzing {symbol[:-4]} for {interval}...")
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
+        else: continue
         
     return True
 
 
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    result = analyze_symbol(symbol, from_id)
-    if result: send_msg(f"{symbol[:-4]} is a good coin to buy now.", from_id)
-    return
+    if analyze_symbol(symbol, from_id): return send_msg(f"{symbol[:-4]} is good to buy now.", from_id)
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
