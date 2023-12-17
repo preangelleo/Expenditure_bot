@@ -122,6 +122,7 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below 100K USDT", from_id)
         return False
 
+    print(f"{coin} latest 'Quote Asset Volume' is {format_number(latest['Quote Asset Volume'])}")
     print(f"{coin} at {interval} interval is good")
     return True
 
@@ -129,18 +130,19 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
 def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
 
-    # for interval in ['4h', '1h', '15m', '5m']:
-    for interval in ['5m']:
+    for interval in ['4h', '1h', '15m', '5m']:
+    # for interval in ['5m']:
         print(f"Analyzing {symbol[:-4]} for {interval}...")
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
         # else: continue
+        
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
 
 
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    if analyze_symbol(symbol, from_id): return send_msg(f"{symbol[:-4]} is good to buy now.", from_id)
+    if analyze_symbol(symbol, from_id): return send_msg(f"{symbol} is good to buy now.", from_id)
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
