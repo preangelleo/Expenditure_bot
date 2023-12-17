@@ -445,4 +445,4 @@ if __name__ == '__main__':
     #     result = analyze_symbol(symbol)
     #     print("Analysis Result:", result)
 
-    analyze_symbol_for_user('lrc', from_id=TG_BOT_OWNER_ID)
+    analyze_symbol_for_user('blz', from_id=TG_BOT_OWNER_ID)
