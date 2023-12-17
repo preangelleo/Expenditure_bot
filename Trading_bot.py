@@ -90,6 +90,7 @@ def calculate_sma(data, period):
 
 
 def calculate_rsi(data, period=14):
+    print(f"Calculating RSI for {period}...")
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
@@ -104,12 +105,14 @@ def analyze_data(df, sma_period, rsi_period):
     
     latest = df.iloc[-1]
     if latest['Close'] < latest['SMA'] or latest['RSI'] < latest['RSI_SMA']:
+        if latest['Close'] < latest['SMA']: print(f"Close price {latest['Close']} is below SMA {latest['SMA']}")
+        if latest['RSI'] < latest['RSI_SMA']: print(f"RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
         return False
     return True
 
 def analyze_symbol(symbol):
-    print(f"Analyzing {symbol}...")
     for interval in ['4h', '1h', '15m', '5m']:
+        print(f"Analyzing {symbol} for {interval}...")
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14):
             return False
@@ -379,7 +382,7 @@ if __name__ == '__main__':
         symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
         if symbol.lower() == 'c': continue
         if symbol.lower() == 'q': break
-        
+
         symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
         result = analyze_symbol(symbol)
         print("Analysis Result:", result)
