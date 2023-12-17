@@ -26,7 +26,7 @@ import matplotlib.dates as mdates
 import ccxt
 import yfinance as yf
 import numpy as np
-
+from bs4 import BeautifulSoup
 from mplfinance.original_flavor import candlestick_ohlc
 
 
@@ -919,8 +919,33 @@ def search_trivial_records(key_word, from_id=TG_BOT_OWNER_ID):
     return
 
 
+
+def fetch_text_from_url(url):
+    try:
+        # Send a request to the URL
+        response = requests.get(url)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Parse the HTML content
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Extract and return the text
+            return soup.get_text()
+        else:
+            return f"Error: Unable to access URL (Status Code: {response.status_code})"
+    except Exception as e: print(f"An error occurred: {e}")
+    return
+
+
+
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
 
-    address = '0x7bc198266f1552223A17a6a7660f3feF9171B888'
+    # address = '0x7bc198266f1552223A17a6a7660f3feF9171B888'
+
+    # Example usage
+    # url = "https://www.cnn.com/2023/12/17/politics/bob-good-house-freedom-caucus/index.html"
+    # text_output = fetch_text_from_url(url)
+    # print(text_output)
 

@@ -58,6 +58,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},
     'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
     'analyze_symbol': {'function': analyze_symbol_for_user, 'description': 'You need to input a coin symbol after this command, for example: /analyze_symbol BTC'},
+    'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
     }
 
 
@@ -128,7 +129,6 @@ def handel_telegram_message_from_webhook(message):
     # Extract the first word from the message, check if it's in COMMAND_LIST
     first_word = text_prompt.split()[0].lower()
     rest_word = text_prompt.split()[1:]
-    # the type of rest_word is list
 
     is_command = False
     # check if first_word starts with '/'
@@ -221,6 +221,8 @@ def handel_telegram_message_from_webhook(message):
         return func(rest_word, from_id)
 
     elif not is_command and not rest_word:
+
+        if first_word.lower().startswith('http'): return summarize_the_url(first_word, from_id)
 
         if first_word.lower().startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
 

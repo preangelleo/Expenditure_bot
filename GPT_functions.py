@@ -63,6 +63,12 @@ def chat_gpt_english(prompt, gpt_model=DEFAULT_MODEL):
     return response.choices[0].message.content
 
 
+def summarize_the_url(url, from_id=TG_BOT_OWNER_ID):
+    extracted_text = fetch_text_from_url(url)
+    if not extracted_text: return send_msg('Failed to extract text from the url...', from_id)
+    prompt_to_summarize = f"Summarize below scraped text from a webpage concisely with bullet points: \n\n{extracted_text}"
+    return ask_gpt(prompt_to_summarize, from_id)
+
 
 # Define a function to pull all of the expdenditure records of this year, calculate the total spend of this month and this year
 def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(datetime.now().year), month=str(datetime.now().month)):

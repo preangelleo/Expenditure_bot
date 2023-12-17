@@ -107,6 +107,7 @@ COMMANDS = [
     {"command": "hash_md5", "description": "Hash the input string with md5"},
     {"command": "save_trivial_record", "description": "Save some information into the table 'trivial_records'"},
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
+    {"comand": "summarize_the_url", "description": "Summarize the content of a given url"},
 ]
 
 
@@ -277,6 +278,20 @@ FUNCTIONS_TOOLS = [
                 "required": ["symbol", "from_id"]
             }
         }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "summarize_the_url",
+            "description": "Summarize the content of a given url",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "The url to be scraped and summarized"},
+                    "from_id": {"type": "string", "description": "The user's telegram id"}                    
+                },
+                "required": ["url", "from_id"]
+            }
+        }
     }
      
 ]
@@ -294,6 +309,7 @@ List of available_functions:
 - save_trivial_record: Save given information into the table 'trivial_records' (for notes only, not for expenditure records)
 - search_trivial_records: Search the information by keywords from the table 'trivial_records' (for notes only, not for expenditure records)
 - analyze_symbol_for_user: Analyze if current time is positive to buy a given coin
+- summarize_the_url: Summarize the content of a given url
 '''
 
 IMAGE_INPUT = '''
@@ -378,6 +394,9 @@ BOT_COMMAND_DICT = {
     'concise': 'Concisely revise the below text in same language in a delicate way\n',
     'summarize': 'Summarize the below text concisely in the same language with bullet points.\n',
     'sum': 'Summarize the below text concisely in the same language with bullet points.\n',
+    'sum_url': 'summarize_the_url',
+    'summarize_url': 'summarize_the_url',
+    'url': 'summarize_the_url',
     'save': 'save_trivial_record',
     'find': 'search_trivial_records',
     'search': 'gemini',

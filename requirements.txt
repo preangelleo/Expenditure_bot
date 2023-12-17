@@ -1,6 +1,8 @@
 openai
 yfinance
 gunicorn
+SQLAlchemy
+beautifulsoup4
 aiodns
 aiofiles
 aiogram
@@ -84,7 +86,6 @@ rlp
 rpds-py
 six
 sniffio
-SQLAlchemy
 tenacity
 toolz
 tqdm
