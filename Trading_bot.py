@@ -241,13 +241,15 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     except: unique_coin_set = set()
 
     # try to read hot_coins from hot_coin_history table of only yesterday, not table not exist, make a [] list
-    try: 
-        df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
-        yesterday_hot_coin_set = set(df_hot_coin_history['coin'].values.tolist())
-    except: yesterday_hot_coin_set = set()
+    # try: 
+    #     df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
+    #     yesterday_hot_coin_set = set(df_hot_coin_history['coin'].values.tolist())
+    # except: yesterday_hot_coin_set = set()
 
     # make a unique coin list of unique_coin_set and yesterday_hot_coin_set together
-    unique_coin_list = list(unique_coin_set | yesterday_hot_coin_set)
+    # unique_coin_list = list(unique_coin_set | yesterday_hot_coin_set)
+
+    unique_coin_list = list(unique_coin_set)
 
     # Ignore the coins in unique_coin_list
     df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
@@ -305,7 +307,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         for index, row in df_ticker.iterrows():
             
             coin = row['coin']
-            if not analyze_symbol(symbol, None): continue
+            if not analyze_symbol(coin, None): continue
             i += 1
 
             price = row['lastPrice']
@@ -384,16 +386,62 @@ def only_check_hot_coins(from_id):
 
 
 
+def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_LIMIT):
+    
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+
+    # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+
+    # pick up the symbol endswith 'USDT'
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+
+    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < 50)]
+
+    if df_ticker.empty:
+        print(f"1) No hot coin today after filtering the coins with priceChangePercent > 1 and quoteVolume > {trading_volume_limit} and priceChangePercent < 20 and lastPrice between 0.0001 and 1000")
+        return []
+
+    # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+
+    # Eliminate the coins with 'USD' in coin name
+    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+
+    # Keep the top 30 coins
+    df_ticker = df_ticker.head(30)
+
+    # make a coin list
+    today_hot_coin_list = df_ticker['coin'].values.tolist()
+
+    if today_hot_coin_list: 
+
+        final_list = []
+
+        print(f"Today's hot coins are: {', '.join(today_hot_coin_list)}")
+
+        for coin in today_hot_coin_list:
+            time.sleep(1)
+            
+            if not analyze_symbol(coin, None): continue
+
+            final_list.append(coin)
+
+    return final_list
+
+
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
     # Example Usage
-    while True:
-        symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
-        if symbol.lower() == 'c': continue
-        if symbol.lower() == 'q': break
+    # while True:
+    #     symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
+    #     if symbol.lower() == 'c': continue
+    #     if symbol.lower() == 'q': break
 
-        result = analyze_symbol(symbol)
-        print("Analysis Result:", result)
+    #     result = analyze_symbol(symbol)
+    #     print("Analysis Result:", result)
 
+    final_list = test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_LIMIT)
+    print(final_list)
