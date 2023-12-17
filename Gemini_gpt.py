@@ -81,6 +81,7 @@ def generate_text(prompt, model_name='gemini-pro'):
 # get the response text from generate_text function and send back to the user
 def gemini_gpt(prompt, from_id=TG_BOT_OWNER_ID):
     print("CALLING GEMINI GPT to generate text answer...")
+    prompt = f"{prompt}\n\nSearch the Internet if you don't know the answer or doesn't have the latest information."
     try: send_msg(generate_text(prompt), from_id)
     except: return
 

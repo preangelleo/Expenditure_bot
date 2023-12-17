@@ -82,6 +82,7 @@ SENTENCE_AS_PARAMETER_COMMAND_LIST = {
     'hash_md5': {"function": hash_md5_bot, "description": "You need to input a sentence after this command, for example: /hash_md5_bot Here's the information you want to get hashed by md5."},
     'save_trivial_record': {"function": save_trivial_record, "description": "You need to input the information you want to be saved after this command, for example: /save_trivial_record I bought 1 BTC on Dec 1, 2023."},
     'search_trivial_records': {"function": search_trivial_records, "description": "You need to input the keywords you want to search after this command, for example: /search_trivial_records BTC"},
+    'chatgpt': {"function": ask_gpt, "description": "You need to input a sentence after this command, for example: /chatgpt What is LLM?"},
     }
 
 
@@ -242,7 +243,6 @@ def handel_telegram_message_from_webhook(message):
 
     try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt, message_id=message_id)
     except Exception as e: send_msg(f"Failed...\n\n{e}", from_id)
-
 
 
 

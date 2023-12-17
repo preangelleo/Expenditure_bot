@@ -13,7 +13,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.utils.markdown import hbold
 from BTC_weekly import *
-from Top_functions import *
+from Trading_bot import *
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -130,7 +130,7 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
 
         if "nice picture" in prompt.lower(): return send_msg("Nice picture!", chat_id)
 
-        send_msg(prompt, chat_id)
+        # send_msg(prompt, chat_id)
 
         prompt = f"{PREFIX_PROMPT_FOR_RECEIPT_PROCESS}\n{prompt}\nimage_url: {image_url}"
 
@@ -166,7 +166,12 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
             "add_coin_to_ignore_list": add_coin_to_ignore_list,
             "get_ignore_list": get_ignore_list,
             "funding_main_transfer_all_usdt": funding_main_transfer_all_usdt,
-            "get_btc_data_with_rsi": get_btc_data_with_rsi
+            "get_btc_data_with_rsi": get_btc_data_with_rsi,
+            'get_stock_info': get_stock_info,
+            'get_token_info': get_token_info,
+            'save_trivial_record': save_trivial_record,
+            'search_trivial_records': search_trivial_records,
+            'analyze_symbol_for_user': analyze_symbol_for_user,
         } 
 
         for tool_call in tool_calls:
