@@ -437,12 +437,12 @@ if __name__ == '__main__':
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT)
 
     # Example Usage
-    # while True:
-    #     symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
-    #     if symbol.lower() == 'c': continue
-    #     if symbol.lower() == 'q': break
+    while True:
+        symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
+        if symbol.lower() == 'c': continue
+        if symbol.lower() == 'q': break
 
-    #     result = analyze_symbol(symbol)
-    #     print("Analysis Result:", result)
+        result = analyze_symbol_for_user(symbol, from_id=TG_BOT_OWNER_ID)
+        print("Analysis Result:", result)
 
-    analyze_symbol_for_user('blz', from_id=TG_BOT_OWNER_ID)
+    
