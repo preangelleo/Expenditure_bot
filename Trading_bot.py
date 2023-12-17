@@ -107,18 +107,18 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
 
     if latest['Close'] < latest['SMA']: 
         print(f"{coin} close price {latest['Close']} is below SMA {latest['SMA']}")
-        if from_id: send_msg(f"{coin} close price {latest['Close']} is below SMA {latest['SMA']}", from_id)
+        if from_id: send_msg(f"{coin} close price {format_number(latest['Close'])} is below SMA {format_number(latest['SMA'])}", from_id)
         return False
 
     if latest['RSI'] < latest['RSI_SMA']: 
         print(f"{coin} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
-        if from_id: send_msg(f"{coin} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}", from_id)
+        if from_id: send_msg(f"{coin} RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
         return False
     
     # Additional volume check for 5-minute interval
     if interval == '5m' and latest['Volume'] < 100_000:
         print(f"{coin} {interval} interval trading volume {latest['Volume']} is below 100,000 USDT")
-        if from_id: send_msg(f"{coin} {interval} interval trading volume {latest['Volume']} is below 100,000 USDT", from_id)
+        if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Volume'])} is below 100K USDT", from_id)
         return False
 
     return True
