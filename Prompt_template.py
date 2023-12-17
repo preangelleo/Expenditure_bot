@@ -107,7 +107,7 @@ COMMANDS = [
     {"command": "hash_md5", "description": "Hash the input string with md5"},
     {"command": "save_trivial_record", "description": "Save some information into the table 'trivial_records'"},
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
-    {"comand": "summarize_the_url", "description": "Summarize the content of a given url"},
+    {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
 ]
 
 
