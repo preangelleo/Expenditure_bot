@@ -2380,6 +2380,7 @@ def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     if trading_bot_switch_on(): 
         target_profit = float(os.getenv('TARGET_PROFIT', 0.05))
         set_target_profit_default(target_profit)
+        print(f'Trading bot has been turned on by webhook signal from TradingView and target profit has been set to: {target_profit * 100:.2f}%')
         return send_msg(f"TradingView webhook has switched ON the bot!\nTarget profit also set back to: {target_profit * 100:.2f}%\nCommand to reset target profit:\n\n/set_target_profit 0.07\n\nMessage from TradingView:\n{msg}", from_id)
     return send_msg(f"TradingView webhook failed to switch on the bot! Message from TradingView:\n{msg}", from_id)
 
@@ -2388,6 +2389,7 @@ def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
 def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     if trading_bot_switch_off(): 
         binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 1, from_id = TG_BOT_OWNER_ID)
+        print('Trading bot has been turned off by webhook signal from TradingView and all limit sell orders have been reset to 1% target profit for positions older than 1 day.')
         return send_msg(f"TradingView webhook has switched OFF the bot! And reset all limit sell orders to 1% target profit for positions older than 1 day.\n\nMessage from TradingView:\n{msg}", from_id)
     return send_msg(f"TradingView webhook failed to switch off the bot!\n\nMessage from TradingView:\n{msg}", from_id)
 
