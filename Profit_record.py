@@ -18,9 +18,6 @@ if __name__ == '__main__':
     try: get_token_info('BTC', TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_token_info() error:\n\n{e}\n\n')
 
-    try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
-    except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
-
     try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
 
@@ -29,3 +26,6 @@ if __name__ == '__main__':
 
     try: binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'binance_position_reset_limit_sell() error:\n\n{e}\n\n')
+
+    try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
+    except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
