@@ -129,11 +129,12 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
 def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
 
-    for interval in ['4h', '1h', '15m', '5m']:
+    # for interval in ['4h', '1h', '15m', '5m']:
+    for interval in ['5m']:
         print(f"Analyzing {symbol[:-4]} for {interval}...")
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
-        else: continue
+        # else: continue
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
 
@@ -444,5 +445,4 @@ if __name__ == '__main__':
     #     result = analyze_symbol(symbol)
     #     print("Analysis Result:", result)
 
-    final_list = test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_LIMIT)
-    print(final_list)
+    analyze_symbol_for_user('lrc', from_id=TG_BOT_OWNER_ID)
