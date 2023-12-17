@@ -81,7 +81,7 @@ def get_kline_data(symbol, interval):
     df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
     df['Close'] = pd.to_numeric(df['Close'])
     df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
-    print(df)
+    # print(df)
     return df
 
 
@@ -156,7 +156,7 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
             reply_string = f"[{symbol}]({URL}) | {format_number(market_cap)} | {format_number(fully_diluted_market_cap)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}"
             send_msg_markdown(reply_string, from_id)
             return send_msg(f"{symbol.upper()} is good to buy now.", from_id)
-        else: send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
+        else: send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
