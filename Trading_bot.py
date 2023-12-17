@@ -80,7 +80,8 @@ def get_kline_data(symbol, interval):
     data = response.json()
     df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
     df['Close'] = pd.to_numeric(df['Close'])
-    # print(df)
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
+    print(df)
     return df
 
 
@@ -116,11 +117,12 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         return False
     
     # Additional volume check for 5-minute interval
-    if interval == '5m' and latest['Volume'] < 100_000:
-        print(f"{coin} {interval} interval trading volume {latest['Volume']} is below 100,000 USDT")
-        if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Volume'])} is below 100K USDT", from_id)
+    if interval == '5m' and latest['Quote Asset Volume'] < 100_000:
+        print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below 100,000 USDT")
+        if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below 100K USDT", from_id)
         return False
 
+    print(f"{coin} at {interval} interval is good")
     return True
 
 
@@ -132,7 +134,7 @@ def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
         else: continue
-        
+    print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
 
 
