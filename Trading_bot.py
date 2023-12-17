@@ -56,7 +56,6 @@ from Binance_api import *
 {'market_cap': 152961767.3786398, 'fully_diluted_market_cap': 302295982.96, 'ratio': 0.5060000000029103}
 '''
 
-
 '''STRATEGY:
 - Setting Limits: Define various limits such as TRADING_VOLUME_LIMIT, INITIAL_FUND, CHECK_SIZE, and POSITIONS_LIMIT.
 - Fetching Market Data: Fetches market data from Binance for coins with a trading volume above TRADING_VOLUME_LIMIT. It filters coins based on several criteria including price change percentage, last price, and quote volume.
@@ -68,6 +67,56 @@ from Binance_api import *
 - Coin Eligibility: For each eligible coin, the strategy checks if it is already in an open position. If not, it fetches price information from CoinMarketCap and send to trader.
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
+
+
+def get_kline_data(symbol, interval):
+    print(f"Getting {symbol} data for {interval}...")
+    url = f"https://api.binance.com/api/v3/klines"
+    params = {
+        'symbol': symbol,
+        'interval': interval
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+    df['Close'] = pd.to_numeric(df['Close'])
+    print(df)
+    return df
+
+
+def calculate_sma(data, period):
+    print(f"Calculating SMA for {period}...")
+    return data.rolling(window=period).mean()
+
+
+def calculate_rsi(data, period=14):
+    delta = data.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+def analyze_data(df, sma_period, rsi_period):
+    df['SMA'] = calculate_sma(df['Close'], sma_period)
+    df['RSI'] = calculate_rsi(df['Close'], rsi_period)
+    df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
+    
+    latest = df.iloc[-1]
+    if latest['Close'] < latest['SMA'] or latest['RSI'] < latest['RSI_SMA']:
+        return False
+    return True
+
+def analyze_symbol(symbol):
+    print(f"Analyzing {symbol}...")
+    for interval in ['4h', '1h', '15m', '5m']:
+        df = get_kline_data(symbol, interval)
+        if not analyze_data(df, 34, 14):
+            return False
+    return True
+
+
+
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
 def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
@@ -324,3 +373,14 @@ if __name__ == '__main__':
 
     # df_hot_coin_history = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date > DATE_SUB(NOW(), INTERVAL 1 DAY)')).fetchall())
     # print(df_hot_coin_history)
+
+    # Example Usage
+    while True:
+        symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
+        if symbol.lower() == 'c': continue
+        if symbol.lower() == 'q': break
+        
+        symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+        result = analyze_symbol(symbol)
+        print("Analysis Result:", result)
+
