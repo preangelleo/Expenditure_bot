@@ -305,7 +305,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
         i = 0
         for index, row in df_ticker.iterrows():
-            
+            time.sleep(1)
             coin = row['coin']
             if not analyze_symbol(coin, None): continue
             i += 1
