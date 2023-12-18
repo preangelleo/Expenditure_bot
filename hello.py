@@ -29,6 +29,7 @@ def tg_webhook():
         global JUST_STARTED
         global UPDATE_ID
         print(f"PREVIOUS UPDATE_ID: {UPDATE_ID}, JUST_STARTED: {JUST_STARTED}")
+        
         if JUST_STARTED: send_msg(f"This is the first message after the bot was restarted.", TG_BOT_OWNER_ID)
 
         # Get the message from Telegram
@@ -55,7 +56,10 @@ def tg_webhook():
                             send_msg(f"Telegram bot was reset successfully.", TG_BOT_OWNER_ID)
                     except: return jsonify({'status': 'success'})
 
+                global UPDATE_ID
                 UPDATE_ID = update_id
+
+                global JUST_STARTED
                 JUST_STARTED = False
 
                 print(f"CURRENT UPDATE_ID: {UPDATE_ID}, JUST_STARTED: {JUST_STARTED}")
