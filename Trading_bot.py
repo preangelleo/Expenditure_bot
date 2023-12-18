@@ -138,6 +138,8 @@ def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
         # else: continue
 
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
+    if symbol == 'BTCUSDT': webhook_switch_on_bot(f"{symbol[:-4]} is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
+
     return True
 
 
