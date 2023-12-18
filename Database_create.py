@@ -298,6 +298,124 @@ def create_white_list_table():
     return True
 
 
+# Define a function to create a table for white_list_users, with ID (key), Status (bolean), From_id (string, not none), Username (string, not none), First_name (default none), Last_name (default none), Date (date)
+def create_white_list_users_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'white_list_users'
+    cursor.execute("CREATE TABLE IF NOT EXISTS white_list_users (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Status BOOLEAN, From_id VARCHAR(255) NOT NULL, Username VARCHAR(255) NOT NULL, First_name VARCHAR(255), Last_name VARCHAR(255), Date DATE)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'white_list_users' created successfully!")
+    return True
+
+
+# Define a function to insert a new record into table "white_list_users", make Status = True, first step convert input from_id to string
+def insert_white_list_users(from_id, username, first_name=None, last_name=None, status=False):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if the from_id is already in the table, if yes, just set the Status to status
+    cursor.execute(f"SELECT * FROM white_list_users WHERE From_id = '{from_id}'")
+    result = cursor.fetchall()
+    if len(result) > 0:
+        cursor.execute(f"UPDATE white_list_users SET Status = {status} WHERE From_id = '{from_id}'")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"@{username} /{from_id} already in the white list table, status set to {status} successfully!")
+        return True
+    else:
+        # Insert a new record into table "white_list_users", make Status = True
+        cursor.execute(f"INSERT INTO white_list_users (Status, From_id, Username, First_name, Last_name, Date) VALUES ({status}, '{from_id}', '{username}', '{first_name}', '{last_name}', CURDATE())")
+        # Commit the session
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"@{username} /{from_id} inserted to the white list table successfully!")
+        return True
+
+
+
+# Define a function to set a from_id status to True
+def set_white_list_users_status_true(from_id):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Set a from_id status to True
+    cursor.execute(f"UPDATE white_list_users SET Status = True WHERE From_id = '{from_id}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"/{from_id} status set to True successfully!")
+    return True
+
+
+# Define a function to set a from_id status to False
+def set_white_list_users_status_false(from_id):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Set a from_id status to False
+    cursor.execute(f"UPDATE white_list_users SET Status = False WHERE From_id = '{from_id}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"/{from_id} status set to False successfully!")
+    return True
+
+
+# set white list by username
+def set_white_list_by_username(username, status=True):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Set white list by username
+    cursor.execute(f"UPDATE white_list_users SET Status = {status} WHERE Username = '{username}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"@{username} status set to {status} successfully!")
+    return True
+
+
+# remove white list by username
+def remove_white_list_by_username(username):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Remove white list by username
+    cursor.execute(f"DELETE FROM white_list_users WHERE Username = '{username}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"@{username} removed from white list successfully!")
+    return True
+
+
+# Define a function to check if a from_id is in white_list_users table and the status is True
+def check_white_list_users(from_id):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if a from_id is in white_list_users table and the status is True
+    cursor.execute(f"SELECT * FROM white_list_users WHERE From_id = '{from_id}' AND Status = True")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    if len(result) > 0: return True
+    else: return False
+
 
 if __name__ == '__main__':
     print("Create database and tables...")

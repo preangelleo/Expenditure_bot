@@ -130,7 +130,7 @@ def handel_telegram_message_from_webhook(message):
     
     if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return send_msg(random.choice(HAPPY_EMOJI), from_id)
 
-    if text_prompt.lower() in ['help', '/help']: return send_msg(BOT_HELP, from_id)
+    if text_prompt.lower() in ['help', '/help', 'start', '/start']: return send_msg(BOT_HELP, from_id)
 
     # Extract the first word from the message, check if it's in COMMAND_LIST
     first_word = text_prompt.split()[0].lower()
@@ -228,9 +228,9 @@ def handel_telegram_message_from_webhook(message):
 
     elif not is_command and not rest_word:
 
-        if first_word.lower().startswith('http'): return summarize_the_url(first_word, from_id)
+        if first_word.startswith('http'): return summarize_the_url(first_word, from_id)
 
-        if first_word.lower().startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
+        if first_word.startswith('0x') and len(first_word) == 42: return check_address_balance_return_str(first_word, from_id)
 
         if len(first_word) < 20:
             r = find_words_for_bot_user(first_word, from_id)
@@ -241,6 +241,21 @@ def handel_telegram_message_from_webhook(message):
                 except: pass
         return
     
+    elif is_command: 
+        if first_word.startswith('approve_white_list_'):
+            user_from_id = first_word.split('_')[-1]
+            if set_white_list_users_status_true(user_from_id): 
+                send_msg(f"You've got approved to use this bot by @{TELEGRAM_OWNER_USERNAME}, how can I help you?", user_from_id)
+                return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, @{from_id} is approved to use this bot.", from_id)
+            else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{from_id} to use this bot.", from_id)
+    
+        if check_if_from_id_in_telegram_messages_table(first_word):
+            user_from_id = first_word
+            forward_msg = ' '.join(rest_word)
+            return send_msg(forward_msg, int(user_from_id))
+        
+        return
+
     rest_word_joined = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word_joined}"
 
@@ -251,6 +266,52 @@ def handel_telegram_message_from_webhook(message):
 
     try: run_conversation_with_functions(chat_id=from_id, model=DEFAULT_MODEL, image_url=image_url, prompt = new_prompt, message_id=message_id)
     except Exception as e: send_msg(f"Failed...\n\n{e}", from_id)
+
+
+# def a function to handle non-owner messages, input is update
+def handel_telegram_message_from_webhook_non_owner(message):
+
+    from_id = message['from']['id']
+    text_prompt = message.get('text', None)
+
+    if not text_prompt: return send_msg(random.choice(HAPPY_EMOJI), from_id)
+
+    if text_prompt.lower() in ['who am i', 'whoami', 'who am i?', 'whoami?', 'who_am_i', 'who', 'woshishui', '我是谁', 'fromid', 'chatid', 'username', 'name', 'id', 'me', 'wo', '谁', 'from', 'chat']: 
+        return send_msg(f"from_id: {from_id}\nuser_name: {message['from'].get('username', 'unknow')}\nfirst_name: {message['from'].get('first_name', 'unknow')}\nlast_name: {message['from'].get('last_name', 'unknow')}", from_id)
+
+    if text_prompt in IGNORE_WORDS: send_msg(random.choice(UNHAPPY_EMOJI), from_id)
+    
+    if len(text_prompt) <3 or text_prompt in EMOJI_REPLY: return send_msg(random.choice(HAPPY_EMOJI), from_id)
+
+    if text_prompt.lower() in ['help', '/help', 'start', '/start']: 
+        user_name = message['from'].get('username')
+        if not user_name: return send_msg(f"Sorry, before you can use this bot, please set your telegram username first.", from_id)
+
+        reply_msg = f'''Hello, please click below command to aply for whitelist to use this bot.\n\n/Apply_White_List'''
+        return send_msg(reply_msg, from_id)
+    
+    if text_prompt.startswith('/Apply_White_List'):
+        user_name = message['from'].get('username')
+        if not user_name: return send_msg(f"Sorry, before you can use this bot, please set your telegram username first.", from_id)
+        
+        first_name = message['from'].get('first_name', None)
+        last_name = message['from'].get('last_name', None)
+
+        try: insert_white_list_users(from_id, user_name, first_name, last_name, status=False)
+        except: pass
+
+        msg_to_bot_owner = f'''Dear owner, @{user_name} is applying for whitelist, click below command to approve.\n\n/Approve_White_List_{from_id}'''
+        send_msg(msg_to_bot_owner, TG_BOT_OWNER_ID)
+
+        return send_msg(f"Dear @{user_name}, your application is submitted, please wait for approval.\n\n@{TELEGRAM_OWNER_USERNAME}", from_id)
+    
+
+    if not check_white_list_users(from_id): 
+        message_to_owner = f"/{from_id} Said:\n\n{text_prompt}"
+        send_msg(message_to_owner, TG_BOT_OWNER_ID)
+        return
+
+    return gemini_gpt(text_prompt, from_id)
 
 
 

@@ -41,7 +41,7 @@ def tg_webhook():
                         message_text = update['message']['text'].replace('/', '')
                         if message_text != RESET_TELEGRAM_TOKEN or update['message']['from']['id'] != TG_BOT_OWNER_ID: 
                             user_name = update['message']['from']['username'] if 'username' in update['message']['from'] else update['message']['from']['first_name'] if 'first_name' in update['message']['from'] else update['message']['from']['last_name'] if 'last_name' in update['message']['from'] else 'UNKNOWN'
-                            alert_info = f"Someone else is trying to send message to this bot.\n\nUpdate_id: {update_id}\nFrom_id: {update['message']['from']['id']}\nFrom_name: {user_name}\n\nMessage: \n\n{message_text}"
+                            alert_info = f"Someone is manipulating this bot.\n\nUpdate_id: {update_id}\nFrom_id: {update['message']['from']['id']}\nFrom_name: {user_name}\n\nMessage: \n\n{message_text}"
                             if update['message']['from']['id'] != TG_BOT_OWNER_ID: send_msg(alert_info, TG_BOT_OWNER_ID)
                             if message_text != RESET_TELEGRAM_TOKEN: send_msg(f"Update_id unmatch with previous records, please click below token to reset:\n\n/{RESET_TELEGRAM_TOKEN}", TG_BOT_OWNER_ID)
                             return jsonify({'status': 'success'})
@@ -63,7 +63,10 @@ def tg_webhook():
                 # if it's not private chat, return
                 if message['chat']['type'] == 'private': 
                     if chat_id != TG_BOT_OWNER_ID: 
-                        send_msg(f'THIS BOT IS OWNER ONLY.\n\nLEOWANG.net', chat_id)
+                        
+                        try: handel_telegram_message_from_webhook_non_owner(message)
+                        except Exception as e: print(f"ERROR while handel_telegram_message_from_webhook_non_owner(): \n\n{e}\n\n")
+
                         return jsonify({'status': 'success'})
                     
                     if message['from']['first_name'] != TELEGRAM_OWNER_FIRST_NAME: return jsonify({'status': 'success'})

@@ -751,6 +751,24 @@ def update_text_for_a_given_message_id(message_id, text, from_id=TG_BOT_OWNER_ID
     conn.close()
     return True
 
+# Check if a given from_id is in telegram_messages table
+def check_if_from_id_in_telegram_messages_table(from_id):
+    try: from_id = int(from_id)
+    except: return False
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    cursor.execute(f"SELECT * FROM telegram_messages WHERE from_id = {from_id}")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    if len(result) == 0: return False
+    return True
+
 
 # Define a function to get the latest message from the table 'telegram_messages'
 def get_latest_message_from_telegram_messages_table(from_id=None):
