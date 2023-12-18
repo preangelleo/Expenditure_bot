@@ -548,7 +548,8 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 def get_ignore_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
     ignore_list = df['symbol'].values.tolist()
-    if from_id: send_msg(f"Ignore list:\n{', '.join(ignore_list)}", from_id)
+    if not ignore_list and from_id: return send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC", from_id)
+    if from_id: send_msg(f"Ignore list:\n{', '.join(ignore_list)}\n\nUse below command to remove any coin from ignore list.\n\n/remove_ignore_coin BTC", from_id)
     return ignore_list
 
 
@@ -556,7 +557,7 @@ def get_ignore_list(from_id = None):
 def get_white_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM white_list")).fetchall())
     white_list = df['symbol'].values.tolist()
-    if not white_list: return send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
+    if not white_list and from_id: return send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
     if from_id: send_msg(f"White list:\n{', '.join(white_list)}\n\nUse below command to remove any coin from white list.\n\n/remove_white_list BTC", from_id)
     return white_list
 

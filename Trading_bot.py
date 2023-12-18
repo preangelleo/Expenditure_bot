@@ -414,37 +414,15 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
     # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
-    # Eliminate the coins in IGNORE_LIST
-    IGNORE_LIST = get_ignore_list()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+    df_ticker['coin'].to_sql('binance_coin_list', engine, if_exists='replace', index=False)
 
-    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+    # Read out the coins in binance_coin_list table and make a list
+    coin_list = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_coin_list')).fetchall())
+    coin_list = coin_list[0].values.tolist()
+    print(coin_list)
+    return
+    
 
-    # Update ticker with market cap and fully diluted market cap
-    df_ticker['market_cap'] = 0
-    df_ticker['fully_diluted_market_cap'] = 0
-    df_ticker['ratio'] = 0.01
-    for index, row in df_ticker.iterrows():
-        coin = row['coin']
-        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
-        if token_info:
-            '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
-            df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
-            df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
-            df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
-            df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
-            df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
-        else: df_ticker.drop(index, inplace=True)
-
-    # Filter out the coins with market_cap between 100M and 5B
-    df_ticker = df_ticker[(df_ticker['market_cap'] > 100_000_000) & (df_ticker['market_cap'] < 5_000_000_000)]
-
-    if df_ticker.empty: return []
-
-    # make a coin list
-    today_hot_coin_list = df_ticker['coin'].values.tolist()
-    print(today_hot_coin_list)
-    return today_hot_coin_list
 
 
 if __name__ == '__main__':
