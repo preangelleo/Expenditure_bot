@@ -1257,7 +1257,7 @@ def get_open_orders_list(from_id=None):
 
 # Define a function to sell all of the profit position
 def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 0" or "stp 0". This is equal to close all positive positions, calling market sell to close positions that are with 0 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
+    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 00.1" or "stp 0.01". This is equal to close all positive positions, calling market sell to close positions that are with 0.01 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0.01" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
     
 
 # 定义一个 do_limit_sell 功能，输入 coin, 从数据库中读取 binance_position_buy 中 coin == coin, is_closed == 0 的记录, 按照 price 从小到大排序, 取第一条记录, 用这条记录的 amount, update_id, buy_cost_value, buy_cost_bnb, buy_bnb_price, open_position_time, 调用 binance_limit_sell(coin, amount, price)
@@ -2059,7 +2059,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         }
         '''
 
-        if chat_id: send_msg(f"SET Limit Order >> {coin} >> {price} >> {target_profit*100:.2f}%", chat_id)
+        if chat_id: send_msg(f"RESET Limit Order >> {coin} >> {price} >> {target_profit*100:.2f}%", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']
@@ -2078,24 +2078,17 @@ df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sel
 
 
 # check binance_position_buy, find out open positions that's been more than 7 days, cancel the current limit sell order for them and reset limit sell order at target_profit = 0.01
-def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID):
+def binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID):
     try: transactTime = int(transactTime)
     except: transactTime = 3
+
     days_ago_millis = int(time.time() * 1000) - (transactTime * 24 * 60 * 60 * 1000)
     query = "SELECT * FROM binance_position_buy WHERE is_closed = 0 AND transactTime < :three_days_ago"
+    
     try: df_balance = pd.DataFrame(engine.connect().execute(text(query), {'three_days_ago': days_ago_millis}).fetchall())
     except: return 'binance_position_buy table does not exist'
-    if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
-    if df_balance.empty: 
-        if coin: return f'No open position for {coin}'
-        else: return 'No open position for all coins'
 
-    ''' df = binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3)
-        symbol     orderId  orderListId           clientOrderId   transactTime     price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
-    0  SANDUSDT  2766936618           -1  k4H1XOehj8sOh3Z9FJpXCS  1702238418107  0.548528  18230.00000000  18230.00000000       9999.66300000  FILLED         GTC  MARKET  BUY  1702238418107            EXPIRE_MAKER  SAND      0.031214          240.1          5          0
-    1  RUNEUSDT  1250812918           -1  UzouLOzpJKumY2DB2C5kOz  1702238420773  6.598612   1515.40000000   1515.40000000       9999.53610000  FILLED         GTC  MARKET  BUY  1702238420773            EXPIRE_MAKER  RUNE      0.031195          240.0          6          0
-    2  NEARUSDT  2093406069           -1  1ZZzoE6tk23VD2bRUCFu9W  1702252815737  2.524769   3960.70000000   3960.70000000       9999.85100000  FILLED         GTC  MARKET  BUY  1702252815737            EXPIRE_MAKER  NEAR      0.031232          239.8          8          0
-    '''
+    if df_balance.empty: return 'No open position for all coins'
 
     # get open orders from table binance_limit_sell_order
     try: df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
@@ -2130,62 +2123,8 @@ def binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transac
                 print(f"COIN: {coin} current order target_profit is same as new target_profit, no need to reset limit order")
                 continue
 
-            clientOrderId = existing_order.iloc[0]['clientOrderId']
-            cancel_confirm = binance_cancel_order(coin, clientOrderId)
-            print(f"COIN: {coin} limit order has been canceled and about to reset limit order at {target_profit*100:.2f}%")
-
-            '''cancel_confirm
-            {
-            "symbol": "FTTUSDT",
-            "origClientOrderId": "7w4KnO7kH4A4kupqItZT5x",
-            "orderId": 693520320,
-            "orderListId": -1,
-            "clientOrderId": "ugNFO2rYpp0aJJe5f3USeX",
-            "transactTime": 1702341486234,
-            "price": "5.50040000",
-            "origQty": "1818.04000000",
-            "executedQty": "0.00000000",
-            "cummulativeQuoteQty": "0.00000000",
-            "status": "CANCELED",
-            "timeInForce": "GTC",
-            "type": "LIMIT",
-            "side": "SELL",
-            "selfTradePreventionMode": "EXPIRE_MAKER"
-            }
-            '''
-
-            # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
-            with engine.connect() as connection:
-                try:
-                    # Execute the query with the updated update_id
-                    connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': cancel_confirm['status']})
-                    connection.commit()
-                    print(f"COIN: {coin} status in binance_limit_sell_order table has been updated for from 'NEW' to 'CANCELED'")
-                except Exception as e:
-                    print(f"COIN: {coin} status in binance_limit_sell_order table updating encountered an error: \n\n{e}\n\n")
-                    connection.rollback()
-        
-        # Set limit sell order at target_profit
-        amount = row['executedQty']
-        price = buy_price * (1 + target_profit)
-
-        # polish parameters
-        polished_parameters = polish_parameters_for_limit_order(coin, amount, price, None)
-        amount = polished_parameters['amount']
-        price = polished_parameters['price']
-
-        data = binance_limit_sell(coin, amount, price)
-
-        if from_id: send_msg(f"Reset {format_number(amount)} {coin} at: {price} usdt/{coin.lower()}", from_id)
-
-        # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
-        del data['fills']
-
-        df = pd.DataFrame(data, index=[0])
-        if df.empty: continue
-
-        try: df.to_sql('binance_limit_sell_order', engine, if_exists='append', index=False)
-        except Exception as e: print(f"binance_position_reset_limit_sell() got an error occurred when update binance_limit_sell_order table: \n\n{e}\n\n")
+            try: binance_position_set_limit_sell(target_profit, from_id, coin)
+            except: pass
 
     return
 
@@ -2420,7 +2359,7 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     if not current_status: return True
 
     if trading_bot_switch_off(): 
-        binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 1, from_id = TG_BOT_OWNER_ID)
+        binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 1, from_id = TG_BOT_OWNER_ID)
         return send_msg(f"Reset all limit sell orders target profit to 1% for positions older than 1 day.\n\n{msg}", from_id)
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
 

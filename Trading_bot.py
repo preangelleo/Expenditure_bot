@@ -60,7 +60,7 @@ from Binance_api import *
 - Setting Limits: Define various limits such as TRADING_VOLUME_LIMIT, INITIAL_FUND, CHECK_SIZE, and POSITIONS_LIMIT.
 - Fetching Market Data: Fetches market data from Binance for coins with a trading volume above TRADING_VOLUME_LIMIT. It filters coins based on several criteria including price change percentage, last price, and quote volume.
 - Filtering Criteria: Coins are filtered to include only those with price change percent > 0, quote volume > TRADING_VOLUME_LIMIT, and last price within a specific range.
-- Exclusions: Coins in the ignore list or previously traded in the last 30 days are excluded.
+- Exclusions: Only trade coins in white list.
 - Market Cap Analysis: Fetches market cap and fully diluted market cap for each coin from CoinMarketCap. Coins are filtered based on their market cap, circulation ratio and turnover ratio.
 - Selecting Top Coins: The top 30 coins are selected based on quote volume.
 - Position Check: The binance_today_hot_coins_check function checks if the current number of open positions is below the POSITIONS_LIMIT. If not, no further action is taken.
@@ -304,10 +304,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
         if from_id: send_msg(f"Today's hot coins are: {', '.join(today_hot_coin_list)}", from_id)
 
-        # strategy_info = f'''STRATEGY: \n\nFiltering the coins with 'Daily Trading Volume' > {format_number(trading_volume_limit)} USD and PriceChangePercent between 1% ~ 20% and lastPrice between 0.0001 ~ 1000 and market_cap between 100M ~ 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {int(CIRCULATION_RATIO*100)}%, then eliminate the coins in IGNORE_LIST and the coins in the latest 30 days positions and ignore yesterday's hot coins, then sort by 'turnover_ratio / priceChangePercent' in descending order and keep the top 10 coins.'''
-        # print(strategy_info)
-        # broadcast_text(strategy_info)
-
         i = 0
         for index, row in df_ticker.iterrows():
             time.sleep(1)
@@ -392,8 +388,6 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
 def only_check_hot_coins(from_id):
     return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id)
-
-
 
 
 
