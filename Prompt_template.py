@@ -108,6 +108,7 @@ COMMANDS = [
     {"command": "save_trivial_record", "description": "Save some information into the table 'trivial_records'"},
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
+    {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
 ]
 
 
@@ -506,4 +507,6 @@ BOT_COMMAND_DICT = {
     'as': 'analyze_symbol',
     'ac': 'analyze_symbol',
     'gpt': 'chatgpt',
+    'rpl': 'read_positions_limit',
+    'read_positions': 'read_positions_limit',
     }

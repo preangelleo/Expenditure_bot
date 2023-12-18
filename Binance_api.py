@@ -25,6 +25,16 @@ def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
             return read_target_profit_default(from_id=chat_id)
     else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
 
+
+def read_positions_limit(from_id=None):
+    global POSITIONS_LIMIT
+    positions_limit = get_position_limit()
+    if positions_limit != POSITIONS_LIMIT:
+        POSITIONS_LIMIT = positions_limit
+        if from_id: send_msg(f"Current positions limit: {POSITIONS_LIMIT}\n\nIf you want to change your positions limit, you could use command:\n\n/set_position_limit 10", from_id)
+    return POSITIONS_LIMIT
+
+
 # from "CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))" table remove the given coin
 def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
