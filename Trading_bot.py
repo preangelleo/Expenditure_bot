@@ -406,8 +406,6 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
     # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
-    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-
     # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
 
@@ -422,7 +420,6 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
     print(coin_list)
     return
     
-
 
 
 if __name__ == '__main__':
