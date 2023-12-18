@@ -26,12 +26,11 @@ def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
     else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
 
 
-def read_positions_limit(from_id=None):
+def read_positions_limit(from_id=TG_BOT_OWNER_ID):
     global POSITIONS_LIMIT
     positions_limit = get_position_limit()
-    if positions_limit != POSITIONS_LIMIT:
-        POSITIONS_LIMIT = positions_limit
-        if from_id: send_msg(f"Current positions limit: {POSITIONS_LIMIT}\n\nIf you want to change your positions limit, you could use command:\n\n/set_position_limit 10", from_id)
+    if positions_limit != POSITIONS_LIMIT: POSITIONS_LIMIT = positions_limit
+    if from_id: send_msg(f"Current positions limit: {POSITIONS_LIMIT}\n\nIf you want to change your positions limit, you could use command:\n\n/set_position_limit 10", from_id)
     return POSITIONS_LIMIT
 
 
