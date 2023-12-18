@@ -456,6 +456,10 @@ if __name__ == '__main__':
     # Initial Step 12: Create white_list tables
     create_white_list_table()
 
+    # Initial Step 13: Create white_list_users tables
+    create_white_list_users_table()
+    
+
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")
     else: print("Trading bot is ACTIVE!")

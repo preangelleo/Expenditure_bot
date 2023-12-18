@@ -246,7 +246,7 @@ def handel_telegram_message_from_webhook(message):
             user_from_id = first_word.split('_')[-1]
             if set_white_list_users_status_true(user_from_id): 
                 send_msg(f"You've got approved to use this bot by @{TELEGRAM_OWNER_USERNAME}, how can I help you?", user_from_id)
-                return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, @{from_id} is approved to use this bot.", from_id)
+                return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, /{from_id} is approved to use this bot.", from_id)
             else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{from_id} to use this bot.", from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
@@ -255,6 +255,7 @@ def handel_telegram_message_from_webhook(message):
             return send_msg(forward_msg, int(user_from_id))
         
         return
+
 
     rest_word_joined = ' '.join(rest_word)
     new_prompt = f"{first_word} {rest_word_joined}"
@@ -306,10 +307,15 @@ def handel_telegram_message_from_webhook_non_owner(message):
         return send_msg(f"Dear @{user_name}, your application is submitted, please wait for approval.\n\n@{TELEGRAM_OWNER_USERNAME}", from_id)
     
 
+    text_prompt = text_prompt.replace('/', '')
+
+    if text_prompt.lower() in BOT_COMMAND_DICT: return send_msg(f"Sorry, you are not allowed to use /{text_prompt.lower()} command.", from_id)
+
     if not check_white_list_users(from_id): 
         message_to_owner = f"/{from_id} Said:\n\n{text_prompt}"
         send_msg(message_to_owner, TG_BOT_OWNER_ID)
         return
+    
 
     return gemini_gpt(text_prompt, from_id)
 
