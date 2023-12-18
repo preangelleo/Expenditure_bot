@@ -306,6 +306,21 @@ def send_msg_markdown(message, chat_id=TG_BOT_OWNER_ID, parse_mode='Markdown'):
 
     return True
 
+# Define a function to delete a given message_id from a given chat_id
+def delete_msg(chat_id, message_id):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/deleteMessage"
+
+    payload = {
+        "chat_id": chat_id,
+        "message_id": message_id
+    }
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+    try: requests.post(url, json=payload, headers=headers)
+    except Exception as e: return print(f"ERROR: delete_msg() failed for:\n{e}\n\n")
+
+    return True
+
 
 # TELEGRAM BROADCAST BOT
 TG_BROADCAST_BOT_TOKEN= os.getenv('TG_BROADCAST_BOT_TOKEN')
@@ -1018,7 +1033,6 @@ def fetch_text_from_url(url):
             return f"Error: Unable to access URL (Status Code: {response.status_code})"
     except Exception as e: print(f"An error occurred: {e}")
     return
-
 
 
 if __name__ == '__main__':

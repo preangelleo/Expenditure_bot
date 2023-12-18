@@ -29,14 +29,14 @@ def tg_webhook():
         global JUST_STARTED
         global UPDATE_ID
         print(f"PREVIOUS UPDATE_ID: {UPDATE_ID}, JUST_STARTED: {JUST_STARTED}")
-        if JUST_STARTED: send_msg(f"This is the first message after the bot was restarted. \n\nCurrent update_id: {UPDATE_ID}", TG_BOT_OWNER_ID)
+        if JUST_STARTED: send_msg(f"This is the first message after the bot was restarted.", TG_BOT_OWNER_ID)
 
         # Get the message from Telegram
         update = request.get_json()
 
         if update:
             print(json.dumps(update, indent=2))
-            
+
             update_id = update['update_id']
             update_id = int(update_id)
 
@@ -47,8 +47,12 @@ def tg_webhook():
 
                     # if update_id != latest_message_dict['update_id'] + 1: 
                     try: 
-                        message_text = update['message']['text']
-                        if str(message_text) != str(RESET_TELEGRAM_TOKEN): return jsonify({'status': 'success'})
+                        if str(update['message']['text']) != str(RESET_TELEGRAM_TOKEN) or int(update['message']['from']['id']) != int(TG_BOT_OWNER_ID): return jsonify({'status': 'success'})
+                        else:
+                            message_id = update['message']['message_id']
+                            try: delete_msg(TG_BOT_OWNER_ID, message_id)
+                            except: pass 
+                            send_msg(f"Telegram bot was reset successfully.", TG_BOT_OWNER_ID)
                     except: return jsonify({'status': 'success'})
 
                 UPDATE_ID = update_id
