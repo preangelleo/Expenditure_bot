@@ -17,6 +17,7 @@ def read_target_profit_default(from_id=None):
 target_profit = read_target_profit_default()
 TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
 
+
 def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
     target_profit = float(target_profit) if target_profit else 0.001
     if target_profit > 0 and target_profit < 1:

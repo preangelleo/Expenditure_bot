@@ -565,6 +565,14 @@ def get_white_list(from_id = None):
 # define a function to add a given coin to white_list table
 def add_coin_to_white_list(coin: str, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+
+    if not coin: return send_msg("Please input a valid coin symbol, USDT is not allowed!", from_id)
+
+    if not coin in BINANCE_COIN_LIST:
+        binance_coin_list = get_binance_coin_list()
+        if not coin in binance_coin_list: return send_msg(f"Coin {coin} is not in the binance coin list, please check the coin symbol and try again!", from_id)
+
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -946,6 +954,26 @@ def search_trivial_records(key_word, from_id=TG_BOT_OWNER_ID):
 
     return
 
+
+def get_binance_coin_list():
+    
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+
+    # pick up the symbol endswith 'USDT'
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+
+
+    # Eliminate the coins with 'USD' in coin name
+    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+
+    print(df_ticker)
+
+    # make a list
+    binance_coin_list = df_ticker['coin'].values.tolist()
+
+    return binance_coin_list
 
 
 def fetch_text_from_url(url):
