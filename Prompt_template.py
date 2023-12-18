@@ -114,7 +114,6 @@ COMMANDS = [
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
-    
 ]
 
 

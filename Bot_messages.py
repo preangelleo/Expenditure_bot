@@ -12,6 +12,7 @@ TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_BOT_WEBHOOK_TOKEN = os.getenv('TELEGRAM_BOT_WEBHOOK_TOKEN')
 
 TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
+RESET_TELEGRAM_TOKEN = os.getenv('RESET_TELEGRAM_TOKEN')
 
 # All handlers should be attached to the Router (or Dispatcher)
 # dp = Dispatcher()

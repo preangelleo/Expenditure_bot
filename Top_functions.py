@@ -579,8 +579,12 @@ def get_ignore_list(from_id = None):
 def get_white_list(from_id = None):
     df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM white_list")).fetchall())
     white_list = df['symbol'].values.tolist()
-    if not white_list and from_id: return send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
-    if from_id: send_msg(f"White list:\n{', '.join(white_list)}\n\nUse below command to remove any coin from white list.\n\n/remove_white_list BTC", from_id)
+    if not white_list:
+        if from_id: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
+        return
+    if from_id: 
+        len_white_list = len(white_list)
+        send_msg(f"White list ({len_white_list}):\n{', '.join(white_list)}\n\nUse below command to remove any coin from white list.\n\n/remove_white_list BTC", from_id)
     return white_list
 
 
