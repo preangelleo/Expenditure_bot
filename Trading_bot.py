@@ -396,7 +396,7 @@ def only_check_hot_coins(from_id):
 
 
 
-def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_LIMIT):
+def test_binance_today_hot_coin_analysis():
     
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -409,16 +409,15 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
 
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
 
-    print(df_ticker)
 
     # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
     print(df_ticker)
 
-    # # make a list
-    # today_hot_coin_list = df_ticker['coin'].values.tolist()
-    # print(today_hot_coin_list)
+    # make a list
+    today_hot_coin_list = df_ticker['coin'].values.tolist()
+    print(today_hot_coin_list)
 
     return
     
@@ -426,7 +425,7 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    test_binance_today_hot_coin_analysis(trading_volume_limit = 20_000_000)
+    test_binance_today_hot_coin_analysis()
 
     # # Example Usage
     # while True:
