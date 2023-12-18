@@ -1894,7 +1894,6 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
                         except Exception as e:
                             print(f"An error occurred: {e}")
                             connection.rollback()
-        
 
     # make a coin list from df_balance_all
     position_coin_list = df_balance_all['coin'].unique().tolist()
@@ -1911,6 +1910,7 @@ def binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, cha
     except: pass
 
     return
+
 
 # define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED' if status is not 'FILLED'
 def binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID):
