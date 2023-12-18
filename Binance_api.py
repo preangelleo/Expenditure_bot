@@ -955,6 +955,7 @@ def binance_market_sell(coin, amount):
 
     if r.status_code == 200:
         data = r.json()
+        time.sleep(1)
         return data
     else: 
         print(r.reason)
@@ -1010,6 +1011,7 @@ def binance_limit_sell(coin, amount, price):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
+        time.sleep(1)
         return data
     else: 
         print(r.json())
@@ -1076,6 +1078,7 @@ def binance_cancel_order(coin, clientOrderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
+        time.sleep(1)
         return data
     else: 
         print(r.json())
@@ -1403,7 +1406,8 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     if symbol in current_orders:
         clientOrderId = current_orders[symbol]
         binance_cancel_order(coin, clientOrderId)
-    return do_market_sell(coin, from_id)
+    do_market_sell(coin, from_id)
+    return 
 
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
@@ -1444,6 +1448,7 @@ def binance_market_buy(coin, value):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
+        time.sleep(1)
         return data
     else: 
         print(r.reason)

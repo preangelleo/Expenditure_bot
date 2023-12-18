@@ -359,6 +359,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         coin_in_positions = df_balance['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
+    REMAINING_POSITIONS = POSITIONS_LIMIT - len(df_balance.shape[0])
+    
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
     if not today_hot_coin_list:
         if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
@@ -371,7 +373,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
     # query_list  = []
     for coin in today_hot_coin_list:
-
+        if REMAINING_POSITIONS <= 0: break
+        
         # Check if coin in coin_in_positions, if yes, ignore this coin
         if coin in coin_in_positions: continue
 
@@ -381,6 +384,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         try: 
             do_market_buy_one_unit(coin, chat_id)
             binance_position_set_limit_sell(target_profit, chat_id, coin)
+            REMAINING_POSITIONS -= 1
         except Exception as e: print(f'Failed to buy {coin} or set limit order...\n\n{e}')
 
     return
