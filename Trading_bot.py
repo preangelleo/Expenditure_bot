@@ -412,12 +412,11 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
     # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
-    df_ticker['coin'].to_sql('binance_coin_list', engine, if_exists='replace', index=False)
+    # make a list
+    today_hot_coin_list = df_ticker['coin'].values.tolist()
+    print(today_hot_coin_list)
 
-    # Read out the coins in binance_coin_list table and make a list
-    coin_list = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_coin_list')).fetchall())
-    coin_list = coin_list[0].values.tolist()
-    print(coin_list)
+
     return
     
 
