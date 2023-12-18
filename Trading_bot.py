@@ -127,7 +127,7 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     return True
 
 
-def analyze_symbol(symbol: str, from_id=TG_BOT_OWNER_ID):
+def analyze_symbol(symbol: str, from_id=None):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
 
     for interval in ['4h', '1h', '15m', '5m']:
