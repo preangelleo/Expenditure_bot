@@ -400,21 +400,23 @@ def test_binance_today_hot_coin_analysis(trading_volume_limit = TRADING_VOLUME_L
     
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
-    # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    print(df_ticker)
 
-    # pick up the symbol endswith 'USDT'
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    # # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
+    # df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
 
-    # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    # # pick up the symbol endswith 'USDT'
+    # df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
-    # Eliminate the coins with 'USD' in coin name
-    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+    # # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
+    # df_ticker['coin'] = df_ticker['symbol'].str[:-4]
 
-    # make a list
-    today_hot_coin_list = df_ticker['coin'].values.tolist()
-    print(today_hot_coin_list)
+    # # Eliminate the coins with 'USD' in coin name
+    # df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+
+    # # make a list
+    # today_hot_coin_list = df_ticker['coin'].values.tolist()
+    # print(today_hot_coin_list)
 
 
     return
