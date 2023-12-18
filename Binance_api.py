@@ -46,6 +46,18 @@ def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
         return
 
 
+# remove coin from white_list table
+def remove_from_white_list(coin: str, chat_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try:
+        engine.connect().execute(text(f"DELETE FROM white_list WHERE symbol = '{coin}'"))
+        send_msg(f"Removed {coin} from white list.", chat_id)
+        return True
+    except Exception as e:
+        send_msg(f"Failed to remove {coin} from white list.", chat_id)
+        return
+    
+
 def network_name_change(str_name: str):
     str_name = str_name.upper()
     str_name = 'ETH' if str_name.startswith("ERC") else 'TRX' if str_name.startswith("TRC") else 'BSC' if str_name.startswith("BEP") else str_name

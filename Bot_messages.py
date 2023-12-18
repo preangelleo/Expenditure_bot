@@ -27,6 +27,7 @@ def set_commands(from_id=TG_BOT_OWNER_ID):
 NONE_PARAMETER_COMMAND_LIST = {
     'set_bot_menu': set_commands,
     'get_ignore_list': get_ignore_list, 
+    'get_white_list': get_white_list,
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
     'get_last_msg': get_latest_message_from_telegram_messages_table,
     'hot_coins_check': only_check_hot_coins,
@@ -46,6 +47,7 @@ NONE_PARAMETER_COMMAND_LIST = {
 
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': add_coin_to_ignore_list, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
+    'add_white_list': {'function': add_coin_to_white_list, 'description': 'You need to input a coin symbol after this command, for example: /add_white_list BTC'},
     'get_coin_info': {'function': get_token_info, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
@@ -54,6 +56,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
+    'remove_white_list': {'function': remove_from_white_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_white_list BTC'},
     'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a coin symbol and a position limit after this command, for example: /set_position_limit 5'},

@@ -552,6 +552,33 @@ def get_ignore_list(from_id = None):
     return ignore_list
 
 
+# Read out white_list table and return a list of white coins
+def get_white_list(from_id = None):
+    df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM white_list")).fetchall())
+    white_list = df['symbol'].values.tolist()
+    if not white_list: return send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
+    if from_id: send_msg(f"White list:\n{', '.join(white_list)}\n\nUse below command to remove any coin from white list.\n\n/remove_white_list BTC", from_id)
+    return white_list
+
+
+# define a function to add a given coin to white_list table
+def add_coin_to_white_list(coin: str, from_id = TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    cursor.execute(f"SELECT * FROM white_list WHERE symbol = '{coin}'")
+    result = cursor.fetchall()
+    if len(result) == 0: cursor.execute(f"INSERT INTO white_list (symbol) VALUES ('{coin}')")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    send_msg(f"Coin {coin} added to white list successfully!", from_id)
+    return True
+
+
 # define a function to add a given coin to ignore_coin_list table
 def add_coin_to_ignore_list(coin: str, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper()

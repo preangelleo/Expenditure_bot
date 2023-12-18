@@ -282,6 +282,21 @@ def create_trivial_records_table():
     print("Table 'trivial_records' created successfully!")
     return True
 
+'''("CREATE TABLE IF NOT EXISTS white_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))")'''
+# Define a function to create a white_list table to save the white list
+def create_white_list_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'white_list'
+    cursor.execute("CREATE TABLE IF NOT EXISTS white_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'white_list' created successfully!")
+    return True
+
 
 
 if __name__ == '__main__':
@@ -319,6 +334,9 @@ if __name__ == '__main__':
 
     # Initial Step 11: Create trivial_records tables
     create_trivial_records_table()
+
+    # Initial Step 12: Create white_list tables
+    create_white_list_table()
 
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")

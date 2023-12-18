@@ -73,10 +73,14 @@ COMMANDS = [
     {'command': 'get_last_msg', 'description': 'Get the last message from the telegram_messages table'},
     {'command': 'cancel_all_orders', 'description': 'Cancel all orders in Binance'},
     {'command': 'open_orders_list', 'description': 'Get the open orders list in Binance'},
+    {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
     {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
+    {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
+    {"command": "get_white_list", "description": "Get the white list"},
+    {'command': 'add_white_list', 'description': 'Add a coin to the white list'},
+    {'command': 'remove_white_list', 'description': 'Remove a coin from the white list'},
     {'command': 'get_coin_info', 'description': 'Get the information of a given coin symbol'},
     {'command': 'get_stock_info', 'description': 'Get the information of a given stock symbol'},
-    {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
     {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
     {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
     {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
@@ -97,7 +101,6 @@ COMMANDS = [
     {'command': 'close_postive_positions', 'description': 'Close all postive positions in Binance'},
     {'command': 'set_target_profit', 'description': 'Set the target profit of the trading bot'},
     {'command': 'set_position_limit', 'description': 'Set the position limit of the trading bot'},
-    {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
     {'command': 'read_target_profit', 'description': 'Read current target profit setting of the trading bot'},
     {'command': 'set_limit_sell', 'description': 'Set limit sell order for a target profit pencentage'},
     {'command': 'get_fibonacci_sequence', 'description': 'Get the fibonacci sequence of a given number'},
@@ -109,6 +112,7 @@ COMMANDS = [
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
+    
 ]
 
 
@@ -509,4 +513,8 @@ BOT_COMMAND_DICT = {
     'gpt': 'chatgpt',
     'rpl': 'read_positions_limit',
     'read_positions': 'read_positions_limit',
+    'gwl': 'get_white_list',
+    'white_list': 'get_white_list',
+    'rwl': 'remove_white_list',
+    'awl': 'add_white_list',
     }
