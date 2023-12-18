@@ -38,7 +38,13 @@ def tg_webhook():
 
                 if update_id != latest_message_dict['update_id'] + 1: 
                     try: 
-                        if update['message']['text'] != RESET_TELEGRAM_TOKEN or update['message']['from']['id'] != TG_BOT_OWNER_ID: return jsonify({'status': 'success'})
+                        message_text = update['message']['text'].replace('/', '')
+                        if message_text != RESET_TELEGRAM_TOKEN or update['message']['from']['id'] != TG_BOT_OWNER_ID: 
+                            user_name = update['message']['from']['username'] if 'username' in update['message']['from'] else update['message']['from']['first_name'] if 'first_name' in update['message']['from'] else update['message']['from']['last_name'] if 'last_name' in update['message']['from'] else 'UNKNOWN'
+                            alert_info = f"Someone else is trying to send message to this bot.\n\nUpdate_id: {update_id}\nFrom_id: {update['message']['from']['id']}\nFrom_name: {user_name}\n\nMessage: \n\n{message_text}"
+                            if update['message']['from']['id'] != TG_BOT_OWNER_ID: send_msg(alert_info, TG_BOT_OWNER_ID)
+                            if message_text != RESET_TELEGRAM_TOKEN: send_msg(f"Update_id unmatch with previous records, please click below token to reset:\n\n/{RESET_TELEGRAM_TOKEN}", TG_BOT_OWNER_ID)
+                            return jsonify({'status': 'success'})
                         else:
                             message_id = update['message']['message_id']
                             try: delete_msg(TG_BOT_OWNER_ID, message_id)
