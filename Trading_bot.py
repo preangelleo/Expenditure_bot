@@ -400,10 +400,6 @@ def test_binance_today_hot_coin_analysis():
     
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
-
-    # # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
-    # df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
-
     # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
 
@@ -416,16 +412,17 @@ def test_binance_today_hot_coin_analysis():
     print(df_ticker)
 
     # make a list
-    today_hot_coin_list = df_ticker['coin'].values.tolist()
-    print(today_hot_coin_list)
+    BINANCE_COIN_LIST = df_ticker['coin'].values.tolist()
 
-    return
+    return BINANCE_COIN_LIST
     
 
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    test_binance_today_hot_coin_analysis()
+    # test_binance_today_hot_coin_analysis()
+
+    binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
 
     # # Example Usage
     # while True:
