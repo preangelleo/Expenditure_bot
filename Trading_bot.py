@@ -244,10 +244,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
-    # Eliminate the coins in IGNORE_LIST
-    # IGNORE_LIST = get_ignore_list()
-    # df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
-
     # Read white_list from database
     WHITE_LIST = get_white_list()
     df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
@@ -256,7 +252,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         print(f"2) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
         if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
         return []
-
 
     # from binance_position_buy find out the latested bought 10 coins
     try:

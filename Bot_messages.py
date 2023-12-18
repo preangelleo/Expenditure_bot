@@ -70,6 +70,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
     'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
     'calculate_irr': {'function': calculate_irr, 'description': 'You need to input a year and a month after this command, for example, calulate a 7 folds return in 10 years: /calculate_irr 7 10'},
+    'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {

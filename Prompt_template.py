@@ -84,6 +84,7 @@ COMMANDS = [
     {'command': 'get_stock_info', 'description': 'Get the information of a given stock symbol'},
     {'command': 'get_expenditure_now', 'description': 'Get the total spend of this year and this month'},
     {'command': 'get_expenditure_info', 'description': 'Get the total spend of any given year and month'},
+    {'command': 'calculate_coin_valuation', 'description': 'Calculate the valuation of a given coin for a given amount'},
     {'command': 'alter_expenditure_record', 'description': 'Alter the expenditure record'},
     {'command': 'sum_category_merchant', 'description': 'Sum the total spend of a given category and merchant'},
     {'command': 'hot_coins_check', 'description': 'Check hot coins of today'},
@@ -518,4 +519,6 @@ BOT_COMMAND_DICT = {
     'white_list': 'get_white_list',
     'rwl': 'remove_white_list',
     'awl': 'add_white_list',
+    'ccv': 'calculate_coin_valuation',
+    'value': 'calculate_coin_valuation',
     }

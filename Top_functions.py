@@ -242,6 +242,28 @@ def get_token_info(coin: str, from_id=TG_BOT_OWNER_ID):
     return True
 
 
+# get token price info from coinmarketcap
+def get_token_price_info(coin: str):
+    # print current time string format and the function is running
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_token_info() is running ...')
+
+    token_info = get_token_info_from_coinmarketcap(coin.upper())
+    if not token_info: return 
+
+    current_price = token_info['quote']['USD']['price']
+    current_price = float(current_price)
+    return current_price
+
+
+# Calculate the valuation of a give coin for a given amount
+def calculate_coin_valuation(coin: str, amount: float, from_id=TG_BOT_OWNER_ID):
+    current_price = get_token_price_info(coin.upper())
+    if not current_price: return 0
+    valuation = current_price * amount
+    if from_id: send_msg(f"{amount} {coin.upper()} = {format_number(valuation)} usd", from_id)
+    return valuation
+
+
 def tg_get_file_path(file_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getFile"
     payload = { "file_id": file_id}
