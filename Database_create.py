@@ -323,12 +323,23 @@ def insert_white_list_users(from_id, username, first_name=None, last_name=None, 
     cursor.execute(f"SELECT * FROM white_list_users WHERE From_id = '{from_id}'")
     result = cursor.fetchall()
     if len(result) > 0:
-        cursor.execute(f"UPDATE white_list_users SET Status = {status} WHERE From_id = '{from_id}'")
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print(f"@{username} /{from_id} already in the white list table, status set to {status} successfully!")
-        return True
+        previous_status = result[0][1]
+        if status:
+            if previous_status: return f"/{from_id} is already in the white list!"
+            else: 
+                cursor.execute(f"UPDATE white_list_users SET Status = {status} WHERE From_id = '{from_id}'")
+                conn.commit()
+                cursor.close()
+                conn.close()
+                return f"/{from_id} added to white list successfully!"
+        if not status:
+            if not previous_status: return f"/{from_id} has already applied previously, please be patient!"
+            else: 
+                cursor.execute(f"UPDATE white_list_users SET Status = {status} WHERE From_id = '{from_id}'")
+                conn.commit()
+                cursor.close()
+                conn.close()
+                return f"/{from_id} removed from white list successfully!"
     else:
         # Insert a new record into table "white_list_users", make Status = True
         cursor.execute(f"INSERT INTO white_list_users (Status, From_id, Username, First_name, Last_name, Date) VALUES ({status}, '{from_id}', '{username}', '{first_name}', '{last_name}', CURDATE())")
@@ -336,9 +347,8 @@ def insert_white_list_users(from_id, username, first_name=None, last_name=None, 
         conn.commit()
         cursor.close()
         conn.close()
-        print(f"@{username} /{from_id} inserted to the white list table successfully!")
-        return True
-
+        if not status: return f"/{from_id} aplying for white list, submitted successfully! Please wait for the approval!"
+        else: return f"/{from_id} added to white list successfully!"
 
 
 # Define a function to set a from_id status to True

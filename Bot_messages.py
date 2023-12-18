@@ -298,13 +298,15 @@ def handel_telegram_message_from_webhook_non_owner(message):
         first_name = message['from'].get('first_name', None)
         last_name = message['from'].get('last_name', None)
 
-        try: insert_white_list_users(from_id, user_name, first_name, last_name, status=False)
-        except: pass
+        try: r = insert_white_list_users(from_id, user_name, first_name, last_name, status=False)
+        except: r = False
 
-        msg_to_bot_owner = f'''Dear owner, @{user_name} is applying for whitelist, click below command to approve.\n\n/Approve_White_List_{from_id}'''
+        msg_to_bot_owner = f'''Dear @{TELEGRAM_OWNER_USERNAME}, \n\n@{user_name} /{from_id} is applying for whitelist, click below command to approve.\n\n/Approve_White_List_{from_id}'''
         send_msg(msg_to_bot_owner, TG_BOT_OWNER_ID)
 
-        return send_msg(f"Dear @{user_name}, your application is submitted, please wait for approval.\n\n@{TELEGRAM_OWNER_USERNAME}", from_id)
+        msg_to_user = r if r else f'''Dear @{user_name}, your application is submitted, please wait for approval.\n\n@{TELEGRAM_OWNER_USERNAME}'''
+
+        return send_msg(msg_to_user, from_id)
     
 
     text_prompt = text_prompt.replace('/', '')
