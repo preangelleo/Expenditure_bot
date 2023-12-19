@@ -115,7 +115,7 @@ COMMANDS = [
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
     {"command": "hot_coin_update", "description": "Check the latest hot coin list and calculate the price change"},
-    {"comand": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
+    {"command": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
 ]
 
 
