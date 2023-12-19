@@ -1,22 +1,144 @@
 from Trading_bot import *
 from binance import ThreadedWebsocketManager
 
+from_id = TG_BOT_OWNER_ID
 
 def handle_socket_message(msg):
     if msg['e'] == 'outboundAccountPosition':
         # Handle account position update
         print('Account position update:')
         print(msg)
+        '''outboundAccountPosition
+        {
+        "e": "outboundAccountPosition", // 事件类型
+        "E": 1564034571105,             // 事件时间
+        "u": 1564034571073,             // 账户末次更新时间戳
+        "B": [                          // 余额
+            {
+            "a": "ETH",                 // 资产名称
+            "f": "10000.000000",        // 可用余额
+            "l": "0.000000"             // 冻结余额
+            }
+        ]
+        }'''
+        # Make a dataframe from the 'B' value in the message, save to sql and append the old one if exists
+        df = pd.DataFrame(msg['B'])
+        df['timestamp'] = msg['E']
+        df['update_time'] = msg['u']
+        df['asset'] = df['a']
+        df['free'] = df['f'].astype(float)
+        df['locked'] = df['l'].astype(float)
+        df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
+        df.to_sql('binance_balance_history', engine, if_exists='append', index=False)
+        print(df)
+
+
     elif msg['e'] == 'balanceUpdate':
         # Handle balance update
         print('Balance update:')
-        print(msg)
+        '''balanceUpdate
+        {
+        "e": "balanceUpdate",         //Event Type
+        "E": 1573200697110,           //Event Time
+        "a": "ABC",                   //Asset
+        "d": "100.00000000",          //Balance Delta
+        "T": 1573200697068            //Clear Time
+        }'''
+        # Make a string from the message and send to the telegram from_id
+        coin = msg['a']
+        delta = msg['d']
+        add_or_subtract = 'added' if float(delta) > 0 else 'subtracted'
+        time_of_update = datetime.fromtimestamp(msg['E']/1000).strftime("%Y-%m-%d %H:%M")
+        alert_msg = f"Binance Balance Update:\n\n{coin} {add_or_subtract} {format_number(delta)}\n\n{time_of_update}"
+
+        send_msg(alert_msg, from_id)
+
+
     elif msg['e'] == 'executionReport':
         # Handle execution report
         print('Execution report:')
+        '''Payload: 订单更新
+        订单通过executionReport事件进行更新。
+
+        执行类型:
+
+        NEW - 新订单已被引擎接受。
+        CANCELED - 订单被用户取消。
+        REPLACED - (保留字段，当前未使用)
+        REJECTED - 新订单被拒绝 （这信息只会在撤消挂单再下单中发生，下新订单被拒绝但撤消挂单请求成功）。
+        TRADE - 订单有新成交。
+        EXPIRED - 订单已根据 Time In Force 参数的规则取消（e.g. 没有成交的 LIMIT FOK 订单或部分成交的 LIMIT IOC 订单）或者被交易所取消（e.g. 强平或维护期间取消的订单）。
+        TRADE_PREVENTION - 订单因 STP 触发而过期。
+        请查阅公开API参数文档获取更多枚举定义。
+
+        备注: 通过将Z除以z可以找到平均价格。
+
+        如果订单是OCO，则除了显示executionReport事件外，还将显示一个名为ListStatus的事件。
+
+        executionReport 中的仅在满足特定条件时才会出现的字段：
+        字段  名称  描述  示例
+        d   Trailing Delta  出现在追踪止损订单中。 "d": 4
+        D   Trailing Time   "D": 1668680518494
+        j   Strategy Id 如果在请求中添加了strategyId参数，则会出现。 "j": 1
+        J   Strategy Type   如果在请求中添加了strategyType参数，则会出现。   "J": 1000000
+        v   Prevented Match Id  只有在因为 STP 导致订单失效时可见。    "v": 3
+        A   Prevented Quantity  "A":"3.000000"
+        B   Last Prevented Quantity "B":"3.000000"
+        u   Trade Group Id  "u":1
+        U   Counter Order Id    "U":37
+        Cs  Counter Symbol  "Cs": "BTCUSDT"
+        pl  Prevented Execution Quantity    "pl":"2.123456"
+        pL  Prevented Execution Price   "pL":"0.10000001"
+        pY  Prevented Execution Quote Qty   "pY":"0.21234562"
+        W   Working Time    只有在订单在订单簿上时可见   "W": 1668683798379
+        b   Match Type  只有在订单有分配时可见 "b":"ONE_PARTY_TRADE_REPORT"
+        a   Allocation ID   "a":1234
+        k   Working Floor   只有在订单可能有分配时可见   "k":"SOR"
+        uS  UsedSor 只有在订单使用 SOR 时可见 "uS":true'''
+        '''executionReport            
+        {
+        "e": "executionReport",        // 事件类型
+        "E": 1499405658658,            // 事件时间
+        "s": "ETHBTC",                 // 交易对
+        "c": "mUvoqJxFIILMdfAW5iGSOW", // clientOrderId
+        "S": "BUY",                    // 订单方向
+        "o": "LIMIT",                  // 订单类型
+        "f": "GTC",                    // 有效方式
+        "q": "1.00000000",             // 订单原始数量
+        "p": "0.10264410",             // 订单原始价格
+        "P": "0.00000000",             // 止盈止损单触发价格
+        "F": "0.00000000",             // 冰山订单数量
+        "g": -1,                       // OCO订单 OrderListId
+        "C": "",                       // 原始订单自定义ID(原始订单，指撤单操作的对象。撤单本身被视为另一个订单)
+        "x": "NEW",                    // 本次事件的具体执行类型
+        "X": "NEW",                    // 订单的当前状态
+        "r": "NONE",                   // 订单被拒绝的原因
+        "i": 4293153,                  // orderId
+        "l": "0.00000000",             // 订单末次成交量
+        "z": "0.00000000",             // 订单累计已成交量
+        "L": "0.00000000",             // 订单末次成交价格
+        "n": "0",                      // 手续费数量
+        "N": null,                     // 手续费资产类别
+        "T": 1499405658657,            // 成交时间
+        "t": -1,                       // 成交ID
+        "v": 3,                        // 被阻止撮合交易的ID; 这仅在订单因 STP 触发而过期时可见
+        "I": 8641984,                  // 请忽略
+        "w": true,                     // 订单是否在订单簿上？
+        "m": false,                    // 该成交是作为挂单成交吗？
+        "M": false,                    // 请忽略
+        "O": 1499405658657,            // 订单创建时间
+        "Z": "0.00000000",             // 订单累计已成交金额
+        "Y": "0.00000000",             // 订单末次成交金额
+        "Q": "0.00000000",             // Quote Order Quantity
+        "W": 1499405658657,            // Working Time; 订单被添加到 order book 的时间
+        "V": "NONE"                    // SelfTradePreventionMode
+        }'''
         # Handle execution report
-        if msg['X'] == 'CANCELED': print('Order was canceled:')
-        elif msg['X'] == 'FILLED': print('Order was filled:')
+        if msg['X'] in ['CANCELED', 'FILLED', 'CANCELLED']:
+            clientOrderId = msg['c']
+            coin = msg['s'].replace('USDT', '')
+            try: binance_check_order_status(coin, clientOrderId)
+            except: pass
 
         print(msg)
 
