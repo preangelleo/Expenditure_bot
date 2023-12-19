@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     try: 
         if analyze_symbol('BTCUSDT'): webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
-        else: webhook_switch_off_bot(f"BTC is not good to buy now. Turning off the bot", TG_BOT_OWNER_ID)
+        # else: webhook_switch_off_bot(f"BTC is not good to buy now. Turning off the bot", TG_BOT_OWNER_ID)
     except: pass
 
 
