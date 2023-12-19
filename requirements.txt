@@ -3,6 +3,7 @@ yfinance
 gunicorn
 SQLAlchemy
 beautifulsoup4
+python-binance
 aiodns
 aiofiles
 aiogram
