@@ -11,18 +11,23 @@ if __name__ == '__main__':
     # try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
     # except: pass
 
-    try: analyze_symbol('BTCUSDT')
+    try: 
+        if analyze_symbol('BTCUSDT'): webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
+        else: webhook_switch_off_bot(f"BTC is not good to buy now. Turning off the bot", TG_BOT_OWNER_ID)
     except: pass
+
 
     # Check limit order status
     try: binance_limit_order_status_check(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
     except: pass
 
-    # Check if trading bot is on
-    trading_bot_status = trading_bot_switch_status()
-    if trading_bot_status:
-        print(f'Trading bot is on, checking hot coins ...')
-        # If trading bot is on, check hot coins
-        try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
-        except: pass
-    else: print(f'Trading bot is off, not checking hot coins ...')
+    try: 
+        # Check if trading bot is on
+        trading_bot_status = trading_bot_switch_status()
+        if trading_bot_status:
+            print(f'Trading bot is on, checking hot coins ...')
+            # If trading bot is on, check hot coins
+            try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
+            except: pass
+        else: print(f'Trading bot is off, not checking hot coins ...')
+    except: pass
