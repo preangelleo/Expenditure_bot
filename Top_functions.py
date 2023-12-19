@@ -608,12 +608,16 @@ def add_coin_to_white_list(coin: str, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
 
-    if not coin: return send_msg("Please input a valid coin symbol, USDT is not allowed!", from_id)
+    if not coin: 
+        if from_id: send_msg("Please provide a coin symbol to add into white list!", from_id)
+        return 
 
     if not coin in BINANCE_COIN_LIST:
         binance_coin_list = get_binance_coin_list()
-        if not coin in binance_coin_list: return send_msg(f"Coin {coin} is not in the binance coin list, please check the coin symbol and try again!", from_id)
-
+        if not coin in binance_coin_list: 
+            if from_id: send_msg(f"Coin {coin} is not in the binance coin list, please check the coin symbol and try again!", from_id)
+            return 
+        
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -625,7 +629,7 @@ def add_coin_to_white_list(coin: str, from_id = TG_BOT_OWNER_ID):
     conn.commit()
     cursor.close()
     conn.close()
-    send_msg(f"Coin {coin} added to white list successfully!", from_id)
+    if from_id: send_msg(f"Coin {coin} added to white list successfully!", from_id)
     return True
 
 

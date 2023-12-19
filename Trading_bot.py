@@ -141,6 +141,21 @@ def analyze_symbol(symbol: str, from_id=None):
     return True
 
 
+# Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
+def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    interval = '1w'
+    print(f"Analyzing {symbol[:-4]} for {interval}...")
+
+    df = get_kline_data(symbol, interval)
+    df['RSI'] = calculate_rsi(df['Close'], 14)
+    latest = df.iloc[-1]
+    if latest['RSI'] > 89: 
+        send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
+        return True
+    return False
+
+
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     if analyze_symbol(symbol, from_id): 
         turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
@@ -152,8 +167,10 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
             circulating_ratio = token_info['circulation_ratio']
             turnover_ratio = token_info['turnover_ratio']
             token_slug = token_info['token_slug']
+            current_price = token_info['current_price']
+            coin_rank = token_info['coin_rank']
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"[{symbol}]({URL}) | {format_number(market_cap)} | {format_number(fully_diluted_market_cap)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}"
+            reply_string = f"[{symbol}]({URL}) | Rank {coin_rank} | {format_number(current_price)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}\nFully_Diluted_Market_Cap: {format_number(fully_diluted_market_cap)}"
             send_msg_markdown(reply_string, from_id)
             return send_msg(f"{symbol.upper()} is good to buy now.", from_id)
         else: send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
@@ -176,8 +193,11 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
             turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
             turnover_ratio = round(turnover_ratio, 2)
             if turnover_ratio < turnover_ratio_eth: return
+
+            current_price = token_info['quote']['USD']['price']
+            coin_rank = token_info['cmc_rank']
                 
-            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug']}
+            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug'], 'current_price': current_price, 'coin_rank': coin_rank}
     except: return 
 
 
@@ -306,7 +326,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         for index, row in df_ticker.iterrows():
             time.sleep(1)
             coin = row['coin']
+
             if not analyze_symbol(coin, None): continue
+            if weekly_rsi_over_high(coin, from_id): continue
+
             i += 1
 
             price = row['lastPrice']
@@ -396,12 +419,9 @@ if __name__ == '__main__':
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
 
     # # Example Usage
-    # while True:
-    #     symbol = input("Enter a symbol to analyze: (press 'c' or 'q' to exit)")
-    #     if symbol.lower() == 'c': continue
-    #     if symbol.lower() == 'q': break
+    while True:
+        symbol = input("Enter a symbol to analyze weely RSI: (press 'c' or 'q' to exit)\n\n")
+        if symbol.lower() == 'c': continue
+        if symbol.lower() == 'q': break
 
-    #     result = analyze_symbol_for_user(symbol, from_id=TG_BOT_OWNER_ID)
-    #     print("Analysis Result:", result)
-
-    
+        weekly_rsi_over_high(symbol, TG_BOT_OWNER_ID)
