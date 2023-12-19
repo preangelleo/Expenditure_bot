@@ -30,8 +30,7 @@ def handle_socket_message(msg):
         df['locked'] = df['l'].astype(float)
         df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
         df.to_sql('binance_balance_history', engine, if_exists='append', index=False)
-        print(df)
-
+        # print(df)
 
     elif msg['e'] == 'balanceUpdate':
         # Handle balance update
@@ -50,9 +49,7 @@ def handle_socket_message(msg):
         add_or_subtract = 'added' if float(delta) > 0 else 'subtracted'
         time_of_update = datetime.fromtimestamp(msg['E']/1000).strftime("%Y-%m-%d %H:%M")
         alert_msg = f"Binance Balance Update:\n\n{coin} {add_or_subtract} {format_number(delta)}\n\n{time_of_update}"
-
         send_msg(alert_msg, from_id)
-
 
     elif msg['e'] == 'executionReport':
         # Handle execution report
@@ -134,9 +131,11 @@ def handle_socket_message(msg):
         "V": "NONE"                    // SelfTradePreventionMode
         }'''
         # Handle execution report
-        if msg['X'] in ['CANCELED', 'FILLED', 'CANCELLED']:
-            clientOrderId = msg['c']
-            coin = msg['s'].replace('USDT', '')
+        clientOrderId = msg['c']
+        coin = msg['s']
+        if msg['X'] in ['CANCELED', 'CANCELLED']:
+            if mark_limit_order_as_canceled(clientOrderId): send_msg(f'''{coin} Limit Order Canceled\n\nclientOrderId: {clientOrderId}''', TG_BOT_OWNER_ID)
+        if msg['X'] == 'FILLED':
             try: binance_check_order_status(coin, clientOrderId)
             except: pass
 
