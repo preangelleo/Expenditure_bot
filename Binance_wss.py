@@ -131,9 +131,11 @@ def handle_socket_message(msg):
         "V": "NONE"                    // SelfTradePreventionMode
         }'''
         # Handle execution report
-        clientOrderId = msg['c']
+        clientOrderId = msg['C']
         coin = msg['s']
         if msg['X'] in ['CANCELED', 'CANCELLED']:
+            ''' {'e': 'executionReport', 'E': 1703029327337, 's': 'RUNEUSDT', 'c': 'web_4ef308e8a5034b259fd36acf1b18fdd6', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '1515.40000000', 'p': '6.66500000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': 'KkrTVdDuxAc5ggTIUErslC', 'x': 'CANCELED', 'X': 'CANCELED', 'r': 'NONE', 'i': 1269148511, 'l': '0.00000000', 'z': '0.00000000', 'L': '0.00000000', 'n': '0', 'N': None, 'T': 1703029327336, 't': -1, 'I': 2630955099, 'w': False, 'm': False, 'M': False, 'O': 1703019729294, 'Z': '0.00000000', 'Y': '0.00000000', 'Q': '0.00000000', 'W': 1703019729294, 'V': 'EXPIRE_MAKER'}
+            '''
             if mark_limit_order_as_canceled(clientOrderId): send_msg(f'''{coin} Limit Order Canceled\n\nclientOrderId: {clientOrderId}''', TG_BOT_OWNER_ID)
         if msg['X'] == 'FILLED':
             try: binance_check_order_status(coin, clientOrderId)
