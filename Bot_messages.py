@@ -43,6 +43,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'open_orders_list': get_open_orders_list,
     'cancel_all_orders': binance_cancel_all_orders,
     'read_positions_limit': read_positions_limit,
+    'hot_coin_update': calculate_hot_coin_price_change,
     }
 
 
@@ -64,6 +65,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
     'analyze_symbol': {'function': analyze_symbol_for_user, 'description': 'You need to input a coin symbol after this command, for example: /analyze_symbol BTC'},
     'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
+    'latest_sell_price': {'function': read_latest_sell_price, 'description': 'You need to input a coin symbol after this command, for example: /read_latest_sell_price BTC'},
     }
 
 

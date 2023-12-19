@@ -2363,6 +2363,121 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
         return send_msg(f"Reset all limit sell orders target profit to 1% for positions older than 1 day.\n\n{msg}", from_id)
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
 
+'''binance_position_sell
+     symbol     orderId  orderListId           clientOrderId   transactTime      price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value      profit
+0   FTTUSDT   688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468   5.562989   1942.29000000   1942.29000000      10804.93829100  FILLED         GTC  MARKET  SELL  1702224291468            EXPIRE_MAKER          1       0.033751           240.3             15.548180  789.421552
+1  EGLDUSDT  1235576864           -1  HbstvGzUiiQBoTFxQGibwW  1702267644918  65.401010    156.76000000    156.76000000      10252.26230000  FILLED         GTC  MARKET  SELL  1702267644918            EXPIRE_MAKER          4       0.032888           233.8             15.186327  237.486573
+2   IMXUSDT   533697410           -1  13Dj1FJeITi5795gIWyN00  1702267667019   1.928267   5223.40000000   5223.40000000      10072.10982900  FILLED         GTC  MARKET  SELL  1702267667019            EXPIRE_MAKER          2       0.032310           233.8             15.032396   57.087613
+3   SNXUSDT  1057101036           -1  DlChdJwJRmwW7Lf9oNBtwu  1702267684943   4.439063   2268.80000000   2268.80000000      10071.34600000  FILLED         GTC  MARKET  SELL  1702267684943            EXPIRE_MAKER          9       0.032307           233.9             15.011603   56.354097
+4   INJUSDT   809743269           -1  JY5FbpXFxPnePCNvO5BgT8  1702308983629  22.561297    442.90000000    442.90000000       9992.39860000  FILLED         GTC  MARKET  SELL  1702308983629            EXPIRE_MAKER         10       0.030714           243.9             15.039906  -22.595406
+5  ORDIUSDT   238514100           -1  hWGYLLB2hBZNqWnhQ1AuMg  1702361706283  51.710000    193.38000000    193.38000000       9999.67980000  FILLED         GTC   LIMIT  SELL  1702353642364            EXPIRE_MAKER          7       0.031247           250.2             15.314370  -15.249150
+6   FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702464665994   5.500400   1818.04000000   1818.04000000       9999.94721600  FILLED         GTC   LIMIT  SELL  1702353638922            EXPIRE_MAKER          3       0.031305           251.3             15.380309  -15.390928
+7   FETUSDT   956488383           -1  RCLyLqsTG2os2Zq5nDHtJO  1702940167510   0.687657  14769.00000000  14769.00000000      10156.01120000  FILLED         GTC  MARKET  SELL  1702940167510            EXPIRE_MAKER         12       0.031685           240.4             15.098148  141.077352
+8   STXUSDT   658898595           -1  FnIGPOiB6Hfp95EQA6NjrC  1702942206075   1.225800   8239.80000000   8239.80000000      10100.34684000  FILLED         GTC   LIMIT  SELL  1702941873518            EXPIRE_MAKER         13       0.030880           240.9             14.856532   85.498898
+'''
+
+
+# define a function to read the latest transactTime sell price for a given coin
+def read_latest_sell_price(coin, from_id):
+    
+    ''' binance_position_sell
+         symbol     orderId  orderListId           clientOrderId   transactTime      price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value      profit
+    0   FTTUSDT   688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468   5.562989   1942.29000000   1942.29000000      10804.93829100  FILLED         GTC  MARKET  SELL  1702224291468            EXPIRE_MAKER          1       0.033751           240.3             15.548180  789.421552
+    1  EGLDUSDT  1235576864           -1  HbstvGzUiiQBoTFxQGibwW  1702267644918  65.401010    156.76000000    156.76000000      10252.26230000  FILLED         GTC  MARKET  SELL  1702267644918            EXPIRE_MAKER          4       0.032888           233.8             15.186327  237.486573
+    2   IMXUSDT   533697410           -1  13Dj1FJeITi5795gIWyN00  1702267667019   1.928267   5223.40000000   5223.40000000      10072.10982900  FILLED         GTC  MARKET  SELL  1702267667019            EXPIRE_MAKER          2       0.032310           233.8             15.032396   57.087613
+    3   SNXUSDT  1057101036           -1  DlChdJwJRmwW7Lf9oNBtwu  1702267684943   4.439063   2268.80000000   2268.80000000      10071.34600000  FILLED         GTC  MARKET  SELL  1702267684943            EXPIRE_MAKER          9       0.032307           233.9             15.011603   56.354097
+    4   INJUSDT   809743269           -1  JY5FbpXFxPnePCNvO5BgT8  1702308983629  22.561297    442.90000000    442.90000000       9992.39860000  FILLED         GTC  MARKET  SELL  1702308983629            EXPIRE_MAKER         10       0.030714           243.9             15.039906  -22.595406
+    5  ORDIUSDT   238514100           -1  hWGYLLB2hBZNqWnhQ1AuMg  1702361706283  51.710000    193.38000000    193.38000000       9999.67980000  FILLED         GTC   LIMIT  SELL  1702353642364            EXPIRE_MAKER          7       0.031247           250.2             15.314370  -15.249150
+    6   FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702464665994   5.500400   1818.04000000   1818.04000000       9999.94721600  FILLED         GTC   LIMIT  SELL  1702353638922            EXPIRE_MAKER          3       0.031305           251.3             15.380309  -15.390928
+    7   FETUSDT   956488383           -1  RCLyLqsTG2os2Zq5nDHtJO  1702940167510   0.687657  14769.00000000  14769.00000000      10156.01120000  FILLED         GTC  MARKET  SELL  1702940167510            EXPIRE_MAKER         12       0.031685           240.4             15.098148  141.077352
+    8   STXUSDT   658898595           -1  FnIGPOiB6Hfp95EQA6NjrC  1702942206075   1.225800   8239.80000000   8239.80000000      10100.34684000  FILLED         GTC   LIMIT  SELL  1702941873518            EXPIRE_MAKER         13       0.030880           240.9             14.856532   85.498898
+    '''
+    symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
+
+    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_position_sell WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
+    except: return send_msg(f'binance_position_sell table does not exist', from_id)
+
+    if df.empty: return send_msg(f'No sell record for {coin}', from_id)
+
+    price = df['price'].values[0]
+    # price = float(price)
+
+    # get current price of coin
+    current_price = get_token_price(coin)
+
+    send_msg(f"{coin}\n\nLast Sell Price: {format_number(price)}\nCurrent Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%", from_id)
+    return price
+
+
+# define a function to read hot_coin_history table and use get_token_price_table() get current price datafram as df, merge the table, create a new column with value of the price up percentage, then make a string and broadcast to TG
+def calculate_hot_coin_price_change(from_id=None):
+
+    # from hot_coin_history select the latest date, then select all rows with that date
+    latest_date = pd.DataFrame(engine.connect().execute(text('SELECT MAX(date) FROM hot_coin_history')).fetchall())
+    latest_date = latest_date.values[0][0]
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date = :date'), {'date': latest_date}).fetchall())
+    except: return 'hot_coin_history table does not exist'
+
+    if df.empty: return 'hot_coin_history table is empty'
+
+    '''hot_coin_history table format
+            coin  priceChangePercent       price  turnover_ratio  turnover_by_priceChangePercent         token_slug              date
+    0        QI               2.116    0.025580            0.82                        0.387524              benqi  2023-12-14 22:05
+    1      RNDR               0.802    4.525000            0.15                        0.187032             render  2023-12-14 22:05
+    2       FET               5.907    0.701000            0.34                        0.057559              fetch  2023-12-14 22:05
+    3   AUCTION              19.603   29.530000            0.73                        0.037239       bounce-token  2023-12-14 22:05
+    4       FUN              27.756    0.010591            0.81                        0.029183           funtoken  2023-12-14 22:05
+    5       WOO              17.930    0.365700            0.23                        0.012828           wootrade  2023-12-14 22:05
+    6   AUCTION              15.892   27.930000            0.94                        0.059149       bounce-token  2023-12-15 05:15
+    7       FET               9.522    0.723500            0.36                        0.037807              fetch  2023-12-15 05:15
+    8      AAVE              21.936  117.010000            0.22                        0.010029               aave  2023-12-15 05:15
+    9   AUCTION               0.108   27.900000            0.65                        6.018519       bounce-token  2023-12-16 05:15
+    10      WOO              16.499    0.416600            0.20                        0.012122           wootrade  2023-12-16 05:15
+    11      ICP              34.965    9.152000            0.10                        0.002860  internet-computer  2023-12-16 05:15
+    '''
+
+    # get current price of coin
+    df_current_price = get_token_price_table()
+    '''df_current_price
+            symbol     lastPrice      coin
+    0         BTCUSDT  43085.180000       BTC
+    1         ETHUSDT   2235.790000       ETH
+    2         BNBUSDT    245.100000       BNB
+    3         BCCUSDT      0.000000       BCC
+    4         NEOUSDT     12.730000       NEO
+    ..            ...           ...       ...
+    470      AEURUSDT      1.092000      AEUR
+    471       JTOUSDT      2.605500       JTO
+    472  1000SATSUSDT      0.000740  1000SATS
+    473      BONKUSDT      0.000022      BONK
+    474       ACEUSDT     14.176700       ACE
+    [475 rows x 3 columns]
+    '''
+    
+    # merge df and df_current_price
+    df = pd.merge(df, df_current_price, how='left', on='coin')
+
+    # calculate the price up percentage, make sure the data type is float
+    df['price_up_percentage'] = (df['lastPrice'] - df['price']) / df['price'] * 100
+
+    for index, row in df.iterrows():
+        coin = row['coin']
+        price = row['price']
+        lastPrice = row['lastPrice']
+        price_up_percentage = row['price_up_percentage']
+        token_slug = row['token_slug']
+        URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
+        date = row['date']
+        time_delta = datetime.now() - datetime.strptime(date, '%Y-%m-%d %H:%M')
+        time_delta = str(time_delta).split('.')[0]
+        reply_string = f"{index+1}. [{coin}]({URL}) \nReport Price: {format_number(price)}\nCurrent Price: {format_number(lastPrice)}\nPrice % Change: {price_up_percentage:.2f}%\nTime Delta: {time_delta}"
+        if not from_id: broadcast_markdown(reply_string)
+        else: send_msg_markdown(reply_string, from_id)
+        # send_msg_markdown(reply_string, TG_BOT_OWNER_ID)
+
+    return
+
+
 
 if __name__ == '__main__':
     print('Binance_api.py is running')

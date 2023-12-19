@@ -359,6 +359,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
             # send_msg_markdown(reply_string, from_id)
             broadcast_markdown(reply_string)
+            
         if not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
     return today_hot_coin_list
@@ -418,10 +419,3 @@ if __name__ == '__main__':
 
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
 
-    # # Example Usage
-    while True:
-        symbol = input("Enter a symbol to analyze weely RSI: (press 'c' or 'q' to exit)\n\n")
-        if symbol.lower() == 'c': continue
-        if symbol.lower() == 'q': break
-
-        weekly_rsi_over_high(symbol, TG_BOT_OWNER_ID)

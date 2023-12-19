@@ -15,17 +15,17 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_btc_data_with_rsi() error:\n\n{e}\n\n')
 
-    try: get_token_info('BTC', TG_BOT_OWNER_ID)
-    except Exception as e: print(f'get_token_info() error:\n\n{e}\n\n')
-
-    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
-    except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
-
     try: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
     except Exception as e: print(f'check_and_buy_bnb() error:\n\n{e}\n\n')
 
     try: binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'binance_position_reset_limit_sell() error:\n\n{e}\n\n')
+
+    try: calculate_hot_coin_price_change()
+    except Exception as e: print(f'calculate_hot_coin_price_change() error:\n\n{e}\n\n')
+
+    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
+    except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
 
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')

@@ -114,6 +114,8 @@ COMMANDS = [
     {"command": "search_trivial_records", "description": "Search the information from the table 'trivial_records' by keywords"},
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
+    {"command": "hot_coin_update", "description": "Check the latest hot coin list and calculate the price change"},
+    {"comand": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
 ]
 
 
@@ -520,4 +522,6 @@ BOT_COMMAND_DICT = {
     'awl': 'add_white_list',
     'ccv': 'calculate_coin_valuation',
     'value': 'calculate_coin_valuation',
+    'hcu': 'hot_coin_update',
+    'lsp': 'latest_sell_price',
     }
