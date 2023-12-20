@@ -318,8 +318,6 @@ def handel_telegram_message_from_webhook_non_owner(message):
     COMMANDS_LIST_TOTAL = list(NONE_PARAMETER_COMMAND_LIST.keys()) + list(ONE_PARAMETER_COMMAND_LIST.keys()) + list(TWO_PARAMETER_COMMAND_LIST.keys()) + list(THREE_PARAMETER_COMMAND_LIST.keys()) + list(FOUR_PARAMETER_COMMAND_LIST.keys()) + list(SENTENCE_AS_PARAMETER_COMMAND_LIST.keys())
 
     command_word = text_prompt.lower().split()[0].lower()
-    command_word = BOT_COMMAND_DICT.get(command_word, command_word)
-    command_word = text_prompt.lower().split()[0].lower()
 
     if command_word in COMMANDS_LIST_TOTAL: 
         if str(from_id) in ['5106438350', '5177152210', '1699390662', '2130497801']:
