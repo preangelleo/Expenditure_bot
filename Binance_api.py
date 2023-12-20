@@ -1917,9 +1917,9 @@ def mark_limit_order_as_canceled(clientOrderId):
 def binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, crontab_profit_record=False):
 
     try: df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-    except: return 'Table binance_position_buy not found'
+    except: return print('Table binance_position_buy not found')
 
-    if df_balance_all.empty: return 'No open position for all coins'
+    if df_balance_all.empty: return print('No open position for all coins')
 
     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
 
@@ -1932,7 +1932,7 @@ def binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, cro
     # find out the coins in position_coin_list but not in limit_order_coin_list
     coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
 
-    if not coin_list: return
+    if not coin_list: return print(f"All positions are with limit orders. No need to check.")
 
     try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
     except: pass

@@ -8,9 +8,6 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
-    # try: binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False)
-    # except: pass
-
     try: 
         if analyze_symbol('BTCUSDT'): webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
         # else: webhook_switch_off_bot(f"BTC is not good to buy now. Turning off the bot", TG_BOT_OWNER_ID)
