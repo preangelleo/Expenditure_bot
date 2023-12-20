@@ -321,7 +321,7 @@ def handel_telegram_message_from_webhook_non_owner(message):
     command_word = BOT_COMMAND_DICT.get(command_word, command_word)
 
     if command_word in COMMANDS_LIST_TOTAL: 
-        if from_id in ['2130497801']:
+        if from_id in ['5106438350', '5177152210', '1699390662', '2130497801']:
             if command_word in ['get_otp']: 
                 app_name = text_prompt.lower().split()[1] if len(text_prompt.lower().split()) > 1 else 'carta'
                 return get_otp(app_name, from_id)
