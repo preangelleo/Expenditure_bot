@@ -1092,9 +1092,7 @@ def calculate_passcode(passcode_key):
 # define a function instert user input app_name and passcode_key into one_time_passcode table
 def insert_otp(app_name, passcode_key, from_id=TG_BOT_OWNER_ID):
     r = insert_one_time_passcode(app_name, passcode_key)
-    if r: 
-        passcode = get_otp(app_name, from_id=TG_BOT_OWNER_ID)
-        send_msg(f"Passcode_key stored for {app_name}, current passcodeis \n\n{passcode}", from_id)
+    if r: passcode = get_otp(app_name, from_id)
     else: send_msg(f"Failed to insert passcode_key for {app_name}", from_id)
     return passcode
 
