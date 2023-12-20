@@ -613,9 +613,29 @@ def get_coin_wallet_balance_with_locked():
 
 
 def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
+    df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT coin, executedQty FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    ''' df_balance_all
+        symbol     orderId  orderListId           clientOrderId   transactTime       price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
+    0  SANDUSDT  2766936618           -1  k4H1XOehj8sOh3Z9FJpXCS  1702238418107    0.548528  18230.00000000  18230.00000000       9999.66300000  FILLED         GTC  MARKET  BUY  1702238418107            EXPIRE_MAKER  SAND      0.031214          240.1          5          0
+    1  RUNEUSDT  1250812918           -1  UzouLOzpJKumY2DB2C5kOz  1702238420773    6.598612   1515.40000000   1515.40000000       9999.53610000  FILLED         GTC  MARKET  BUY  1702238420773            EXPIRE_MAKER  RUNE      0.031195          240.0          6          0
+    2  AAVEUSDT  1508986082           -1  jUZBtFcfMtPYX73iAb5MqI  1702658512922  109.138053     91.62700000     91.62700000       9999.99235000  FILLED         GTC  MARKET  BUY  1702658512922            EXPIRE_MAKER  AAVE      0.030264          246.6         11          0
+    '''
+    if not df_balance_all.empty:
+        # Coins in position, make a dict from df_balance_all with key is coin, value is executedQty
+        coin_in_position_dict = dict(zip(df_balance_all['coin'].values, df_balance_all['executedQty'].values))
+        coin_in_position_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_position_dict.items()])
+        send_msg(f"Coins in position:\n\n{coin_in_position_str}", chat_id)
+
     data = get_coin_wallet_balance_with_locked()
-    if data: return send_msg('\n'.join([f'{key}: {format_number(value)}' for key, value in data.items()]), chat_id)
-    else: return send_msg("No coin in your wallet.", chat_id)
+    if data: 
+        '''{'AAVE': '091.627', 'BNB': '2.014138090', 'OGN': '0.58882430', 'ONG': '140000', 'RSR': '0.099999980', 'RUNE': '01515.4', 'SAND': '018230', 'USDT': '71305.788331640'}'''
+        # Coins in balance except coins in position
+        coin_in_balance_dict = {key: value for key, value in data.items() if key not in coin_in_position_dict.keys()}
+        coin_in_balance_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_balance_dict.items()])
+        send_msg(f"Other coins in balance:\n\n{coin_in_balance_str}", chat_id)
+        return
+    
+    else: return send_msg("No balance in your binance spot wallet.", chat_id)
 
 
 # 通过 get_user_asset() 获取某个 coin 的余额
