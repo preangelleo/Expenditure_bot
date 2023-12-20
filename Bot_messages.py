@@ -315,7 +315,7 @@ def handel_telegram_message_from_webhook_non_owner(message):
 
     text_prompt = text_prompt.replace('/', '')
 
-    COMMANDS_LIST_TOTAL = NONE_PARAMETER_COMMAND_LIST + ONE_PARAMETER_COMMAND_LIST + TWO_PARAMETER_COMMAND_LIST + THREE_PARAMETER_COMMAND_LIST + FOUR_PARAMETER_COMMAND_LIST + SENTENCE_AS_PARAMETER_COMMAND_LIST
+    COMMANDS_LIST_TOTAL = NONE_PARAMETER_COMMAND_LIST.keys() + ONE_PARAMETER_COMMAND_LIST.keys() + TWO_PARAMETER_COMMAND_LIST.keys() + THREE_PARAMETER_COMMAND_LIST.keys() + FOUR_PARAMETER_COMMAND_LIST.keys() + SENTENCE_AS_PARAMETER_COMMAND_LIST.keys()
 
     command_word = text_prompt.lower().split()[0].lower()
     command_word = BOT_COMMAND_DICT.get(command_word, command_word)
