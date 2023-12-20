@@ -70,7 +70,6 @@ from Binance_api import *
 
 
 def get_kline_data(symbol, interval):
-    print(f"Getting {symbol} data for {interval}...")
     url = f"https://api.binance.com/api/v3/klines"
     params = {
         'symbol': symbol,
@@ -86,12 +85,10 @@ def get_kline_data(symbol, interval):
 
 
 def calculate_sma(data, period):
-    print(f"Calculating SMA for {period}...")
     return data.rolling(window=period).mean()
 
 
 def calculate_rsi(data, period=14):
-    print(f"Calculating RSI for {period}...")
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
@@ -122,8 +119,6 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below 100K USDT", from_id)
         return False
 
-    print(f"{coin} latest 'Quote Asset Volume' is {format_number(latest['Quote Asset Volume'])}")
-    print(f"{coin} at {interval} interval is good")
     return True
 
 
@@ -131,11 +126,8 @@ def analyze_symbol(symbol: str, from_id=None):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
 
     for interval in ['4h', '1h', '15m', '5m']:
-    # for interval in ['5m']:
-        print(f"Analyzing {symbol[:-4]} for {interval}...")
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
-        # else: continue
 
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
@@ -145,7 +137,6 @@ def analyze_symbol(symbol: str, from_id=None):
 def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
-    print(f"Analyzing {symbol[:-4]} for {interval}...")
 
     df = get_kline_data(symbol, interval)
     df['RSI'] = calculate_rsi(df['Close'], 14)
@@ -153,6 +144,7 @@ def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
     if latest['RSI'] > 89: 
         send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
         return True
+    
     return False
 
 
