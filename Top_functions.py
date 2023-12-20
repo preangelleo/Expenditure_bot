@@ -28,7 +28,7 @@ import yfinance as yf
 import numpy as np
 from bs4 import BeautifulSoup
 from mplfinance.original_flavor import candlestick_ohlc
-
+import pyotp
 
 # Load environment variables
 load_dotenv()
@@ -1056,6 +1056,59 @@ def fetch_text_from_url(url):
     except Exception as e: print(f"An error occurred: {e}")
     return
 
+def calculate_passcode(passcode_key):
+    # Convert passcode_key into a base32 format as required by the TOTP standard
+    key = base64.b32encode(passcode_key.encode()).decode()
+
+    # Define the time period for OTP. This is typically 30 seconds.
+    interval = 30
+
+    # Calculate the number of intervals that have passed since the Unix epoch
+    time_counter = int(time.time() / interval)
+
+    # Convert the time counter to byte format
+    counter_bytes = time_counter.to_bytes(8, 'big')
+
+    # Decode the key from Base32
+    key_bytes = base64.b32decode(key, casefold=True)
+
+    # Create an HMAC-SHA1 hash from the key and counter
+    hmac_hash = hmac.new(key_bytes, counter_bytes, hashlib.sha1).digest()
+
+    # Use a dynamic truncation to get a 4-byte string
+    offset = hmac_hash[-1] & 0x0F
+    truncated_hash = hmac_hash[offset:offset+4]
+
+    # Convert the truncated hash to an integer
+    code = int.from_bytes(truncated_hash, 'big')
+
+    # Extract a 6-digit number from the code
+    passcode = code % 1000000
+
+    return passcode
+
+
+'''CREATE TABLE IF NOT EXISTS one_time_passcode (ID INTEGER PRIMARY KEY AUTO_INCREMENT, AppName VARCHAR(255), Passcode_Key VARCHAR(255), Date DATE)'''
+# define a function instert user input app_name and passcode_key into one_time_passcode table
+def insert_otp(app_name, passcode_key, from_id=TG_BOT_OWNER_ID):
+    r = insert_one_time_passcode(app_name, passcode_key)
+    if r: 
+        passcode = get_otp(app_name, from_id=TG_BOT_OWNER_ID)
+        send_msg(f"Passcode_key stored for {app_name}, current passcodeis \n\n{passcode}", from_id)
+    else: send_msg(f"Failed to insert passcode_key for {app_name}", from_id)
+    return passcode
+
+
+'''get_one_time_passcode(app_name)'''
+# define a function to get the passcode_key for a given app_name and calculate the passcode digit
+def get_otp(app_name, from_id=TG_BOT_OWNER_ID):
+    passcode_key = get_one_time_passcode(app_name)
+    if not passcode_key: return send_msg(f"App Name {app_name} not found!", from_id)
+    totp = pyotp.TOTP(passcode_key)
+    passcode = totp.now()
+    send_msg(f"Passcode for {app_name} is \n\n{passcode}", from_id)
+    return passcode
+
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
@@ -1066,4 +1119,5 @@ if __name__ == '__main__':
     # url = "https://www.cnn.com/2023/12/17/politics/bob-good-house-freedom-caucus/index.html"
     # text_output = fetch_text_from_url(url)
     # print(text_output)
-
+    app_name = 'carta'
+    get_otp(app_name, from_id=TG_BOT_OWNER_ID)

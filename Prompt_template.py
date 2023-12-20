@@ -116,6 +116,7 @@ COMMANDS = [
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
     {"command": "hot_coin_update", "description": "Check the latest hot coin list and calculate the price change"},
     {"command": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
+    {"command": "insert_otp", "description": "Insert a otp passcode_key for a app_name into the table"},
 ]
 
 
@@ -524,4 +525,8 @@ BOT_COMMAND_DICT = {
     'value': 'calculate_coin_valuation',
     'hcu': 'hot_coin_update',
     'lsp': 'latest_sell_price',
+    'otp': 'get_otp',
+    'gotp': 'get_otp',
+    'carta': '/get_otp carta',
+    'iotp': 'insert_otp',
     }

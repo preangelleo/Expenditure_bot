@@ -427,6 +427,63 @@ def check_white_list_users(from_id):
     else: return False
 
 
+# Define a function to store and manage one time passcode key and app_name
+def create_one_time_passcode_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'one_time_passcode'
+    cursor.execute("CREATE TABLE IF NOT EXISTS one_time_passcode (ID INTEGER PRIMARY KEY AUTO_INCREMENT, AppName VARCHAR(255), Passcode_Key VARCHAR(255), Date DATE)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'one_time_passcode' created successfully!")
+    return True
+
+
+# Define a function to insert a new record into table "one_time_passcode" if the app_name is not in the table, othewise update the key
+def insert_one_time_passcode(app_name, Passcode_Key):
+    app_name = app_name.lower()
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the app_name is already in the table
+    cursor.execute(f"SELECT * FROM one_time_passcode WHERE AppName = '{app_name}'")
+    result = cursor.fetchall()
+    if len(result) == 0: 
+        # Insert a new record into table "one_time_passcode"
+        cursor.execute(f"INSERT INTO one_time_passcode (AppName, Passcode_Key, Date) VALUES ('{app_name}', '{Passcode_Key}', CURDATE())")
+    else: 
+        # Update the key
+        cursor.execute(f"UPDATE one_time_passcode SET Passcode_Key = '{Passcode_Key}' WHERE AppName = '{app_name}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"Passcode_Key inserted successfully for {app_name}!")
+    return True
+
+
+# Define a function to get the key from table "one_time_passcode" by app_name
+def get_one_time_passcode(app_name):
+    app_name = app_name.lower()
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the app_name is already in the table
+    cursor.execute(f"SELECT Passcode_Key FROM one_time_passcode WHERE AppName = '{app_name}'")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    if len(result) == 0: return None
+    else: return result[0][0]
+
+
 if __name__ == '__main__':
     print("Create database and tables...")
     # Initial Step 1: Create database
@@ -468,11 +525,15 @@ if __name__ == '__main__':
 
     # Initial Step 13: Create white_list_users tables
     create_white_list_users_table()
+
+    # Initial Step 14: Create one_time_passcode tables
+    create_one_time_passcode_table()
     
 
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")
     else: print("Trading bot is ACTIVE!")
 
+    
     print("All tables created successfully!")
 

@@ -66,6 +66,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'analyze_symbol': {'function': analyze_symbol_for_user, 'description': 'You need to input a coin symbol after this command, for example: /analyze_symbol BTC'},
     'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
     'latest_sell_price': {'function': read_latest_sell_price, 'description': 'You need to input a coin symbol after this command, for example: /latest_sell_price BTC'},
+    'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
     }
 
 
@@ -74,6 +75,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
     'calculate_irr': {'function': calculate_irr, 'description': 'You need to input a year and a month after this command, for example, calulate a 7 folds return in 10 years: /calculate_irr 7 10'},
     'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000'},
+    'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
@@ -248,8 +250,8 @@ def handel_telegram_message_from_webhook(message):
             user_from_id = first_word.split('_')[-1]
             if set_white_list_users_status_true(user_from_id): 
                 send_msg(f"You've got approved to use this bot by @{TELEGRAM_OWNER_USERNAME}, how can I help you?", user_from_id)
-                return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, /{from_id} is approved to use this bot.", from_id)
-            else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{from_id} to use this bot.", from_id)
+                return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, /{user_from_id} is approved to use this bot.", from_id)
+            else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{user_from_id} to use this bot.", from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word
@@ -313,7 +315,19 @@ def handel_telegram_message_from_webhook_non_owner(message):
 
     text_prompt = text_prompt.replace('/', '')
 
-    if text_prompt.lower() in BOT_COMMAND_DICT: return send_msg(f"Sorry, you are not allowed to use /{text_prompt.lower()} command.", from_id)
+    COMMANDS_LIST_TOTAL = NONE_PARAMETER_COMMAND_LIST + ONE_PARAMETER_COMMAND_LIST + TWO_PARAMETER_COMMAND_LIST + THREE_PARAMETER_COMMAND_LIST + FOUR_PARAMETER_COMMAND_LIST + SENTENCE_AS_PARAMETER_COMMAND_LIST
+
+    command_word = text_prompt.lower().split()[0].lower()
+    command_word = BOT_COMMAND_DICT.get(command_word, command_word)
+
+    if command_word in COMMANDS_LIST_TOTAL: 
+        if from_id in ['2130497801']:
+            if command_word in ['get_otp']: 
+                app_name = text_prompt.lower().split()[1] if len(text_prompt.lower().split()) > 1 else 'carta'
+                return get_otp(app_name, from_id)
+
+        return send_msg(f"Sorry, you are not allowed to use /{command_word} command.", from_id)
+
 
     if not check_white_list_users(from_id): 
         message_to_owner = f"/{from_id} Said:\n\n{text_prompt}"

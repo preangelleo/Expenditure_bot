@@ -4,6 +4,7 @@ gunicorn
 SQLAlchemy
 beautifulsoup4
 python-binance
+pyotp
 aiodns
 aiofiles
 aiogram
