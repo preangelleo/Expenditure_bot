@@ -3,6 +3,44 @@ from datetime import datetime
 USDT_NETWORK_LIST = ['BSC', 'EOS', 'NEAR', 'AVAXC', 'ARBITRUM', 'STATEMINT', 'BNB', 'ETH', 'OPTIMISM', 'MATIC', 'SOL', 'XTZ', 'TRX', 'OPBNB']
 USDT_ETH_COMPATIBLE_NETWORK_LIST = ['ETH', 'BSC', 'MATIC', 'AVAXC', 'ARBITRUM', 'OPTIMISM', 'OPBNB']
 
+TRANSFER_TYPE = ['MAIN_UMFUTURE', 'MAIN_CMFUTURE', 'MAIN_MARGIN', 'UMFUTURE_MAIN', 'UMFUTURE_MARGIN', 'CMFUTURE_MAIN', 'MARGIN_MAIN', 'MARGIN_UMFUTURE', 'MARGIN_CMFUTURE', 'CMFUTURE_MARGIN', 'ISOLATEDMARGIN_MARGIN', 'MARGIN_ISOLATEDMARGIN', 'ISOLATEDMARGIN_ISOLATEDMARGIN', 'MAIN_FUNDING', 'FUNDING_MAIN', 'FUNDING_UMFUTURE', 'UMFUTURE_FUNDING', 'MARGIN_FUNDING', 'FUNDING_MARGIN', 'FUNDING_CMFUTURE', 'CMFUTURE_FUNDING', 'MAIN_OPTION', 'OPTION_MAIN', 'UMFUTURE_OPTION', 'OPTION_UMFUTURE', 'MARGIN_OPTION', 'OPTION_MARGIN', 'FUNDING_OPTION', 'OPTION_FUNDING', 'MAIN_PORTFOLIO_MARGIN', 'PORTFOLIO_MARGIN_MAIN', 'MAIN_ISOLATED_MARGIN', 'ISOLATED_MARGIN_MAIN']
+
+TRANSFER_TYPE_DICT = {
+    'MAIN_UMFUTURE': '现货钱包转向U本位合约钱包',
+    'MAIN_CMFUTURE': '现货钱包转向币本位合约钱包',
+    'MAIN_MARGIN': '现货钱包转向杠杆全仓钱包',
+    'UMFUTURE_MAIN': 'U本位合约钱包转向现货钱包',
+    'UMFUTURE_MARGIN': 'U本位合约钱包转向杠杆全仓钱包',
+    'CMFUTURE_MAIN': '币本位合约钱包转向现货钱包',
+    'MARGIN_MAIN': '杠杆全仓钱包转向现货钱包',
+    'MARGIN_UMFUTURE': '杠杆全仓钱包转向U本位合约钱包',
+    'MARGIN_CMFUTURE': '杠杆全仓钱包转向币本位合约钱包',
+    'CMFUTURE_MARGIN': '币本位合约钱包转向杠杆全仓钱包',
+    'ISOLATEDMARGIN_MARGIN': '杠杆逐仓钱包转向杠杆全仓钱包',
+    'MARGIN_ISOLATEDMARGIN': '杠杆全仓钱包转向杠杆逐仓钱包',
+    'ISOLATEDMARGIN_ISOLATEDMARGIN': '杠杆逐仓钱包转向杠杆逐仓钱包',
+    'MAIN_FUNDING': '现货钱包转向资金钱包',
+    'FUNDING_MAIN': '资金钱包转向现货钱包',
+    'FUNDING_UMFUTURE': '资金钱包转向U本位合约钱包',
+    'UMFUTURE_FUNDING': 'U本位合约钱包转向资金钱包',
+    'MARGIN_FUNDING': '杠杆全仓钱包转向资金钱包',
+    'FUNDING_MARGIN': '资金钱包转向杠杆全仓钱包',
+    'FUNDING_CMFUTURE': '资金钱包转向币本位合约钱包',
+    'CMFUTURE_FUNDING': '币本位合约钱包转向资金钱包',
+    'MAIN_OPTION': '现货钱包转向期权钱包',
+    'OPTION_MAIN': '期权钱包转向现货钱包',
+    'UMFUTURE_OPTION': 'U本位合约钱包转向期权钱包',
+    'OPTION_UMFUTURE': '期权钱包转向U本位合约钱包',
+    'MARGIN_OPTION': '杠杆全仓钱包转向期权钱包',
+    'OPTION_MARGIN': '期权全仓钱包转向杠杆钱包',
+    'FUNDING_OPTION': '资金钱包转向期权钱包',
+    'OPTION_FUNDING': '期权钱包转向资金钱包',
+    'MAIN_PORTFOLIO_MARGIN': '现货钱包转向统一账户钱包',
+    'PORTFOLIO_MARGIN_MAIN': '统一账户钱包转向现货钱包',
+    'MAIN_ISOLATED_MARGIN': '现货钱包转向逐仓账户钱包',
+    'ISOLATED_MARGIN_MAIN': '逐仓钱包转向现货账户钱包'
+    }
+
 BINANCE_COIN_LIST = ['BTC', 'ETH', 'BNB', 'BCC', 'NEO', 'LTC', 'QTUM', 'ADA', 'XRP', 'EOS', 'IOTA', 'XLM', 'ONT', 'TRX', 'ETC', 'ICX', 'VEN', 'NULS', 'VET', 'PAX', 'BCHABC', 'BCHSV', 'LINK', 'WAVES', 'BTT', 'ONG', 'HOT', 'ZIL', 'ZRX', 'FET', 'BAT', 'XMR', 'ZEC', 'IOST', 'CELR', 'DASH', 'NANO', 'OMG', 'THETA', 'ENJ', 'MITH', 'MATIC', 'ATOM', 'TFUEL', 'ONE', 'FTM', 'ALGO', 'GTO', 'ERD', 'DOGE', 'DUSK', 'ANKR', 'WIN', 'COS', 'NPXS', 'COCOS', 'MTL', 'TOMO', 'PERL', 'DENT', 'MFT', 'KEY', 'STORM', 'DOCK', 'WAN', 'FUN', 'CVC', 'CHZ', 'BAND', 'BEAM', 'XTZ', 'REN', 'RVN', 'HC', 'HBAR', 'NKN', 'STX', 'KAVA', 'ARPA', 'IOTX', 'RLC', 'MCO', 'CTXC', 'BCH', 'TROY', 'VITE', 'FTT', 'EUR', 'OGN', 'DREP', 'BULL', 'BEAR', 'ETHBULL', 'ETHBEAR', 'TCT', 'WRX', 'BTS', 'LSK', 'BNT', 'LTO', 'EOSBULL', 'EOSBEAR', 'XRPBULL', 'XRPBEAR', 'STRAT', 'AION', 'MBL', 'COTI', 'BNBBULL', 'BNBBEAR', 'STPT', 'WTC', 'DATA', 'XZC', 'SOL', 'CTSI', 'HIVE', 'CHR', 'BTCUP', 'BTCDOWN', 'GXS', 'ARDR', 'LEND', 'MDT', 'STMX', 'KNC', 'REP', 'LRC', 'PNT', 'COMP', 'BKRW', 'SC', 'ZEN', 'SNX', 'ETHUP', 'ETHDOWN', 'ADAUP', 'ADADOWN', 'LINKUP', 'LINKDOWN', 'VTHO', 'DGB', 'GBP', 'SXP', 'MKR', 'DAI', 'DCR', 'STORJ', 'BNBUP', 'BNBDOWN', 'XTZUP', 'XTZDOWN', 'MANA', 'AUD', 'YFI', 'BAL', 'BLZ', 'IRIS', 'KMD', 'JST', 'SRM', 'ANT', 'CRV', 'SAND', 'OCEAN', 'NMR', 'DOT', 'LUNA', 'RSR', 'PAXG', 'WNXM', 'TRB', 'BZRX', 'SUSHI', 'YFII', 'KSM', 'EGLD', 'DIA', 'RUNE', 'FIO', 'UMA', 'EOSUP', 'EOSDOWN', 'TRXUP', 'TRXDOWN', 'XRPUP', 'XRPDOWN', 'DOTUP', 'DOTDOWN', 'BEL', 'WING', 'LTCUP', 'LTCDOWN', 'UNI', 'NBS', 'OXT', 'SUN', 'AVAX', 'HNT', 'FLM', 'UNIUP', 'UNIDOWN', 'ORN', 'UTK', 'XVS', 'ALPHA', 'AAVE', 'NEAR', 'SXPUP', 'SXPDOWN', 'FIL', 'FILUP', 'FILDOWN', 'YFIUP', 'YFIDOWN', 'INJ', 'AUDIO', 'CTK', 'BCHUP', 'BCHDOWN', 'AKRO', 'AXS', 'HARD', 'DNT', 'STRAX', 'UNFI', 'ROSE', 'AVA', 'XEM', 'AAVEUP', 'AAVEDOWN', 'SKL', 'SUSHIUP', 'SUSHIDOWN', 'XLMUP', 'XLMDOWN', 'GRT', 'JUV', 'PSG', '1INCH', 'REEF', 'OG', 'ATM', 'ASR', 'CELO', 'RIF', 'BTCST', 'TRU', 'CKB', 'TWT', 'FIRO', 'LIT', 'SFP', 'DODO', 'CAKE', 'ACM', 'BADGER', 'FIS', 'OM', 'POND', 'DEGO', 'ALICE', 'LINA', 'PERP', 'RAMP', 'SUPER', 'CFX', 'EPS', 'AUTO', 'TKO', 'PUNDIX', 'TLM', '1INCHUP', '1INCHDOWN', 'BTG', 'MIR', 'BAR', 'FORTH', 'BAKE', 'BURGER', 'SLP', 'SHIB', 'ICP', 'AR', 'POLS', 'MDX', 'MASK', 'LPT', 'NU', 'XVG', 'ATA', 'GTC', 'TORN', 'KEEP', 'ERN', 'KLAY', 'PHA', 'BOND', 'MLN', 'DEXE', 'C98', 'CLV', 'QNT', 'FLOW', 'TVK', 'MINA', 'RAY', 'FARM', 'ALPACA', 'QUICK', 'MBOX', 'FOR', 'REQ', 'GHST', 'WAXP', 'TRIBE', 'GNO', 'XEC', 'ELF', 'DYDX', 'POLY', 'IDEX', 'VIDT', 'GALA', 'ILV', 'YGG', 'SYS', 'DF', 'FIDA', 'FRONT', 'CVP', 'AGLD', 'RAD', 'BETA', 'RARE', 'LAZIO', 'CHESS', 'ADX', 'AUCTION', 'DAR', 'BNX', 'RGT', 'MOVR', 'CITY', 'ENS', 'KP3R', 'QI', 'PORTO', 'POWR', 'VGX', 'JASMY', 'AMP', 'PLA', 'PYR', 'RNDR', 'ALCX', 'SANTOS', 'MC', 'ANY', 'BICO', 'FLUX', 'FXS', 'VOXEL', 'HIGH', 'CVX', 'PEOPLE', 'OOKI', 'SPELL', 'UST', 'JOE', 'ACH', 'IMX', 'GLMR', 'LOKA', 'SCRT', 'API3', 'BTTC', 'ACA', 'ANC', 'XNO', 'WOO', 'ALPINE', 'T', 'ASTR', 'NBT', 'GMT', 'KDA', 'APE', 'BSW', 'BIFI', 'MULTI', 'STEEM', 'MOB', 'NEXO', 'REI', 'GAL', 'LDO', 'EPX', 'OP', 'LEVER', 'STG', 'LUNC', 'GMX', 'NEBL', 'POLYX', 'APT', 'OSMO', 'HFT', 'PHB', 'HOOK', 'MAGIC', 'HIFI', 'RPL', 'PROS', 'AGIX', 'GNS', 'SYN', 'VIB', 'SSV', 'LQTY', 'AMB', 'BETH', 'USTC', 'GAS', 'GLM', 'PROM', 'QKC', 'UFT', 'ID', 'ARB', 'LOOM', 'OAX', 'RDNT', 'WBTC', 'EDU', 'SUI', 'AERGO', 'PEPE', 'FLOKI', 'AST', 'SNT', 'COMBO', 'MAV', 'PENDLE', 'ARKM', 'WBETH', 'WLD', 'SEI', 'CYBER', 'ARK', 'CREAM', 'GFT', 'IQ', 'NTRN', 'TIA', 'MEME', 'ORDI', 'BEAMX', 'PIVX', 'VIC', 'BLUR', 'VANRY', 'AEUR', 'JTO', '1000SATS', 'BONK']
 
 INITIAL_IGNORE_LIST = ['BTC', 'ETH', 'XRP', 'AMB', 'LTC', 'ARB', 'BTS', 'SOL', 'JST', 'ADA', 'TRX', 'LUNA', 'LUNC', 'BCH', 'USTC', 'EOS', 'XMR', 'XLM', 'XEM', 'DOGE', 'AVAX', 'OP', 'MATIC', 'APT', 'COCOS', 'BTT', 'BTTT', 'BTTB', 'EUR', 'SUI', 'QTUM', 'DASH', 'ZEC', 'ZEN', 'ZIL', 'ZRX', 'NEO', 'CELO', 'ANKR', 'BNB', 'OMG', 'TUSDT', 'ETC', 'ACA', 'STORJ', 'FTM', 'LQTY', 'OGN', 'RSR', 'VGX', 'MBL', 'COIN98', 'BLZ', 'MC', 'GAS']
@@ -117,6 +155,7 @@ COMMANDS = [
     {"command": "hot_coin_update", "description": "Check the latest hot coin list and calculate the price change"},
     {"command": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
     {"command": "insert_otp", "description": "Insert a otp passcode_key for a app_name into the table"},
+    {"command": 'transfer_between_accounts', 'description': 'Transfer between accounts: MAIN_UMFUTURE, FUNDING_MAIN, etc.'},
 ]
 
 
@@ -528,4 +567,5 @@ BOT_COMMAND_DICT = {
     'otp': 'get_otp',
     'gotp': 'get_otp',
     'iotp': 'insert_otp',
+    'tba': 'transfer_between_accounts',
     }

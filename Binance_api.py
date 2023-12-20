@@ -488,6 +488,77 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
         else: return send_msg(f'资金账户没有 {coin} 资产。', chat_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
 
+'''目前支持的type划转类型:
+MAIN_UMFUTURE 现货钱包转向U本位合约钱包
+MAIN_CMFUTURE 现货钱包转向币本位合约钱包
+MAIN_MARGIN 现货钱包转向杠杆全仓钱包
+UMFUTURE_MAIN U本位合约钱包转向现货钱包
+UMFUTURE_MARGIN U本位合约钱包转向杠杆全仓钱包
+CMFUTURE_MAIN 币本位合约钱包转向现货钱包
+MARGIN_MAIN 杠杆全仓钱包转向现货钱包
+MARGIN_UMFUTURE 杠杆全仓钱包转向U本位合约钱包
+MARGIN_CMFUTURE 杠杆全仓钱包转向币本位合约钱包
+CMFUTURE_MARGIN 币本位合约钱包转向杠杆全仓钱包
+ISOLATEDMARGIN_MARGIN 杠杆逐仓钱包转向杠杆全仓钱包
+MARGIN_ISOLATEDMARGIN 杠杆全仓钱包转向杠杆逐仓钱包
+ISOLATEDMARGIN_ISOLATEDMARGIN 杠杆逐仓钱包转向杠杆逐仓钱包
+MAIN_FUNDING 现货钱包转向资金钱包
+FUNDING_MAIN 资金钱包转向现货钱包
+FUNDING_UMFUTURE 资金钱包转向U本位合约钱包
+UMFUTURE_FUNDING U本位合约钱包转向资金钱包
+MARGIN_FUNDING 杠杆全仓钱包转向资金钱包
+FUNDING_MARGIN 资金钱包转向杠杆全仓钱包
+FUNDING_CMFUTURE 资金钱包转向币本位合约钱包
+CMFUTURE_FUNDING 币本位合约钱包转向资金钱包
+MAIN_OPTION 现货钱包转向期权钱包
+OPTION_MAIN 期权钱包转向现货钱包
+UMFUTURE_OPTION U本位合约钱包转向期权钱包
+OPTION_UMFUTURE 期权钱包转向U本位合约钱包
+MARGIN_OPTION 杠杆全仓钱包转向期权钱包
+OPTION_MARGIN 期权全仓钱包转向杠杆钱包
+FUNDING_OPTION 资金钱包转向期权钱包
+OPTION_FUNDING 期权钱包转向资金钱包
+MAIN_PORTFOLIO_MARGIN 现货钱包转向统一账户钱包
+PORTFOLIO_MARGIN_MAIN 统一账户钱包转向现货钱包
+MAIN_ISOLATED_MARGIN 现货钱包转向逐仓账户钱包
+ISOLATED_MARGIN_MAIN 逐仓钱包转向现货账户钱包'''
+
+
+
+# DEFINE a function to transfer coin from uer input accout type to another account type
+def transfer_between_accounts(coin, amount, transfer_type, chat_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try: amount = float(amount)
+    except: return send_msg(f'Wrong amount: {amount}, please input a number.', chat_id)
+
+    if transfer_type not in TRANSFER_TYPE:
+        # make a string from TRANSFER_TYPE_DICT and sent to user
+        reply_string = '\n'.join([f'{key}: {value}' for key, value in TRANSFER_TYPE_DICT.items()])
+        return send_msg(f'Wrong transfer type: {transfer_type}, please choose from below:\n\n{reply_string}', chat_id)
+
+    PATH = '/sapi/v1/asset/transfer'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'type': transfer_type,
+        'asset': coin,
+        'amount': amount,
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    try:
+        r = requests.post(url, headers=BINANCE_HEADERS, params=params)
+        if r.status_code != 200: return
+        data = r.json()
+        tranId = data['tranId']
+        transfer_direction = TRANSFER_TYPE_DICT[transfer_type]
+        return send_msg(f'{transfer_direction} Success, tranId: \n{tranId}', chat_id)
+    except Exception as e:
+        print(e)
+        return
+    
+
 
 # 定义 MAIN_FUNDING 现货钱包转向资金钱包功能
 def main_funding_transfer(coin, amount):

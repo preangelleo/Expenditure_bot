@@ -80,6 +80,7 @@ TWO_PARAMETER_COMMAND_LIST = {
 
 THREE_PARAMETER_COMMAND_LIST = {
     'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: \n/alter_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
+    'transfer_between_accounts': {'function': transfer_between_accounts, 'description': 'You need to input a coin symbol, amount and transfer_type after this command, for example: /transfer_between_accounts USDT 1000 MAIN_UMFUTURE or /transfer_between_accounts USDT 1000 UMFUTURE_MAIN'},
     }
 
 FOUR_PARAMETER_COMMAND_LIST = {
