@@ -527,6 +527,5 @@ BOT_COMMAND_DICT = {
     'lsp': 'latest_sell_price',
     'otp': 'get_otp',
     'gotp': 'get_otp',
-    'carta': 'get_otp carta',
     'iotp': 'insert_otp',
     }
