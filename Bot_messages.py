@@ -7,7 +7,7 @@ from Gmail_api import *
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = os.getenv('TELEGRAM_TOKEN')
-
+USER_TELEGRAM_LINK = os.getenv('USER_TELEGRAM_LINK')
 
 TELEGRAM_BOT_WEBHOOK_TOKEN = os.getenv('TELEGRAM_BOT_WEBHOOK_TOKEN')
 
@@ -116,7 +116,8 @@ def handel_telegram_message_from_webhook(message):
         email_address = re.findall(EMAIL_ADDRESS_REGEX, text_prompt)
         if email_address: 
             for to_address in email_address: 
-                send_email(f"FROM TELEGRAM: {TELEGRAM_OWNER_USERNAME}", f"{reply_to_message}\n\nSent from python code, do NOT reply!", to_address)
+                send_email(f"FROM TELEGRAM: @{TELEGRAM_OWNER_USERNAME}", f"Sent from python code, DO NOT reply!\n\n{reply_to_message}\n\n{USER_TELEGRAM_LINK}", to_address)
+            send_msg(f"Email sent to {email_address} successfully.", from_id)
             return
         
         text_prompt += f"\n\n{reply_to_message}"
