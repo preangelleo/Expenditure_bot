@@ -31,8 +31,7 @@ def send_to_gmail_main(message, subject = 'From Python Bot'):
     return
 
 
-def read_emails(user = GMAIL_ADDRESS, app_password = GMAIL_APP_PASSWORD):
-    
+def read_emails(user, app_password):
     imap_url = 'imap.gmail.com'
 
     # Connect to the server
@@ -41,51 +40,54 @@ def read_emails(user = GMAIL_ADDRESS, app_password = GMAIL_APP_PASSWORD):
 
     # Select the mailbox
     status, messages = mail.select('inbox')
-    if status != 'OK': return print("Error selecting inbox.")
+    if status != 'OK':
+        print("Error selecting inbox.")
+        return
 
     # Search for specific mails
-    result, data = mail.search(None, 'ALL')
-    mail_ids = data[0]
+    result, uids = mail.uid('search', None, 'ALL')
+    if result != 'OK':
+        print("No emails found.")
+        return
 
-    if not mail_ids: return print("No emails found.")
+    for uid in uids[0].split():
+        result, data = mail.uid('fetch', uid, '(RFC822)')
+        if result != 'OK':
+            continue
 
-    id_list = mail_ids.split()
-    first_email_id = int(id_list[0])
-    latest_email_id = int(id_list[-1])
+        msg = email.message_from_bytes(data[0][1])
+        email_subject = msg['subject']
+        email_from = msg['from']
+        print('From : ' + email_from + '\n')
+        print('Subject : ' + email_subject + '\n')
 
-    # Iterate through each email
-    for i in range(latest_email_id, first_email_id - 1, -1):
-        result, data = mail.fetch(str(i), '(RFC822)')
-        for response_part in data:
-            if isinstance(response_part, tuple):
-                msg = email.message_from_bytes(response_part[1])
-                email_subject = msg['subject']
-                email_from = msg['from']
-                print('From : ' + email_from + '\n')
-                print('Subject : ' + email_subject + '\n')
+        body = ""
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+                if "attachment" not in content_disposition and content_type == "text/html":
+                    body = part.get_payload(decode=True).decode()
+                    break
+        else:
+            content_type = msg.get_content_type()
+            if content_type == "text/html":
+                body = msg.get_payload(decode=True).decode()
 
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        content_type = part.get_content_type()
-                        content_disposition = str(part.get("Content-Disposition"))
-                        if "attachment" not in content_disposition and content_type == "text/html":
-                            body = part.get_payload(decode=True).decode()
-                            soup = BeautifulSoup(body, 'html.parser')
-                            plain_text = soup.get_text(separator='\n')
-                            # print("Body:\n", plain_text)
-                            prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points: \n\nSubject: {email_subject}\n\nEmail body: \n{plain_text}"
-                            try: send_email(email_subject, generate_text(prompt), GMAIL_ADDRESS_MAIN)
-                            except: pass
-                else:
-                    content_type = msg.get_content_type()
-                    if content_type == "text/html":
-                        body = msg.get_payload(decode=True).decode()
-                        soup = BeautifulSoup(body, 'html.parser')
-                        plain_text = soup.get_text(separator='\n')
-                        # print("Body:\n", plain_text)
-                        prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points: \n\nSubject: {email_subject}\n\nEmail body: \n{plain_text}"
-                        try: send_email(email_subject, generate_text(prompt), GMAIL_ADDRESS_MAIN)
-                        except: pass
+        soup = BeautifulSoup(body, 'html.parser')
+        plain_text = soup.get_text(separator='\n')
+        prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points: \n\nSubject: {email_subject}\n\nEmail body: \n{plain_text}"
+
+        try: 
+            summary = generate_text(prompt)  # Assuming generate_text is a function you've defined
+            send_email(email_subject, summary, GMAIL_ADDRESS_MAIN)
+        except Exception as e:
+            print(f"Error during email processing: {e}")
+
+        # Archive the email
+        mail.uid('COPY', uid, '[Gmail]/All Mail')
+        mail.uid('store', uid, '+FLAGS', '(\Deleted)')
+        mail.expunge()
 
 
 
