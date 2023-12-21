@@ -109,7 +109,13 @@ def handel_telegram_message_from_webhook(message):
     reply_to_message = None
     # Check if there's a reply_to_message, if yes, put the text of the reply_to_message to text_prompt
     if 'reply_to_message' in message:
+
+        # Check if there's image in reply_to_message, return
+        # if 'photo' in message['reply_to_message']: return
+
         reply_to_message = message['reply_to_message'].get('text', None)
+        if not reply_to_message: return send_msg(random.choice(HAPPY_EMOJI), from_id)
+
         if text_prompt.lower() in ['email', 'gmail', 'mail', 'backup']: return send_to_gmail_main(reply_to_message)
 
         # check if there's an email address in the text_prompt
