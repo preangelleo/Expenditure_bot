@@ -316,7 +316,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         if from_id: send_msg(f"Today's hot coins are: {', '.join(today_hot_coin_list)}", from_id)
 
         i = 0
+        final_hotcoin_list = []
         for index, row in df_ticker.iterrows():
+            if i > 10: break
+
             time.sleep(1)
             coin = row['coin']
 
@@ -352,10 +355,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
             # send_msg_markdown(reply_string, from_id)
             broadcast_markdown(reply_string)
+
+            final_hotcoin_list.append(coin)
             
         if not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
-    return today_hot_coin_list
+    return final_hotcoin_list
 
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT):
