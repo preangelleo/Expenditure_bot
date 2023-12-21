@@ -31,7 +31,7 @@ def send_to_gmail_main(message, subject = 'From Python Bot'):
     return
 
 
-def read_emails(user, app_password):
+def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
     imap_url = 'imap.gmail.com'
 
     # Connect to the server
@@ -51,6 +51,7 @@ def read_emails(user, app_password):
         return
 
     for uid in uids[0].split():
+        uid = uid.decode('utf-8')  # Ensure UID is a string
         result, data = mail.uid('fetch', uid, '(RFC822)')
         if result != 'OK':
             continue
@@ -85,10 +86,12 @@ def read_emails(user, app_password):
             print(f"Error during email processing: {e}")
 
         # Archive the email
-        mail.uid('COPY', uid, '[Gmail]/All Mail')
-        mail.uid('store', uid, '+FLAGS', '(\Deleted)')
-        mail.expunge()
-
+        result, copy_response = mail.uid('COPY', uid, '"[Gmail]/All Mail"')
+        if result == 'OK':
+            mail.uid('store', uid, '+FLAGS', '(\Deleted)')
+            mail.expunge()
+        else:
+            print(f"Error archiving email UID {uid}: {copy_response}")
 
 
 if __name__ == '__main__':
