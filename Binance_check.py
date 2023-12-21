@@ -20,10 +20,7 @@ if __name__ == '__main__':
                 webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
                 trading_bot_status = trading_bot_switch_status()
 
-        if trading_bot_status:
-            print(f'Trading bot is on, checking hot coins ...')
-            # If trading bot is on, check hot coins
-            try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
-            except: pass
+        try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
+        except: pass
 
     except: pass
