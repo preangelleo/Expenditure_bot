@@ -258,6 +258,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         # Read white_list from database
         WHITE_LIST = get_white_list()
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
+    else:
+        # Read the ignore_list from database
+        IGNORE_LIST = get_ignore_list()
+        df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
 
     if df_ticker.empty:
         print(f"2) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
