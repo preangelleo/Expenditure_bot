@@ -1,5 +1,6 @@
 from BTC_weekly import *
 from Trading_bot import *
+from Gmail_api import *
 
 if __name__ == '__main__':
     # Crontab job, run once a day at 00:00
@@ -29,3 +30,6 @@ if __name__ == '__main__':
 
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
+
+    try: send_email('Profit_record job finished!', f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Profit_record.py has finished successfully!', GMAIL_ADDRESS_MAIN)
+    except Exception as e: print(f'send_email() error:\n\n{e}\n\n')

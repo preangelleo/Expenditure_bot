@@ -15,6 +15,7 @@ from aiogram.utils.markdown import hbold
 from BTC_weekly import *
 from Trading_bot import *
 
+
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 DEFAULT_MODEL = 'gpt-4-1106-preview'

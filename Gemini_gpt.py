@@ -75,6 +75,7 @@ def generate_text(prompt, model_name='gemini-pro'):
     '''
     response_text = response.json()['candidates'][0]['content']['parts'][0]['text']
     print(f"GEMINI API RESPONSE TEXT: \n\n{response_text}\n\n")
+    
     return response_text
 
 

@@ -1,5 +1,5 @@
 from Trading_bot import *
-
+from Gmail_api import *
 
 if __name__ == '__main__':
     # Crontab job, run once every 3 minutes, check hot coins to see if they are profitable chance.
@@ -13,14 +13,12 @@ if __name__ == '__main__':
     except: pass
 
     try: 
-        # Check if trading bot is on
-        trading_bot_status = trading_bot_switch_status()
-        if not trading_bot_status: 
-            if analyze_symbol('BTCUSDT'): 
-                webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
-                trading_bot_status = trading_bot_switch_status()
+        if not trading_bot_switch_status(): 
+            if analyze_symbol('BTCUSDT'): webhook_switch_on_bot(f"BTC is good to buy now. Turning on the bot", TG_BOT_OWNER_ID)
+    except: pass
 
-        try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
-        except: pass
+    try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
+    except: pass
 
+    try: read_emails()
     except: pass
