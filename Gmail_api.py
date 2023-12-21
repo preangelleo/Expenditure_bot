@@ -25,6 +25,12 @@ def send_email(subject, message, to_addr):
         server.sendmail(GMAIL_ADDRESS, to_addr, msg.as_string())
 
 
+def send_to_gmail_main(message, subject = 'From Python Bot'):
+    send_email(subject, message, GMAIL_ADDRESS_MAIN)
+    send_msg(f"Message sent to {GMAIL_ADDRESS_MAIN} successfully.")
+    return
+
+
 def read_emails(user = GMAIL_ADDRESS, app_password = GMAIL_APP_PASSWORD):
     
     imap_url = 'imap.gmail.com'

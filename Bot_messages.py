@@ -1,6 +1,6 @@
 from Trading_bot import *
 from English_bot import *
-from Gemini_gpt import *
+from Gmail_api import *
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html
@@ -105,9 +105,21 @@ def handel_telegram_message_from_webhook(message):
     from_id = message['from']['id']
     message_id = message['message_id']
     text_prompt = message.get('text', None)
-    # print(f"from_id: {from_id}, text_prompt: {text_prompt}")
 
-    # send_msg(f"from_id: {from_id}, text_prompt: {text_prompt}", from_id)
+    reply_to_message = None
+    # Check if there's a reply_to_message, if yes, put the text of the reply_to_message to text_prompt
+    if 'reply_to_message' in message:
+        reply_to_message = message['reply_to_message'].get('text', None)
+        if text_prompt.lower() in ['email', 'gmail', 'mail', 'backup']: return send_to_gmail_main(reply_to_message)
+
+        # check if there's an email address in the text_prompt
+        email_address = re.findall(EMAIL_ADDRESS_REGEX, text_prompt)
+        if email_address: 
+            for to_address in email_address: 
+                send_email(f"FROM TELEGRAM: {TELEGRAM_OWNER_USERNAME}", f"{reply_to_message}\n\nSent from python code, do NOT reply!", to_address)
+            return
+        
+        text_prompt += f"\n\n{reply_to_message}"
 
     image_url = None
 
