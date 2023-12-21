@@ -1,4 +1,4 @@
-from Top_functions import *
+from Gmail_api import *
 
 TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
 INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
@@ -1841,7 +1841,11 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
                 # investment_return with percentage format
                 investment_return = f"{investment_return * 100:.2f}%"
 
-                send_msg(f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}", chat_id)
+                summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
+                send_msg(summary_msg, chat_id)
+
+                year_and_month_day = datetime.now().strftime('%Y-%m-%d')
+                send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
 
                 plot_net_profit_sum(chat_id)
 
