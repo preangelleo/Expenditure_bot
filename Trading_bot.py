@@ -177,7 +177,8 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
             market_cap = token_info['quote']['USD']['market_cap']
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
             if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
-                print(f"{token_symbol} Fully_diluted_market_cap {fully_diluted_market_cap} is more than {FULLLY_DILUTED_MARKET_CAP_UP_LIMIT}, ignore this coin")
+                # print(f"{token_symbol} Fully_diluted_market_cap {fully_diluted_market_cap} is more than {FULLLY_DILUTED_MARKET_CAP_UP_LIMIT}, ignore this coin")
+                add_coin_to_ignore_list(token_symbol, from_id = TG_BOT_OWNER_ID)
                 return
             if market_cap < MARKET_CAP_DOWN_LIMIT: 
                 print(f"{token_symbol} market_cap {market_cap} is less than {MARKET_CAP_DOWN_LIMIT}, ignore this coin")
