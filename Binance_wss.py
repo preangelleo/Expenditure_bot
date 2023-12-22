@@ -148,7 +148,7 @@ def handle_socket_message(msg):
             except: pass
         
         if msg['X'] == 'PARTIALLY_FILLED':
-            alert_msg = f"{coin} Limit Order Partially Filled\n\n"
+            alert_msg = f"{coin} Order Partially Filled\n\n"
             send_msg(alert_msg, TG_BOT_OWNER_ID)
 
         print(msg)
