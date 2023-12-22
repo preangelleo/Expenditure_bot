@@ -30,7 +30,14 @@ def handle_socket_message(msg):
         df['locked'] = df['l'].astype(float)
         df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
         df.to_sql('binance_balance_history', engine, if_exists='append', index=False)
-        # print(df)
+        # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_balance_history WHERE asset = :asset ORDER BY timestamp DESC LIMIT 1'), {'asset': 'BNB'}).fetchall())
+        try:
+            bnb_df = df[df['asset'] == 'BNB']
+            if not bnb_df.empty:
+                bnb_free = bnb_df['free'].values[0]
+                if bnb_free < 2: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
+        except Exception as e: print(f'check_and_buy_bnb() error:\n\n{e}\n\n')
+
 
     elif msg['e'] == 'balanceUpdate':
         # Handle balance update

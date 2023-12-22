@@ -15,12 +15,6 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_btc_data_with_rsi() error:\n\n{e}\n\n')
 
-    try: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
-    except Exception as e: print(f'check_and_buy_bnb() error:\n\n{e}\n\n')
-
-    try: binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
-    except Exception as e: print(f'binance_position_reset_limit_sell() error:\n\n{e}\n\n')
-
     try: calculate_hot_coin_price_change()
     except Exception as e: print(f'calculate_hot_coin_price_change() error:\n\n{e}\n\n')
 
