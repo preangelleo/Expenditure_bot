@@ -1937,9 +1937,6 @@ def analyze_symbol(symbol: str, from_id=None):
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
 
-symbol = 'CAKE'
-from_id = TG_BOT_OWNER_ID
-analyze_symbol(symbol, from_id)
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
 def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
