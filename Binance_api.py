@@ -981,9 +981,18 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     return
 
 
+def update_binance_withdraw_task(withdraw_id_self, withdraw_id_binance):
+    connection = engine.connect()
+    transaction = connection.begin()
+    try:
+        connection.execute(text(f"UPDATE binance_withdraw_task SET withdraw_id_binance = '{withdraw_id_binance}' WHERE withdraw_id_self = '{withdraw_id_self}'"))
+        transaction.commit()
+    except Exception as e: print(f'Failed to update binance_withdraw_task\n\n{e}')
+    return 
+
 # define a function to read binance_withdraw_task where status = 'pending' and withdraw_id_binance = 'waiting_for_update' and withdraw_id_self = given token, if exist, call bianance_withdraw() and update withdraw_id_binance, status, updated_at
 def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
-    # df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_withdraw_task')).fetchall())
+    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_withdraw_task')).fetchall())
 
     try:
         df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
@@ -1008,7 +1017,8 @@ def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
     try:
         data = binance_withdraw(amount, network, coin, address)
         if data.get('id'):
-            engine.connect().execute(text(f"UPDATE binance_withdraw_task SET withdraw_id_binance = '{data.get('id')}', status = 'success' WHERE withdraw_id_self = '{token}'"))
+            update_binance_withdraw_task(token, data.get('id'))
+            # update_binance_withdraw_task('u7s6TSq7EzLsWYNFzwFAQw', 'a97b825669b94c0c9b2658c34ac5d6dc')
             reply_msg = f"Withdraw task with token: {token} is confirmed and updated.\n\nWithdraw ID from Binance: {data.get('id')}"
             send_msg(reply_msg, from_id)
             return reply_msg
