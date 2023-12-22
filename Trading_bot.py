@@ -302,13 +302,13 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 
     # make a coin list
     today_hot_coin_list = df_ticker['coin'].values.tolist()
+    
+    final_hotcoin_list = []
 
     if today_hot_coin_list and only_check: 
 
-        if from_id: send_msg(f"Today's hot coins are: {', '.join(today_hot_coin_list)}", from_id)
-
         i = 0
-        final_hotcoin_list = []
+        
         for index, row in df_ticker.iterrows():
             if i > 10: break
 
@@ -352,6 +352,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             
         if not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
+        if from_id: send_msg(f"Today's hot coins are: {', '.join(final_hotcoin_list)}", from_id)
+
     return final_hotcoin_list
 
 
@@ -367,7 +369,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         coin_in_positions = df_balance['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
-    REMAINING_POSITIONS = POSITIONS_LIMIT - len(df_balance.shape[0])
+    REMAINING_POSITIONS = POSITIONS_LIMIT - df_balance.shape[0]
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
     if not today_hot_coin_list:
