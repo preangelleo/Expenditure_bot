@@ -1,4 +1,5 @@
 from Gmail_api import *
+from Generate_token import *
 
 TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
 INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
@@ -950,10 +951,83 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
         try: checksum_address = web3.to_checksum_address(address)
         except Exception as e: return send_msg(f'Invalid address: {e}', from_id)
 
-    send_msg(f"Now ready to call binance_withdraw({amount}, {network}, {coin}, {checksum_address})", from_id)
-    
-    # data = binance_withdraw(amount, network, coin, address)
+    withdraw_id_self = generate_token()
+    withdraw_token = f"withdraw-{withdraw_id_self}"
+    # Prepare data = {} to a dataframe and append to table binance_withdraw_task
+    data = {
+        'coin': coin,
+        'amount': amount,
+        'network': network,
+        'to_address': checksum_address,
+        'from_id': from_id,
+        'withdraw_id_self': withdraw_id_self,
+        'created_at': datetime.now(),
+        'withdraw_id_binance': 'waiting_for_update'
+    }
+
+    df = pd.DataFrame(data, index=[0])
+    df.to_sql('binance_withdraw_task', engine, if_exists='append', index=False)
+
+    # del status, withdraw_id_binance, withdraw_id_self,from_id, created_at, updated_at from data
+    del data['withdraw_id_binance']
+    del data['withdraw_id_self']
+    del data['from_id']
+    del data['created_at']
+
+    reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{', '.join([f'{k}: {v}' for k, v in data.items()])}\n\nYou can reply: \nconfirm {withdraw_id_self}\n\nOr click the following link to confirm"
+    send_msg(reply_string_from_dict, from_id)
+
+    confirm_link_markdown = f"[CONFIRM_WITHDRAW](https://wh.leowang.net/confirmation/{withdraw_token})"
+    send_msg_markdown(confirm_link_markdown, from_id)
+
     return
+
+
+# define a function to read binance_withdraw_task where status = 'pending' and withdraw_id_binance = 'waiting_for_update' and withdraw_id_self = given token, if exist, call bianance_withdraw() and update withdraw_id_binance, status, updated_at
+def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
+
+    try:
+        df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND status = 'pending' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
+        if df.empty: 
+            reply_msg = f'No withdraw task with token: {token}'
+            send_msg(reply_msg, from_id)
+            return reply_msg
+    except: 
+        reply_msg = f'binance_withdraw_task table not exist.'
+        send_msg(reply_msg, from_id)
+        return reply_msg
+
+    amount = float(df[1].values[0])
+    network = df[2].values[0]
+    coin = df[0].values[0]
+    address = df[3].values[0]
+
+    try:
+        data = binance_withdraw(amount, network, coin, address)
+        if data.get('id'):
+            engine.connect().execute(text(f"UPDATE binance_withdraw_task SET withdraw_id_binance = '{data.get('id')}', status = 'success' WHERE withdraw_id_self = '{token}'"))
+            reply_msg = f"Withdraw task with token: {token} is confirmed and updated.\n\nWithdraw ID from Binance: {data.get('id')}"
+            send_msg(reply_msg, from_id)
+            return reply_msg
+        else: return 'Failed to withdraw.'
+    except Exception as e: 
+        send_msg(f'Error for calling binance_withdraw(): \n\n{e}', from_id)
+        print(e)
+        return f"Error:\n\n{e}"
+
+
+
+# handle webhook task tokens, recieve task token from webhook and split with the first '-', first half is the identification fo a function, second half is the token for the validation of the task
+def handle_webhook_confirmation(token: str, from_id=TG_BOT_OWNER_ID):
+
+    token_list = token.split('-', 1)
+    target_function = token_list[0].lower()
+    task_token = token_list[1]
+
+    if target_function == 'withdraw': return binance_withdraw_task_update(task_token, from_id)
+
+    return
+
 
 
 
@@ -1887,18 +1961,20 @@ Got response from binance_exchange_info table.
 df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = "NEW"')).fetchall())
 
 # Define a function to check orderid and update status
-def binance_check_order_status(coin, clientOrderId=None):
+def binance_check_order_status(symbol, clientOrderId=None):
+    symbol = symbol.upper()
+    coin = symbol.replace('USDT', '')
 
     if not clientOrderId:
         try:
-            df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE coin = :coin AND status = "NEW"'), {'coin': coin.upper()}).fetchall())
+            df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE symbol = :symbol AND status = "NEW"'), {'symbol': symbol}).fetchall())
             if df_balance.empty: return
         except: return
 
         clientOrderId = df_balance['clientOrderId'].values[0]
         
     try: 
-        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0 AND coin = :coin'), {'coin': coin.upper()}).fetchall())
+        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0 AND coin = :coin'), {'coin': coin}).fetchall())
         if df_balance.empty: return
     except: return 'Table binance_position_buy not found'
 

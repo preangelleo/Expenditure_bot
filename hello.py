@@ -8,6 +8,7 @@ def hello_world():
     # Show a hyperlink of LEOWANG.NET to the website
     return '<a href="https://leowang.net">LEOWANG.NET</a>'
 
+
 # Create a webhook to receive messages from Tradingview
 @app.route(f'/{TRADINGVIEW_WEBHOOK}', methods=['POST'])
 def tv_webhook():
@@ -17,6 +18,17 @@ def tv_webhook():
 
     except: pass
 
+    return {'message': 'Thanks'}, 200
+
+
+@app.route('/confirmation/<token>', methods=['GET'])
+def confirm_token(token):
+    try: 
+        if handle_webhook_confirmation(token):
+            # Show confirmed and done in text
+            return 'Confirmed and done'
+            
+    except: pass
     return {'message': 'Thanks'}, 200
 
 

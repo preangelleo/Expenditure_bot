@@ -67,6 +67,8 @@ ONE_PARAMETER_COMMAND_LIST = {
     'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
     'latest_sell_price': {'function': read_latest_sell_price, 'description': 'You need to input a coin symbol after this command, for example: /latest_sell_price BTC'},
     'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
+    'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
+    
     }
 
 

@@ -276,8 +276,11 @@ def tg_get_file_path(file_id):
     
 
 # difine a function to send telegram message to a chat_id using requests + telegram bot api
-def send_msg(message, chat_id=TG_BOT_OWNER_ID):
+def send_msg(message, chat_id=None):
     # print(f"Sending message to chat_id: {chat_id}")
+
+    if not chat_id: print(f"No chat_id, just print the message:\n\n{message}\n\n")
+
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         data = {

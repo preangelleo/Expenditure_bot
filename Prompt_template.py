@@ -568,4 +568,6 @@ BOT_COMMAND_DICT = {
     'gotp': 'get_otp',
     'iotp': 'insert_otp',
     'tba': 'transfer_between_accounts',
+    'cfm': 'confirm_token',
+    'confirm': 'confirm_token'
     }

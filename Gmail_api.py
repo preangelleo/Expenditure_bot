@@ -77,7 +77,9 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
 
         soup = BeautifulSoup(body, 'html.parser')
         plain_text = soup.get_text(separator='\n')
-        prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points: \n\nSubject: {email_subject}\n\nEmail body: \n{plain_text}"
+        prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points. If you think it's an commercial or spam, please reply restrictly with only the word: no_need_to_summarize in lowercase. Then your reply will be passed to python code, if my python code finds 'no_need_to_summarize' in your reply, this email will be ignored. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
+
+        if 'no_need_to_summarize' in plain_text.lower(): continue
 
         try: 
             summary = generate_text(prompt)  # Assuming generate_text is a function you've defined
