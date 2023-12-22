@@ -2144,19 +2144,19 @@ def binance_check_order_status(symbol, clientOrderId=None):
             send_msg(reply_msg, TG_BOT_OWNER_ID)
 
 
-        if limit_order_data['status'] == 'CANCELED' or limit_order_data['status'] == 'CANCELLED':
-            if mark_limit_order_as_canceled(clientOrderId): send_msg(f'''{coin} Limit Order Canceled\n\nOrder_ID: {limit_order_data['orderId']}\n''', TG_BOT_OWNER_ID)
+        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']:
+            if mark_limit_order_as_canceled(clientOrderId, limit_order_data['status']): send_msg(f'''{coin} Order {limit_order_data['status']}\n\nOrder_ID: {limit_order_data['orderId']}\n''', TG_BOT_OWNER_ID)
 
     return 
 
 
 # Mark a limit order as canceled in binance_limit_sell_order table
-def mark_limit_order_as_canceled(clientOrderId):
+def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
     
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
-            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId})
+            connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': status})
             connection.commit()
             return True
         except Exception as e:
