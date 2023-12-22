@@ -1876,9 +1876,13 @@ def calculate_rsi(data, period=14):
     return rsi
 
 def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
+
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
+    # calculate the average volume for the last sma_period candles
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
+    df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
 
     df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
     df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
@@ -1891,9 +1895,21 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         if from_id: send_msg(f"{coin} {interval} interval close price {format_number(latest['Close'])} is below SMA {format_number(latest['SMA'])}", from_id)
         return False
     
+    # Check if latest sma is lower than previous sma
+    if latest['SMA'] < previous['SMA']: 
+        print(f"{coin} {interval} SMA {latest['SMA']} is below previous SMA {previous['SMA']}")
+        if from_id: send_msg(f"{coin} {interval} interval SMA {format_number(latest['SMA'])} is below previous SMA {format_number(previous['SMA'])}", from_id)
+        return False
+    
     if latest['RSI'] < latest['RSI_SMA']: 
         print(f"{coin} {interval} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
         if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
+        return False
+    
+    # check if latest rsi is lower than previous rsi
+    if latest['RSI'] < previous['RSI']:
+        print(f"{coin} {interval} RSI {latest['RSI']} is below previous RSI {previous['RSI']}")
+        if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below previous RSI {format_number(previous['RSI'])}", from_id)
         return False
     
     if latest['Open'] < previous['Close']: 
@@ -1901,8 +1917,14 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         if from_id: send_msg(f"{coin} {interval} interval open price {format_number(latest['Open'])} is lower than previous close price {format_number(previous['Close'])}", from_id)
         return False
     
+    # check if thequote asset volume is higher than average quote asset volume
+    if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA']:
+        print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below SMA {latest['Quote Asset Volume SMA']}")
+        if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below SMA {format_number(latest['Quote Asset Volume SMA'])}", from_id)
+        return False
+
     if interval == '5m':
-        if previous['Quote Asset Volume'] < 100_000:
+        if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
             print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
             if from_id: send_msg(f"{coin} {interval} interval previous trading volume {format_number(previous['Quote Asset Volume'])} is below 100K USDT", from_id)
             return False
@@ -1916,7 +1938,7 @@ def analyze_symbol(symbol: str, from_id=None):
     for interval in ['4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
         if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
-        
+
     print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
     return True
 
