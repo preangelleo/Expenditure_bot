@@ -51,7 +51,7 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
 
         if 'no_need_to_summarize' in plain_text.lower(): continue
 
-        if 'receipt' in plain_text.lower() or 'recepit' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower() or 'bill' in email_subject.lower() or 'renewed' in email_subject.lower() or 'payment' in email_subject.lower() or '收据' in email_subject.lower():
+        if 'receipt' in plain_text.lower() or 'recepit' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower() or 'bill' in email_subject.lower() or 'renewed' in email_subject.lower() or 'payment' in email_subject.lower() or '收据' in email_subject.lower() or '付款' in email_subject.lower():
             new_prompt = f"Extract the receipt detail information from this email and call function: insert_new_expenditure_record to insert the record into the table. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
             try: run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = new_prompt, message_id=None)
             except Exception as e: print(f"Error during receipt processing: {e}")
