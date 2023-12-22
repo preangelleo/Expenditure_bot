@@ -525,7 +525,6 @@ MAIN_ISOLATED_MARGIN 现货钱包转向逐仓账户钱包
 ISOLATED_MARGIN_MAIN 逐仓钱包转向现货账户钱包'''
 
 
-
 # DEFINE a function to transfer coin from uer input accout type to another account type
 def transfer_between_accounts(coin, amount, transfer_type, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
@@ -559,7 +558,6 @@ def transfer_between_accounts(coin, amount, transfer_type, chat_id=TG_BOT_OWNER_
         print(e)
         return
     
-
 
 # 定义 MAIN_FUNDING 现货钱包转向资金钱包功能
 def main_funding_transfer(coin, amount):
@@ -602,7 +600,6 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
             else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
-
 
 
 # 通过 get_funding_asset 检查资金账户中的 USDT 余额，如果存在 USDT 余额，则调用 funding_main_transfer_with_check_and_send(coin, amount) 将所有 USDT 余额转入到现货账户
@@ -974,7 +971,8 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     del data['from_id']
     del data['created_at']
 
-    reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{', '.join([f'{k}: {v}' for k, v in data.items()])}\n\nYou can reply: \nconfirm {withdraw_id_self}\n\nOr click the following link to confirm"
+    string_dict = '\n'.join([f'{k}: {v}' for k, v in data.items()])
+    reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nYou can reply: \n/confirm {withdraw_id_self}\n\nOr click the following link to confirm"
     send_msg(reply_string_from_dict, from_id)
 
     confirm_link_markdown = f"[CONFIRM_WITHDRAW](https://wh.leowang.net/confirmation/{withdraw_token})"
@@ -985,9 +983,10 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
 
 # define a function to read binance_withdraw_task where status = 'pending' and withdraw_id_binance = 'waiting_for_update' and withdraw_id_self = given token, if exist, call bianance_withdraw() and update withdraw_id_binance, status, updated_at
 def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
+    # df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_withdraw_task')).fetchall())
 
     try:
-        df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND status = 'pending' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
+        df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
         if df.empty: 
             reply_msg = f'No withdraw task with token: {token}'
             send_msg(reply_msg, from_id)
@@ -1014,7 +1013,6 @@ def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
         send_msg(f'Error for calling binance_withdraw(): \n\n{e}', from_id)
         print(e)
         return f"Error:\n\n{e}"
-
 
 
 # handle webhook task tokens, recieve task token from webhook and split with the first '-', first half is the identification fo a function, second half is the token for the validation of the task
@@ -1071,7 +1069,6 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
 
     # withdraw USDT to target address
     return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
-
 
 
 '''获取充值地址 (支持多网络) (USER_DATA)
@@ -1608,6 +1605,7 @@ Profit_Sum: {format_number(profit_sum)} usdt
 0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
 '''
 
+
 def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     current_orders = get_open_orders_list()
     symbol = coin + 'USDT'
@@ -2001,7 +1999,6 @@ Got response from binance_exchange_info table.
 }
 '''
 
-df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = "NEW"')).fetchall())
 
 # Define a function to check orderid and update status
 def binance_check_order_status(symbol, clientOrderId=None):

@@ -23,13 +23,8 @@ def tv_webhook():
 
 @app.route('/confirmation/<token>', methods=['GET'])
 def confirm_token(token):
-    try: 
-        if handle_webhook_confirmation(token):
-            # Show confirmed and done in text
-            return 'Confirmed and done'
-            
-    except: pass
-    return {'message': 'Thanks'}, 200
+    try: return handle_webhook_confirmation(token)   
+    except: return {'message': 'Thanks'}, 200
 
 
 # Create a webhook to receive messages from Telegram
