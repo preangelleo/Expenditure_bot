@@ -433,4 +433,4 @@ if __name__ == '__main__':
     # test_binance_today_hot_coin_analysis()
 
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
-
+    analyze_symbol('FET', from_id=TG_BOT_OWNER_ID)
