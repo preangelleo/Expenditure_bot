@@ -268,18 +268,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
         return []
 
-    # from binance_position_buy find out the latested bought 10 coins
-    try:
-        df_30_days = pd.DataFrame(engine.connect().execute(text('SELECT coin FROM binance_position_buy ORDER BY transactTime Desc LIMIT 10')).fetchall())
-        unique_coin_list = list(set(df_30_days['coin'].values.tolist()))
-        if unique_coin_list: 
-            # Ignore the coins in unique_coin_list
-            df_ticker = df_ticker[~df_ticker['coin'].isin(unique_coin_list)]
-            if df_ticker.empty: 
-                print(f"3) No hot coin today, after ignore the latest hot coin list: {unique_coin_list}")
-                return []
-    except: pass
-
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
 
     # Update ticker with market cap and fully diluted market cap
@@ -299,7 +287,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         else: df_ticker.drop(index, inplace=True)
 
     if df_ticker.empty:
-        print(f"4) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
+        print(f"3) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
         if only_check: broadcast_text(f"No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
         return []
 
