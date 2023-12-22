@@ -156,8 +156,9 @@ COMMANDS = [
     {"command": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
     {"command": "insert_otp", "description": "Insert a otp passcode_key for a app_name into the table"},
     {"command": 'transfer_between_accounts', 'description': 'Transfer between accounts: MAIN_UMFUTURE, FUNDING_MAIN, etc.'},
+    {"command": 'confirm_token', 'description': 'Confirm the token for a previous task to be executed'},
+    {"command": 'binance_pay_usdt', 'description': 'Pay a certain amount of USDT to a given TRX address (less then 1000)'},
 ]
-
 
 
 FUNCTIONS_TOOLS = [
@@ -569,5 +570,6 @@ BOT_COMMAND_DICT = {
     'iotp': 'insert_otp',
     'tba': 'transfer_between_accounts',
     'cfm': 'confirm_token',
-    'confirm': 'confirm_token'
+    'confirm': 'confirm_token',
+    'bpu': 'binance_pay_usdt',
     }

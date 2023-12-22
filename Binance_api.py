@@ -714,7 +714,7 @@ def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
 def get_coin_wallet_balance(coin):
     df = get_user_asset()
     df = df[df['asset'] == coin.upper()]
-    if not df.empty: return df['free'].values[0]
+    if not df.empty: return float(df['free'].values[0])
     else: return 0
 
 
@@ -724,7 +724,7 @@ def get_token_price(coin: str, from_id=None):
     df = df[df['coin'] == coin.upper()]
     if not df.empty: 
         if from_id: send_msg(f"Current price of {coin.upper()}: {format_number(df['lastPrice'].values[0])} usdt\n\nCurrent time: {datetime.now().strftime('%Y-%m-%d %H:%M')}", from_id)
-        return df['lastPrice'].values[0]
+        return float(df['lastPrice'].values[0])
     else: return 0
 '''235.8'''
 
@@ -1028,6 +1028,49 @@ def handle_webhook_confirmation(token: str, from_id=TG_BOT_OWNER_ID):
 
     return
 
+
+# Define binance_pay_usdt, user input a usdt amount and a target address; then market sell coin ONG for this target usdt amount, and send the USDT to the target address with TRX network only, usdt input must less than 1000 usd.
+def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWNER_ID):
+    try: usdt_amount = float(usdt_amount)
+    except: return send_msg(f'You need to input a number for amount, but you input: {usdt_amount}', from_id)
+
+    if usdt_amount > 1000: return send_msg(f'You can only pay less than 1000 usdt, but you input: {usdt_amount}', from_id)
+
+    '''TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'''
+    # CHECK IF target_address IS A VALID TRX ADDRESS
+    if not re.match(TRX_REGEX, target_address): return send_msg(f'Invalid TRX address: {target_address}', from_id)
+
+    # Get ONG price
+    ong_price = get_token_price('ONG')
+    if ong_price == 0: return send_msg(f'Can not get ONG price.', from_id)
+
+    # Calculate ONG amount
+    ong_amount = usdt_amount / ong_price
+
+    # Get ONG balance
+    ong_balance = get_coin_wallet_balance('ONG')
+    if ong_balance == 0: return send_msg(f'No ONG in your binance wallet. \n\n/get_wallet_balance', from_id)
+
+    polish_parameters = polish_parameters_for_limit_order('ONG', ong_amount, ong_price, from_id)
+    if not polish_parameters: return send_msg(f'Failed to polish parameters for ONG market sell', from_id)
+
+    ong_amount = polish_parameters['amount']
+
+    # Check if ONGUSDT balance is sufficient
+    if ong_balance < ong_amount: return send_msg(f'ONG balance is {ong_balance}, which is not sufficient for {ong_amount}.', from_id)
+
+    # Market sell ONG for USDT
+    data = binance_market_sell('ONG', ong_amount)
+    if not data: return send_msg(f'Failed to market sell ONG for USDT.', from_id)
+
+    del data['fills']
+
+    df = pd.DataFrame(data, index=[0])
+    df.to_sql('binance_ong_sell_history', engine, if_exists='append', index=False)
+    print(f"Market sell ONG for USDT:\n\n{df}\n\n")
+
+    # withdraw USDT to target address
+    return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
 
 

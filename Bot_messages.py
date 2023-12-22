@@ -68,7 +68,6 @@ ONE_PARAMETER_COMMAND_LIST = {
     'latest_sell_price': {'function': read_latest_sell_price, 'description': 'You need to input a coin symbol after this command, for example: /latest_sell_price BTC'},
     'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
     'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
-    
     }
 
 
@@ -78,6 +77,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'calculate_irr': {'function': calculate_irr, 'description': 'You need to input a year and a month after this command, for example, calulate a 7 folds return in 10 years: /calculate_irr 7 10'},
     'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000'},
     'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
+    'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
