@@ -176,15 +176,23 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
         if token_info:
             market_cap = token_info['quote']['USD']['market_cap']
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
-            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: return
-            if market_cap < MARKET_CAP_DOWN_LIMIT: return
+            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
+                print(f"{token_symbol} Fully_diluted_market_cap {fully_diluted_market_cap} is more than {FULLLY_DILUTED_MARKET_CAP_UP_LIMIT}, ignore this coin")
+                return
+            if market_cap < MARKET_CAP_DOWN_LIMIT: 
+                print(f"{token_symbol} market_cap {market_cap} is less than {MARKET_CAP_DOWN_LIMIT}, ignore this coin")
+                return
             circulating_ratio = market_cap / fully_diluted_market_cap
             circulating_ratio = round(circulating_ratio, 2)
-            if circulating_ratio < CIRCULATION_RATIO: return 
+            if circulating_ratio < CIRCULATION_RATIO: 
+                print(f"{token_symbol} circulating_ratio {circulating_ratio} is less than {CIRCULATION_RATIO}, ignore this coin")
+                return 
             # Calculate turnover ratio
             turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
             turnover_ratio = round(turnover_ratio, 2)
-            if turnover_ratio < turnover_ratio_eth: return
+            if turnover_ratio < turnover_ratio_eth: 
+                print(f"{token_symbol} turnover_ratio {turnover_ratio} is less than ETH's {turnover_ratio_eth}, ignore this coin")
+                return
 
             current_price = token_info['quote']['USD']['price']
             coin_rank = token_info['cmc_rank']
@@ -232,7 +240,7 @@ def is_coin_recently_listed(symbol: str, days=7):
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = TG_BOT_OWNER_ID):
-    
+
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
     # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
@@ -255,18 +263,25 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
     if not trading_bot_switch_status():
+        print(f"Trading bot is off, only check white_list coins")
         # Read white_list from database
         WHITE_LIST = get_white_list()
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
+        if df_ticker.empty:
+            print(f"2) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
+            if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
+            return []
+
     else:
+        print(f"Trading bot is on, trading any coin except for ignore_list")
         # Read the ignore_list from database
         IGNORE_LIST = get_ignore_list()
         df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+        if df_ticker.empty:
+            print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
+            if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
+            return []
 
-    if df_ticker.empty:
-        print(f"2) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
-        if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
-        return []
 
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
 
@@ -305,7 +320,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     
     final_hotcoin_list = []
 
-    if today_hot_coin_list and only_check: 
+    if today_hot_coin_list: 
 
         i = 0
         
@@ -315,8 +330,13 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             time.sleep(1)
             coin = row['coin']
 
-            if not analyze_symbol(coin, None): continue
-            if weekly_rsi_over_high(coin, from_id): continue
+            if not analyze_symbol(coin, None): 
+                print(f"{coin} is not good to buy now after analyze_symbol()")
+                continue
+            if weekly_rsi_over_high(coin, from_id): 
+                print(f"{coin} weekly RSI is over 90, ignore this coin")
+                send_msg(f"{coin} weekly RSI is over 90, ignore this coin", from_id)
+                continue
 
             i += 1
 
@@ -346,13 +366,11 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
 
             # send_msg_markdown(reply_string, from_id)
-            broadcast_markdown(reply_string)
+            if only_check: broadcast_markdown(reply_string)
 
             final_hotcoin_list.append(coin)
             
-        if not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
-
-        if from_id: send_msg(f"Today's hot coins are: {', '.join(final_hotcoin_list)}", from_id)
+        if only_check and not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
     return final_hotcoin_list
 
@@ -375,6 +393,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     if not today_hot_coin_list:
         if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
         return
+    
+    print(f"today_hot_coin_list: {today_hot_coin_list}")
 
     target_profit_in_db = read_target_profit_default()
 
@@ -386,10 +406,14 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         if REMAINING_POSITIONS <= 0: break
         
         # Check if coin in coin_in_positions, if yes, ignore this coin
-        if coin in coin_in_positions: continue
+        if coin in coin_in_positions: 
+            print(f"{coin} is in positions already, ignore this coin")
+            continue
 
         # Check if coin is recently listed, if yes, ignore this coin
-        if is_coin_recently_listed(coin, 7): continue
+        if is_coin_recently_listed(coin, 7): 
+            print(f"{coin} is recently listed, ignore this coin")
+            continue
 
         try: 
             do_market_buy_one_unit(coin, chat_id)

@@ -187,9 +187,6 @@ def markdown_tokentnxs(address):
 
 # 从 Coinmarketcap 给定 token 的价格等数据, 返回一个字典
 def get_token_info_from_coinmarketcap(token_symbol):
-    # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_token_info_from_coinmarketcap({token_symbol}) is running ...')
-
     # CoinMarketCap API endpoint
     url = f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol={token_symbol}'
 
