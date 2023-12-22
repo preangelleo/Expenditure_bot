@@ -263,26 +263,23 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     # Eliminate the coins with 'USD' in coin name
     df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
 
+    # Read the ignore_list from database
+    IGNORE_LIST = get_ignore_list()
+    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+    if df_ticker.empty:
+        print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
+        if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
+        return []
+
     if not trading_bot_switch_status():
         print(f"Trading bot is off, only check white_list coins")
         # Read white_list from database
         WHITE_LIST = get_white_list()
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
         if df_ticker.empty:
-            print(f"2) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
+            print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
             if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
             return []
-
-    else:
-        print(f"Trading bot is on, trading any coin except for ignore_list")
-        # Read the ignore_list from database
-        IGNORE_LIST = get_ignore_list()
-        df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
-        if df_ticker.empty:
-            print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
-            if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
-            return []
-
 
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
 
