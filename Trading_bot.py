@@ -114,10 +114,13 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         return False
     
     # Additional volume check for 5-minute interval
-    if interval == '5m' and latest['Quote Asset Volume'] < 100_000:
-        print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below 100,000 USDT")
-        if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below 100K USDT", from_id)
-        return False
+    if interval == '5m':
+        # Get the previous 5-minute interval's trading volume
+        previous = df.iloc[-2]
+        if previous['Quote Asset Volume'] < 100_000:
+            print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
+            if from_id: send_msg(f"{coin} {interval} interval previous trading volume {format_number(previous['Quote Asset Volume'])} is below 100K USDT", from_id)
+            return False
 
     return True
 
