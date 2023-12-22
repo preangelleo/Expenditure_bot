@@ -1619,6 +1619,33 @@ Profit_Sum: {format_number(profit_sum)} usdt
 0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
 '''
 
+''' df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+      symbol     orderId  orderListId           clientOrderId   transactTime      price  ... selfTradePreventionMode update_id sell_cost_bnb sell_bnb_price total_bnb_cost_value      profit
+0    FTTUSDT   688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468   5.562989  ...            EXPIRE_MAKER         1      0.033751          240.3            15.548180  789.421552
+1   EGLDUSDT  1235576864           -1  HbstvGzUiiQBoTFxQGibwW  1702267644918  65.401010  ...            EXPIRE_MAKER         4      0.032888          233.8            15.186327  237.486573
+2    IMXUSDT   533697410           -1  13Dj1FJeITi5795gIWyN00  1702267667019   1.928267  ...            EXPIRE_MAKER         2      0.032310          233.8            15.032396   57.087613
+3    SNXUSDT  1057101036           -1  DlChdJwJRmwW7Lf9oNBtwu  1702267684943   4.439063  ...            EXPIRE_MAKER         9      0.032307          233.9            15.011603   56.354097
+4    INJUSDT   809743269           -1  JY5FbpXFxPnePCNvO5BgT8  1702308983629  22.561297  ...            EXPIRE_MAKER        10      0.030714          243.9            15.039906  -22.595406
+5   ORDIUSDT   238514100           -1  hWGYLLB2hBZNqWnhQ1AuMg  1702361706283  51.710000  ...            EXPIRE_MAKER         7      0.031247          250.2            15.314370  -15.249150
+6    FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702464665994   5.500400  ...            EXPIRE_MAKER         3      0.031305          251.3            15.380309  -15.390928
+7    FETUSDT   956488383           -1  RCLyLqsTG2os2Zq5nDHtJO  1702940167510   0.687657  ...            EXPIRE_MAKER        12      0.031685          240.4            15.098148  141.077352
+8    STXUSDT   658898595           -1  FnIGPOiB6Hfp95EQA6NjrC  1702942206075   1.225800  ...            EXPIRE_MAKER        13      0.030880          240.9            14.856532   85.498898
+9   NEARUSDT  2110473867           -1  b1vSFIYMRLWZrz4ecPsPaZ  1703034724092   2.550000  ...            EXPIRE_MAKER         8      0.031232          254.2            15.428633   84.505367
+10  SANDUSDT  2782080420           -1  C9lGCy1BllCj9kATi9iaGz  1703211765923   0.554000  ...            EXPIRE_MAKER         5      0.031214          272.0            15.984787   83.772213
+11  BAKEUSDT   657386867           -1  nEZ0RcxsNDo5G7pO7Lp9EE  1703227338598   0.421900  ...            EXPIRE_MAKER        15      0.027083          273.4            14.873934  484.989486
+12  BAKEUSDT   657615307           -1  Ah0I3w2XaYjd9qywfk03VK  1703227686811   0.431500  ...            EXPIRE_MAKER        16      0.027978          272.9            15.261983  484.980807
+'''
+
+# get the latest sold coin from binance_position_sell
+def get_latest_sold_coin():
+    try:
+        df_latest_sold_coin = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_sell ORDER BY transactTime DESC LIMIT 1")).fetchall())
+        if df_latest_sold_coin.empty: return
+    except: return
+    coin = df_latest_sold_coin['symbol'].values[0]
+    coin = coin.replace('USDT', '') if coin.endswith('USDT') else coin
+    return coin
+
 
 def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     current_orders = get_open_orders_list()

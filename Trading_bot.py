@@ -412,6 +412,11 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         if is_coin_recently_listed(coin, 7): 
             print(f"{coin} is recently listed, ignore this coin")
             continue
+        
+        last_sold_coin = get_latest_sold_coin()
+        if last_sold_coin and coin == last_sold_coin: 
+            print(f"{coin} is the last sold coin, ignore...")
+            continue
 
         try: 
             do_market_buy_one_unit(coin, chat_id)
