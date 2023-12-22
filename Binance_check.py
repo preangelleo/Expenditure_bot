@@ -9,7 +9,7 @@ if __name__ == '__main__':
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
     # Check limit order status
-    try: binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, crontab_profit_record=False)
+    try: binance_position_buy_check_all(0.01, None, chat_id=None, crontab_profit_record=False)
     except: pass
 
     try: 

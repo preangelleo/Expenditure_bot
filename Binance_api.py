@@ -1154,13 +1154,15 @@ timestamp	LONG	YES'''
 
 
 # 定义一个Market sell 交易功能 Input: coin, amount
-def binance_market_sell(coin, amount):
+def binance_market_sell(coin: str, amount):
     coin = coin.upper()
+    symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
+
     PATH = '/api/v3/order'
     timestamp = int(time.time() * 1000)
     
     params = {
-        'symbol': coin + 'USDT',
+        'symbol': symbol,
         'side': 'SELL',
         'type': 'MARKET',
         'quantity': amount,
@@ -1282,12 +1284,14 @@ orderId 或 origClientOrderId 必须至少发送一个
 '''
 
 # Define a function to cancel an order
-def binance_cancel_order(coin, clientOrderId):
+def binance_cancel_order(coin: str, clientOrderId):
     coin = coin.upper()
+    symbol = coin if coin.endswith('USDT') else coin + 'USDT'
+
     PATH = '/api/v3/order'
     timestamp = int(time.time() * 1000)
     params = {
-        'symbol': coin + 'USDT',
+        'symbol': symbol,
         'origClientOrderId': clientOrderId,
         'timestamp': timestamp
         }
@@ -1844,17 +1848,97 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
     return send_img(chat_id, filename)
 
 
+def get_kline_data(symbol, interval):
+    url = f"https://api.binance.com/api/v3/klines"
+    params = {
+        'symbol': symbol,
+        'interval': interval
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+    df['Close'] = pd.to_numeric(df['Close'])
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
+    # print(df)
+    return df
+
+
+def calculate_sma(data, period):
+    return data.rolling(window=period).mean()
+
+
+def calculate_rsi(data, period=14):
+    delta = data.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
+    df['SMA'] = calculate_sma(df['Close'], sma_period)
+    df['RSI'] = calculate_rsi(df['Close'], rsi_period)
+    df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
+    
+    latest = df.iloc[-1]
+
+    if latest['Close'] < latest['SMA']: 
+        print(f"{coin} close price {latest['Close']} is below SMA {latest['SMA']}")
+        if from_id: send_msg(f"{coin} {interval} interval close price {format_number(latest['Close'])} is below SMA {format_number(latest['SMA'])}", from_id)
+        return False
+
+    if latest['RSI'] < latest['RSI_SMA']: 
+        print(f"{coin} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
+        if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
+        return False
+    
+    # Additional volume check for 5-minute interval
+    if interval == '5m':
+        # Get the previous 5-minute interval's trading volume
+        previous = df.iloc[-2]
+        if previous['Quote Asset Volume'] < 100_000:
+            print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
+            if from_id: send_msg(f"{coin} {interval} interval previous trading volume {format_number(previous['Quote Asset Volume'])} is below 100K USDT", from_id)
+            return False
+
+    return True
+
+
+def analyze_symbol(symbol: str, from_id=None):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+
+    for interval in ['4h', '1h', '15m', '5m']:
+        df = get_kline_data(symbol, interval)
+        if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
+
+    print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
+    return True
+
+
+# Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
+def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    interval = '1w'
+
+    df = get_kline_data(symbol, interval)
+    df['RSI'] = calculate_rsi(df['Close'], 14)
+    latest = df.iloc[-1]
+    if latest['RSI'] > 89: 
+        send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
+        return True
+    
+    return False
+
+
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=None, crontab_profit_record=False):
+def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=False):
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} binance_position_buy_check_all() is running ...')
-    print(f'coin: {coin}, chat_id: {chat_id}, crontab_profit_record: {crontab_profit_record}')    
 
-    try:
-        # get df_balance from binance_position_buy
-        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-        if df_balance.empty: return 'No open position for all coins'
-    except: return 'No open position for all coins'
+    try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    except: return 'Table binance_position_buy does not exist'
+
+    if df_balance.empty: return 'No open position for all coins'
 
     if coin: 
         df_balance = df_balance[df_balance['coin']==coin.upper()]
@@ -1906,21 +1990,19 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
     # sort by profit
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
-    target_profit = read_target_profit_default() if chat_id else target_profit
-    print('CALLING: binance_position_buy_check_all() with TARGET_PROFIT: ', f"{target_profit*100:.2f}% at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-
     current_orders = get_open_orders_list()
-
     book_value = 0
-
     for_reply = {}
-    new_profit = 0
+
     for i in range(df_balance.shape[0]):
-        # ignore coin BNB
-        if df_balance.iloc[i]['coin'] == 'BNB': continue
+        # ignore coin BNB, ONG
+        if df_balance.iloc[i]['coin'] in ['BNB', 'ONG']: continue
 
         reply_dict = df_balance.iloc[i].to_dict()
-        # format_number for amount, profit, up_ratio, buy_price, current_price
+
+        coin = reply_dict['coin']
+        symbol = coin + 'USDT'
+
         for_reply['Coin'] = reply_dict['coin']
         for_reply['Amount'] = format_number(reply_dict['executedQty'])
         for_reply['Profit'] = format_number(reply_dict['profit'])
@@ -1935,20 +2017,17 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
-        # If profit > target_profit, do market sell, close the position
-        if reply_dict['up_ratio'] > target_profit: 
+        # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
+        if not analyze_symbol(coin, chat_id) or weekly_rsi_over_high(coin, chat_id): 
 
-            # Check if current coin has open order, if yes, ignore market sell
-            symbol = reply_dict['coin'] + 'USDT'
-            if symbol not in current_orders: new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
-            else:
-                if chat_id:
-                    # Cancel order then do market sell
-                    binance_cancel_order(symbol, current_orders[symbol])
-                    new_profit += do_market_sell(reply_dict['coin'], TG_BOT_OWNER_ID)
-                else: book_value += reply_dict['profit']
+            if reply_dict['up_ratio'] >= target_profit:
+                if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
+                do_market_sell(coin, chat_id)
+                continue
 
-        else: book_value += reply_dict['profit']
+            binance_position_set_limit_sell(target_profit, chat_id, coin)
+
+        book_value += reply_dict['profit']
 
     if chat_id or crontab_profit_record: 
         try:
@@ -2007,38 +2086,6 @@ def binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_
 
         except: pass
     return
-
-''' binance_position_sell
-    symbol    orderId  orderListId           clientOrderId   transactTime     price        origQty    executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value      profit
-0  FTTUSDT  688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468  5.562989  1942.29000000  1942.29000000      10804.93829100  FILLED         GTC  MARKET  SELL  1702224291468            EXPIRE_MAKER          1       0.033751           240.3              15.54818  789.421552
-'''
-
-''' net_profit_daily_record
-         Date  NetProfit
-0  2023-12-10    1186.83
-'''
-
-'''r = get_exchange_info_symbols('FTT')
-Got response from binance_exchange_info table.
-{
-  "symbol": "FTTUSDT",
-  "status": "TRADING",
-  "baseAsset": "FTT",
-  "coin": "FTT",
-  "baseAssetPrecision": 8,
-  "quoteAsset": "USDT",
-  "quotePrecision": 8,
-  "quoteAssetPrecision": 8,
-  "baseCommissionPrecision": 8,
-  "quoteCommissionPrecision": 8,
-  "minPrice": "0.00010000",
-  "maxPrice": "100000.00000000",
-  "tickSize": "0.00010000",
-  "minQty": "0.01000000",
-  "maxQty": "922327.00000000",
-  "stepSize": "0.01000000"
-}
-'''
 
 
 # Define a function to check orderid and update status
@@ -2166,30 +2213,31 @@ def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
 
 
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, crontab_profit_record=False):
+# def binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, crontab_profit_record=False):
 
-    try: df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-    except: return print('Table binance_position_buy not found')
+#     try: df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+#     except: return print('Table binance_position_buy not found')
 
-    if df_balance_all.empty: return print('No open position for all coins')
+#     if df_balance_all.empty: return print('No open position for all coins')
 
-    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
+#     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
 
-    # make a coin list from df_balance_all
-    position_coin_list = df_balance_all['coin'].unique().tolist()
+#     # make a coin list from df_balance_all
+#     position_coin_list = df_balance_all['coin'].unique().tolist()
 
-    # make a coin list from df
-    limit_order_coin_list = df['coin'].unique().tolist() if not df.empty else []
+#     # make a coin list from df
+#     limit_order_coin_list = df['coin'].unique().tolist() if not df.empty else []
 
-    # find out the coins in position_coin_list but not in limit_order_coin_list
-    coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
+#     # find out the coins in position_coin_list but not in limit_order_coin_list
+#     coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
 
-    if not coin_list: return print(f"All positions are with limit orders. No need to check.")
+#     if not coin_list: return print(f"All positions are with limit orders. No need to check.")
 
-    try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
-    except: pass
+#     try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
+#     except: pass
 
-    return
+#     return
+
 
 # select * from binance_balance_history
 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_balance_history')).fetchall())
@@ -2447,11 +2495,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=None, chat_id=from_id, crontab_profit_record=False)
+    return binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=from_id, crontab_profit_record=False)
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=TARGET_PROFIT, coin=coin, chat_id=from_id, crontab_profit_record=False)
+    return binance_position_buy_check_all(target_profit=0.01, coin=coin, chat_id=from_id, crontab_profit_record=False)
 
 
 '''小额资产转换 (USER_DATA)
