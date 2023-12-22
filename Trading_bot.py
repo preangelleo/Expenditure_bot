@@ -153,6 +153,8 @@ def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
 
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     if analyze_symbol(symbol, from_id): 
+        if weekly_rsi_over_high(symbol, from_id): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
+
         turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
         token_info = get_token_market_cap_and_ratio(symbol, turnover_ratio_eth)
         if token_info:
@@ -332,10 +334,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             coin = row['coin']
 
             if not analyze_symbol(coin, None): continue
-            if weekly_rsi_over_high(coin, from_id): 
-                print(f"{coin} weekly RSI is over 90, ignore this coin")
-                send_msg(f"{coin} weekly RSI is over 90, ignore this coin", from_id)
-                continue
+            if weekly_rsi_over_high(coin, from_id): continue
 
             i += 1
 

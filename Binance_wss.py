@@ -146,12 +146,6 @@ def handle_socket_message(msg):
             '''{'e': 'executionReport', 'E': 1703032385551, 's': 'NEARUSDT', 'c': 'b1vSFIYMRLWZrz4ecPsPaZ', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '3960.70000000', 'p': '2.55000000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 2110473867, 'l': '3960.70000000', 'z': '3960.70000000', 'L': '2.55000000', 'n': '0.02982221', 'N': 'BNB', 'T': 1703032385543, 't': 138267320, 'I': 4348096316, 'w': False, 'm': True, 'M': True, 'O': 1703019732394, 'Z': '10099.78500000', 'Y': '10099.78500000', 'Q': '0.00000000', 'W': 1703019732394, 'V': 'EXPIRE_MAKER'}'''
             try: binance_check_order_status(symbol)
             except: pass
-        
-        if msg['X'] == 'PARTIALLY_FILLED':
-            alert_msg = f"{coin} Order Partially Filled\n\n"
-            send_msg(alert_msg, TG_BOT_OWNER_ID)
-
-        print(msg)
 
 
 def main():
