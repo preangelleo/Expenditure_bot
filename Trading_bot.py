@@ -330,9 +330,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             time.sleep(1)
             coin = row['coin']
 
-            if not analyze_symbol(coin, None): 
-                print(f"{coin} is not good to buy now after analyze_symbol()")
-                continue
+            if not analyze_symbol(coin, None): continue
             if weekly_rsi_over_high(coin, from_id): 
                 print(f"{coin} weekly RSI is over 90, ignore this coin")
                 send_msg(f"{coin} weekly RSI is over 90, ignore this coin", from_id)
