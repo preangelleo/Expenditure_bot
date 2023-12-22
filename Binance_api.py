@@ -996,10 +996,14 @@ def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
         send_msg(reply_msg, from_id)
         return reply_msg
 
-    amount = float(df[1].values[0])
-    network = df[2].values[0]
-    coin = df[0].values[0]
-    address = df[3].values[0]
+    # print(f"binance_withdraw_task_update():\n\n{df}\n\n")
+    '''   coin  amount network                          to_address     from_id        withdraw_id_self          created_at withdraw_id_binance
+        0  USDT   100.0     TRX  TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72  2118900665  u7s6TSq7EzLsWYNFzwFAQw 2023-12-21 19:05:21  waiting_for_update'''
+
+    amount = float(df['amount'].values[0])
+    network = df['network'].values[0]
+    coin = df['coin'].values[0]
+    address = df['to_address'].values[0]
 
     try:
         data = binance_withdraw(amount, network, coin, address)
