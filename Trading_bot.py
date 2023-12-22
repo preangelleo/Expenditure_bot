@@ -334,7 +334,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             coin = row['coin']
 
             if not analyze_symbol(coin, None): continue
-            if weekly_rsi_over_high(coin, from_id): continue
+            if weekly_rsi_over_high(coin, None): continue
 
             i += 1
 
