@@ -1,6 +1,6 @@
 from Trading_bot import *
 from English_bot import *
-from Gmail_api import *
+from Gemini_gpt import *
 
 # aiogram 3.2.0
 # https://docs.aiogram.dev/en/latest/index.html

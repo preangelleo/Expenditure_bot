@@ -1,35 +1,5 @@
+from Bot_messages import *
 from Gemini_gpt import *
-import smtplib
-from email.mime.text import MIMEText
-import imaplib
-import email
-
-
-GMAIL_ADDRESS_MAIN = os.getenv('GMAIL_ADDRESS_MAIN')
-
-GMAIL_ADDRESS = os.getenv('GMAIL_ADDRESS')
-GMAIL_APP_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
-
-def send_email(subject, message, to_addr):
-
-    # Create MIMEText object
-    msg = MIMEText(message)
-    msg['Subject'] = subject
-    msg['From'] = GMAIL_ADDRESS
-    msg['To'] = to_addr
-
-    # Connect to Gmail's SMTP server and send the email
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()  # Start TLS encryption
-        server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_ADDRESS, to_addr, msg.as_string())
-
-
-def send_to_gmail_main(message, subject = 'From Python Bot'):
-    send_email(subject, message, GMAIL_ADDRESS_MAIN)
-    send_msg(f"Message sent to {GMAIL_ADDRESS_MAIN} successfully.")
-    return
-
 
 def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
     imap_url = 'imap.gmail.com'
@@ -81,11 +51,17 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
 
         if 'no_need_to_summarize' in plain_text.lower(): continue
 
-        try: 
-            summary = generate_text(prompt)  # Assuming generate_text is a function you've defined
-            send_email(email_subject, summary, GMAIL_ADDRESS_MAIN)
-        except Exception as e:
-            print(f"Error during email processing: {e}")
+        if 'receipt' in plain_text.lower() or 'recepit' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower():
+            new_prompt = f"Extract the receipt detail information from this email and call function: insert_new_expenditure_record to insert the record into the table. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
+            try: run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = new_prompt, message_id=None)
+            except Exception as e: print(f"Error during receipt processing: {e}")
+
+        else:
+            try: 
+                summary = generate_text(prompt)  # Assuming generate_text is a function you've defined
+                send_email(email_subject, summary, GMAIL_ADDRESS_MAIN)
+            except Exception as e:
+                print(f"Error during email processing: {e}")
 
         # Archive the email
         result, copy_response = mail.uid('COPY', uid, '"[Gmail]/All Mail"')

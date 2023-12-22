@@ -29,6 +29,11 @@ import numpy as np
 from bs4 import BeautifulSoup
 from mplfinance.original_flavor import candlestick_ohlc
 import pyotp
+import smtplib
+from email.mime.text import MIMEText
+import imaplib
+import email
+
 
 # Load environment variables
 load_dotenv()
@@ -104,6 +109,10 @@ USDT_ERC20_DECIMALS = 6
 USDC_ERC20 = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 USDC_ERC20_DECIMALS = 6
 
+GMAIL_ADDRESS_MAIN = os.getenv('GMAIL_ADDRESS_MAIN')
+GMAIL_ADDRESS = os.getenv('GMAIL_ADDRESS')
+GMAIL_APP_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
+
 BINANCE_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
     'X-MBX-APIKEY': BINANCE_API,
@@ -162,7 +171,6 @@ def hash_md5_bot(content, from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(f"Original Content: \n{content}\n\nMD5 Hashed: \n{hashed_content}", from_id)
     return hashed_content
 
-
 def hash_sha256_bot(content, from_id=TG_BOT_OWNER_ID):
     print(f"CALLING hash_sha256_bot() for {content}")
     hashed_content = hashlib.sha256(str(content).encode('utf-8')).hexdigest()
@@ -184,6 +192,25 @@ def markdown_token_address(token_address):
 def markdown_tokentnxs(address):
     markdown_token = f'[{address[:6]}...{address[-7:]}]({ETHERSCAN_TOKEN_URL_PREFIX}{address}#tokentxns)'
     return markdown_token
+
+def send_email(subject, message, to_addr):
+
+    # Create MIMEText object
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_ADDRESS
+    msg['To'] = to_addr
+
+    # Connect to Gmail's SMTP server and send the email
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()  # Start TLS encryption
+        server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_ADDRESS, to_addr, msg.as_string())
+
+def send_to_gmail_main(message, subject = 'From Python Bot'):
+    send_email(subject, message, GMAIL_ADDRESS_MAIN)
+    send_msg(f"Message sent to {GMAIL_ADDRESS_MAIN} successfully.")
+    return
 
 # 从 Coinmarketcap 给定 token 的价格等数据, 返回一个字典
 def get_token_info_from_coinmarketcap(token_symbol):

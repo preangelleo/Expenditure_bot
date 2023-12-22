@@ -155,7 +155,7 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
     response_message = response.choices[0].message
 
     # If there's content in the response, send it to the user
-    if response_message.content: 
+    if response_message.content and message_id: 
         send_msg(response_message.content, chat_id)
         try: insert_new_gpt_response_record(from_id, message_id, prompt, response_message.content)
         except: pass
