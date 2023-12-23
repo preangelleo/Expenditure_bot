@@ -14,7 +14,7 @@ def get_listen_key():
 # WebSocket回调
 def on_message(ws, message):
     data = json.loads(message)
-    print(json.dumps(data, indent=2, sort_keys=True))
+    # print(json.dumps(data, indent=2, sort_keys=True))
 
     # 账户变动
     if data['e'] == 'ACCOUNT_UPDATE':
@@ -63,6 +63,47 @@ def on_message(ws, message):
     if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['X'] == 'FILLED':
         try: send_msg(f"UMFUTURE {data['o']['ps']} {data['o']['s'][:-4]} Order Filled at {format_number(data['o']['ap'])}", TG_BOT_OWNER_ID)
         except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
+
+''' {
+    "E": 1703309262526,
+    "T": 1703309262515,
+    "e": "ORDER_TRADE_UPDATE",
+    "o": {
+        "L": "0.11690",
+        "N": "USDT",
+        "R": true,
+        "S": "BUY",
+        "T": 1703309262515,
+        "V": "NONE",
+        "X": "FILLED",
+        "a": "0",
+        "ap": "0.11685",
+        "b": "0",
+        "c": "web_NNeR7Cr9DzP26sOr5jCr",
+        "cp": false,
+        "f": "GTC",
+        "gtd": 0,
+        "i": 3550168631,
+        "l": "307",
+        "m": false,
+        "n": "0.01794415",
+        "o": "MARKET",
+        "ot": "MARKET",
+        "p": "0",
+        "pP": false,
+        "pm": "NONE",
+        "ps": "SHORT",
+        "q": "86311",
+        "rp": "-0.33710002",
+        "s": "ROSEUSDT",
+        "si": 0,
+        "sp": "0",
+        "ss": 0,
+        "t": 149011642,
+        "wt": "CONTRACT_PRICE",
+        "x": "TRADE",
+        "z": "86311"
+    }}'''
 
 def on_error(ws, error):
     print(error)
