@@ -1136,7 +1136,7 @@ def get_otp(app_name, from_id=TG_BOT_OWNER_ID):
 
 
 # Read umfuture_orders_profit and get the sum of profit
-def get_umfuture_profit(coin=None, from_id=None):
+def get_umfuture_profit(from_id=None, coin=None):
     profit = 0
     try:
         if not coin: df = pd.DataFrame(engine.connect().execute(text('SELECT SUM(profit) FROM umfuture_orders_profit')).fetchall())

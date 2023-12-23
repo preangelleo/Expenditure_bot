@@ -59,7 +59,7 @@ def on_message(ws, message):
                     df = pd.DataFrame(new_data, index=[0])
                     df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
 
-                    profit = get_umfuture_profit(coin, from_id=TG_BOT_OWNER_ID)
+                    profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 
         if data['o']['S'] == 'BUY' and data['o']['ps'] == 'LONG':
@@ -101,7 +101,7 @@ def on_message(ws, message):
                     df = pd.DataFrame(new_data, index=[0])
                     df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
 
-                    profit = get_umfuture_profit(coin, from_id=TG_BOT_OWNER_ID)
+                    profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 
 
