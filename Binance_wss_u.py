@@ -14,76 +14,50 @@ def get_listen_key():
 # WebSocket回调
 def on_message(ws, message):
     data = json.loads(message)
-    print(json.dumps(data, indent=2, sort_keys=True))
-
-    # 账户变动
-    if data['e'] == 'ACCOUNT_UPDATE':
-        print(f"UMFUTURE: ACCOUNT_UPDATE")
-        '''{
-            "E": 1703307809090,
-            "T": 1703307809083,
-            "a": {
-                "B": [
-                {
-                    "a": "USDT",
-                    "bc": "0",
-                    "cw": "100767.06273249",
-                    "wb": "100767.06273249"
-                }
-                ],
-                "P": [
-                {
-                    "bep": "0",
-                    "cr": "-42.58360980",
-                    "ep": "0",
-                    "iw": "0",
-                    "ma": "USDT",
-                    "mt": "cross",
-                    "pa": "0",
-                    "ps": "SHORT",
-                    "s": "RNDRUSDT",
-                    "up": "0"
-                }
-                ],
-                "m": "ORDER"
-            },
-            "e": "ACCOUNT_UPDATE"
-            }
-        '''
-        # try:
-        #     for i in data['a']['P']:
-        #         profit = float(i['cr'])
-        #         direction = i['ps']
-        #         symbol = i['s']
-        #         coin = symbol[:-4]
-        #         send_msg(f"UMFUTURE: {coin} {direction.lower()} closed >> {format_number(profit)} usdt", TG_BOT_OWNER_ID)
-        # except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
-
+    
     # 如果订单状态是 FILLED，发送 send_msg 给 telegram
     if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['X'] == 'FILLED':
-        profit = 0
-        # 如果 umfuture_new_orders 存在的话，找出对应 COIN 的订单，查找开单时的价格，计算价格变化，按照 10000 USDT 一个单位计算盈亏
-        try:
-            df = pd.read_sql('umfuture_new_orders', engine)
-            df = df[df['s'] == data['o']['s']]
-            if len(df) > 0:
-                df = df.iloc[0]
-                coin = df['s'][:-4]
-                direction = df['ps']
-                price_change = float(data['o']['ap']) - float(df['ap'])
-                profit = price_change * float(df['q']) * 10000
-                send_msg(f"UMFUTURE: {coin} {direction.lower()} closed >> profit: {format_number(profit)} usdt", TG_BOT_OWNER_ID)
-        except: pass
 
+        print(json.dumps(data, indent=2, sort_keys=True))
 
-    # 如果是新开的订单，发送 send_msg 给 telegram
-    if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['x'] == 'NEW':
-        try: send_msg(f"UMFUTURE {data['o']['ps']} {data['o']['s'][:-4]} Order Created at {format_number(data['o']['ap'])}", TG_BOT_OWNER_ID)
-        except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
+        if data['o']['S'] == 'SELL' and data['o']['ps'] == 'SHORT':
+            try: 
+                send_msg(f"UMFUTURE {data['o']['ps']} SHORT at {data['o']['ap']}", TG_BOT_OWNER_ID)
+                # 将新订单json转换成 dataframe 并写入table 'umfuture_short_orders', append
+                df = pd.DataFrame(data['o'], index=[0])
+                df.to_sql('umfuture_short_orders', engine, if_exists='append', index=False)
+            except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
 
-        # 将新订单json转换成 dataframe 并写入table 'umfuture_new_orders', append
-        df = pd.DataFrame(data['o'], index=[0])
-        df.to_sql('umfuture_new_orders', engine, if_exists='append', index=False)
+        if data['o']['S'] == 'BUY' and data['o']['ps'] == 'SHORT':
+            try:
+                df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_short_orders WHERE s = :s AND S = :S ORDER BY T DESC LIMIT 1'), {'s': data['o']['s'], 'S': 'SELL'}).fetchall())
+                if not df.empty:
+                    coin = data['o']['s'][:-4]
+                    price_change = float(df['ap']) - float(data['o']['ap'])
+                    profit = price_change * float(df['q']) * 10000
+                    profit = format_number(profit)
+                    send_msg(f"UMFUTURE {coin} SHORT closed >> {profit} usdt", TG_BOT_OWNER_ID)
+            except: pass
+
+        if data['o']['S'] == 'BUY' and data['o']['ps'] == 'LONG':
+            try: 
+                send_msg(f"UMFUTURE {data['o']['ps']} LONG at {data['o']['ap']}", TG_BOT_OWNER_ID)
+                # 将新订单json转换成 dataframe 并写入table 'umfuture_long_orders', append
+                df = pd.DataFrame(data['o'], index=[0])
+                df.to_sql('umfuture_long_orders', engine, if_exists='append', index=False)
+            except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
+        
+        if data['o']['S'] == 'SELL' and data['o']['ps'] == 'LONG':
+            try:
+                df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_long_orders WHERE s = :s AND S = :S ORDER BY T DESC LIMIT 1'), {'s': data['o']['s'], 'S': 'BUY'}).fetchall())
+                if not df.empty:
+                    coin = data['o']['s'][:-4]
+                    price_change = float(data['o']['ap']) - float(df['ap'])
+                    profit = price_change * float(df['q']) * 10000
+                    profit = format_number(profit)
+                    send_msg(f"UMFUTURE {coin} LONG closed >> {profit} usdt", TG_BOT_OWNER_ID)
+            except: pass
+
 
 ''' {
     "E": 1703309262526,
