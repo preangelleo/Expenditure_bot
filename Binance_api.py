@@ -18,6 +18,7 @@ def read_target_profit_default(from_id=None):
 target_profit = read_target_profit_default()
 TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
 
+SHORT_COINS_LIST = []
 
 def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
     target_profit = float(target_profit) if target_profit else 0.001
@@ -1536,7 +1537,6 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
         if df_balance.empty: return send_msg(f'No open position for coin: {coin}', from_id)
     except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
 
-
     amount = float(df_balance['executedQty'].values[0])
     update_id = int(df_balance['update_id'].values[0])
     buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
@@ -1897,64 +1897,60 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
         good_to_short += 1
         good_to_buy = 0
         print(f"{coin} {interval} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
-        if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
-        good_to_short += 1
-        good_to_buy = 0
 
     # Check if latest sma is lower than previous sma
     if latest['SMA'] < previous['SMA']: 
         good_to_short += 1
         good_to_buy = 0
         print(f"{coin} {interval} SMA {latest['SMA']} is below previous SMA {previous['SMA']}")
-        if from_id: send_msg(f"{coin} {interval} interval SMA {format_number(latest['SMA'])} is below previous SMA {format_number(previous['SMA'])}", from_id)
 
     # check if latest rsi is lower than previous rsi
     if latest['RSI'] < previous['RSI']:
         good_to_short += 1
         good_to_buy = 0
         print(f"{coin} {interval} RSI {latest['RSI']} is below previous RSI {previous['RSI']}")
-        if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below previous RSI {format_number(previous['RSI'])}", from_id)
 
     if interval == '5m':
         if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
             good_to_short += 1
             good_to_buy = 0
             print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
-            if from_id: send_msg(f"{coin} {interval} interval previous trading volume {format_number(previous['Quote Asset Volume'])} is below 100K USDT", from_id)
 
         if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA'] and previous['Quote Asset Volume'] < previous['Quote Asset Volume SMA']:
             good_to_short += 1
             good_to_buy = 0            
             print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below SMA {latest['Quote Asset Volume SMA']}")
-            if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below SMA {format_number(latest['Quote Asset Volume SMA'])}", from_id)
         
         if latest['Close'] < previous['Close']: 
             good_to_short += 1
             good_to_buy = 0
             print(f"{coin} {interval} close price {latest['Close']} is lower than previous close price {previous['Close']}")
-            if from_id: send_msg(f"{coin} {interval} interval close price {format_number(latest['Close'])} is lower than previous close price {format_number(previous['Close'])}", from_id)
 
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
     
-
 def analyze_symbol(symbol: str, from_id=None):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    coin = symbol[:-4]
+    global SHORT_COINS_LIST
+
     good_to_buy = 0
     good_to_short = 0
 
     for interval in ['4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        result = analyze_data(df, 34, 14, interval, symbol[:-4], from_id)
+        result = analyze_data(df, 34, 14, interval, coin, from_id)
         good_to_buy += result['good_to_buy']
         good_to_short += result['good_to_short']
 
     if good_to_buy == 4: 
-        if from_id: send_msg(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.", from_id)
+        if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
         return {'long': True, 'short': False}
 
     if good_to_short > 12: 
-        send_msg(f"{symbol[:-4]} is good to short now.", TG_BOT_OWNER_ID)
+        if coin not in SHORT_COINS_LIST:
+            SHORT_COINS_LIST.append(coin)
+            send_msg(f"{coin} is good to short now.", TG_BOT_OWNER_ID)
         return {'long': False, 'short': True}
     
     return {'long': False, 'short': False}
