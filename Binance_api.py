@@ -46,8 +46,8 @@ def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
 
 def remove_from_future_profit(coin: str, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
-    try: remove_from_future_profit_table(coin): send_msg(f"Removed {coin} from future profit table.", chat_id)
-    except: send_msg(f"Failed to remove {coin} from future profit table.", chat_id)
+    if remove_from_future_profit_table(coin): send_msg(f"Removed {coin} from future profit table.", chat_id)
+    else: send_msg(f"Failed to remove {coin} from future profit table.", chat_id)
 
 
 # remove coin from white_list table

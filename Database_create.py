@@ -503,7 +503,6 @@ def remove_from_ignore_coin_table(coin):
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Remove coin from ignore_coin_list where symbol = 'coin'
     cursor.execute(f"DELETE FROM ignore_coin_list WHERE symbol = '{coin}'")
     # Commit the session
     conn.commit()
@@ -517,7 +516,6 @@ def remove_from_white_list_table(coin):
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Remove coin from ignore_coin_list where symbol = 'coin'
     cursor.execute(f"DELETE FROM white_list WHERE symbol = '{coin}'")
     # Commit the session
     conn.commit()
@@ -531,7 +529,6 @@ def remove_from_future_profit_table(coin):
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Remove coin from ignore_coin_list where symbol = 'coin'
     cursor.execute(f"DELETE FROM umfuture_orders_profit WHERE coin = '{coin}'")
     # Commit the session
     conn.commit()
