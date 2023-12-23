@@ -14,12 +14,54 @@ def get_listen_key():
 # WebSocket回调
 def on_message(ws, message):
     data = json.loads(message)
-    print("UMFUTURE Received Message:")
     print(json.dumps(data, indent=2, sort_keys=True))
+
+    # 账户变动
+    if data['e'] == 'ACCOUNT_UPDATE':
+        print(f"UMFUTURE: ACCOUNT_UPDATE")
+        '''{
+            "E": 1703307809090,
+            "T": 1703307809083,
+            "a": {
+                "B": [
+                {
+                    "a": "USDT",
+                    "bc": "0",
+                    "cw": "100767.06273249",
+                    "wb": "100767.06273249"
+                }
+                ],
+                "P": [
+                {
+                    "bep": "0",
+                    "cr": "-42.58360980",
+                    "ep": "0",
+                    "iw": "0",
+                    "ma": "USDT",
+                    "mt": "cross",
+                    "pa": "0",
+                    "ps": "SHORT",
+                    "s": "RNDRUSDT",
+                    "up": "0"
+                }
+                ],
+                "m": "ORDER"
+            },
+            "e": "ACCOUNT_UPDATE"
+            }
+        '''
+        # try:
+        #     for i in data['a']['P']:
+        #         profit = float(i['cr'])
+        #         direction = i['ps']
+        #         symbol = i['s']
+        #         coin = symbol[:-4]
+        #         send_msg(f"UMFUTURE: {coin} {direction.lower()} closed >> {format_number(profit)} usdt", TG_BOT_OWNER_ID)
+        # except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
 
     # 如果订单状态是 FILLED，发送 send_msg 给 telegram
     if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['X'] == 'FILLED':
-        try: send_msg(f"UMFUTURE Order Filled: {data['o']['s']} {data['o']['q']} at {data['o']['L']}")
+        try: send_msg(f"UMFUTURE {data['o']['ps']} {data['o']['s'][:-4]} Order Filled at {format_number(data['o']['ap'])}", TG_BOT_OWNER_ID)
         except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
 
 def on_error(ws, error):
