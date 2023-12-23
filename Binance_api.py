@@ -1570,6 +1570,8 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
 
     profit = float(data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
 
+    if profit < 0: add_coin_to_ignore_list(coin, from_id)
+
     # delete fills from data
     del data['fills']
 
@@ -2032,6 +2034,7 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
     current_orders = get_open_orders_list()
+    WHITE_LIST = get_white_list()
     book_value = 0
     for_reply = {}
 
@@ -2066,7 +2069,7 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
 
-            if short or reply_dict['up_ratio'] >= target_profit:
+            if (short and not trading_bot_switch_status() and coin not in WHITE_LIST) or reply_dict['up_ratio'] >= target_profit:
                 if short: send_msg(f"{coin} is good to short now, close all positions.", TG_BOT_OWNER_ID)
                 if reply_dict['up_ratio'] >= target_profit: send_msg(f"{coin} is not in good condition, and profit is positive, close position.", TG_BOT_OWNER_ID)
                 
