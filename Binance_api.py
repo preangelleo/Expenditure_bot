@@ -1756,7 +1756,6 @@ def do_market_buy(coin: str, value):
     
     data['coin'] = data['symbol'].replace('USDT', '')
     data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-    new_order_id = data['orderId']
 
     # convert data['fills] to dataframe
     df_fills = pd.DataFrame(data['fills'])
@@ -1791,7 +1790,7 @@ def do_market_buy(coin: str, value):
     # If table binance_position_buy does not exist, create one, else append df_buyin_result to binance_position_buy
     df_buyin_result.to_sql('binance_position_buy', engine, if_exists='append', index=False)
 
-    return f'''New_Position: {coin}\nOrder_ID: {new_order_id}'''
+    return f'''Bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}'''
 
 
 def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -2451,7 +2450,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         }
         '''
 
-        if chat_id: send_msg(f"RESET Limit Order >> {coin} >> {price} >> {target_profit*100:.2f}%", chat_id)
+        if chat_id: send_msg(f"{coin} Limit Order >> {price} >> {target_profit*100:.2f}%", chat_id)
 
         # del data.fills and make data a dataframe df, make sure df not empty and instert or update to 'binance_limit_sell_order' table by checking if clientOrderId exists
         del data['fills']

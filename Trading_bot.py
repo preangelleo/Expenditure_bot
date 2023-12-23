@@ -313,12 +313,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     if not today_hot_coin_list:
         if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
         return
-    
-    print(f"today_hot_coin_list: {today_hot_coin_list}")
 
-    target_profit_in_db = read_target_profit_default()
-
-    # compare target_profit_in_db with 0.01, if target_profit_in_db < 0.01, set target_profit_in_db = 0.01
+    target_profit_in_db = read_target_profit_default() if trading_bot_switch_status() else 0.01
     if target_profit_in_db < 0.01: target_profit_in_db = 0.01
 
     # query_list  = []
