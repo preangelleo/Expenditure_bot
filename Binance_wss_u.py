@@ -17,8 +17,7 @@ def on_message(ws, message):
     
     # 如果订单状态是 FILLED，发送 send_msg 给 telegram
     if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['X'] == 'FILLED':
-
-        print(json.dumps(data, indent=2, sort_keys=True))
+        # print(json.dumps(data, indent=2, sort_keys=True))
         coin = data['o']['s'][:-4]
 
         if data['o']['S'] == 'SELL' and data['o']['ps'] == 'SHORT':
