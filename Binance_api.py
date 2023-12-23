@@ -1882,7 +1882,7 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
-    # calculate the average volume for the last sma_period candles
+
     df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
     df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
 
@@ -1898,35 +1898,29 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     if latest['RSI'] < latest['RSI_SMA']: 
         good_to_short += 1
         good_to_buy = 0
-        print(f"{coin} {interval} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
 
     # Check if latest sma is lower than previous sma
     if latest['SMA'] < previous['SMA']: 
         good_to_short += 1
         good_to_buy = 0
-        print(f"{coin} {interval} SMA {latest['SMA']} is below previous SMA {previous['SMA']}")
 
     # check if latest rsi is lower than previous rsi
     if latest['RSI'] < previous['RSI']:
         good_to_short += 1
         good_to_buy = 0
-        print(f"{coin} {interval} RSI {latest['RSI']} is below previous RSI {previous['RSI']}")
 
     if interval == '5m':
         if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
             good_to_short += 1
             good_to_buy = 0
-            print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
 
         if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA'] and previous['Quote Asset Volume'] < previous['Quote Asset Volume SMA']:
             good_to_short += 1
             good_to_buy = 0            
-            print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below SMA {latest['Quote Asset Volume SMA']}")
-        
+
         if latest['Close'] < previous['Close']: 
             good_to_short += 1
             good_to_buy = 0
-            print(f"{coin} {interval} close price {latest['Close']} is lower than previous close price {previous['Close']}")
 
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
@@ -2388,12 +2382,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         amount = df_balance.iloc[i]['executedQty']
         buy_price = df_balance.iloc[i]['price']
         price = buy_price * (1 + float(target_profit))
-
-        polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
-
-        coin = polished_parameters['coin']
-        amount = polished_parameters['amount']
-        price = polished_parameters['price']
         symbol = coin + 'USDT'
 
         # Check if there is an open order for the coin, if yes, cancel it first
@@ -2440,6 +2428,10 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
                         except Exception as e:
                             print(f"An error occurred: {e}")
                             connection.rollback()
+
+        polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
+        amount = polished_parameters['amount']
+        price = polished_parameters['price']
 
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
