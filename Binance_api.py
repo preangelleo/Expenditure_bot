@@ -40,25 +40,21 @@ def read_positions_limit(from_id=TG_BOT_OWNER_ID):
 # from "CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))" table remove the given coin
 def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
-    try:
-        engine.connect().execute(text(f"DELETE FROM ignore_coin_list WHERE symbol = '{coin}'"))
-        send_msg(f"Removed {coin} from ignore list.", chat_id)
-        return True
-    except Exception as e:
-        send_msg(f"Failed to remove {coin} from ignore list.", chat_id)
-        return
+    if remove_from_ignore_coin_table(coin): send_msg(f"Removed {coin} from ignore coin list.", chat_id)
+    else: send_msg(f"Failed to remove {coin} from ignore coin list.", chat_id)
+
+
+def remove_from_future_profit(coin: str, chat_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try: remove_from_future_profit_table(coin): send_msg(f"Removed {coin} from future profit table.", chat_id)
+    except: send_msg(f"Failed to remove {coin} from future profit table.", chat_id)
 
 
 # remove coin from white_list table
 def remove_from_white_list(coin: str, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
-    try:
-        engine.connect().execute(text(f"DELETE FROM white_list WHERE symbol = '{coin}'"))
-        if chat_id: send_msg(f"Removed {coin} from white list.", chat_id)
-        return True
-    except Exception as e:
-        if chat_id: send_msg(f"Failed to remove {coin} from white list.", chat_id)
-        return
+    if remove_from_white_list_table(coin): send_msg(f"Removed {coin} from white list.", chat_id)
+    else: send_msg(f"Failed to remove {coin} from white list.", chat_id)
     
 
 def network_name_change(str_name: str):
@@ -2840,12 +2836,7 @@ def calculate_hot_coin_price_change(from_id=None):
 if __name__ == '__main__':
     print('Binance_api.py is running')
 
-    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order')).fetchall())
-    # select * from binance_limit_sell_order where status is not 'CANCELED'
-    # df = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_limit_sell_order WHERE status != 'CANCELED'")).fetchall())
-    # print(df)
-    # binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID)
-    # read net_profit_daily_record table and print as df
-    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM net_profit_daily_record')).fetchall())
-    # binance_position_reset_limit_sell(coin = None, target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID)
-    # check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
+    coin = 'ATOM'
+    remove_from_future_profit(coin, chat_id=TG_BOT_OWNER_ID)
+    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
+    print(df)

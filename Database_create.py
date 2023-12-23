@@ -484,6 +484,63 @@ def get_one_time_passcode(app_name):
     else: return result[0][0]
 
 
+def remove_white_list_by_username(username):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Remove white list by username
+    cursor.execute(f"DELETE FROM white_list_users WHERE Username = '{username}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"@{username} removed from white list successfully!")
+    return True
+
+
+# DELETE coin from ignore_coin_list where symbol = 'coin'
+def remove_from_ignore_coin_table(coin):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Remove coin from ignore_coin_list where symbol = 'coin'
+    cursor.execute(f"DELETE FROM ignore_coin_list WHERE symbol = '{coin}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"{coin} removed from ignore_coin_list successfully!")
+    return True
+
+
+def remove_from_white_list_table(coin):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Remove coin from ignore_coin_list where symbol = 'coin'
+    cursor.execute(f"DELETE FROM white_list WHERE symbol = '{coin}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"{coin} removed from white_list successfully!")
+    return True
+
+
+def remove_from_future_profit_table(coin):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Remove coin from ignore_coin_list where symbol = 'coin'
+    cursor.execute(f"DELETE FROM umfuture_orders_profit WHERE coin = '{coin}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"{coin} removed from umfuture_orders_profit successfully!")
+    return True
+
+
 if __name__ == '__main__':
     print("Create database and tables...")
     # Initial Step 1: Create database

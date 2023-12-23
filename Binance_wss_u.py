@@ -59,7 +59,7 @@ def on_message(ws, message):
                     }
                     df = pd.DataFrame(new_data, index=[0])
                     df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
-
+                    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
                     profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 
@@ -101,7 +101,7 @@ def on_message(ws, message):
                     }
                     df = pd.DataFrame(new_data, index=[0])
                     df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
-
+                    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
                     profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 
