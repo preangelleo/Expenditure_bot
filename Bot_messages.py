@@ -44,6 +44,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'cancel_all_orders': binance_cancel_all_orders,
     'read_positions_limit': read_positions_limit,
     'hot_coin_update': calculate_hot_coin_price_change,
+    'get_future_profit': get_umfuture_profit,
     }
 
 
