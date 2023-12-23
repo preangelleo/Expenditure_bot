@@ -14,7 +14,7 @@ def get_listen_key():
 # WebSocket回调
 def on_message(ws, message):
     data = json.loads(message)
-    # print(json.dumps(data, indent=2, sort_keys=True))
+    print(json.dumps(data, indent=2, sort_keys=True))
 
     # 账户变动
     if data['e'] == 'ACCOUNT_UPDATE':
