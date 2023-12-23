@@ -8,10 +8,6 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
-    # Check limit order status
-    try: binance_position_buy_check_all(0.01, None, chat_id=None, crontab_profit_record=False)
-    except: pass
-
     try: 
 
         long_or_short = analyze_symbol('BTC')
@@ -24,6 +20,10 @@ if __name__ == '__main__':
         if long and not current_bot_status: webhook_switch_on_bot(f"BTC is good to long now. Turning on the bot", TG_BOT_OWNER_ID)
         elif short and current_bot_status: webhook_switch_off_bot(f"BTC is good to short now. Turning off the bot", TG_BOT_OWNER_ID)
 
+    except: pass
+
+    # Check limit order status
+    try: binance_position_buy_check_all(0.01, None, chat_id=None, crontab_profit_record=False)
     except: pass
 
     try: binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=True, trading_volume_limit = TRADING_VOLUME_LIMIT)
