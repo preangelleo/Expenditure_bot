@@ -41,10 +41,11 @@ def on_message(ws, message):
             try:
                 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_short WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'SELL'}).fetchall())
                 if not df.empty:
-                    price_change = float(df['price']) - float(data['o']['ap'])
-                    profit = price_change * 10000
+                    price_change = float(df['price'].iloc[0]) - float(data['o']['ap'])
+                    profit = price_change / float(df['price'].iloc[0]) * 10000
                     profit = format_number(profit)
                     send_msg(f"UMFUTURE {coin} SHORT closed >> {profit} usdt", TG_BOT_OWNER_ID)
+
                     duration = data['o']['T'] - df['trade_time']
                     new_data = {
                         'coin': coin,
@@ -83,8 +84,8 @@ def on_message(ws, message):
             try:
                 df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_long WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'BUY'}).fetchall())
                 if not df.empty:
-                    price_change = float(data['o']['ap']) - float(df['price'])
-                    profit = price_change * 10000
+                    price_change = float(data['o']['ap']) - float(df['price'].iloc[0])
+                    profit = price_change / float(df['price'].iloc[0]) * 10000
                     profit = format_number(profit)
                     send_msg(f"UMFUTURE {coin} LONG closed >> {profit} usdt", TG_BOT_OWNER_ID)
                     duration = data['o']['T'] - df['trade_time']
