@@ -61,8 +61,29 @@ def on_message(ws, message):
 
     # 如果订单状态是 FILLED，发送 send_msg 给 telegram
     if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['X'] == 'FILLED':
-        try: send_msg(f"UMFUTURE {data['o']['ps']} {data['o']['s'][:-4]} Order Filled at {format_number(data['o']['ap'])}", TG_BOT_OWNER_ID)
+        profit = 0
+        # 如果 umfuture_new_orders 存在的话，找出对应 COIN 的订单，查找开单时的价格，计算价格变化，按照 10000 USDT 一个单位计算盈亏
+        try:
+            df = pd.read_sql('umfuture_new_orders', engine)
+            df = df[df['s'] == data['o']['s']]
+            if len(df) > 0:
+                df = df.iloc[0]
+                coin = df['s'][:-4]
+                direction = df['ps']
+                price_change = float(data['o']['ap']) - float(df['ap'])
+                profit = price_change * float(df['q']) * 10000
+                send_msg(f"UMFUTURE: {coin} {direction.lower()} closed >> profit: {format_number(profit)} usdt", TG_BOT_OWNER_ID)
+        except: pass
+
+
+    # 如果是新开的订单，发送 send_msg 给 telegram
+    if data['e'] == 'ORDER_TRADE_UPDATE' and data['o']['x'] == 'NEW':
+        try: send_msg(f"UMFUTURE {data['o']['ps']} {data['o']['s'][:-4]} Order Created at {format_number(data['o']['ap'])}", TG_BOT_OWNER_ID)
         except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
+
+        # 将新订单json转换成 dataframe 并写入table 'umfuture_new_orders', append
+        df = pd.DataFrame(data['o'], index=[0])
+        df.to_sql('umfuture_new_orders', engine, if_exists='append', index=False)
 
 ''' {
     "E": 1703309262526,
