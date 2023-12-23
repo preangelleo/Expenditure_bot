@@ -1890,51 +1890,74 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     latest = df.iloc[-1]
     previous = df.iloc[-2]
 
+    good_to_short = 0
+    good_to_buy = 1
+
     if latest['RSI'] < latest['RSI_SMA']: 
+        good_to_short += 1
+        good_to_buy = 0
         print(f"{coin} {interval} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
         if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
-        return False
+        good_to_short += 1
+        good_to_buy = 0
 
     # Check if latest sma is lower than previous sma
     if latest['SMA'] < previous['SMA']: 
+        good_to_short += 1
+        good_to_buy = 0
         print(f"{coin} {interval} SMA {latest['SMA']} is below previous SMA {previous['SMA']}")
         if from_id: send_msg(f"{coin} {interval} interval SMA {format_number(latest['SMA'])} is below previous SMA {format_number(previous['SMA'])}", from_id)
-        return False
-    
+
     # check if latest rsi is lower than previous rsi
     if latest['RSI'] < previous['RSI']:
+        good_to_short += 1
+        good_to_buy = 0
         print(f"{coin} {interval} RSI {latest['RSI']} is below previous RSI {previous['RSI']}")
         if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below previous RSI {format_number(previous['RSI'])}", from_id)
-        return False
-    
+
     if interval == '5m':
         if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
+            good_to_short += 1
+            good_to_buy = 0
             print(f"{coin} {interval} interval previous trading volume {previous['Quote Asset Volume']} is below 100,000 USDT")
             if from_id: send_msg(f"{coin} {interval} interval previous trading volume {format_number(previous['Quote Asset Volume'])} is below 100K USDT", from_id)
-            return False
-        
+
         if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA'] and previous['Quote Asset Volume'] < previous['Quote Asset Volume SMA']:
+            good_to_short += 1
+            good_to_buy = 0            
             print(f"{coin} {interval} interval trading volume {latest['Quote Asset Volume']} is below SMA {latest['Quote Asset Volume SMA']}")
             if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below SMA {format_number(latest['Quote Asset Volume SMA'])}", from_id)
-            return False
         
         if latest['Close'] < previous['Close']: 
+            good_to_short += 1
+            good_to_buy = 0
             print(f"{coin} {interval} close price {latest['Close']} is lower than previous close price {previous['Close']}")
             if from_id: send_msg(f"{coin} {interval} interval close price {format_number(latest['Close'])} is lower than previous close price {format_number(previous['Close'])}", from_id)
-            return False
 
-    return True
-
+    return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
+    
+    
 
 def analyze_symbol(symbol: str, from_id=None):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    good_to_buy = 0
+    good_to_short = 0
 
     for interval in ['4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        if not analyze_data(df, 34, 14, interval, symbol[:-4], from_id): return False
+        result = analyze_data(df, 34, 14, interval, symbol[:-4], from_id)
+        good_to_buy += result['good_to_buy']
+        good_to_short += result['good_to_short']
 
-    print(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.")
-    return True
+    if good_to_buy == 4: 
+        if from_id: send_msg(f"Finished analyzing {symbol[:-4]}, and it is good to buy now.", from_id)
+        return {'long': True, 'short': False}
+
+    if good_to_short > 12: 
+        send_msg(f"{symbol[:-4]} is good to short now.", TG_BOT_OWNER_ID)
+        return {'long': False, 'short': True}
+    
+    return {'long': False, 'short': False}
 
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
@@ -2039,10 +2062,18 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
-        # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
-        if not analyze_symbol(coin, chat_id) or weekly_rsi_over_high(coin, chat_id): 
+        long_or_short = analyze_symbol(coin, chat_id)
+        '''{'long': True, 'short': False}'''
+        long = long_or_short['long']
+        short = long_or_short['short']
 
-            if reply_dict['up_ratio'] >= target_profit:
+        # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
+        if not long: 
+
+            if short or reply_dict['up_ratio'] >= target_profit:
+                if short: send_msg(f"{coin} is good to short now, close all positions.", TG_BOT_OWNER_ID)
+                if reply_dict['up_ratio'] >= target_profit: send_msg(f"{coin} is not in good condition, and profit is positive, close position.", TG_BOT_OWNER_ID)
+                
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
                 do_market_sell(coin, chat_id)
                 continue

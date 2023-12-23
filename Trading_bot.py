@@ -68,14 +68,18 @@ from Binance_api import *
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    if analyze_symbol(symbol, from_id): 
+    long_or_short = analyze_symbol(symbol, from_id)
+    '''{'long': True, 'short': False}'''
+    long = long_or_short['long']
+    short = long_or_short['short']
+
+    if long: 
         if weekly_rsi_over_high(symbol, from_id): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
 
         turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
         token_info = get_token_market_cap_and_ratio(symbol, turnover_ratio_eth)
         if token_info:
             '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
-            market_cap = token_info['market_cap']
             fully_diluted_market_cap = token_info['fully_diluted_market_cap']
             circulating_ratio = token_info['circulation_ratio']
             turnover_ratio = token_info['turnover_ratio']
@@ -87,6 +91,11 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
             send_msg_markdown(reply_string, from_id)
             return send_msg(f"{symbol.upper()} is good to buy now.", from_id)
         else: send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
+
+    elif short: return send_msg(f"{symbol.upper()} is good to short now.", from_id)
+
+    return send_msg(f"{symbol.upper()} is not good to long or short now. Wait for the next chance. Be patient please 😘", from_id)
+
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
@@ -160,8 +169,7 @@ def is_coin_recently_listed(symbol: str, days=7):
     return True
 
 
-
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = TG_BOT_OWNER_ID):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = None):
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -249,8 +257,13 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             time.sleep(1)
             coin = row['coin']
 
-            if not analyze_symbol(coin, None): continue
-            if weekly_rsi_over_high(coin, None): continue
+            long_or_short = analyze_symbol(coin, from_id)
+            '''{'long': True, 'short': False}'''
+            long = long_or_short['long']
+            # short = long_or_short['short']
+
+            if not long: continue
+            if weekly_rsi_over_high(coin, from_id): continue
 
             i += 1
 
@@ -353,4 +366,5 @@ if __name__ == '__main__':
     # test_binance_today_hot_coin_analysis()
 
     # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
-    analyze_symbol('FET', from_id=TG_BOT_OWNER_ID)
+    r = analyze_symbol('FET', from_id=TG_BOT_OWNER_ID)
+    print(r)
