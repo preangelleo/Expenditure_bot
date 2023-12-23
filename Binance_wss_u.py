@@ -108,8 +108,9 @@ def on_message(ws, message):
 def on_error(ws, error):
     print(error)
 
-def on_close(ws):
+def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
+    print(close_status_code, close_msg)
 
 def on_open(ws):
     print("WebSocket Connected")
