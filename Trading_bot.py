@@ -107,23 +107,16 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
             market_cap = token_info['quote']['USD']['market_cap']
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
             if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
-                # print(f"{token_symbol} Fully_diluted_market_cap {fully_diluted_market_cap} is more than {FULLLY_DILUTED_MARKET_CAP_UP_LIMIT}, ignore this coin")
                 add_coin_to_ignore_list(token_symbol, from_id = TG_BOT_OWNER_ID)
                 return
-            if market_cap < MARKET_CAP_DOWN_LIMIT: 
-                print(f"{token_symbol} market_cap {market_cap} is less than {MARKET_CAP_DOWN_LIMIT}, ignore this coin")
-                return
+            if market_cap < MARKET_CAP_DOWN_LIMIT: return
             circulating_ratio = market_cap / fully_diluted_market_cap
             circulating_ratio = round(circulating_ratio, 2)
-            if circulating_ratio < CIRCULATION_RATIO: 
-                print(f"{token_symbol} circulating_ratio {circulating_ratio} is less than {CIRCULATION_RATIO}, ignore this coin")
-                return 
+            if circulating_ratio < CIRCULATION_RATIO: return 
             # Calculate turnover ratio
             turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
             turnover_ratio = round(turnover_ratio, 2)
-            if turnover_ratio < turnover_ratio_eth: 
-                print(f"{token_symbol} turnover_ratio {turnover_ratio} is less than ETH's {turnover_ratio_eth}, ignore this coin")
-                return
+            if turnover_ratio < turnover_ratio_eth: return
 
             current_price = token_info['quote']['USD']['price']
             coin_rank = token_info['cmc_rank']
@@ -333,19 +326,15 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         if REMAINING_POSITIONS <= 0: break
         
         # Check if coin in coin_in_positions, if yes, ignore this coin
-        if coin in coin_in_positions: 
-            print(f"{coin} is in positions already, ignore this coin")
-            continue
+        if coin in coin_in_positions: continue
 
         # Check if coin is recently listed, if yes, ignore this coin
-        if is_coin_recently_listed(coin, 7): 
-            print(f"{coin} is recently listed, ignore this coin")
-            continue
+        if is_coin_recently_listed(coin, 7): continue
         
-        last_sold_coin = get_latest_sold_coin()
-        if last_sold_coin and coin == last_sold_coin: 
-            print(f"{coin} is the last sold coin, ignore...")
-            continue
+        # last_sold_coin = get_latest_sold_coin()
+        # if last_sold_coin and coin == last_sold_coin: 
+        #     print(f"{coin} is the last sold coin, ignore...")
+        #     continue
 
         try: 
             do_market_buy_one_unit(coin, chat_id)

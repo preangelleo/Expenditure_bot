@@ -2392,9 +2392,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
                 # Check the price of the existing order
                 existing_order_price = float(existing_order.iloc[0]['price'])
                 current_order_target_profit = (existing_order_price - buy_price) / buy_price
-                if round(current_order_target_profit, 2) == round(target_profit, 2): 
-                    print(f"COIN: {coin} current order target_profit is same as new target_profit, no need to reset limit order")
-                    continue
+                if round(current_order_target_profit, 2) == round(target_profit, 2): continue
                 else:
                     clientOrderId = current_orders[symbol]
                     cancel_confirm = binance_cancel_order(coin, clientOrderId)
