@@ -1890,26 +1890,21 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     latest = df.iloc[-1]
     previous = df.iloc[-2]
 
-    if latest['RSI'] < latest['RSI_SMA'] and interval in ['4h', '1h']: 
+    if latest['RSI'] < latest['RSI_SMA']: 
         print(f"{coin} {interval} RSI {latest['RSI']} is below RSI_SMA {latest['RSI_SMA']}")
         if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below RSI_SMA {format_number(latest['RSI_SMA'])}", from_id)
         return False
 
     # Check if latest sma is lower than previous sma
-    if latest['SMA'] < previous['SMA'] and interval in ['15m', '5m']: 
+    if latest['SMA'] < previous['SMA']: 
         print(f"{coin} {interval} SMA {latest['SMA']} is below previous SMA {previous['SMA']}")
         if from_id: send_msg(f"{coin} {interval} interval SMA {format_number(latest['SMA'])} is below previous SMA {format_number(previous['SMA'])}", from_id)
         return False
     
     # check if latest rsi is lower than previous rsi
-    if latest['RSI'] < previous['RSI'] and interval in ['15m', '5m']:
+    if latest['RSI'] < previous['RSI']:
         print(f"{coin} {interval} RSI {latest['RSI']} is below previous RSI {previous['RSI']}")
         if from_id: send_msg(f"{coin} {interval} interval RSI {format_number(latest['RSI'])} is below previous RSI {format_number(previous['RSI'])}", from_id)
-        return False
-    
-    if latest['Open'] < previous['Close'] and interval in ['15m', '5m']: 
-        print(f"{coin} {interval} open price {latest['Open']} is lower than previous close price {previous['Close']}")
-        if from_id: send_msg(f"{coin} {interval} interval open price {format_number(latest['Open'])} is lower than previous close price {format_number(previous['Close'])}", from_id)
         return False
     
     if interval == '5m':
@@ -1923,6 +1918,11 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
             if from_id: send_msg(f"{coin} {interval} interval trading volume {format_number(latest['Quote Asset Volume'])} is below SMA {format_number(latest['Quote Asset Volume SMA'])}", from_id)
             return False
         
+        if latest['Close'] < previous['Close']: 
+            print(f"{coin} {interval} close price {latest['Close']} is lower than previous close price {previous['Close']}")
+            if from_id: send_msg(f"{coin} {interval} interval close price {format_number(latest['Close'])} is lower than previous close price {format_number(previous['Close'])}", from_id)
+            return False
+
     return True
 
 
