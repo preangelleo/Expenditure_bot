@@ -48,7 +48,7 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
         soup = BeautifulSoup(body, 'html.parser')
         plain_text = soup.get_text(separator='\n')
         
-        if 'receipt' in plain_text.lower() or 'recepit' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower() or 'bill' in email_subject.lower() or 'renewed' in email_subject.lower() or 'payment' in email_subject.lower() or '收据' in email_subject.lower() or '付款' in email_subject.lower() or '充值' in email_subject.lower() or 'statement' in email_subject.lower():
+        if 'receipt' in plain_text.lower() or 'recepit' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower() or 'bill' in email_subject.lower() or 'renewed' in email_subject.lower() or 'payment' in email_subject.lower() or '收据' in email_subject.lower() or '付款' in email_subject.lower() or '充值' in email_subject.lower() or 'statement' in email_subject.lower() or 'order' in email_subject.lower():
             
             new_prompt = f"Extract the receipt detail information from this email and call function: insert_new_expenditure_record to insert the record into the table. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
 
