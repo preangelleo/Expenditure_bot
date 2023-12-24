@@ -2841,17 +2841,20 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
 
             long_or_short = analyze_symbol(coin, tradingbot_status)
             short = long_or_short['short']
+            print(f"{index}. COIN: {coin} is ready to short? >> {short}")
 
-            if not weekly_rsi_over_high(coin): 
-                # remove coin from SHORT_COINS_LIST
+            if not short: 
                 if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
                 continue
-            if not short: 
+
+            if not weekly_rsi_over_high(coin): 
+                print(f"{coin} weekly_rsi_over_high? >> False")
                 if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
                 continue
 
             SHORT_COINS_LIST.append(coin)
 
+    print(f"SHORT_COINS_LIST: {SHORT_COINS_LIST}")
     if SHORT_COINS_LIST: send_msg(f"Coins ready to short:\n\n{', '.join(SHORT_COINS_LIST)}", from_id)
     
     return SHORT_COINS_LIST
@@ -3022,7 +3025,4 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 if __name__ == '__main__':
     print('Binance_api.py is running')
 
-    coin = 'ATOM'
-    remove_from_future_profit(coin, chat_id=TG_BOT_OWNER_ID)
-    df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
-    print(df)
+    binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = read_trading_bot_status())

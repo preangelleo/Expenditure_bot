@@ -36,7 +36,7 @@ if __name__ == '__main__':
     except: pass
 
     try: binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = current_bot_status)
-    except: pass
+    except Exception as e: print(f"binance_today_short_coin error: \n\n{e}\n\n")
 
     try: read_emails()
     except: pass
