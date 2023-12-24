@@ -1,8 +1,8 @@
 from GPT_functions import *
 
-engine = get_remote_db_connection()
 
 def st_find_ranks_for_word(key_word):
+    engine = get_remote_db_connection()
     df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM db_daily_words WHERE word = '{key_word}'")).fetchall())
     if df.empty: return 
     word_dict = df.iloc[0].to_dict()
@@ -10,7 +10,6 @@ def st_find_ranks_for_word(key_word):
 '''
 {'id': 2524, 'word': 'happy', 'rank': 559, 'counts': 0, 'total_counts': 0, 'us-phonetic': '[ˈhæpi]', 'origin': 'The word "happy" comes from the Middle English word "hap" which means luck or chance. In Chinese, the word for happy is 高兴 (gāo xìng) which literally translates to "highly excited" or "pleased".', 'synonyms': 'cheerful(8003) | joyful(10551) | exuberant(14116) | blissful(17552) | jubilant(20243)', 'antonyms': None, 'tag': None, 'chinese': 'adj. 快乐的；幸福的、使人高兴的；满意的；乐意的；幸运的；合适的。comb. <非正式> 滥用……的', 'chat_gpt_explanation': '\nHappy is a feeling of joy, contentment, pleasure, or good fortune. It is a positive emotion that can be experienced in response to a variety of situations, including success, relationships, and activities.', 'note': '\n1. Joyful: feeling or expressing great pleasure and happiness.\n2. Cheerful: having a good disposition; being full of hope and courage.\n3. Jubilant: feeling or expressing great joy and triumph.\n4. Exuberant: joyously unrestrained; overflowing with enthusiasm.\n5. Blissful: supremely happy and contented.\n\nThe difference among these synonyms is the degree of happiness they express. Joyful and cheerful indicate mild pleasure, while jubilant and exuberant show more intense joy, and blissful is the highest level of happiness.', 'memo': None, 'toefl': 1, 'gre': 0, 'gmat': 0, 'sat': 0, 'scenario': None, 'mastered': 0, 'level': 1, 'sentence': None, 'last_check_time': None, 'youdao_synced': 0, 'manually_updated': 0, 'derivative': None, 'relevant': None, 'phrase': None, 'sealed': 1}
 '''
-
 
 '''class GptEnglishExplanation(Base):
     __tablename__ = 'gpt_english_explanation'
@@ -25,7 +24,8 @@ def st_find_ranks_for_word(key_word):
 
 def find_words_for_bot_user(word:str, from_id=TG_BOT_OWNER_ID):
     word = word.lower()
-    
+    engine = get_remote_db_connection()
+
     df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM db_daily_words WHERE word = '{word}'")).fetchall())
     if df.empty: return 
 

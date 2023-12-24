@@ -879,9 +879,6 @@ def calculate_irr(x, years, from_id):
 
 # Define a function to connect to the remote database and return the connection
 def get_remote_db_connection():
-    # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} get_db_connection() is running ...')
-
     # Define the database connection parameters
     db_host = os.getenv('UBUNTU_SERVER_JP_DB_HOST')
     db_port = os.getenv('UBUNTU_SERVER_JP_DB_PORT')
