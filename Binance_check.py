@@ -35,5 +35,8 @@ if __name__ == '__main__':
     try: binance_today_hot_coins_check(chat_id = TG_BOT_OWNER_ID, user_nick_name = 'Dear', crontab = True, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
     except: pass
 
+    try: binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = current_bot_status)
+    except: pass
+
     try: read_emails()
     except: pass

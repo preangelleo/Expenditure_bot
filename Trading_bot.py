@@ -100,31 +100,6 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
 
 
 
-# From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
-def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
-    if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
-    try:
-        token_info = get_token_info_from_coinmarketcap(token_symbol)
-        if token_info:
-            market_cap = token_info['quote']['USD']['market_cap']
-            fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
-            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
-                add_coin_to_ignore_list(token_symbol, from_id = TG_BOT_OWNER_ID)
-                return
-            if market_cap < MARKET_CAP_DOWN_LIMIT: return
-            circulating_ratio = market_cap / fully_diluted_market_cap
-            circulating_ratio = round(circulating_ratio, 2)
-            if circulating_ratio < CIRCULATION_RATIO: return 
-            # Calculate turnover ratio
-            turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
-            turnover_ratio = round(turnover_ratio, 2)
-            if turnover_ratio < turnover_ratio_eth: return
-
-            current_price = token_info['quote']['USD']['price']
-            coin_rank = token_info['cmc_rank']
-                
-            return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug'], 'current_price': current_price, 'coin_rank': coin_rank}
-    except: return 
 
 
 def is_coin_recently_listed(symbol: str, days=7):
@@ -164,137 +139,6 @@ def is_coin_recently_listed(symbol: str, days=7):
     return True
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = None, tradingbot_status = False):
-
-    df_ticker = pd.read_json(BINANCE_TICKER_URL)
-
-    # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
-
-    # pick up the symbol endswith 'USDT'
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-
-    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-
-    if df_ticker.empty:
-        print(f"1) No hot coin today after filtering the coins with priceChangePercent > 1 and quoteVolume > {trading_volume_limit} and priceChangePercent < 20 and lastPrice between 0.0001 and 1000")
-        if only_check: broadcast_text(f"No hot coin today after filtering the coins with 20% > priceChangePercent > 1% and quoteVolume > {format_number(trading_volume_limit)} and lastPrice between 0.0001 and 1000")
-        return []
-
-    # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
-
-    # Eliminate the coins with 'USD' in coin name
-    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
-
-    # Read the ignore_list from database
-    IGNORE_LIST = get_ignore_list()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
-    if df_ticker.empty:
-        print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
-        if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
-        return []
-
-    if not tradingbot_status:
-        print(f"Trading bot is off, only check white_list coins")
-        # Read white_list from database
-        WHITE_LIST = get_white_list()
-        df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
-        if df_ticker.empty:
-            print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
-            if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
-            return []
-
-    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
-
-    # Update ticker with market cap and fully diluted market cap
-    df_ticker['market_cap'] = 0
-    df_ticker['fully_diluted_market_cap'] = 0
-    df_ticker['ratio'] = 0.01
-    for index, row in df_ticker.iterrows():
-        coin = row['coin']
-        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
-        if token_info:
-            '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
-            df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
-            df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
-            df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
-            df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
-            df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
-        else: df_ticker.drop(index, inplace=True)
-
-    if df_ticker.empty:
-        print(f"3) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
-        if only_check: broadcast_text(f"No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
-        return []
-
-    # add a new column 'turnover_by_priceChangePercent' = turnover_ratio / priceChangePercent
-    df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
-
-    # sort by 'turnover_by_priceChangePercent' in descending order
-    df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
-
-    # Keep the top 30 coins
-    df_ticker = df_ticker.head(10)
-
-    # make a coin list
-    today_hot_coin_list = df_ticker['coin'].values.tolist()
-    
-    final_hotcoin_list = []
-
-    if today_hot_coin_list: 
-
-        i = 0
-        
-        for index, row in df_ticker.iterrows():
-            if i > 10: break
-
-            time.sleep(1)
-            coin = row['coin']
-
-            long_or_short = analyze_symbol(coin, tradingbot_status)
-            '''{'long': True, 'short': False}'''
-            long = long_or_short['long']
-            # short = long_or_short['short']
-
-            if not long: continue
-            if weekly_rsi_over_high(coin, from_id): continue
-
-            i += 1
-
-            price = row['lastPrice']
-            priceChangePercent = row['priceChangePercent']
-            turnover_ratio = row['turnover_ratio']
-            turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
-            token_slug = row['token_slug']
-            URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"{i} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
-
-            # make a dictionary of this coin and append to "hot_coin_history"
-            hot_coin_history = {
-                'coin': coin, 
-                'priceChangePercent': priceChangePercent, 
-                'price': price, 
-                'turnover_ratio': turnover_ratio, 
-                'turnover_by_priceChangePercent': turnover_by_priceChangePercent,
-                'token_slug': token_slug,
-                'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
-                }
-
-            # make dictionary to dataframe
-            df_hot_coin_history = pd.DataFrame(hot_coin_history, index=[0])
-            
-            # append df_hot_coin_history to hot_coin_history table
-            df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
-
-            # send_msg_markdown(reply_string, from_id)
-            if only_check: broadcast_markdown(reply_string)
-
-            final_hotcoin_list.append(coin)
-            
-        if only_check and not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
-
-    return final_hotcoin_list
 
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
@@ -345,6 +189,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 def only_check_hot_coins(from_id):
     tradingbot_status = trading_bot_switch_status()
     return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id, tradingbot_status = tradingbot_status)
+
 
 
 
