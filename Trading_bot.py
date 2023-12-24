@@ -76,7 +76,7 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     short = long_or_short['short']
 
     if long: 
-        if weekly_rsi_over_high(symbol, from_id): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
+        if weekly_rsi_over_high(symbol): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
 
         turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
         token_info = get_token_market_cap_and_ratio(symbol, turnover_ratio_eth)

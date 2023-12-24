@@ -1950,7 +1950,7 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
-def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
+def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
 
@@ -1958,7 +1958,7 @@ def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
     df['RSI'] = calculate_rsi(df['Close'], 14)
     latest = df.iloc[-1]
     if latest['RSI'] > 89: 
-        send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
+        # send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
         return True
     
     return False
@@ -2842,7 +2842,7 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
             long_or_short = analyze_symbol(coin, tradingbot_status)
             short = long_or_short['short']
 
-            if not weekly_rsi_over_high(coin, from_id): 
+            if not weekly_rsi_over_high(coin): 
                 # remove coin from SHORT_COINS_LIST
                 if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
                 continue
@@ -2978,7 +2978,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             # short = long_or_short['short']
 
             if not long: continue
-            if weekly_rsi_over_high(coin, from_id): continue
+            if weekly_rsi_over_high(coin): continue
 
             i += 1
 
