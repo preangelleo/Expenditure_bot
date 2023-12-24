@@ -538,6 +538,39 @@ def remove_from_future_profit_table(coin):
     return True
 
 
+# Function to find all tables in the database
+def find_all_tables():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Find all tables in the database
+    cursor.execute("SHOW TABLES")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return result
+
+
+# Function to get table structure and save all of them into a singal file
+def save_table_structures():
+    result = find_all_tables()
+    for table in result:
+        # Create a new session
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Get table structure and save to a file
+        cursor.execute(f"SHOW CREATE TABLE {table[0]}")
+        result = cursor.fetchall()
+        # Commit the session
+        conn.commit()
+        cursor.close()
+        conn.close()
+        with open(f"table_structure.sql", "a") as f:
+            f.write(f"{result[0][1]}\n\n")
+
+
 if __name__ == '__main__':
     print("Create database and tables...")
     # Initial Step 1: Create database
@@ -583,11 +616,11 @@ if __name__ == '__main__':
     # Initial Step 14: Create one_time_passcode tables
     create_one_time_passcode_table()
     
-
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")
     else: print("Trading bot is ACTIVE!")
 
-    
+    # save_table_structures()
+
     print("All tables created successfully!")
 

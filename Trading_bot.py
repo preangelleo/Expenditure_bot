@@ -99,9 +99,6 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     return send_msg(f"{symbol.upper()} is not good to long or short now. Wait for the next chance. Be patient please 😘", from_id)
 
 
-
-
-
 def is_coin_recently_listed(symbol: str, days=7):
     try: days = int(days)
     except: days = 7
@@ -137,8 +134,6 @@ def is_coin_recently_listed(symbol: str, days=7):
         else: return False
 
     return True
-
-
 
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):

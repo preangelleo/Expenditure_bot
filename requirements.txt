@@ -5,6 +5,7 @@ SQLAlchemy
 beautifulsoup4
 python-binance
 pyotp
+streamlit
 aiodns
 aiofiles
 aiogram
