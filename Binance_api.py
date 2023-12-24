@@ -2816,9 +2816,7 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
 
     df_ticker = df_ticker[(df_ticker['priceChangePercent'] < -1) & (df_ticker['priceChangePercent'] > -20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
 
-    if df_ticker.empty: 
-        print(f"1) No short coin today after filtering the coins with priceChangePercent < -1 and priceChangePercent > -20 and lastPrice between 0.0001 and 1000")
-        return []
+    if df_ticker.empty: return []
 
     # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
@@ -2841,20 +2839,17 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
 
             long_or_short = analyze_symbol(coin, tradingbot_status)
             short = long_or_short['short']
-            print(f"{index}. COIN: {coin} is ready to short? >> {short}")
 
             if not short: 
                 if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
                 continue
 
             if not weekly_rsi_over_high(coin): 
-                print(f"{coin} weekly_rsi_over_high? >> False")
                 if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
                 continue
 
             SHORT_COINS_LIST.append(coin)
 
-    print(f"SHORT_COINS_LIST: {SHORT_COINS_LIST}")
     if SHORT_COINS_LIST: send_msg(f"Coins ready to short:\n\n{', '.join(SHORT_COINS_LIST)}", from_id)
     
     return SHORT_COINS_LIST
