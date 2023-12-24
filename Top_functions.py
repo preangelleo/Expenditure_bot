@@ -693,7 +693,7 @@ def switch_off_bot(from_id):
 
 
 # define a function to read the trading bot switch status from the database
-def read_trading_bot_status(from_id):
+def read_trading_bot_status(from_id=TG_BOT_OWNER_ID):
     status = trading_bot_switch_status()
     if status: return send_msg("Trading bot is ON!", from_id)
     return send_msg("Trading bot is OFF (NO more buying)!", from_id)

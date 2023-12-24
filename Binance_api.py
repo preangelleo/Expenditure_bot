@@ -3025,4 +3025,4 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
 if __name__ == '__main__':
     print('Binance_api.py is running')
 
-    binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = read_trading_bot_status())
+    binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = trading_bot_switch_status())
