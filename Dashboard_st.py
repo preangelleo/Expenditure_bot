@@ -96,15 +96,15 @@ def plot_annualized_return(engine):
     metric_col2.metric("ROI", f"{format_number(roi*100)}%", format_number(profit_sum))
     metric_col3.metric("APY", annualized_return_percent, format_number(annualized_return))
     
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    fig, ax1 = plt.subplots(figsize=(12, 8))
 
-    ax1.plot(df['Date'], df['NetProfit'], color='b')
-    ax1.set_ylabel('Net Profit', color='b')
+    ax1.plot(df['Date'], df['NetProfit'], color='green')
+    ax1.set_ylabel('Net Profit', color='black')
 
     # Create a secondary y-axis for the percentage return
     ax2 = ax1.twinx()
-    ax2.plot(df['Date'], df['ReturnPercent'], color='g')
-    ax2.set_ylabel('Return (%)', color='g')
+    ax2.plot(df['Date'], df['ReturnPercent'], color='green')
+    ax2.set_ylabel('Return (%)', color='black')
 
     col1, col2 = st.columns(2)
     with col1:
@@ -157,7 +157,7 @@ def plot_performance_by_coin(engine):
 
     # Add labels and title
     plt.xticks(rotation=45)
-    ax1.set_xlabel('Coins')
+    # ax1.set_xlabel('Coins')
     plt.title('Top Performing and Worst Performing Coins')
 
     st.pyplot(fig)
