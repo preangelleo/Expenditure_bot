@@ -1872,7 +1872,7 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
+def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False):
 
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
@@ -1889,6 +1889,10 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
 
     good_to_short = 0
     good_to_buy = 1
+
+    if latest['RSI'] > 70 and not tradingbot_status:
+        good_to_short += 1
+        good_to_buy = 0
 
     if latest['RSI'] < latest['RSI_SMA']: 
         good_to_short += 1
@@ -1920,7 +1924,7 @@ def analyze_data(df, sma_period, rsi_period, interval, coin, from_id=None):
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
     
-def analyze_symbol(symbol: str, from_id=None):
+def analyze_symbol(symbol: str, tradingbot_status = False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     coin = symbol[:-4]
     global SHORT_COINS_LIST
@@ -1930,7 +1934,7 @@ def analyze_symbol(symbol: str, from_id=None):
 
     for interval in ['4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        result = analyze_data(df, 34, 14, interval, coin, from_id)
+        result = analyze_data(df, 34, 14, interval, tradingbot_status)
         good_to_buy += result['good_to_buy']
         good_to_short += result['good_to_short']
 
@@ -1938,7 +1942,7 @@ def analyze_symbol(symbol: str, from_id=None):
         if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
         return {'long': True, 'short': False}
 
-    if good_to_short > 12: 
+    if good_to_short > 16: 
         if coin not in SHORT_COINS_LIST:
             SHORT_COINS_LIST.append(coin)
             send_msg(f"{coin} is good to short now.", TG_BOT_OWNER_ID)
@@ -1963,9 +1967,7 @@ def weekly_rsi_over_high(symbol, from_id=TG_BOT_OWNER_ID):
 
 
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=False):
-    # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} binance_position_buy_check_all() is running ...')
+def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=False, tradingbot_status=False):
 
     try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     except: return 'Table binance_position_buy does not exist'
@@ -2050,7 +2052,7 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
-        long_or_short = analyze_symbol(coin, chat_id)
+        long_or_short = analyze_symbol(coin, tradingbot_status)
         '''{'long': True, 'short': False}'''
         long = long_or_short['long']
         short = long_or_short['short']
@@ -2251,33 +2253,6 @@ def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
             print(f"An error occurred: {e}")
             connection.rollback()
             return False
-
-
-# check binance_position_buy and calculate profit based on current price for all coins
-# def binance_position_status_check(target_profit=TARGET_PROFIT, chat_id=None, crontab_profit_record=False):
-
-#     try: df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-#     except: return print('Table binance_position_buy not found')
-
-#     if df_balance_all.empty: return print('No open position for all coins')
-
-#     df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
-
-#     # make a coin list from df_balance_all
-#     position_coin_list = df_balance_all['coin'].unique().tolist()
-
-#     # make a coin list from df
-#     limit_order_coin_list = df['coin'].unique().tolist() if not df.empty else []
-
-#     # find out the coins in position_coin_list but not in limit_order_coin_list
-#     coin_list = list(set(position_coin_list) - set(limit_order_coin_list))
-
-#     if not coin_list: return print(f"All positions are with limit orders. No need to check.")
-
-#     try: binance_position_buy_check_all(target_profit, None, chat_id, crontab_profit_record)
-#     except: pass
-
-#     return
 
 
 # select * from binance_balance_history
@@ -2532,11 +2507,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=from_id, crontab_profit_record=False)
+    return binance_position_buy_check_all(target_profit = 0.01, coin = None, chat_id = from_id, crontab_profit_record = False, tradingbot_status = trading_bot_switch_status())
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit=0.01, coin=coin, chat_id=from_id, crontab_profit_record=False)
+    return binance_position_buy_check_all(target_profit = 0.01, coin = coin, chat_id = from_id, crontab_profit_record = False, tradingbot_status = trading_bot_switch_status())
 
 
 '''小额资产转换 (USER_DATA)

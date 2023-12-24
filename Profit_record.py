@@ -9,7 +9,12 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Profit_record.py is running ...')
 
-    try: binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=True)
+    current_bot_status = False
+
+    try: current_bot_status = trading_bot_switch_status()
+    except: pass
+
+    try: binance_position_buy_check_all(0.01, None, None, True, current_bot_status)
     except Exception as e: print(f'binance_position_buy_check_all() error:\n\n{e}\n\n')
 
     try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)

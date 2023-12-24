@@ -68,7 +68,9 @@ from Binance_api import *
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    long_or_short = analyze_symbol(symbol, from_id)
+    trading_bot_status = trading_bot_switch_status()
+
+    long_or_short = analyze_symbol(symbol, trading_bot_status)
     '''{'long': True, 'short': False}'''
     long = long_or_short['long']
     short = long_or_short['short']
@@ -162,7 +164,7 @@ def is_coin_recently_listed(symbol: str, days=7):
     return True
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = None):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = None, tradingbot_status = False):
 
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
 
@@ -193,7 +195,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
         return []
 
-    if not trading_bot_switch_status():
+    if not tradingbot_status:
         print(f"Trading bot is off, only check white_list coins")
         # Read white_list from database
         WHITE_LIST = get_white_list()
@@ -250,7 +252,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             time.sleep(1)
             coin = row['coin']
 
-            long_or_short = analyze_symbol(coin, from_id)
+            long_or_short = analyze_symbol(coin, tradingbot_status)
             '''{'long': True, 'short': False}'''
             long = long_or_short['long']
             # short = long_or_short['short']
@@ -295,7 +297,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     return final_hotcoin_list
 
 
-def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT):
+def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
 
     coin_in_positions = []
     try:
@@ -309,12 +311,12 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     
     REMAINING_POSITIONS = POSITIONS_LIMIT - df_balance.shape[0]
     
-    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit)
+    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit, False, chat_id, tradingbot_status)
     if not today_hot_coin_list:
         if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
         return
 
-    target_profit = read_target_profit_default() if trading_bot_switch_status() else 0.01
+    target_profit = read_target_profit_default() if tradingbot_status else 0.01
 
     # query_list  = []
     for coin in today_hot_coin_list:
@@ -341,7 +343,8 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
 
 def only_check_hot_coins(from_id):
-    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id)
+    tradingbot_status = trading_bot_switch_status()
+    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id, tradingbot_status = tradingbot_status)
 
 
 
@@ -349,6 +352,3 @@ if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
     # test_binance_today_hot_coin_analysis()
 
-    # binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
-    r = analyze_symbol('FET', from_id=TG_BOT_OWNER_ID)
-    print(r)
