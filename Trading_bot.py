@@ -149,6 +149,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
     REMAINING_POSITIONS = POSITIONS_LIMIT - df_balance.shape[0]
+    target_profit = read_target_profit_default() if tradingbot_status else 0.01
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit, False, chat_id, tradingbot_status)
     if not today_hot_coin_list:
@@ -156,10 +157,9 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         try: 
             today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = tradingbot_status)
             if not today_hot_coin_list: return
+            target_profit = 0.01
             print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes: \n\n{today_hot_coin_list}\n\n")
         except: return
-
-    target_profit = read_target_profit_default() if tradingbot_status else 0.01
 
     # query_list  = []
     for coin in today_hot_coin_list:
