@@ -1,6 +1,6 @@
 # from Top_functions import *
 import streamlit as st
-import os, time
+import os, time, base64
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.sql import text
@@ -13,8 +13,6 @@ st.set_page_config(
     layout="wide",
     page_icon="🤖",
     )
-
-
 
 # Database connection parameters
 db_host = os.getenv('DB_HOST')
@@ -177,10 +175,36 @@ def display_coin_lists(engine):
     with col2:
         with st.expander("Ignore List", expanded=False): st.table(df_ignorelist)
 
+
+def display_binance_position_sell():
+    df_sell = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" ORDER BY update_id DESC')).fetchall())
+    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
+    df_merged = pd.merge(df_buy, df_sell, on='update_id', suffixes=('_buy', '_sell'))
+    df_merged['coin'] = df_merged['symbol_buy'].str[:-4]
+    df_merged['duration'] = df_merged['transactTime_sell'] - df_merged['transactTime_buy']
+    df_merged['duration_min'] = df_merged['duration'].apply(lambda x: int(x/1000/60))
+    df_merged['transactTime_buy'] = df_merged['transactTime_buy'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+    df_merged['transactTime_sell'] = df_merged['transactTime_sell'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+    df_merged.drop(['symbol_buy', 'symbol_sell', 'duration'], axis=1, inplace=True)
+    df_merged = df_merged[['update_id', 'coin', 'profit', 'type_buy', 'type_sell', 'duration_min', 'transactTime_buy', 'transactTime_sell', 'price_buy', 'price_sell', 'clientOrderId_buy', 'clientOrderId_sell']]
+
+    # offer a download link for the dataframe as a csv file
+    csv = df_merged.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+    href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_buy_sell.csv">Download CSV File</a>'
+    st.markdown(href, unsafe_allow_html=True)
+
+    with st.expander("Position BUY & SELL History", expanded=False):  st.table(df_merged)
+
+    return
+
+
 def main():
     display_header()
     
     plot_annualized_return(engine)
+
+    display_binance_position_sell()
 
     display_coin_lists(engine)
     # Call other display functions here

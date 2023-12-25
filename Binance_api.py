@@ -1589,10 +1589,6 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     # 如果没有 binance_position_sell table, 就创建一个，如果 table 存在，就 append df_buyin_result
     df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
 
-    # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
-    if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
-
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -1601,8 +1597,6 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
         except Exception as e:
             print(f"An error occurred: {e}")
             connection.rollback()
-
-    order_id = data['orderId']
 
     duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
     # 讲 duration 变为 xx 天 xx 小时
@@ -1615,16 +1609,11 @@ Sold_Amount: {format_number(amount)}
 Commition_Fee: {format_number(total_bnb_cost_value)} usdt
 Trading_Profit: {format_number(profit)} usdt
 Holding_Duration: {duration}
-Order_ID: {order_id}
 Update_ID: {update_id}
-Profit_Sum: {format_number(profit_sum)} usdt
 '''
-    send_msg(reply_msg, from_id)
+    send_msg(reply_msg, TG_BOT_OWNER_ID)
     return profit
-'''
-      symbol    orderId  orderListId           clientOrderId   transactTime     price       origQty   executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value   profit
-0  CAKEUSDT  513576898           -1  ixTpmGNbj5w3J2vW1NPAel  1685860174026  1.746501  572.40000000  572.40000000        999.69736000  FILLED         GTC  MARKET  SELL  1685860174026                    NONE          1        0.00245      306.124284               1.50045 -1.78589
-'''
+
 
 ''' df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
       symbol     orderId  orderListId           clientOrderId   transactTime      price  ... selfTradePreventionMode update_id sell_cost_bnb sell_bnb_price total_bnb_cost_value      profit
@@ -2003,32 +1992,6 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
     # merge df_balance and df based on coin since df and df_balance all have coin column
     df_balance = pd.merge(df_balance, df, on='coin', how='left')
 
-    '''convert df_balance first row to dict
-    {
-      "symbol_x": "CAKEUSDT",
-      "orderId": 513582692,
-      "orderListId": -1,
-      "clientOrderId": "VUxnvBkLBvuNSVzmLKV2NM",
-      "transactTime": 1685863960460,
-      "price": 1.7495544727679897,
-      "origQty": "571.57000000",
-      "executedQty": "571.57000000",
-      "cummulativeQuoteQty": "999.99285000",
-      "status": "FILLED",
-      "timeInForce": "GTC",
-      "type": "MARKET",
-      "side": "BUY",
-      "workingTime": 1685863960460,
-      "selfTradePreventionMode": "NONE",
-      "coin": "CAKE",
-      "buy_cost_bnb": 0.0024476899999999998,
-      "buy_bnb_price": 306.7,
-      "update_id": 3,
-      "is_closed": 0,
-      "symbol_y": "CAKEUSDT",
-      "lastPrice": 1.749
-    }'''
-
     # convert df_balance['executedQty'] to float and calculate profit
     df_balance['executedQty'] = df_balance['executedQty'].astype(float)
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
@@ -2078,7 +2041,7 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
 
-            if (not tradingbot_status and reply_dict['up_ratio'] > 0.003) or reply_dict['up_ratio'] >= target_profit:
+            if reply_dict['up_ratio'] >= target_profit:
                 if short: send_msg(f"{coin} is good to short now, close all positions.", TG_BOT_OWNER_ID)
                 if reply_dict['up_ratio'] >= target_profit: send_msg(f"{coin} is not in good condition, and profit is positive, close position.", TG_BOT_OWNER_ID)
                 
@@ -2248,8 +2211,7 @@ def binance_check_order_status(symbol, clientOrderId=None):
             send_msg(reply_msg, TG_BOT_OWNER_ID)
 
 
-        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']:
-            if mark_limit_order_as_canceled(clientOrderId, limit_order_data['status']): send_msg(f'''{coin} Order {limit_order_data['status']}\n\nOrder_ID: {limit_order_data['orderId']}\n''', TG_BOT_OWNER_ID)
+        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled(clientOrderId, limit_order_data['status'])
 
     return 
 
