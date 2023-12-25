@@ -481,10 +481,17 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = funding_main_transfer(coin, amount)
-                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从资金账户转入到现货账户, tranId: \n{tranId}', chat_id)
-            else: return send_msg(f'资金账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', chat_id)
-        else: return send_msg(f'资金账户没有 {coin} 资产。', chat_id)
-    return send_msg(f'转账失败，可能是网络问题，请稍后再试。', chat_id)
+                if tranId: 
+                    send_msg(f'Successfully transfered {format_number(amount)} {coin} from funding account to spot account.', chat_id)
+                    return tranId
+            else: 
+                send_msg(f"Failed to transfer {format_number(amount)} {coin} from funding account to spot account, because the balance of {coin} in funding account is: {format_number(balance)}", chat_id)
+                return False
+        else: 
+            send_msg(f"Failed to transfer {format_number(amount)} {coin} from funding account to spot account, because the balance of {coin} in funding account is: 0", chat_id)
+            return False
+    send_msg(f"Failed to transfer {format_number(amount)} {coin} from funding account to spot account, network error.", chat_id)
+    return False
 
 '''目前支持的type划转类型:
 MAIN_UMFUTURE 现货钱包转向U本位合约钱包
@@ -924,6 +931,7 @@ def binance_withdraw(amount, network, coin, address):
 
 # difine a binance_send_coin function for bot to call
 def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=TG_BOT_OWNER_ID):
+    time.sleep(1)
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {amount}', from_id)
@@ -1048,11 +1056,15 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
     try: usdt_amount = float(usdt_amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {usdt_amount}', from_id)
 
-    if usdt_amount > 1000: return send_msg(f'You can only pay less than 1000 usdt, but you input: {usdt_amount}', from_id)
+    if usdt_amount > 1000: return send_msg(f'You can only pay less than 1000 usdt, but you input: {usdt_amount}. \n\nIf you want to transfer more than 1000 usdt, please login to binance and transfer manually.', from_id)
 
     '''TRX_REGEX = r'T[1-9A-HJ-NP-Za-km-z]{33}'''
     # CHECK IF target_address IS A VALID TRX ADDRESS
     if not re.match(TRX_REGEX, target_address): return send_msg(f'Invalid TRX address: {target_address}', from_id)
+
+    usdt_amount = round(usdt_amount, 2)
+
+    if funding_main_transfer_with_check_and_send('USDT', usdt_amount, from_id): return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
     # Get ONG price
     ong_price = get_token_price('ONG')
@@ -1061,17 +1073,16 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
     # Calculate ONG amount
     ong_amount = usdt_amount / ong_price
 
-    # Get ONG balance
-    ong_balance = get_coin_wallet_balance('ONG')
-    if ong_balance == 0: return send_msg(f'No ONG in your binance wallet. \n\n/get_wallet_balance', from_id)
-
     polish_parameters = polish_parameters_for_limit_order('ONG', ong_amount, ong_price, from_id)
     if not polish_parameters: return send_msg(f'Failed to polish parameters for ONG market sell', from_id)
 
     ong_amount = polish_parameters['amount']
 
-    # Check if ONGUSDT balance is sufficient
-    if ong_balance < ong_amount: return send_msg(f'ONG balance is {ong_balance}, which is not sufficient for {ong_amount}.', from_id)
+    # Get ONG balance
+    ong_balance = get_coin_wallet_balance('ONG')
+    if ong_balance < ong_amount:
+        amount_need_to_transfer = ong_amount - ong_balance
+        if not funding_main_transfer_with_check_and_send('ONG', amount_need_to_transfer, chat_id=from_id): return
 
     # Market sell ONG for USDT
     data = binance_market_sell('ONG', ong_amount)
