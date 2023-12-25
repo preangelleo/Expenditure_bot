@@ -2655,7 +2655,7 @@ def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     if current_status: return True
 
     if trading_bot_switch_on(): 
-        target_profit = float(os.getenv('TARGET_PROFIT', 0.05))
+        target_profit = float(os.getenv('TARGET_PROFIT', 0.03))
         set_target_profit_default(target_profit)
         return send_msg(f"Reset target profit to {target_profit*100:.2f}%\n\n{msg}", from_id)
     return send_msg(f"Failed to switch on the bot! \n\n{msg}", from_id)
