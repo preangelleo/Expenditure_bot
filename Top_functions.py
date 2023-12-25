@@ -517,7 +517,7 @@ def alter_expenditure_record(id, column_name, new_value, from_id=TG_BOT_OWNER_ID
 
 
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe
-def get_all_expenditure_records(from_id):
+def get_all_expenditure_records(from_id = TG_BOT_OWNER_ID):
     query = f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}'"
     df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
     return df
