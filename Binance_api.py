@@ -1895,7 +1895,7 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
     good_to_short = 0
     good_to_buy = 1
 
-    if latest['RSI'] > 70 and not tradingbot_status:
+    if interval == '4h' and latest['RSI'] > 89 and not tradingbot_status:
         good_to_short += 1
         good_to_buy = 0
 
@@ -1947,7 +1947,7 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
         if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
         return {'long': True, 'short': False}
 
-    if good_to_short > 16: 
+    if good_to_short > 13: 
         if coin not in SHORT_COINS_LIST: SHORT_COINS_LIST.append(coin)
         return {'long': False, 'short': True}
     
@@ -2078,13 +2078,14 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
 
-            if (short and not trading_bot_switch_status() and coin not in WHITE_LIST and reply_dict['up_ratio'] > 0.003) or reply_dict['up_ratio'] >= target_profit:
+            if (not tradingbot_status and reply_dict['up_ratio'] > 0.003) or reply_dict['up_ratio'] >= target_profit:
                 if short: send_msg(f"{coin} is good to short now, close all positions.", TG_BOT_OWNER_ID)
                 if reply_dict['up_ratio'] >= target_profit: send_msg(f"{coin} is not in good condition, and profit is positive, close position.", TG_BOT_OWNER_ID)
                 
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
                 do_market_sell(coin, chat_id)
                 continue
+            if short: send_msg(f"SHORT {coin} on UMFUTURES to hedge the risk.", TG_BOT_OWNER_ID)
 
             binance_position_set_limit_sell(target_profit, chat_id, coin)
 
