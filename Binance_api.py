@@ -2093,6 +2093,12 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                     except Exception as e:
                         print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
                         connection.rollback()
+
+                year_and_month_day = datetime.now().strftime('%Y-%m-%d')
+                send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
+                plot_net_profit_sum(chat_id)
+                send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
+
             # Send profit_sum to chat_id
             chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
             investment_return = net_profit_sum / INITIAL_FUND
@@ -2100,10 +2106,7 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
             investment_return = f"{investment_return * 100:.2f}%"
             summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nNet_Profit: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {current_positions}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
             send_msg(summary_msg, chat_id)
-            year_and_month_day = datetime.now().strftime('%Y-%m-%d')
-            send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
-            plot_net_profit_sum(chat_id)
-            send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
+    
     return 
 
 
