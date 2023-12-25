@@ -3077,6 +3077,7 @@ def binance_adjust_profit(from_id = None):
 
 
 def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = False):
+    print(f"binance_hot_coin_5_minutes() is running")
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'quoteVolume', 'lastPrice']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
