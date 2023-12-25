@@ -1973,17 +1973,32 @@ def weekly_rsi_over_high(symbol):
 def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=False, tradingbot_status=False):
 
     try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-    except: return 'Table binance_position_buy does not exist'
+    except: 
+        if chat_id: send_msg('Table binance_position_buy does not exist', chat_id)
+        return 'Table binance_position_buy does not exist'
 
-    if df_balance.empty: return 'No open position for all coins'
+    if df_balance.empty: 
+        if chat_id: send_msg('No open position currently.', chat_id)
+
+        try: binance_adjust_profit(chat_id)
+        except: pass
+
+        try: check_profit_and_record(chat_id, crontab_profit_record)
+        except: pass
+
+        return 'No open position for all coins'
 
     if coin: 
         df_balance = df_balance[df_balance['coin']==coin.upper()]
-        if df_balance.empty: return f'No open position for coin: {coin}'
+        if df_balance.empty: 
+            if chat_id: send_msg(f'No open position for coin: {coin}', chat_id)
+            return f'No open position for coin: {coin}'
 
     # get current price for all coins
     df = get_token_price_table()
-    if df.empty: return 'Failed to fetch price info'
+    if df.empty: 
+        if chat_id: send_msg('Failed to fetch price info', chat_id)
+        return 'Failed to fetch price info'
 
     # merge df_balance and df based on coin since df and df_balance all have coin column
     df_balance = pd.merge(df_balance, df, on='coin', how='left')
@@ -2034,7 +2049,7 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
 
     for i in range(df_balance.shape[0]):
         # ignore coin BNB, ONG
-        if df_balance.iloc[i]['coin'] in ['BNB', 'ONG']: continue
+        if df_balance.iloc[i]['coin'] in ['BNB', 'ONG', 'USDT', 'USDC']: continue
 
         reply_dict = df_balance.iloc[i].to_dict()
 
@@ -2075,63 +2090,58 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
 
         book_value += reply_dict['profit']
 
-    if chat_id or crontab_profit_record: 
-        try:
-            # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-            df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
-            if not df_profit.empty: 
+    try: check_profit_and_record(chat_id, crontab_profit_record, book_value, current_positions=df_balance.shape[0])
+    except: pass
 
-                # From binance_position_buy read out the earliest transactTime
-                df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
-                earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
-
-                # print('earliest_transactTime: ', earliest_transactTime)
-
-                duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
-
-                duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
-                profit_sum = df_profit['profit'].astype(float).sum()
-
-                net_profit_sum = profit_sum + book_value
-
-                annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
-                # annualized_return with percentage format
-                annualized_return = f"{annualized_return * 100:.2f}%"
-
-                if crontab_profit_record:
-                    # Record net_profit_sum to table net_profit_daily_record
-                    with engine.connect() as connection:
-                        try:
-                            # Check if today's record exists
-                            query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
-                            params = {'Date': datetime.now().strftime('%Y-%m-%d')}
-                            result = connection.execute(text(query), params)
-                            df = pd.DataFrame(result.fetchall(), columns=result.keys())
-                            if df.empty:
-                                # Execute the query with the updated update_id
-                                connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
-                                connection.commit()
-                        except Exception as e:
-                            print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
-                            connection.rollback()
-
-                # Send profit_sum to chat_id
-                chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
-
-                investment_return = net_profit_sum / INITIAL_FUND
-                # investment_return with percentage format
-                investment_return = f"{investment_return * 100:.2f}%"
-
-                summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nBook_Value: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {df_balance.shape[0]}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
-                send_msg(summary_msg, chat_id)
-
-                year_and_month_day = datetime.now().strftime('%Y-%m-%d')
-                send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
-
-                plot_net_profit_sum(chat_id)
-
-        except: pass
     return
+
+# check_profit_and_record(chat_id=TG_BOT_OWNER_ID, crontab_profit_record=False, book_value=0)
+
+def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_value=0, current_positions=0):
+    if chat_id or crontab_profit_record: 
+        # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
+        df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+        if not df_profit.empty: 
+            # From binance_position_buy read out the earliest transactTime
+            df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
+            earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
+            # print('earliest_transactTime: ', earliest_transactTime)
+            duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
+            duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+            profit_sum = df_profit['profit'].astype(float).sum()
+            net_profit_sum = profit_sum + book_value
+            annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
+            # annualized_return with percentage format
+            annualized_return = f"{annualized_return * 100:.2f}%"
+            if crontab_profit_record:
+                # Record net_profit_sum to table net_profit_daily_record
+                with engine.connect() as connection:
+                    try:
+                        # Check if today's record exists
+                        query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
+                        params = {'Date': datetime.now().strftime('%Y-%m-%d')}
+                        result = connection.execute(text(query), params)
+                        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+                        if df.empty:
+                            # Execute the query with the updated update_id
+                            connection.execute(text("INSERT INTO net_profit_daily_record (Date, NetProfit) VALUES (:Date, :NetProfit)"), {'Date': datetime.now().strftime('%Y-%m-%d'), 'NetProfit': net_profit_sum})
+                            connection.commit()
+                    except Exception as e:
+                        print(f"An error occurred for reading net_profit_daily_record and insert data: {e}")
+                        connection.rollback()
+            # Send profit_sum to chat_id
+            chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
+            investment_return = net_profit_sum / INITIAL_FUND
+            # investment_return with percentage format
+            investment_return = f"{investment_return * 100:.2f}%"
+            summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nNet_Profit: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {current_positions}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
+            send_msg(summary_msg, chat_id)
+            year_and_month_day = datetime.now().strftime('%Y-%m-%d')
+            send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
+            plot_net_profit_sum(chat_id)
+            send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
+    return 
+
 
 
 # Define a function to check orderid and update status
