@@ -158,7 +158,6 @@ COMMANDS = [
     {"command": 'transfer_between_accounts', 'description': 'Transfer between accounts: MAIN_UMFUTURE, FUNDING_MAIN, etc.'},
     {"command": 'confirm_token', 'description': 'Confirm the token for a previous task to be executed'},
     {"command": 'binance_pay_usdt', 'description': 'Pay a certain amount of USDT to a given TRX address (less then 1000)'},
-    {"command": 'get_future_profit', 'description': 'Get the total profit of UMFUTURE account'},
 ]
 
 
