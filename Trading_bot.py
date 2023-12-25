@@ -152,26 +152,19 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit, False, chat_id, tradingbot_status)
     if not today_hot_coin_list:
-        if not crontab: send_msg(f"{user_nick_name}, Your current positions are {len(coin_in_positions)} out of {POSITIONS_LIMIT}, but there is no hot coin today, please wait with patience 😘", chat_id)
-        return
+        try: 
+            today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = tradingbot_status)
+            if not today_hot_coin_list: return
+            print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes: \n\n{today_hot_coin_list}\n\n")
+        except: return
 
     target_profit = read_target_profit_default() if tradingbot_status else 0.01
 
     # query_list  = []
     for coin in today_hot_coin_list:
         if REMAINING_POSITIONS <= 0: break
-        
-        # Check if coin in coin_in_positions, if yes, ignore this coin
         if coin in coin_in_positions: continue
-
-        # Check if coin is recently listed, if yes, ignore this coin
         if is_coin_recently_listed(coin, 7): continue
-        
-        # last_sold_coin = get_latest_sold_coin()
-        # if last_sold_coin and coin == last_sold_coin: 
-        #     print(f"{coin} is the last sold coin, ignore...")
-        #     continue
-
         try: 
             do_market_buy_one_unit(coin, chat_id)
             binance_position_set_limit_sell(target_profit, chat_id, coin)
@@ -186,9 +179,8 @@ def only_check_hot_coins(from_id):
     return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id, tradingbot_status = tradingbot_status)
 
 
-
-
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    # test_binance_today_hot_coin_analysis()
+    today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = trading_bot_switch_status())
+    print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes: \n\n{today_hot_coin_list}\n\n")
 

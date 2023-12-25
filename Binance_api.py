@@ -1867,54 +1867,47 @@ def calculate_rsi(data, period=14):
     return rsi
 
 def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False):
-
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
-
     df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
     df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
-
     df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
     df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
-
     latest = df.iloc[-1]
     previous = df.iloc[-2]
-
     good_to_short = 0
     good_to_buy = 1
-
     if interval == '4h' and latest['RSI'] > 89 and not tradingbot_status:
         good_to_short += 1
         good_to_buy = 0
-
     if latest['RSI'] < latest['RSI_SMA']: 
         good_to_short += 1
         good_to_buy = 0
-
+        # print(f"Latest RSI: {latest['RSI']} < RSI SMA: {latest['RSI_SMA']}")
     # Check if latest sma is lower than previous sma
     if latest['SMA'] < previous['SMA']: 
         good_to_short += 1
         good_to_buy = 0
-
+        # print(f"latest SMA: {latest['SMA']} < previous SMA: {previous['SMA']}")
     # check if latest rsi is lower than previous rsi
     if latest['RSI'] < previous['RSI']:
         good_to_short += 1
         good_to_buy = 0
-
+        # print(f"latest RSI: {latest['RSI']} < previous RSI: {previous['RSI']}")
     if interval == '5m':
         if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
             good_to_short += 1
             good_to_buy = 0
-
+            # print(f"previous Quote Asset Volume: {previous['Quote Asset Volume']} < 100_000 and latest Quote Asset Volume: {latest['Quote Asset Volume']} < 100_000")
         if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA'] and previous['Quote Asset Volume'] < previous['Quote Asset Volume SMA']:
             good_to_short += 1
-            good_to_buy = 0            
-
+            good_to_buy = 0
+            # print(f"Quote Asset Volume: {latest['Quote Asset Volume']} < Quote Asset Volume SMA: {latest['Quote Asset Volume SMA']}")
         if latest['Close'] < previous['Close']: 
             good_to_short += 1
             good_to_buy = 0
-
+            # print(f"latest Close: {latest['Close']} < previous Close: {previous['Close']}")
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
     
@@ -1941,6 +1934,14 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
         return {'long': False, 'short': True}
     
     return {'long': False, 'short': False}
+
+
+def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = False):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    df = get_kline_data(symbol, interval)
+    result = analyze_data(df, 34, 14, interval, tradingbot_status)
+    good_to_buy = result['good_to_buy']
+    return good_to_buy
 
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
@@ -3075,7 +3076,60 @@ def binance_adjust_profit(from_id = None):
     return amount_to_be_adjusted
 
 
+def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = False):
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'quoteVolume', 'lastPrice']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
+    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+    IGNORE_LIST = get_ignore_list()
+
+    df_5000 = df_ticker[df_ticker['quoteVolume'] > 50_000_000]
+    df_5000 = df_5000[~df_5000['coin'].isin(IGNORE_LIST)]
+
+    df_2000 = df_ticker[df_ticker['quoteVolume'] <= 50_000_000]
+    df_2000 = df_2000[~df_2000['coin'].isin(IGNORE_LIST)]
+
+    WHITE_LIST = get_white_list()
+    df_2000 = df_2000[df_2000['coin'].isin(WHITE_LIST)]
+
+    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+
+    final_hotcoin_list = []
+
+    for df_ticker in [df_5000, df_2000]:
+        df_ticker['market_cap'] = 0
+        df_ticker['fully_diluted_market_cap'] = 0
+        df_ticker['ratio'] = 0.01
+
+        for index, row in df_ticker.iterrows():
+            coin = row['coin']
+            token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
+            if token_info:
+                df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
+                df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
+                df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
+                df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
+                df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
+            else: df_ticker.drop(index, inplace=True)
+
+        df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
+        df_ticker = df_ticker.head(20)
+
+        for index, row in df_ticker.iterrows():
+            coin = row['coin']
+            is_good_to_buy = analyze_symbol_interval(coin, '5m', tradingbot_status)
+
+            if not is_good_to_buy: continue
+            if weekly_rsi_over_high(coin): continue
+
+            final_hotcoin_list.append(coin)
+        
+        if len(final_hotcoin_list) > 10: break
+    return final_hotcoin_list
+
+
 if __name__ == '__main__':
     print('Binance_api.py is running')
 
-    binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = trading_bot_switch_status())
