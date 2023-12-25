@@ -696,7 +696,7 @@ def switch_off_bot(from_id):
 def read_trading_bot_status(from_id=TG_BOT_OWNER_ID):
     status = trading_bot_switch_status()
     if status: return send_msg("Trading bot is ON!", from_id)
-    return send_msg("Trading bot is OFF (NO more buying)!", from_id)
+    return send_msg("Trading bot is OFF (Whitelist only)!", from_id)
 
 
 # Set position_limit from bot import and send a message to the user
