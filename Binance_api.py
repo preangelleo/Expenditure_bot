@@ -691,6 +691,11 @@ def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
         coin_in_position_dict = dict(zip(df_balance_all['coin'].values, df_balance_all['executedQty'].values))
         coin_in_position_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_position_dict.items()])
         send_msg(f"Coins in position:\n\n{coin_in_position_str}", chat_id)
+    else: 
+        coin_in_position_dict = {}
+        send_msg("No coins in position.", chat_id)
+        try: binance_adjust_profit(chat_id)
+        except: pass
 
     data = get_coin_wallet_balance_with_locked()
     if data: 
@@ -3015,6 +3020,83 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     if SHORT_COINS_LIST: send_msg(f"Coins turning down: \n\n{', '.join(SHORT_COINS_LIST)}", from_id)
 
     return final_hotcoin_list
+
+'''df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+      symbol     orderId  orderListId           clientOrderId   transactTime       price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value       profit
+0    FTTUSDT   688100726           -1  d8JXSWSmsEmVQoDqv3dIbC  1702224291468    5.562989   1942.29000000   1942.29000000      10804.93829100  FILLED         GTC  MARKET  SELL  1702224291468            EXPIRE_MAKER          1       0.033751           240.3             15.548180   789.421552
+1   EGLDUSDT  1235576864           -1  HbstvGzUiiQBoTFxQGibwW  1702267644918   65.401010    156.76000000    156.76000000      10252.26230000  FILLED         GTC  MARKET  SELL  1702267644918            EXPIRE_MAKER          4       0.032888           233.8             15.186327   237.486573
+2    IMXUSDT   533697410           -1  13Dj1FJeITi5795gIWyN00  1702267667019    1.928267   5223.40000000   5223.40000000      10072.10982900  FILLED         GTC  MARKET  SELL  1702267667019            EXPIRE_MAKER          2       0.032310           233.8             15.032396    57.087613
+3    SNXUSDT  1057101036           -1  DlChdJwJRmwW7Lf9oNBtwu  1702267684943    4.439063   2268.80000000   2268.80000000      10071.34600000  FILLED         GTC  MARKET  SELL  1702267684943            EXPIRE_MAKER          9       0.032307           233.9             15.011603    56.354097
+4    INJUSDT   809743269           -1  JY5FbpXFxPnePCNvO5BgT8  1702308983629   22.561297    442.90000000    442.90000000       9992.39860000  FILLED         GTC  MARKET  SELL  1702308983629            EXPIRE_MAKER         10       0.030714           243.9             15.039906   -22.595406
+5   ORDIUSDT   238514100           -1  hWGYLLB2hBZNqWnhQ1AuMg  1702361706283   51.710000    193.38000000    193.38000000       9999.67980000  FILLED         GTC   LIMIT  SELL  1702353642364            EXPIRE_MAKER          7       0.031247           250.2             15.314370   -15.249150
+6    FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702464665994    5.500400   1818.04000000   1818.04000000       9999.94721600  FILLED         GTC   LIMIT  SELL  1702353638922            EXPIRE_MAKER          3       0.031305           251.3             15.380309   -15.390928
+7    FETUSDT   956488383           -1  RCLyLqsTG2os2Zq5nDHtJO  1702940167510    0.687657  14769.00000000  14769.00000000      10156.01120000  FILLED         GTC  MARKET  SELL  1702940167510            EXPIRE_MAKER         12       0.031685           240.4             15.098148   141.077352
+8    STXUSDT   658898595           -1  FnIGPOiB6Hfp95EQA6NjrC  1702942206075    1.225800   8239.80000000   8239.80000000      10100.34684000  FILLED         GTC   LIMIT  SELL  1702941873518            EXPIRE_MAKER         13       0.030880           240.9             14.856532    85.498898
+9   NEARUSDT  2110473867           -1  b1vSFIYMRLWZrz4ecPsPaZ  1703034724092    2.550000   3960.70000000   3960.70000000      10099.78500000  FILLED         GTC   LIMIT  SELL  1703019732394            EXPIRE_MAKER          8       0.031232           254.2             15.428633    84.505367
+10  SANDUSDT  2782080420           -1  C9lGCy1BllCj9kATi9iaGz  1703211765923    0.554000  18230.00000000  18230.00000000      10099.42000000  FILLED         GTC   LIMIT  SELL  1703019727319            EXPIRE_MAKER          5       0.031214           272.0             15.984787    83.772213
+11  BAKEUSDT   657386867           -1  nEZ0RcxsNDo5G7pO7Lp9EE  1703227338598    0.421900  24887.00000000  24887.00000000      10499.82530000  FILLED         GTC   LIMIT  SELL  1703225114459            EXPIRE_MAKER         15       0.027083           273.4             14.873934   484.989486
+12  BAKEUSDT   657615307           -1  Ah0I3w2XaYjd9qywfk03VK  1703227686811    0.431500  24334.20000000  24334.20000000      10500.20730000  FILLED         GTC   LIMIT  SELL  1703227513810            EXPIRE_MAKER         16       0.027978           272.9             15.261983   484.980807
+13  BAKEUSDT   657707687           -1  74l6EIBov0YnUQzE7gk7mg  1703228412194    0.454900  23082.70000000  23082.70000000      10500.32023000  FILLED         GTC   LIMIT  SELL  1703227813069            EXPIRE_MAKER         17       0.027117           271.3             14.743589   485.601201
+14   TRBUSDT   920027678           -1  XAYNWwD1K3HyahklWGskgz  1703275730432  174.980000     57.72000000     57.72000000      10099.84560000  FILLED         GTC   LIMIT  SELL  1703266208873            EXPIRE_MAKER         19       0.027617           270.8             14.971105    85.165795
+15  AAVEUSDT  1522571378           -1  nuPlSOkci275D8OuMM7sBc  1703301012848   97.582201     91.62700000     91.62700000       8941.16429000  FILLED         GTC  MARKET  SELL  1703301012848            EXPIRE_MAKER         11       0.025097           267.0             14.163937 -1072.991997
+16  RUNEUSDT  1274638830           -1  J0htytqcx0J3XYNFpbIFSd  1703301018111    5.205126   1515.40000000   1515.40000000       7887.84790000  FILLED         GTC  MARKET  SELL  1703301018111            EXPIRE_MAKER          6       0.022157           267.0             13.402615 -2125.090815
+17  RNDRUSDT   560303558           -1  8V51QCjt4eJs5nt4munpXV  1703317812922    4.293253   2211.48000000   2211.48000000       9494.44291000  FILLED         GTC  MARKET  SELL  1703317812922            EXPIRE_MAKER         18       0.026700           266.5             14.606195  -520.130695
+18  ALGOUSDT  1618310425           -1  8hOfRMyuVpceE9NHwoXLvm  1703325459228    0.242900  41583.00000000  41583.00000000      10100.51070000  FILLED         GTC   LIMIT  SELL  1703290509559            EXPIRE_MAKER         21       0.027694           268.1             14.935455    85.722145
+19  ORDIUSDT   374002265           -1  rnQoSqo4haAR3ZCuA2Jv7R  1703364103075   53.527000    188.69000000    188.69000000      10100.00963000  FILLED         GTC   LIMIT  SELL  1703350509711            EXPIRE_MAKER         22       0.027713           270.6             14.984311    85.027879
+20  ORDIUSDT   374865940           -1  IX9u6c7hHB6Yuq15kN9NPa  1703367036730   53.907000    187.36000000    187.36000000      10100.01552000  FILLED         GTC   LIMIT  SELL  1703364608675            EXPIRE_MAKER         24       0.027736           270.8             15.010696    85.071864
+21  CAKEUSDT   596213818           -1  wEPZaI4U1oIzz40FP2BInA  1703368656462    2.939000   3436.61000000   3436.61000000      10100.19679000  FILLED         GTC   LIMIT  SELL  1703363409736            EXPIRE_MAKER         23       0.027705           271.0             15.002252    85.219678
+22  ATOMUSDT  2582908475           -1  8ClVCLA10FkWiwpvssTUUx  1703407646491   11.620000    869.17000000    869.17000000      10099.75540000  FILLED         GTC   LIMIT  SELL  1703266206495            EXPIRE_MAKER         14       0.027261           268.7             14.841084    85.021496
+23  CAKEUSDT   596437527           -1  L0UsaZhryFgw35dwIdzpvo  1703428973754    2.994000   3373.90000000   3373.90000000      10101.45660000  FILLED         GTC   LIMIT  SELL  1703371509130            EXPIRE_MAKER         25       0.027619           270.8             14.978011    86.505009
+24  CAKEUSDT   597800248           -1  srwR5rF9tSfqU51NSBsajv  1703430904522    3.074000   3285.53000000   3285.53000000      10099.71922000  FILLED         GTC   LIMIT  SELL  1703429409548            EXPIRE_MAKER         27       0.027593           270.6             14.947366    84.795314
+25   GRTUSDT  1380284656           -1  lVlMTloc0HjnRwnMi8bVP5  1703438762459    0.195800  51585.00000000  51585.00000000      10100.34300000  FILLED         GTC   LIMIT  SELL  1703281507217            EXPIRE_MAKER         20       0.027448           268.2             14.841296    85.614604
+26  EGLDUSDT  1257719586           -1  8WzAF3o6SMGuOTgxmB6syD  1703461664725   74.220000    136.08000000    136.08000000      10099.85760000  FILLED         GTC   LIMIT  SELL  1703457309089            EXPIRE_MAKER         28       0.028138           265.0             14.910151    85.638949
+27  EGLDUSDT  1257871388           -1  8Ji10eP1eZ7ofhGwCYmqQX  1703463345710   74.410000    135.74000000    135.74000000      10100.41340000  FILLED         GTC   LIMIT  SELL  1703463310828            EXPIRE_MAKER         29       0.028312           264.3             14.976958    85.672042
+28  ORDIUSDT   380939246           -1  7eaEqGmblpQCUygjD7Uexf  1703476274498   55.996000    180.37000000    180.37000000      10099.99852000  FILLED         GTC   LIMIT  SELL  1703426409251            EXPIRE_MAKER         26       0.027691           264.9             14.806586    85.220994
+'''
+
+# Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
+def binance_adjust_profit(from_id = None):
+    df_balance_all = pd.DataFrame(engine.connect().execute(text('SELECT coin, executedQty FROM binance_position_buy WHERE is_closed = 0')).fetchall())
+    if not df_balance_all.empty: 
+        if from_id: send_msg(f"Only can adjust profit when all positions are closed", from_id)
+        return 0
+    # Get the sum of profit of all coins in binance_position_sell table
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT sum(profit) FROM binance_position_sell')).fetchall())
+    df_profit.columns = ['profit']
+    profit = df_profit['profit'][0]
+    spot_balance = get_coin_wallet_balance_with_locked()
+    '''{'BNB': '2.043559780', 'ONG': '131820', 'USDT': '100161.787261640'}'''
+    USDT_balance = float(spot_balance['USDT'])
+    amount_to_be_adjusted = USDT_balance - (INITIAL_FUND + profit)
+    if int(amount_to_be_adjusted) != 0:
+        adjust_dict = {
+            "symbol": "ADJUSTUSDT",
+            "orderId": 1234567890,
+            "orderListId": -1,
+            "clientOrderId": "AAAAAAAAAAAAAAAAAAAAAA",
+            "transactTime": datetime.now().timestamp() * 1000,
+            "price": amount_to_be_adjusted,
+            "origQty": "1",
+            "executedQty": "1",
+            "cummulativeQuoteQty": "1",
+            "status": "FILLED",
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": "NONE",
+            "workingTime": datetime.now().timestamp() * 1000,
+            "selfTradePreventionMode": "EXPIRE_MAKER",
+            "update_id": 0,
+            "sell_cost_bnb": 0,
+            "sell_bnb_price": 0,
+            "total_bnb_cost_value": 0,
+            "profit": amount_to_be_adjusted,
+            }
+        # make dictionary to dataframe
+        df_adjust = pd.DataFrame(adjust_dict, index=[0])
+        df_adjust.to_sql('binance_position_sell', engine, if_exists='append', index=False)
+        reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
+        send_msg(reply_string, TG_BOT_OWNER_ID)
+    return amount_to_be_adjusted
 
 
 if __name__ == '__main__':

@@ -26,6 +26,9 @@ if __name__ == '__main__':
     try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
 
+    try: binance_adjust_profit(from_id = None)
+    except Exception as e: print(f'binance_adjust_profit() error:\n\n{e}\n\n')
+
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
 
