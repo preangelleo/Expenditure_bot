@@ -1971,6 +1971,7 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 
 def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    print(f"Calling analyze_symbol_interval for {symbol} with interval: {interval}")
     df = get_kline_data(symbol, interval)
     result = analyze_data(df, 34, 14, interval, tradingbot_status, symbol[:-4])
     good_to_buy = result['good_to_buy']
@@ -1981,7 +1982,7 @@ def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = Fa
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
-
+    print(f"Calling weekly_rsi_over_high for {symbol} with interval: {interval}")
     df = get_kline_data(symbol, interval)
     df['RSI'] = calculate_rsi(df['Close'], 14)
     latest = df.iloc[-1]
@@ -2896,6 +2897,7 @@ def read_and_save_token_market_cap(coin: str):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     current_date = datetime.now().strftime("%Y-%m-%d")
+    print(f"Reading and saving token market cap for {coin}")
     token_cmc_info_dict = {}
     try: df_token_cmc_info = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}" AND updated_date = "{current_date}" ORDER BY updated_date DESC LIMIT 1')).fetchall())
     except: df_token_cmc_info = pd.DataFrame()
@@ -3191,6 +3193,7 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
         df_ticker['ratio'] = 0.01
         for index, row in df_ticker.iterrows():
             if len(final_hotcoin_list) > 9: break
+            time.sleep(1)
             coin = row['coin']
             print(f"coin: {coin}")
             token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
@@ -3202,6 +3205,7 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
                 df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
             else: df_ticker.drop(index, inplace=True)
         df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
+        print(f"final df_ticker: \n\n{df_ticker}\n\n")
         for index, row in df_ticker.iterrows():
             coin = row['coin']
             if not analyze_symbol_interval(coin, '5m', tradingbot_status): continue
