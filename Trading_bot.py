@@ -152,14 +152,14 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     target_profit = read_target_profit_default() if tradingbot_status else 0.01
     
     today_hot_coin_list = binance_today_hot_coin(trading_volume_limit, False, chat_id, tradingbot_status)
-    if not today_hot_coin_list:
-        if not tradingbot_status: return
-        try: 
-            today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = tradingbot_status)
-            if not today_hot_coin_list: return
-            target_profit = 0.01
-            print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes:\n{today_hot_coin_list}\n")
-        except: return
+    if not today_hot_coin_list: return 
+        # if not tradingbot_status: return
+        # try: 
+        #     today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = tradingbot_status)
+        #     if not today_hot_coin_list: return
+        #     target_profit = 0.01
+        #     print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes:\n{today_hot_coin_list}\n")
+        # except: return
 
     print(f"Got hot coins: {', '.join(today_hot_coin_list)}")
     # query_list  = []
