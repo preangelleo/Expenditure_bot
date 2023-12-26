@@ -1937,8 +1937,8 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
             send_msg(f"UPCROSS ALERT: {coin} 1h interval kline just upcross its SMA34 line, buy in now!!!", TG_BOT_OWNER_ID)
 
     if interval == '4h':
-        if latest['RSI'] > 89 and not tradingbot_status:
-            good_to_short += 1
+        if latest['RSI'] > 89 and not tradingbot_status: good_to_short += 1
+
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
     
@@ -1958,10 +1958,12 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 
     if good_to_buy >= 4: 
         if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
+        print(f"coint: {coin} good_to_buy")
         return {'long': True, 'short': False}
 
     if good_to_short > 13: 
         if coin not in SHORT_COINS_LIST: SHORT_COINS_LIST.append(coin)
+        print(f"coint: {coin} good_to_short")
         return {'long': False, 'short': True}
     
     return {'long': False, 'short': False}
@@ -3116,6 +3118,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             
             # append df_hot_coin_history to hot_coin_history table
             df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
+            # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history')).fetchall())
 
             # send_msg_markdown(reply_string, from_id)
             if only_check: broadcast_markdown(reply_string)
