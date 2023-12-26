@@ -2843,7 +2843,7 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
 
             SHORT_COINS_LIST.append(coin)
 
-    if SHORT_COINS_LIST: send_msg(f"Coins ready to short:\n\n{', '.join(SHORT_COINS_LIST)}", from_id)
+    if SHORT_COINS_LIST: send_msg(f"Coins ready to short: {', '.join(SHORT_COINS_LIST)}", from_id)
     
     return SHORT_COINS_LIST
 
@@ -3005,7 +3005,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             
         if only_check and not i: broadcast_text(f"No hot coin for today after filtering with our strategy, which assesses a cryptocurrency's performance across 4h, 1h, 15m, and 5m intervals. It checks if the price is above the 34-period SMA and if the 14-period RSI is higher than its SMA. All conditions must be met in each interval for a positive signal, which none have achieved today.")
 
-    if SHORT_COINS_LIST: send_msg(f"Coins turning down: \n\n{', '.join(SHORT_COINS_LIST)}", from_id)
+    if SHORT_COINS_LIST: send_msg(f"Coins turning down: {', '.join(SHORT_COINS_LIST)}", from_id)
 
     return final_hotcoin_list
 
