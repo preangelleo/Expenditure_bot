@@ -25,5 +25,5 @@ dist/
 Temp.txt
 
 binance_exchange_info.json
-
 table_structure.sql
+DB_expenditure.py
