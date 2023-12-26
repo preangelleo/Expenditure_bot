@@ -161,11 +161,15 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
             print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes:\n{today_hot_coin_list}\n")
         except: return
 
+    print(f"Got hot coins: {', '.join(today_hot_coin_list)}")
     # query_list  = []
     for coin in today_hot_coin_list:
+        
         if REMAINING_POSITIONS <= 0: break
         if coin in coin_in_positions: continue
-        if is_coin_recently_listed(coin, 7): continue
+        if is_coin_recently_listed(coin, 7): 
+            print(f'{coin} is recently listed, ignore.')
+            continue
         try: 
             do_market_buy_one_unit(coin, chat_id)
             binance_position_set_limit_sell(target_profit, chat_id, coin)
