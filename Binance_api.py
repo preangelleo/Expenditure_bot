@@ -1877,7 +1877,7 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False):
+def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False, coin = None):
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
@@ -1889,10 +1889,8 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
     previous = df.iloc[-2]
     good_to_short = 0
     good_to_buy = 1
-    if interval == '4h' and latest['RSI'] > 89 and not tradingbot_status:
-        good_to_short += 1
-        good_to_buy = 0
-    if latest['RSI'] < latest['RSI_SMA']: 
+
+    if latest['RSI'] < latest['RSI_SMA'] and latest['RSI_SMA'] > 50: 
         good_to_short += 1
         good_to_buy = 0
         # print(f"Latest RSI: {latest['RSI']} < RSI SMA: {latest['RSI_SMA']}")
@@ -1906,6 +1904,7 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
         good_to_short += 1
         good_to_buy = 0
         # print(f"latest RSI: {latest['RSI']} < previous RSI: {previous['RSI']}")
+
     if interval == '5m':
         if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
             good_to_short += 1
@@ -1919,6 +1918,25 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
             good_to_short += 1
             good_to_buy = 0
             # print(f"latest Close: {latest['Close']} < previous Close: {previous['Close']}")
+        # 如果价格低于 34 日均线 15%，买入
+        if latest['Close'] < latest['SMA'] * 0.87:
+            good_to_buy += 4
+            good_to_short = 0
+            # print(f"latest Close: {latest['Close']} < SMA: {latest['SMA']} * 0.87")
+            send_msg(f"EXTREAM LOW PRICE ALERT: {coin} price is lower than 34 SMA 13%, buy in now!!!", TG_BOT_OWNER_ID)
+
+    if interval == '1h':
+        # check if a coin’s 1h interval kline just upcross its sms34 line
+        if latest['Close'] > latest['SMA'] and previous['Low'] < previous['SMA'] and latest['SMA'] > previous['SMA']:
+            good_to_buy += 4
+            good_to_short = 0
+            # print(f"latest Close: {latest['Close']} > SMA: {latest['SMA']} and previous Close: {previous['Close']} < SMA: {previous['SMA']}")
+            send_msg(f"UPCROSS ALERT: {coin} 1h interval kline just upcross its SMA34 line, buy in now!!!", TG_BOT_OWNER_ID)
+
+    if interval == '4h':
+        if latest['RSI'] > 89 and not tradingbot_status:
+            good_to_short += 1
+
     return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
     
     
@@ -1932,11 +1950,11 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 
     for interval in ['4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        result = analyze_data(df, 34, 14, interval, tradingbot_status)
+        result = analyze_data(df, 34, 14, interval, tradingbot_status, coin)
         good_to_buy += result['good_to_buy']
         good_to_short += result['good_to_short']
 
-    if good_to_buy == 4: 
+    if good_to_buy >= 4: 
         if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
         return {'long': True, 'short': False}
 
@@ -1950,7 +1968,7 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     df = get_kline_data(symbol, interval)
-    result = analyze_data(df, 34, 14, interval, tradingbot_status)
+    result = analyze_data(df, 34, 14, interval, tradingbot_status, symbol[:-4])
     good_to_buy = result['good_to_buy']
     return good_to_buy
 
@@ -2848,29 +2866,128 @@ def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = Fals
     return SHORT_COINS_LIST
 
 
+def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
+    print(f"Updating coin info to token_cmc_info table for {token_cmc_info_dict['coin']}")
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE token_cmc_info SET cmc_rank = :cmc_rank, is_fiat = :is_fiat, in_ignorelist = :in_ignorelist, in_whitelist = :in_whitelist, total_supply = :total_supply, date_added = :date_added, price_of_today = :price_of_today, volume_24h = :volume_24h, market_cap = :market_cap, fully_diluted_market_cap = :fully_diluted_market_cap, circulating_supply = :circulating_supply, circulating_ratio = :circulating_ratio, turnover_ratio = :turnover_ratio, updated_date = :updated_date, token_slug = :token_slug, token_tag = :token_tag WHERE coin = :coin"), token_cmc_info_dict)
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return 
+
+def read_and_save_token_market_cap(coin: str):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    token_cmc_info_dict = {}
+    try: df_token_cmc_info = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}" AND updated_date = "{current_date}" ORDER BY updated_date DESC LIMIT 1')).fetchall())
+    except: df_token_cmc_info = pd.DataFrame()
+    if not df_token_cmc_info.empty: token_cmc_info_dict = df_token_cmc_info.to_dict(orient='records')[0]
+    else:
+        IGNORE_LIST = get_ignore_list()
+        WHITE_LIST = get_white_list()
+        token_info = get_token_info_from_coinmarketcap(coin)
+        if token_info:
+            # get max supply or total supply, whichever is larger
+            max_supply = token_info['max_supply']
+            total_supply = token_info['total_supply']
+            if max_supply > total_supply: total_supply = max_supply
+            token_slug = token_info['slug']
+            cmc_rank = token_info['cmc_rank']
+            is_fiat = token_info['is_fiat']
+            date_added = token_info['date_added']
+            token_name = token_info['name']
+            price_of_today = token_info['quote']['USD']['price']
+            volume_24h = token_info['quote']['USD']['volume_24h']
+            market_cap = token_info['quote']['USD']['market_cap']
+            fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
+            circulating_supply = token_info['circulating_supply']
+            circulating_ratio = circulating_supply / total_supply
+            circulating_ratio = round(circulating_ratio, 2)
+            turnover_ratio = volume_24h / market_cap
+            updated_date = datetime.now().strftime("%Y-%m-%d")
+            token_tag = ', '.join(token_info['tags']) if token_info['tags'] else ''
+            in_ignorelist = 1 if coin in IGNORE_LIST else 0
+            in_whitelist = 1 if coin in WHITE_LIST else 0
+
+            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
+                add_coin_to_ignore_list(coin, TG_BOT_OWNER_ID)
+                in_ignorelist = 1
+            
+            token_cmc_info_dict = {
+                'coin': coin, 
+                'token_name': token_name, 
+                'cmc_rank': cmc_rank, 
+                'is_fiat': is_fiat, 
+                'in_ignorelist': in_ignorelist,
+                'in_whitelist': in_whitelist,
+                'total_supply': total_supply,
+                'date_added': date_added, 
+                'price_of_today': price_of_today, 
+                'volume_24h': volume_24h, 
+                'market_cap': market_cap, 
+                'fully_diluted_market_cap': fully_diluted_market_cap, 
+                'circulating_supply': circulating_supply, 
+                'circulating_ratio': circulating_ratio, 
+                'turnover_ratio': turnover_ratio, 
+                'updated_date': updated_date,
+                'token_slug': token_slug,
+                'token_tag': token_tag,
+                }
+            df_token_cmc_info = pd.DataFrame(token_cmc_info_dict, index=[0])
+            try: 
+                df_token_check = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}"')).fetchall())
+                if not df_token_check.empty: update_coin_info_to_token_cmc_info_table(token_cmc_info_dict)
+                else: df_token_cmc_info.to_sql('token_cmc_info', engine, if_exists='append', index=False)
+            except Exception as e: print(f"An error occurred: {e}")
+    return token_cmc_info_dict
+'''{
+  "coin": "RSR",
+  "token_name": "Reserve Rights",
+  "cmc_rank": 249,
+  "is_fiat": 0,
+  "in_ignorelist": 1,
+  "in_whitelist": 1,
+  "total_supply": 100000000000,
+  "date_added": "2019-05-24T00:00:00.000Z",
+  "price_of_today": 0.003625399340507161,
+  "volume_24h": 54124697.02542073,
+  "market_cap": 183445206.62966236,
+  "fully_diluted_market_cap": 362539934.05,
+  "circulating_supply": 50600000000,
+  "circulating_ratio": 0.51,
+  "turnover_ratio": 0.2950455780220369,
+  "updated_date": "2023-12-26",
+  "token_slug": "reserve-rights",
+  "token_tag": "store-of-value, defi, coinbase-ventures-portfolio, dcg-portfolio, real-world-assets"
+}'''
+# result = read_and_save_token_market_cap(coin = 'RSR')
+# print(json.dumps(result, indent=2))
+
+# pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info')).fetchall())
+
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
 def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     try:
-        token_info = get_token_info_from_coinmarketcap(token_symbol)
+        token_info = read_and_save_token_market_cap(coin = token_symbol)
         if token_info:
-            market_cap = token_info['quote']['USD']['market_cap']
+            if token_info['is_fiat']: return
+            if token_info['in_ignorelist']: return
+            if token_info['market_cap'] < MARKET_CAP_DOWN_LIMIT: return
+            if token_info['circulating_ratio'] < CIRCULATION_RATIO: return 
+            token_info = get_token_info_from_coinmarketcap(token_symbol)
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
-            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
-                add_coin_to_ignore_list(token_symbol, from_id = TG_BOT_OWNER_ID)
-                return
-            if market_cap < MARKET_CAP_DOWN_LIMIT: return
-            circulating_ratio = market_cap / fully_diluted_market_cap
-            circulating_ratio = round(circulating_ratio, 2)
-            if circulating_ratio < CIRCULATION_RATIO: return 
-            # Calculate turnover ratio
+            market_cap = token_info['quote']['USD']['market_cap']
+            circulating_ratio = token_info['circulating_supply'] / token_info['total_supply']
             turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
             turnover_ratio = round(turnover_ratio, 2)
             if turnover_ratio < turnover_ratio_eth: return
-
             current_price = token_info['quote']['USD']['price']
             coin_rank = token_info['cmc_rank']
-                
             return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug'], 'current_price': current_price, 'coin_rank': coin_rank}
     except: return 
 
@@ -3140,6 +3257,46 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
         
         if len(final_hotcoin_list) > 10: break
     return final_hotcoin_list
+
+
+# 1h bar upcross 34 SMA
+def binance_hot_coin_1h(trading_volume_limit = 20_000_000, tradingbot_status = False):
+    print(f"binance_hot_coin_5_minutes() is running")
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'quoteVolume', 'lastPrice']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
+    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
+    IGNORE_LIST = get_ignore_list()
+    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+    final_hotcoin_list = []
+    df_ticker['market_cap'] = 0
+    df_ticker['fully_diluted_market_cap'] = 0
+    df_ticker['ratio'] = 0.01
+    for index, row in df_ticker.iterrows():
+        coin = row['coin']
+        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
+        if token_info:
+            df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
+            df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
+            df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
+            df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
+            df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
+        else: df_ticker.drop(index, inplace=True)
+    df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
+    df_ticker = df_ticker.head(20)
+    print(df_ticker)
+    for index, row in df_ticker.iterrows():
+        coin = row['coin']
+        is_good_to_buy = analyze_symbol_interval(coin, '5m', tradingbot_status)
+        if not is_good_to_buy: continue
+        if weekly_rsi_over_high(coin): continue
+        final_hotcoin_list.append(coin)
+    print(final_hotcoin_list)
+    return final_hotcoin_list
+
 
 
 if __name__ == '__main__':

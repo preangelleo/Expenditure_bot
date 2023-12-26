@@ -228,6 +228,9 @@ def get_token_info_from_coinmarketcap(token_symbol):
         return token_info
     return
 
+# token_info = get_token_info_from_coinmarketcap('RSR')
+# print(json.dumps(token_info, indent=2))
+
 # Get the turnover ratio of eth from coinmarketcap
 def get_turnover_ratio_from_coinmarketcap(coin='ETH'):
     token_info = get_token_info_from_coinmarketcap(coin.upper())

@@ -61,6 +61,8 @@ def handle_socket_message(msg):
     elif msg['e'] == 'executionReport':
         # Handle execution report
         print('Execution report:')
+        print(json.dumps(msg, indent=2, sort_keys=True))
+
         '''Payload: 订单更新
         订单通过executionReport事件进行更新。
 
