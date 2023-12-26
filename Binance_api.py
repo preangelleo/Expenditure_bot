@@ -3186,7 +3186,6 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     final_hotcoin_list = []
     for df_ticker in [df_5000, df_2000]:
-        print(f"df_ticker: {df_ticker}")
         if len(final_hotcoin_list) > 9: break
         df_ticker['market_cap'] = 0
         df_ticker['fully_diluted_market_cap'] = 0
@@ -3195,7 +3194,6 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
             if len(final_hotcoin_list) > 9: break
             time.sleep(1)
             coin = row['coin']
-            print(f"coin: {coin}")
             token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
             if token_info:
                 df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
@@ -3205,7 +3203,6 @@ def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_sta
                 df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
             else: df_ticker.drop(index, inplace=True)
         df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
-        print(f"final df_ticker: \n\n{df_ticker}\n\n")
         for index, row in df_ticker.iterrows():
             coin = row['coin']
             if not analyze_symbol_interval(coin, '5m', tradingbot_status): continue
