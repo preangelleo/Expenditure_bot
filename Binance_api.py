@@ -1881,6 +1881,10 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
     df['SMA'] = calculate_sma(df['Close'], sma_period)
     df['RSI'] = calculate_rsi(df['Close'], rsi_period)
     df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
+
+    df['SMA_55'] = calculate_sma(df['Close'], 55)
+    df['SMA_89'] = calculate_sma(df['Close'], 89)
+
     df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
     df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
     df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
@@ -1888,6 +1892,9 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
     df['SMA'] = pd.to_numeric(df['SMA'], errors='coerce')
     df['RSI'] = pd.to_numeric(df['RSI'], errors='coerce')
     df['RSI_SMA'] = pd.to_numeric(df['RSI_SMA'], errors='coerce')
+    df['SMA_55'] = pd.to_numeric(df['SMA_55'], errors='coerce')
+    df['SMA_89'] = pd.to_numeric(df['SMA_89'], errors='coerce')
+
     latest = df.iloc[-1]
     previous = df.iloc[-2]
     good_to_short = 0
@@ -1926,7 +1933,7 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
             good_to_buy += 4
             good_to_short = 0
             # print(f"latest Close: {latest['Close']} < SMA: {latest['SMA']} * 0.87")
-            send_msg(f"EXTREAM LOW PRICE ALERT: {coin} price is lower than 34 SMA 13%, buy in now!!!", TG_BOT_OWNER_ID)
+            send_msg(f"EXTREAM LOW PRICE ALERT: \n{coin} price is 13% lower than SMA_34, buy in now!!!", TG_BOT_OWNER_ID)
 
     if interval == '1h':
         # check if a coin’s 1h interval kline just upcross its sms34 line
@@ -1934,7 +1941,7 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
             good_to_buy += 4
             good_to_short = 0
             # print(f"latest Close: {latest['Close']} > SMA: {latest['SMA']} and previous Close: {previous['Close']} < SMA: {previous['SMA']}")
-            send_msg(f"UPCROSS ALERT: {coin} 1h interval kline just upcross its SMA34 line, buy in now!!!", TG_BOT_OWNER_ID)
+            send_msg(f"UPCROSS ALERT: \n{coin} 1h Kline just upcross its SMA_34 line, buy in now!!!", TG_BOT_OWNER_ID)
 
     if interval == '4h':
         if latest['RSI'] > 89 and not tradingbot_status: good_to_short += 1
@@ -1971,7 +1978,6 @@ def analyze_symbol(symbol: str, tradingbot_status = False):
 
 def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
-    print(f"Calling analyze_symbol_interval for {symbol} with interval: {interval}")
     df = get_kline_data(symbol, interval)
     result = analyze_data(df, 34, 14, interval, tradingbot_status, symbol[:-4])
     good_to_buy = result['good_to_buy']
@@ -2897,7 +2903,6 @@ def read_and_save_token_market_cap(coin: str):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     current_date = datetime.now().strftime("%Y-%m-%d")
-    print(f"Reading and saving token market cap for {coin}")
     token_cmc_info_dict = {}
     try: df_token_cmc_info = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}" AND updated_date = "{current_date}" ORDER BY updated_date DESC LIMIT 1')).fetchall())
     except: df_token_cmc_info = pd.DataFrame()
