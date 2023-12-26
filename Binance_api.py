@@ -1885,6 +1885,9 @@ def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False
     df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
     df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
     df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+    df['SMA'] = pd.to_numeric(df['SMA'], errors='coerce')
+    df['RSI'] = pd.to_numeric(df['RSI'], errors='coerce')
+    df['RSI_SMA'] = pd.to_numeric(df['RSI_SMA'], errors='coerce')
     latest = df.iloc[-1]
     previous = df.iloc[-2]
     good_to_short = 0
