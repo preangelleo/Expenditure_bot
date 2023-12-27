@@ -2002,6 +2002,9 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
             return f'No open position for coin: {coin}'
 
     keep_holding_dict = read_keep_holding_coinlist()
+    holding_list = list(keep_holding_dict.keys())
+    # ignore holding_list
+    df_balance = df_balance[~df_balance['coin'].isin(holding_list)]
 
     # get current price for all coins
     df = get_token_price_table()
@@ -2057,7 +2060,7 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
         long = long_or_short['long']
         short = long_or_short['short']
         target_profit = long_or_short['target_profit'] if long_or_short['target_profit'] > 0.01 else 0.01
-        target_profit = keep_holding_dict[coin] if coin in keep_holding_dict else target_profit
+        target_profit = keep_holding_dict[coin] if coin in holding_list else target_profit
 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
