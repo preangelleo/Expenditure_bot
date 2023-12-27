@@ -1932,9 +1932,8 @@ def analyze_data(df, interval):
 
         target_profit = 0.1 - deviation_percentage
         for sma in ['SMA_89', 'SMA_55', 'SMA_34', 'SMA_21', 'SMA_13']:
-            if current_price > df[sma].iloc[-1] and df['Close'].iloc[-2] < df[sma].iloc[-2] and (df['Quote Asset Volume'].iloc[-1] > df['Quote Asset Volume SMA'].iloc[-1] or df['Quote Asset Volume'].iloc[-1] > df['Quote Asset Volume'].iloc[-2]): return {'interval': interval, 'target_profit': target_profit, 'long': True, 'short': False}
-
-            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2] and (df['Quote Asset Volume'].iloc[-1] < df['Quote Asset Volume SMA'].iloc[-1] and df['Quote Asset Volume'].iloc[-1] < df['Quote Asset Volume'].iloc[-2]): return {'interval': interval, 'target_profit': 0, 'long': False, 'short': True}
+            if current_price > df[sma].iloc[-1] and df['Close'].iloc[-2] < df[sma].iloc[-2]: return {'interval': interval, 'target_profit': target_profit, 'long': True, 'short': False}
+            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2]: return {'interval': interval, 'target_profit': 0, 'long': False, 'short': True}
 
     else: return {'interval': interval, 'target_profit': 0, 'long': False, 'short': False}
 
