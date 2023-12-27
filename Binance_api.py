@@ -1961,10 +1961,10 @@ def analyze_symbol(symbol: str):
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
-    print(f"Calling weekly_rsi_over_high for {symbol} with interval: {interval}")
     df = get_kline_data(symbol, interval)
-    df['RSI'] = calculate_rsi(df['Close'], 14)
+    df['RSI'] = calculate_rsi(df['Close'], 13)
     latest = df.iloc[-1]
+    print(f"{symbol[:-4]} weekly RSI_13: {latest['RSI']}")
     if latest['RSI'] > 89: return True
     return False
 
