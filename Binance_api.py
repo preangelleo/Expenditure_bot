@@ -1923,19 +1923,21 @@ def analyze_data(df, interval):
         # Price higher than max(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89) 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
-        if deviation_percentage > 0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
+        if deviation_percentage > 0.2: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
+        if deviation_percentage > 0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
         # Price lower than min(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89)
         min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - min_sma) / min_sma
         if deviation_percentage < -0.2: return {'interval': interval, 'target_profit': abs(deviation_percentage) - 0.2, 'long': True, 'short': False}
+        if deviation_percentage < -0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
         target_profit = 0.1 - deviation_percentage
         for sma in ['SMA_89', 'SMA_55', 'SMA_34', 'SMA_21', 'SMA_13']:
             if current_price > df[sma].iloc[-1] and df['Close'].iloc[-2] < df[sma].iloc[-2]: return {'interval': interval, 'target_profit': target_profit, 'long': True, 'short': False}
-            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2]: return {'interval': interval, 'target_profit': 0, 'long': False, 'short': True}
+            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2]: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
 
-    else: return {'interval': interval, 'target_profit': 0, 'long': False, 'short': False}
+    else: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
     
 def analyze_symbol(symbol: str):
