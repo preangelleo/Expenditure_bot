@@ -2004,7 +2004,7 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
     keep_holding_dict = read_keep_holding_coinlist()
     holding_list = list(keep_holding_dict.keys())
     # ignore holding_list
-    df_balance = df_balance[~df_balance['coin'].isin(holding_list)]
+    df_balance = df_balance[~df_balance['coin'].isin(holding_list)] if holding_list else df_balance
 
     # get current price for all coins
     df = get_token_price_table()
