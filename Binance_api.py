@@ -1934,25 +1934,26 @@ def analyze_data(df, interval):
     
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
-
     good_to_buy = 0
     good_to_short = 0
     target_profit = 0
-
     for interval in ['1d', '4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        result = analyze_data(df, interval)
-        if result['long']: 
-            good_to_buy += 1
-            good_to_short -= 1
-        if result['short']: 
-            good_to_short += 1
-            good_to_buy -= 1
-        target_profit = max(target_profit, result['target_profit'])
-
+        if not df.empty: 
+            result = analyze_data(df, interval)
+            if not result: 
+                print(f"{symbol[:-4]} analyze_data() returned None: {interval}")
+                continue
+            if result['long']: 
+                good_to_buy += 1
+                good_to_short -= 1
+            if result['short']: 
+                good_to_short += 1
+                good_to_buy -= 1
+            target_profit = max(target_profit, result['target_profit'])
+    print(f"{symbol[:-4]} good_to_buy: {good_to_buy}, good_to_short: {good_to_short}, target_profit: {target_profit}")
     if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
     if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0}
-    
     return {'long': False, 'short': False, 'target_profit': 0}
 
 
@@ -3086,3 +3087,4 @@ def binance_adjust_profit(from_id = None):
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
+    print(analyze_symbol('ATOM'))
