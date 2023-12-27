@@ -2001,6 +2001,8 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
             if chat_id: send_msg(f'No open position for coin: {coin}', chat_id)
             return f'No open position for coin: {coin}'
 
+    keep_holding_dict = read_keep_holding_coinlist()
+
     # get current price for all coins
     df = get_token_price_table()
     if df.empty: 
@@ -2055,6 +2057,7 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
         long = long_or_short['long']
         short = long_or_short['short']
         target_profit = long_or_short['target_profit'] if long_or_short['target_profit'] > 0.01 else 0.01
+        target_profit = keep_holding_dict[coin] if coin in keep_holding_dict else target_profit
 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
@@ -2063,7 +2066,7 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
                 do_market_sell(coin, chat_id)
                 continue
-
+            
             binance_position_set_limit_sell(target_profit, chat_id, coin)
 
         book_value += reply_dict['profit']
@@ -2224,6 +2227,9 @@ def binance_check_order_status(symbol, clientOrderId=None):
                     print(f"An error occurred: {e}")
                     connection.rollback()
 
+            try: release_holding_coin(coin)
+            except: pass
+
             reply_msg = f'''{coin} Limit Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
             send_msg(reply_msg, TG_BOT_OWNER_ID)
 
@@ -2246,6 +2252,7 @@ def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
             print(f"An error occurred: {e}")
             connection.rollback()
             return False
+
 
 
 # select * from binance_balance_history
@@ -3110,14 +3117,18 @@ def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER
     symbol = f"{coin}USDT"
     try: target_profit = float(target_profit)
     except: return send_msg(f"Target profit must be a number", from_id)
+
     try: binance_position_set_limit_sell(target_profit, from_id, coin)
     except: return send_msg(f"Error in setting limit order for {coin}", from_id)
+
     try: df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
     except: return send_msg(f"Error in getting current open orders", from_id)
+
     if df_current_openorders.empty: return send_msg(f"No open orders", from_id)
     # get the latest order for symbol
     df_current_openorders_coin = df_current_openorders[df_current_openorders['symbol'] == symbol]
     if df_current_openorders_coin.empty: return send_msg(f"No open orders for {coin}", from_id)
+
     new_data = {
         'coin': coin,
         'symbol': symbol,
@@ -3126,9 +3137,11 @@ def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER
         'target_price': float(df_current_openorders_coin['price'].values[0]),
         'keep_holding': 1,
     }
+
     df_new_order = pd.DataFrame(new_data, index=[0])
     df_new_order.to_sql('binance_limit_sell_manually', engine, if_exists='append', index=False)
     reply_string = f"{coin} Limit order >> {format_number(target_profit*100)}% >> {format_number(new_data['target_price'])}"
+    
     return send_msg(reply_string, from_id)
 
 
@@ -3138,11 +3151,23 @@ def read_keep_holding_coinlist():
     if not df_keep_holding_coinlist.empty: 
         # make a dictionary of coin and target_profit
         reply_dict = df_keep_holding_coinlist.set_index('coin').T.to_dict('records')[0]
-        return 
-    return df_keep_holding_coinlist['coin'].values.tolist()
+        return reply_dict
+    return {}
+
+
+def release_holding_coin(coin):
+    with engine.connect() as connection:
+        try:
+            connection.execute(text(f'UPDATE binance_limit_sell_manually SET keep_holding = 0 WHERE coin = "{coin}"'))
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return True
+
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
     # print(analyze_symbol('ATOM'))
     # binance_position_set_limit_sell(target_profit=0.5, chat_id=TG_BOT_OWNER_ID, coin='BONK')
-    manually_limit_order('BONK', 0.5, from_id = TG_BOT_OWNER_ID)
+    # manually_limit_order('BONK', 0.5, from_id = TG_BOT_OWNER_ID)

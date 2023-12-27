@@ -71,7 +71,6 @@ ONE_PARAMETER_COMMAND_LIST = {
     'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
     }
 
-
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
     'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
@@ -79,6 +78,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000'},
     'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
     'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
+    'manually_limit_order': {'function': manually_limit_order, 'description': 'You need to input a coin symbol, a target profit after this command, for example: /manually_limit_order BONK 0.1'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
