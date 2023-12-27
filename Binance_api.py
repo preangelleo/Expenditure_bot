@@ -3157,7 +3157,7 @@ def read_keep_holding_coinlist():
 def release_holding_coin(coin):
     with engine.connect() as connection:
         try:
-            connection.execute(text(f'UPDATE binance_limit_sell_manually SET keep_holding = 0 WHERE coin = "{coin}"'))
+            connection.execute(text(f'DELETE FROM binance_limit_sell_manually WHERE coin = :coin'), {'coin': coin})
             connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")
