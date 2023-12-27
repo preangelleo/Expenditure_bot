@@ -2002,7 +2002,8 @@ def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_recor
             return f'No open position for coin: {coin}'
 
     keep_holding_dict = read_keep_holding_coinlist()
-    holding_list = list(keep_holding_dict.keys())
+    holding_list = list(keep_holding_dict.keys()) if keep_holding_dict else []
+
     # ignore holding_list
     df_balance = df_balance[~df_balance['coin'].isin(holding_list)] if holding_list else df_balance
 
@@ -2240,22 +2241,6 @@ def binance_check_order_status(symbol, clientOrderId=None):
         if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled(clientOrderId, limit_order_data['status'])
 
     return 
-
-
-# Mark a limit order as canceled in binance_limit_sell_order table
-def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
-    
-    with engine.connect() as connection:
-        try:
-            # Execute the query with the updated update_id
-            connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': status})
-            connection.commit()
-            return True
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-            return False
-
 
 
 # select * from binance_balance_history
@@ -3171,6 +3156,31 @@ def release_holding_coin(coin):
         except Exception as e:
             print(f"An error occurred: {e}")
             connection.rollback()
+    return True
+
+
+# Mark a limit order as canceled in binance_limit_sell_order table
+def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
+    
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': status})
+            connection.commit()
+            
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+
+    # delete coin from binance_limit_sell_manually table
+    with engine.connect() as connection:
+        try:
+            connection.execute(text(f'DELETE FROM binance_limit_sell_manually WHERE clientOrderId = :clientOrderId'), {'clientOrderId': clientOrderId})
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+
     return True
 
 
