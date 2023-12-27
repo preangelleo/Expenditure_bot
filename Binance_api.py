@@ -3145,7 +3145,6 @@ def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER
     return send_msg(reply_string, from_id)
 
 
-
 def read_keep_holding_coinlist():
     df_keep_holding_coinlist = pd.DataFrame(engine.connect().execute(text('SELECT coin, target_profit FROM binance_limit_sell_manually WHERE keep_holding = 1')).fetchall())
     if not df_keep_holding_coinlist.empty: 
