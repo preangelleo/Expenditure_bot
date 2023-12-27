@@ -29,14 +29,11 @@ if __name__ == '__main__':
     except: pass
 
     # Check limit order status
-    try: binance_position_buy_check_all(0.01, None, None, False, current_bot_status)
+    try: binance_position_buy_check_all(None, None, False)
     except: pass
 
     try: binance_today_hot_coins_check(chat_id = TG_BOT_OWNER_ID, user_nick_name = 'Dear', crontab = True, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
     except: pass
-
-    try: binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = current_bot_status)
-    except Exception as e: print(f"binance_today_short_coin error: \n\n{e}\n\n")
 
     try: read_emails()
     except: pass

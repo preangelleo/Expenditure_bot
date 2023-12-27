@@ -1864,10 +1864,8 @@ def get_kline_data(symbol, interval):
     # print(df)
     return df
 
-
 def calculate_sma(data, period):
     return data.rolling(window=period).mean()
-
 
 def calculate_rsi(data, period=14):
     delta = data.diff()
@@ -1877,111 +1875,85 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def analyze_data(df, sma_period, rsi_period, interval, tradingbot_status = False, coin = None):
-    df['SMA'] = calculate_sma(df['Close'], sma_period)
-    df['RSI'] = calculate_rsi(df['Close'], rsi_period)
-    df['RSI_SMA'] = calculate_sma(df['RSI'], rsi_period)
+def calculate_macd(data, short_window=12, long_window=26, signal=9):
+    short_ema = data.ewm(span=short_window, adjust=False).mean()
+    long_ema = data.ewm(span=long_window, adjust=False).mean()
+    macd = short_ema - long_ema
+    signal_line = macd.ewm(span=signal, adjust=False).mean()
+    return macd, signal_line
 
+
+def analyze_data(df, interval):
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
+
+    df['RSI'] = calculate_rsi(df['Close'], 13)
+    df['RSI_SMA'] = calculate_sma(df['RSI'], 13)
+
+    df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], 34)
+
+    df['SMA_13'] = calculate_sma(df['Close'], 13)
+    df['SMA_21'] = calculate_sma(df['Close'], 21)
+    df['SMA_34'] = calculate_sma(df['Close'], 34)
     df['SMA_55'] = calculate_sma(df['Close'], 55)
     df['SMA_89'] = calculate_sma(df['Close'], 89)
 
-    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
-    df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], sma_period)
-    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
-    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
-    df['SMA'] = pd.to_numeric(df['SMA'], errors='coerce')
-    df['RSI'] = pd.to_numeric(df['RSI'], errors='coerce')
-    df['RSI_SMA'] = pd.to_numeric(df['RSI_SMA'], errors='coerce')
-    df['SMA_55'] = pd.to_numeric(df['SMA_55'], errors='coerce')
-    df['SMA_89'] = pd.to_numeric(df['SMA_89'], errors='coerce')
+    target_profit = 0
+    # This is a very basic and not necessarily accurate approach
+    current_price = df['Close'].iloc[-1]
 
-    latest = df.iloc[-1]
-    previous = df.iloc[-2]
-    good_to_short = 0
-    good_to_buy = 1
+    condition_1d = df['SMA_55'].iloc[-1] > df['SMA_89'].iloc[-1]
+    condition_4h = df['SMA_34'].iloc[-1] > df['SMA_55'].iloc[-1]
+    condition_1h = df['SMA_21'].iloc[-1] > df['SMA_34'].iloc[-1]
+    condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
+    condition_5m = current_price > df['SMA_13'].iloc[-1]
 
-    if latest['RSI'] < latest['RSI_SMA'] and latest['RSI_SMA'] > 50: 
-        good_to_short += 1
-        good_to_buy = 0
-        # print(f"Latest RSI: {latest['RSI']} < RSI SMA: {latest['RSI_SMA']}")
-    # Check if latest sma is lower than previous sma
-    if latest['SMA'] < previous['SMA']: 
-        good_to_short += 1
-        good_to_buy = 0
-        # print(f"latest SMA: {latest['SMA']} < previous SMA: {previous['SMA']}")
-    # check if latest rsi is lower than previous rsi
-    if latest['RSI'] < previous['RSI']:
-        good_to_short += 1
-        good_to_buy = 0
-        # print(f"latest RSI: {latest['RSI']} < previous RSI: {previous['RSI']}")
+    current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
 
-    if interval == '5m':
-        if previous['Quote Asset Volume'] < 100_000 and latest['Quote Asset Volume'] < 100_000:
-            good_to_short += 1
-            good_to_buy = 0
-            # print(f"previous Quote Asset Volume: {previous['Quote Asset Volume']} < 100_000 and latest Quote Asset Volume: {latest['Quote Asset Volume']} < 100_000")
-        if latest['Quote Asset Volume'] < latest['Quote Asset Volume SMA'] and previous['Quote Asset Volume'] < previous['Quote Asset Volume SMA']:
-            good_to_short += 1
-            good_to_buy = 0
-            # print(f"Quote Asset Volume: {latest['Quote Asset Volume']} < Quote Asset Volume SMA: {latest['Quote Asset Volume SMA']}")
-        if latest['Close'] < previous['Close']: 
-            good_to_short += 1
-            good_to_buy = 0
-            # print(f"latest Close: {latest['Close']} < previous Close: {previous['Close']}")
-        # 如果价格低于 34 日均线 15%，买入
-        if latest['Close'] < latest['SMA'] * 0.87:
-            good_to_buy += 4
-            good_to_short = 0
-            # print(f"latest Close: {latest['Close']} < SMA: {latest['SMA']} * 0.87")
-            send_msg(f"EXTREAM LOW PRICE ALERT: \n{coin} price is 13% lower than SMA_34, buy in now!!!", TG_BOT_OWNER_ID)
+    if current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
 
-    if interval == '1h':
-        # check if a coin’s 1h interval kline just upcross its sms34 line
-        if latest['Close'] > latest['SMA'] and previous['Low'] < previous['SMA'] and latest['SMA'] > previous['SMA']:
-            good_to_buy += 4
-            good_to_short = 0
-            # print(f"latest Close: {latest['Close']} > SMA: {latest['SMA']} and previous Close: {previous['Close']} < SMA: {previous['SMA']}")
-            send_msg(f"UPCROSS ALERT: \n{coin} 1h Kline just upcross its SMA_34 line, buy in now!!!", TG_BOT_OWNER_ID)
+        # Price higher than max(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89) 
+        max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
+        deviation_percentage = (current_price - max_sma) / max_sma
+        if deviation_percentage > 0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
 
-    if interval == '4h':
-        if latest['RSI'] > 89 and not tradingbot_status: good_to_short += 1
+        # Price lower than min(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89)
+        min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
+        deviation_percentage = (current_price - min_sma) / min_sma
+        if deviation_percentage < -0.2: return {'interval': interval, 'target_profit': abs(deviation_percentage) - 0.2, 'long': True, 'short': False}
 
-    return {'good_to_buy': good_to_buy, 'good_to_short': good_to_short}
+        target_profit = 0.1 - deviation_percentage
+        for sma in ['SMA_89', 'SMA_55', 'SMA_34', 'SMA_21', 'SMA_13']:
+            if current_price > df[sma].iloc[-1] and df['Close'].iloc[-2] < df[sma].iloc[-2] and (df['Quote Asset Volume'].iloc[-1] > df['Quote Asset Volume SMA'].iloc[-1] or df['Quote Asset Volume'].iloc[-1] > df['Quote Asset Volume'].iloc[-2]): return {'interval': interval, 'target_profit': target_profit, 'long': True, 'short': False}
+
+            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2] and (df['Quote Asset Volume'].iloc[-1] < df['Quote Asset Volume SMA'].iloc[-1] and df['Quote Asset Volume'].iloc[-1] < df['Quote Asset Volume'].iloc[-2]): return {'interval': interval, 'target_profit': 0, 'long': False, 'short': True}
+
+    else: return {'interval': interval, 'target_profit': 0, 'long': False, 'short': False}
+
     
-    
-def analyze_symbol(symbol: str, tradingbot_status = False):
+def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
-    coin = symbol[:-4]
-    global SHORT_COINS_LIST
 
     good_to_buy = 0
     good_to_short = 0
+    target_profit = 0
 
-    for interval in ['4h', '1h', '15m', '5m']:
+    for interval in ['1d', '4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
-        result = analyze_data(df, 34, 14, interval, tradingbot_status, coin)
-        good_to_buy += result['good_to_buy']
-        good_to_short += result['good_to_short']
+        result = analyze_data(df, interval)
+        if result['long']: 
+            good_to_buy += 1
+            good_to_short -= 1
+        if result['short']: 
+            good_to_short += 1
+            good_to_buy -= 1
+        target_profit = max(target_profit, result['target_profit'])
 
-    if good_to_buy >= 4: 
-        if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
-        print(f"coint: {coin} good_to_buy")
-        return {'long': True, 'short': False}
-
-    if good_to_short > 13: 
-        if coin not in SHORT_COINS_LIST: SHORT_COINS_LIST.append(coin)
-        print(f"coint: {coin} good_to_short")
-        return {'long': False, 'short': True}
+    if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+    if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0}
     
-    return {'long': False, 'short': False}
-
-
-def analyze_symbol_interval(symbol: str, interval = '5m', tradingbot_status = False):
-    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
-    df = get_kline_data(symbol, interval)
-    result = analyze_data(df, 34, 14, interval, tradingbot_status, symbol[:-4])
-    good_to_buy = result['good_to_buy']
-    return good_to_buy
+    return {'long': False, 'short': False, 'target_profit': 0}
 
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
@@ -1992,15 +1964,12 @@ def weekly_rsi_over_high(symbol):
     df = get_kline_data(symbol, interval)
     df['RSI'] = calculate_rsi(df['Close'], 14)
     latest = df.iloc[-1]
-    if latest['RSI'] > 89: 
-        # send_msg(f"{symbol[:-4]} weekly RSI {format_number(latest['RSI'])} is higher than 89", from_id)
-        return True
-    
+    if latest['RSI'] > 89: return True
     return False
 
 
 # check binance_position_buy and calculate profit based on current price for all coins
-def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, crontab_profit_record=False, tradingbot_status=False):
+def binance_position_buy_check_all(coin=None, chat_id=None, crontab_profit_record=False):
 
     try: df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
     except: 
@@ -2047,7 +2016,6 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
     current_orders = get_open_orders_list()
-    WHITE_LIST = get_white_list()
     book_value = 0
     for_reply = {}
 
@@ -2074,22 +2042,19 @@ def binance_position_buy_check_all(target_profit=0.01, coin=None, chat_id=None, 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
-        long_or_short = analyze_symbol(coin, tradingbot_status)
+        long_or_short = analyze_symbol(coin)
         '''{'long': True, 'short': False}'''
         long = long_or_short['long']
         short = long_or_short['short']
+        target_profit = long_or_short['target_profit'] if long_or_short['target_profit'] > 0.01 else 0.01
 
         # Condition analysis: if the coin has profit but in the same time, the analysis_symbol() returns False (which means the coin is not good to buy), Or the weekly_rsi_over_high() returns True (which means the weekly rsi is over 89), then do market sell for this coin (cancel order first if there is an open order)
         if not long: 
 
             if reply_dict['up_ratio'] >= target_profit:
-                if short: send_msg(f"{coin} is good to short now, close all positions.", TG_BOT_OWNER_ID)
-                if reply_dict['up_ratio'] >= target_profit: send_msg(f"{coin} is not in good condition, and profit is positive, close position.", TG_BOT_OWNER_ID)
-                
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
                 do_market_sell(coin, chat_id)
                 continue
-            if short: send_msg(f"SHORT {coin} on UMFUTURES to hedge the risk.", TG_BOT_OWNER_ID)
 
             binance_position_set_limit_sell(target_profit, chat_id, coin)
 
@@ -2527,11 +2492,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit = 0.01, coin = None, chat_id = from_id, crontab_profit_record = False, tradingbot_status = trading_bot_switch_status())
+    return binance_position_buy_check_all(coin = None, chat_id = from_id, crontab_profit_record = False)
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_position_buy_check_all(target_profit = 0.01, coin = coin, chat_id = from_id, crontab_profit_record = False, tradingbot_status = trading_bot_switch_status())
+    return binance_position_buy_check_all(coin = coin, chat_id = from_id, crontab_profit_record = False)
 
 
 '''小额资产转换 (USER_DATA)
@@ -2834,57 +2799,6 @@ def calculate_hot_coin_price_change(from_id=None):
     return
 
 
-def binance_today_short_coin(from_id = TG_BOT_OWNER_ID, tradingbot_status = False):
-
-    df_ticker = pd.read_json(BINANCE_TICKER_URL)
-
-    # Keep symbol, priceChangePercent, lastPrice, openPrice, highPrice, lowPrice, volume, quoteVolume, openTime, closeTime
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
-
-    # pick up the symbol endswith 'USDT'
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-
-    df_ticker = df_ticker[(df_ticker['priceChangePercent'] < -1) & (df_ticker['priceChangePercent'] > -20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-
-    if df_ticker.empty: return []
-
-    # df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
-
-    # sort by 'turnover_by_priceChangePercent' in descending order
-    df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
-
-    # Keep the top 30 coins
-    df_ticker = df_ticker.head(10)
-
-    # make a coin list
-    today_short_coin_list = df_ticker['coin'].values.tolist()
-    
-    global SHORT_COINS_LIST
-
-    if today_short_coin_list: 
-        for index, row in df_ticker.iterrows():
-            time.sleep(1)
-            coin = row['coin']
-
-            long_or_short = analyze_symbol(coin, tradingbot_status)
-            short = long_or_short['short']
-
-            if not short: 
-                if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
-                continue
-
-            if not weekly_rsi_over_high(coin): 
-                if coin in SHORT_COINS_LIST: SHORT_COINS_LIST.remove(coin)
-                continue
-
-            SHORT_COINS_LIST.append(coin)
-
-    if SHORT_COINS_LIST: send_msg(f"Coins ready to short: {', '.join(SHORT_COINS_LIST)}", from_id)
-    
-    return SHORT_COINS_LIST
-
-
 def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
     print(f"Updating coin info to token_cmc_info table for {token_cmc_info_dict['coin']}")
     with engine.connect() as connection:
@@ -3013,7 +2927,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, from_id = None, tradingbot_status = False):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, tradingbot_status = False, coin_in_positions = []):
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
@@ -3024,7 +2938,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
     df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
     if df_ticker.empty:
         print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
-        if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
         return []
     if not tradingbot_status:
         print(f"Trading bot is off, only check white_list coins")
@@ -3032,10 +2945,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
         if df_ticker.empty:
             print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
-            if only_check: broadcast_text(f"No hot coin today after narrowing down to the coins in WHITE_LIST:\n\n{', '.join(WHITE_LIST)}")
             return []
     hotcoin_list_of_today = get_hot_coin_list_of_today()
     df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)]
+    df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)]
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
@@ -3053,13 +2966,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         else: df_ticker.drop(index, inplace=True)
     if df_ticker.empty:
         print(f"3) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
-        if only_check: broadcast_text(f"No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
         return []
     df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
     df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
     df_ticker = df_ticker.head(10)
     today_hot_coin_list = df_ticker['coin'].values.tolist()
-    final_hotcoin_list = []
+    final_hotcoin_dict = {}
     if today_hot_coin_list: 
         i = 0
         for index, row in df_ticker.iterrows():
@@ -3067,11 +2979,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             time.sleep(1)
             coin = row['coin']
             if weekly_rsi_over_high(coin): continue
-            long_or_short = analyze_symbol(coin, tradingbot_status)
+            long_or_short = analyze_symbol(coin)
             long = long_or_short['long']
             if not long: continue
+            target_profit = long_or_short['target_profit']
+            final_hotcoin_dict[coin] = target_profit
             i += 1
-            final_hotcoin_list.append(coin)
             price = row['lastPrice']
             priceChangePercent = row['priceChangePercent']
             turnover_ratio = row['turnover_ratio']
@@ -3091,7 +3004,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
             reply_string = f"{i} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
             broadcast_markdown(reply_string)
-    return final_hotcoin_list
+    return final_hotcoin_dict
 
 '''df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
       symbol     orderId  orderListId           clientOrderId   transactTime       price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type  side    workingTime selfTradePreventionMode  update_id  sell_cost_bnb  sell_bnb_price  total_bnb_cost_value       profit
@@ -3171,53 +3084,5 @@ def binance_adjust_profit(from_id = None):
     return amount_to_be_adjusted
 
 
-def binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = False):
-    print(f"binance_hot_coin_5_minutes() is running")
-    df_ticker = pd.read_json(BINANCE_TICKER_URL)
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'quoteVolume', 'lastPrice']]
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
-    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-    df_ticker = df_ticker[~df_ticker['coin'].str.contains('USD')]
-    hotcoin_list_of_today = get_hot_coin_list_of_today()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)]
-    IGNORE_LIST = get_ignore_list()
-    df_5000 = df_ticker[df_ticker['quoteVolume'] > 50_000_000]
-    df_5000 = df_5000[~df_5000['coin'].isin(IGNORE_LIST)]
-    df_2000 = df_ticker[df_ticker['quoteVolume'] <= 50_000_000]
-    df_2000 = df_2000[~df_2000['coin'].isin(IGNORE_LIST)]
-    WHITE_LIST = get_white_list()
-    df_2000 = df_2000[df_2000['coin'].isin(WHITE_LIST)]
-    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
-    final_hotcoin_list = []
-    for df_ticker in [df_5000, df_2000]:
-        if len(final_hotcoin_list) > 9: break
-        df_ticker['market_cap'] = 0
-        df_ticker['fully_diluted_market_cap'] = 0
-        df_ticker['ratio'] = 0.01
-        for index, row in df_ticker.iterrows():
-            if len(final_hotcoin_list) > 9: break
-            time.sleep(1)
-            coin = row['coin']
-            token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
-            if token_info:
-                df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
-                df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
-                df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
-                df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
-                df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
-            else: df_ticker.drop(index, inplace=True)
-        df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
-        for index, row in df_ticker.iterrows():
-            coin = row['coin']
-            if not analyze_symbol_interval(coin, '5m', tradingbot_status): continue
-            if weekly_rsi_over_high(coin): continue
-            final_hotcoin_list.append(coin)
-    return final_hotcoin_list
-
-
-
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    r = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = True)
-    print(r)

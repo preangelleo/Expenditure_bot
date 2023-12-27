@@ -14,7 +14,7 @@ if __name__ == '__main__':
     try: current_bot_status = trading_bot_switch_status()
     except: pass
 
-    try: binance_position_buy_check_all(0.01, None, None, True, current_bot_status)
+    try: binance_position_buy_check_all(None, None, True)
     except Exception as e: print(f'binance_position_buy_check_all() error:\n\n{e}\n\n')
 
     try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     try: calculate_hot_coin_price_change()
     except Exception as e: print(f'calculate_hot_coin_price_change() error:\n\n{e}\n\n')
 
-    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = TG_BOT_OWNER_ID)
+    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, tradingbot_status = current_bot_status, coin_in_positions=[])
     except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
 
     try: binance_adjust_profit(from_id = None)

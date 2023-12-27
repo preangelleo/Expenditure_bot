@@ -68,9 +68,7 @@ from Binance_api import *
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    trading_bot_status = trading_bot_switch_status()
-
-    long_or_short = analyze_symbol(symbol, trading_bot_status)
+    long_or_short = analyze_symbol(symbol)
     '''{'long': True, 'short': False}'''
     long = long_or_short['long']
     short = long_or_short['short']
@@ -149,21 +147,11 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
     REMAINING_POSITIONS = POSITIONS_LIMIT - df_balance.shape[0]
-    target_profit = read_target_profit_default() if tradingbot_status else 0.01
-    
-    today_hot_coin_list = binance_today_hot_coin(trading_volume_limit, False, chat_id, tradingbot_status)
-    if not today_hot_coin_list: return 
-        # if not tradingbot_status: return
-        # try: 
-        #     today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = tradingbot_status)
-        #     if not today_hot_coin_list: return
-        #     target_profit = 0.01
-        #     print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes:\n{today_hot_coin_list}\n")
-        # except: return
 
-    print(f"Got hot coins: {', '.join(today_hot_coin_list)}")
-    # query_list  = []
-    for coin in today_hot_coin_list:
+    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, False, tradingbot_status, coin_in_positions)
+    if not today_hot_coin_dict: return 
+
+    for coin in today_hot_coin_dict:
         
         if REMAINING_POSITIONS <= 0: break
         if coin in coin_in_positions: continue
@@ -171,6 +159,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
             print(f'{coin} is recently listed, ignore.')
             continue
         try: 
+            target_profit = float(today_hot_coin_dict[coin]['target_profit'])
             do_market_buy_one_unit(coin, chat_id)
             binance_position_set_limit_sell(target_profit, chat_id, coin)
             REMAINING_POSITIONS -= 1
@@ -179,13 +168,10 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
     return
 
 
-def only_check_hot_coins(from_id):
+def only_check_hot_coins(from_id = None):
     tradingbot_status = trading_bot_switch_status()
-    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, from_id = from_id, tradingbot_status = tradingbot_status)
+    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, tradingbot_status = tradingbot_status, coin_in_positions=[])
 
 
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')
-    today_hot_coin_list = binance_hot_coin_5_minutes(trading_volume_limit = 20_000_000, tradingbot_status = trading_bot_switch_status())
-    print(f"\n\nGot hot_coins from binance_hot_coin_5_minutes:\n{today_hot_coin_list}\n")
-
