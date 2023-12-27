@@ -55,7 +55,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     'binance_market_sell': {'function': force_do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
-    'binance_market_buy': {'function': do_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
+    'binance_market_buy': {'function': manually_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_from_ignore_coin_list, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},

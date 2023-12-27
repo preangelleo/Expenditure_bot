@@ -138,15 +138,16 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
     coin_in_positions = []
     try:
-        # Check if there is any open position in binance_position_buy table, if yes, ignore this coin
-        df_balance = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy WHERE is_closed = 0')).fetchall())
-        if df_balance.shape[0] >= POSITIONS_LIMIT: 
-            if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_balance.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number.", chat_id)
+        df_auto_position = get_df_from_position_buy_table(None, 'binance_position_buy')
+        df_manual_position = get_df_from_position_buy_table(None, 'binance_manually_buy')
+        if df_auto_position.shape[0] + df_manual_position.shape[0] >= POSITIONS_LIMIT: 
+            if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_auto_position.shape[0] + df_manual_position.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number.", chat_id)
             return
-        coin_in_positions = df_balance['coin'].values.tolist()
+
+        coin_in_positions = df_auto_position['coin'].values.tolist() + df_manual_position['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     
-    REMAINING_POSITIONS = POSITIONS_LIMIT - df_balance.shape[0]
+    REMAINING_POSITIONS = POSITIONS_LIMIT - (df_auto_position.shape[0] + df_manual_position.shape[0])
 
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, False, tradingbot_status, coin_in_positions)
     if not today_hot_coin_dict: return 
@@ -161,7 +162,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
         try: 
             target_profit = float(today_hot_coin_dict[coin]['target_profit'])
             do_market_buy_one_unit(coin, chat_id)
-            binance_position_set_limit_sell(target_profit, chat_id, coin)
+            binance_position_set_limit_sell(target_profit, chat_id, coin, table_name = 'binance_position_buy')
             REMAINING_POSITIONS -= 1
         except Exception as e: print(f'Failed to buy {coin} or set limit order...\n\n{e}')
 
