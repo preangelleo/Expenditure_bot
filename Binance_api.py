@@ -2405,6 +2405,9 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
                         except Exception as e:
                             print(f"An error occurred: {e}")
                             connection.rollback()
+                    
+                    try: release_holding_coin(coin)
+                    except: pass
 
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
@@ -3128,6 +3131,9 @@ def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER
     # get the latest order for symbol
     df_current_openorders_coin = df_current_openorders[df_current_openorders['symbol'] == symbol]
     if df_current_openorders_coin.empty: return send_msg(f"No open orders for {coin}", from_id)
+
+    try: release_holding_coin(coin)
+    except: send_msg(f"Error in releasing {coin} from holding", from_id)
 
     new_data = {
         'coin': coin,
