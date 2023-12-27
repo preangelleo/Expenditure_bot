@@ -244,6 +244,13 @@ def get_exchange_info_symbols(coin: str):
     df = pd.DataFrame(data['symbols'])
     df_new = df[df['symbol'].str.endswith(coin.upper()+'USDT')]
 
+    if df_new.empty: 
+        get_exchange_info()
+        with open('binance_exchange_info.json') as f: data = json.load(f)
+        df = pd.DataFrame(data['symbols'])
+        df_new = df[df['symbol'].str.endswith(coin.upper()+'USDT')]
+        if df_new.empty: return
+
     # convert df back into dict 
     result_list = df_new.to_dict(orient='records')
     response = {
@@ -1867,7 +1874,7 @@ def get_kline_data(symbol, interval):
 def calculate_sma(data, period):
     return data.rolling(window=period).mean()
 
-def calculate_rsi(data, period=14):
+def calculate_rsi(data, period=13):
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
@@ -2300,6 +2307,15 @@ def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_
     return polished_parameters
 
 
+def is_scientific_notation(number):
+    # Convert the number to a string
+    number_str = str(number)
+    # Check if 'e' or 'E' is in the string
+    if 'e' in number_str or 'E' in number_str:
+        formatted_number = "{:.20f}".format(number).rstrip('0').rstrip('.')
+        return formatted_number
+    else: return number
+
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None):
 
@@ -2386,6 +2402,9 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
         price = polished_parameters['price']
+        '''price = 2.368e-05' / {'code': -1100, 'msg': "Illegal characters found in parameter 'price'; legal range is '^([0-9]{1,20})(\\.[0-9]{1,20})?$'."}'''
+        # make price format legit number
+        price = is_scientific_notation(price)
 
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
@@ -3085,6 +3104,45 @@ def binance_adjust_profit(from_id = None):
     return amount_to_be_adjusted
 
 
+# define a function to set a limit order for a coin in position
+def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
+    coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
+    symbol = f"{coin}USDT"
+    try: target_profit = float(target_profit)
+    except: return send_msg(f"Target profit must be a number", from_id)
+    try: binance_position_set_limit_sell(target_profit, from_id, coin)
+    except: return send_msg(f"Error in setting limit order for {coin}", from_id)
+    try: df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
+    except: return send_msg(f"Error in getting current open orders", from_id)
+    if df_current_openorders.empty: return send_msg(f"No open orders", from_id)
+    # get the latest order for symbol
+    df_current_openorders_coin = df_current_openorders[df_current_openorders['symbol'] == symbol]
+    if df_current_openorders_coin.empty: return send_msg(f"No open orders for {coin}", from_id)
+    new_data = {
+        'coin': coin,
+        'symbol': symbol,
+        'clientOrderId': df_current_openorders_coin['clientOrderId'].values[0],
+        'target_profit': target_profit,
+        'target_price': float(df_current_openorders_coin['price'].values[0]),
+        'keep_holding': 1,
+    }
+    df_new_order = pd.DataFrame(new_data, index=[0])
+    df_new_order.to_sql('binance_limit_sell_manually', engine, if_exists='append', index=False)
+    reply_string = f"{coin} Limit order >> {format_number(target_profit*100)}% >> {format_number(new_data['target_price'])}"
+    return send_msg(reply_string, from_id)
+
+
+
+def read_keep_holding_coinlist():
+    df_keep_holding_coinlist = pd.DataFrame(engine.connect().execute(text('SELECT coin, target_profit FROM binance_limit_sell_manually WHERE keep_holding = 1')).fetchall())
+    if not df_keep_holding_coinlist.empty: 
+        # make a dictionary of coin and target_profit
+        reply_dict = df_keep_holding_coinlist.set_index('coin').T.to_dict('records')[0]
+        return 
+    return df_keep_holding_coinlist['coin'].values.tolist()
+
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    print(analyze_symbol('ATOM'))
+    # print(analyze_symbol('ATOM'))
+    # binance_position_set_limit_sell(target_profit=0.5, chat_id=TG_BOT_OWNER_ID, coin='BONK')
+    manually_limit_order('BONK', 0.5, from_id = TG_BOT_OWNER_ID)
