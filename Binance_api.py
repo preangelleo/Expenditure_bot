@@ -1313,6 +1313,28 @@ def binance_cancel_order(coin: str, clientOrderId):
         print(r.json())
         return
 
+def binance_cancel_order_by_orderId(coin: str, orderId):
+    coin = coin.upper()
+    symbol = coin if coin.endswith('USDT') else coin + 'USDT'
+
+    PATH = '/api/v3/order'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'symbol': symbol,
+        'orderId': orderId,
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        time.sleep(1)
+        return data
+    else: 
+        print(r.json())
+        return
 
 '''查询订单 (USER_DATA)
 响应
@@ -1867,14 +1889,9 @@ def weekly_rsi_over_high(symbol):
 def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
     df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: 
-        if chat_id: send_msg('No open position currently.', chat_id)
-
-        try: binance_adjust_profit(chat_id)
-        except: pass
-
-        try: check_profit_and_record(chat_id, crontab_profit_record)
-        except: pass
-
+        if chat_id: 
+            send_msg('No open auto trading position currently.', chat_id)
+            check_profit_and_record(chat_id, crontab_profit_record)
         return 'No open position for all coins'
 
     if coin: 
@@ -2118,10 +2135,8 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
             data['sell_bnb_price'] = sell_bnb_price
             data['total_bnb_cost_value'] = total_bnb_cost_value
             data['profit'] = profit
-            df_sellout_result = pd.DataFrame(data, index=[0])
-            df_sellout_result.to_sql('binance_position_sell', engine, if_exists='append', index=False)
-            set_limit_order_filled_by_orderId(orderId, 'binance_limit_sell_order')
-            if close_position_status_by_order_id(position_order_id, table_name):
+            
+            if data_to_table(data, 'binance_position_sell') and set_limit_order_filled_by_orderId(orderId, 'binance_limit_sell_order') and close_position_status_by_order_id(position_order_id, table_name):
                 df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
                 if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
                 duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
@@ -2209,7 +2224,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: return f'binance_position_buy table does not exist or no position for {coin}'
 
-    # if coin is given, filter df_balance with coin
     if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
 
     if df_balance.empty: 
@@ -2218,59 +2232,41 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         return 
 
     # get open orders from table binance_limit_sell_order
-    df_current_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
+    df_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
 
-    current_orders = get_open_orders_list()
+    df_openorders = df_openorders[df_openorders['target_profit'] != target_profit]
+    if df_openorders.empty: return 
+
+    # from df_balance eliminate the symbol not in df_openorders
+    df_balance = df_balance[df_balance['symbol'].isin(df_openorders['symbol'])]
+    if df_balance.empty: return
+
+    # keep only symbol, amount, price, executedQty columns from df_balance
+    df_balance = df_balance[['coin', 'symbol', 'price', 'executedQty']]
+
+    # keep only symbol, orderId, clientOrderId columns from df_openorders
+    df_openorders = df_openorders[['symbol', 'clientOrderId']]
+
+    # merge df_balance and df_openorders based on symbol
+    df_balance = pd.merge(df_balance, df_openorders, on='symbol', how='left')
 
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
+        symbol = df_balance.iloc[i]['symbol']
         amount = df_balance.iloc[i]['executedQty']
         buy_price = df_balance.iloc[i]['price']
+        clientOrderId = df_balance.iloc[i]['clientOrderId']
         price = buy_price * (1 + float(target_profit))
-        symbol = coin + 'USDT'
 
-        # Check if there is an open order for the coin, if yes, cancel it first
-        if symbol in current_orders:
-            # Check if there is an existing order for this coin
-            existing_order = df_current_openorders[df_current_openorders['symbol'] == symbol] if not df_current_openorders.empty else pd.DataFrame()
-            if not existing_order.empty:
-                # Check the price of the existing order
-                existing_order_price = float(existing_order.iloc[0]['price'])
-                current_order_target_profit = (existing_order_price - buy_price) / buy_price
-                if round(current_order_target_profit, 2) == round(target_profit, 2): continue
-                else:
-                    clientOrderId = current_orders[symbol]
-                    cancel_confirm = binance_cancel_order(coin, clientOrderId)
+        cancel_confirm = binance_cancel_order(symbol, clientOrderId)
 
-                    '''cancel_confirm
-                    {
-                    "symbol": "FTTUSDT",
-                    "origClientOrderId": "7w4KnO7kH4A4kupqItZT5x",
-                    "orderId": 693520320,
-                    "orderListId": -1,
-                    "clientOrderId": "ugNFO2rYpp0aJJe5f3USeX",
-                    "transactTime": 1702341486234,
-                    "price": "5.50040000",
-                    "origQty": "1818.04000000",
-                    "executedQty": "0.00000000",
-                    "cummulativeQuoteQty": "0.00000000",
-                    "status": "CANCELED",
-                    "timeInForce": "GTC",
-                    "type": "LIMIT",
-                    "side": "SELL",
-                    "selfTradePreventionMode": "EXPIRE_MAKER"
-                    }
-                    '''
-
-                    # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
-                    mark_limit_order_as_canceled(clientOrderId, status=cancel_confirm['status'])
+        # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
+        mark_limit_order_as_canceled(clientOrderId, status=cancel_confirm['status'])
 
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
         price = polished_parameters['price']
-        '''price = 2.368e-05' / {'code': -1100, 'msg': "Illegal characters found in parameter 'price'; legal range is '^([0-9]{1,20})(\\.[0-9]{1,20})?$'."}'''
-        # make price format legit number
-        
+
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
         del data['fills']
@@ -2278,29 +2274,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         data['manual_order'] = 1 if (table_name and table_name == 'binance_manually_buy') else 0
 
         data_to_table(data, 'binance_limit_sell_order')
-
-        ''' DATA format:
-        {
-        "symbol": "FTTUSDT",
-        "orderId": 693489563,
-        "orderListId": -1,
-        "clientOrderId": "Af88C5Qb0P1bmzs3vjZh9u",
-        "transactTime": 1702335015511,
-        "price": "5.50040000",
-        "origQty": "1818.04000000",
-        "executedQty": "0.00000000",
-        "cummulativeQuoteQty": "0.00000000",
-        "status": "NEW",
-        "timeInForce": "GTC",
-        "type": "LIMIT",
-        "side": "SELL",
-        "workingTime": 1702335015511,
-        "fills": [],
-        "selfTradePreventionMode": "EXPIRE_MAKER",
-        "target_profit": 0.01,
-        "manual_order": 1
-        }
-        '''
 
         if chat_id: send_msg(f"{coin} Limit Sell Order >> {price} >> {target_profit*100:.2f}%", chat_id)
 

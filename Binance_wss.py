@@ -165,31 +165,31 @@ def handle_socket_message(msg):
                 try: binance_limit_buy_order_status(symbol, orderId, table_name = 'binance_manually_buy')
                 except: pass
 
-        if msg['X'] == 'NEW':
-            if clientOrderId.startswith('web_'):
-                binance_manually_buy_dict = {
-                    'symbol': symbol,
-                    'orderId': orderId,
-                    'orderListId': msg['g'],
-                    'clientOrderId': clientOrderId,
-                    'transactTime': msg['T'],
-                    'price': msg['p'],
-                    'origQty': msg['q'],
-                    'executedQty': msg['z'],
-                    'cummulativeQuoteQty': msg['Z'],
-                    'status': msg['X'],
-                    'timeInForce': msg['f'],
-                    'type': msg['o'],
-                    'side': msg['S'],
-                    'workingTime': msg['W'],
-                    'selfTradePreventionMode': msg['V'],
-                    'coin': coin,
-                    'buy_cost_bnb': 0,
-                    'buy_bnb_price': 0,
-                    'update_id': 0,
-                    'is_closed': 0
-                }
-                if data_to_table(binance_manually_buy_dict, 'binance_manually_buy'): binance_position_set_limit_sell(0.1, TG_BOT_OWNER_ID, coin, 'binance_manually_buy')
+        # if msg['X'] == 'NEW':
+        #     if clientOrderId.startswith('web_'):
+        #         binance_manually_buy_dict = {
+        #             'symbol': symbol,
+        #             'orderId': orderId,
+        #             'orderListId': msg['g'],
+        #             'clientOrderId': clientOrderId,
+        #             'transactTime': msg['T'],
+        #             'price': msg['p'],
+        #             'origQty': msg['q'],
+        #             'executedQty': msg['z'],
+        #             'cummulativeQuoteQty': msg['Z'],
+        #             'status': msg['X'],
+        #             'timeInForce': msg['f'],
+        #             'type': msg['o'],
+        #             'side': msg['S'],
+        #             'workingTime': msg['W'],
+        #             'selfTradePreventionMode': msg['V'],
+        #             'coin': coin,
+        #             'buy_cost_bnb': 0,
+        #             'buy_bnb_price': 0,
+        #             'update_id': 0,
+        #             'is_closed': 0
+        #         }
+        #         if data_to_table(binance_manually_buy_dict, 'binance_manually_buy'): binance_position_set_limit_sell(0.1, TG_BOT_OWNER_ID, coin, 'binance_manually_buy')
 
 def main():
     twm = ThreadedWebsocketManager(api_key=BINANCE_API, api_secret=BINANCE_SECRET)
