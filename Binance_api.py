@@ -2231,6 +2231,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     df_openorders = df_openorders[['update_id', 'orderId', 'manual_order']]
     df_balance = pd.merge(df_balance, df_openorders, on='update_id', how='left')
     if not manual_force: df_balance = df_balance[df_balance['manual_order'] != 1]
+    if df_balance.empty: return
+    print(df_balance)
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         amount = df_balance.iloc[i]['executedQty']
