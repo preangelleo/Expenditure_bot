@@ -1831,7 +1831,6 @@ def analyze_symbol(symbol: str):
         if not df.empty: 
             result = analyze_data(df, interval)
             if not result: 
-                good_to_buy += 1
                 print(f"{symbol[:-4]} analyze_data()  {interval} returned None")
                 continue
             if result['long']: 
@@ -1842,7 +1841,7 @@ def analyze_symbol(symbol: str):
                 good_to_buy -= 1
             target_profit = max(target_profit, result['target_profit'])
     print(f"{symbol[:-4]} good_to_buy: {good_to_buy}, good_to_short: {good_to_short}, target_profit: {target_profit}")
-    if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+    if good_to_buy >= 1: return {'long': True, 'short': False, 'target_profit': target_profit}
     if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0}
     return {'long': False, 'short': False, 'target_profit': 0}
 
