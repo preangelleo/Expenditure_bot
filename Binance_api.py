@@ -2275,9 +2275,10 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         buy_price = df_balance.iloc[i]['price']
         orderId = df_balance.iloc[i]['orderId']
         price = buy_price * (1 + float(target_profit))
-
-        cancel_confirm = binance_cancel_order_by_orderId(coin, orderId)
-        mark_limit_order_as_canceled_by_orderId(orderId, status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
+        
+        if not pd.isna(orderId):
+            cancel_confirm = binance_cancel_order_by_orderId(coin, orderId)
+            mark_limit_order_as_canceled_by_orderId(orderId, status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
 
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
