@@ -135,25 +135,23 @@ def is_coin_recently_listed(symbol: str, days=7):
 
 
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
-
     coin_in_positions = []
     try:
         df_auto_position = get_df_from_position_buy_table(None, 'binance_position_buy')
         df_manual_position = get_df_from_position_buy_table(None, 'binance_manually_buy')
-        if df_auto_position.shape[0] + df_manual_position.shape[0] >= POSITIONS_LIMIT: 
-            if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_auto_position.shape[0] + df_manual_position.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number.", chat_id)
+        df_limit_buy_order = get_open_limit_orders(None, 'binance_limit_buy_order')
+        if df_auto_position.shape[0] + df_manual_position.shape[0] + df_limit_buy_order.shape[0] >= POSITIONS_LIMIT:
+            if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_auto_position.shape[0] + df_manual_position.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number. Or cancel some limit orders.", chat_id)
             return
-
         coin_in_positions = df_auto_position['coin'].values.tolist() + df_manual_position['coin'].values.tolist()
+        if not df_auto_position.empty: 
+            df_limit_buy_order['coin'] = df_limit_buy_order['symbol'].apply(lambda x: x[:-4])
+            coin_in_positions += df_limit_buy_order['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
-    
     REMAINING_POSITIONS = POSITIONS_LIMIT - (df_auto_position.shape[0] + df_manual_position.shape[0])
-
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, False, tradingbot_status, coin_in_positions)
     if not today_hot_coin_dict: return 
-
     for coin in today_hot_coin_dict:
-        
         if REMAINING_POSITIONS <= 0: break
         if coin in coin_in_positions: continue
         if is_coin_recently_listed(coin, 7): 
@@ -165,7 +163,6 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
             binance_position_set_limit_sell(target_profit, chat_id, coin, table_name = 'binance_position_buy')
             REMAINING_POSITIONS -= 1
         except Exception as e: print(f'Failed to buy {coin} or set limit order...\n\n{e}')
-
     return
 
 

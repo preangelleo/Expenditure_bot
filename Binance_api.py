@@ -2614,7 +2614,7 @@ def get_hot_coin_list_of_today():
     today_date = datetime.now().strftime('%Y-%m-%d')
     try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
-    hotcoin_list = df['coin'].values.tolist()
+    hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
 
 
@@ -2802,8 +2802,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
             print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
             return []
     hotcoin_list_of_today = get_hot_coin_list_of_today()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)]
-    df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)]
+    df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
+    df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
@@ -2968,7 +2968,6 @@ def mark_limit_order_as_canceled_by_orderId(orderId, status='CANCELED', table_na
     return
 
 
-
 def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     reply_msg = do_market_buy(coin, CHECK_SIZE)
     if reply_msg: send_msg(reply_msg, from_id)
@@ -2987,38 +2986,26 @@ def manually_limit_buy_order(coin: str, price, amount, from_id=TG_BOT_OWNER_ID):
 def manually_limit_buy_order_process(target_price, coin, chat_id=TG_BOT_OWNER_ID):
     if not coin: return send_msg(f'Coin is not given', chat_id)
     if not target_price: return send_msg(f'Target price is not given', chat_id)
-
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     symbol = coin + 'USDT'
-
     df_auto_position = get_df_from_position_buy_table(coin, 'binance_position_buy')
     if not df_auto_position.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
     df_manual_position = get_df_from_position_buy_table(coin, 'binance_manually_buy')
     if not df_manual_position.empty: return send_msg(f'Coin {coin} is in manual position, do not double buy', chat_id)
-
     table_name = 'binance_limit_buy_order'
-
-    # get open orders from table binance_limit_sell_order
     df_current_openorders = get_open_limit_orders(symbol, table_name)
     if not df_current_openorders.empty: 
         clientOrderId = df_current_openorders['clientOrderId'].values[0]
         return send_msg(f"Coin {coin} has open limit buy order: '{clientOrderId}', do not double buy", chat_id)
-
     amount = CHECK_SIZE / target_price
-
-    polished_parameters = polish_parameters_for_limit_order(coin, price, amount, chat_id)
+    polished_parameters = polish_parameters_for_limit_order(coin, amount, target_price)
     if not polished_parameters: return send_msg(f'Failed to polish parameters for limit buy order', chat_id)
-
     amount = polished_parameters['amount']
     price = polished_parameters['price']
-
     data = binance_limit_buy(coin, amount, price)
     del data['fills']
-
     clientOrderId = data['clientOrderId']
-
     if data_to_table(data, table_name) and chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {clientOrderId}", chat_id)
-
     return
 
 
@@ -3065,7 +3052,8 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
         # Check if the order is filled, if yes, do market sell
         if data['status'] == 'FILLED':
-
+            '''{'symbol': 'RSRUSDT', 'orderId': 756116674, 'orderListId': -1, 'clientOrderId': 'YSA5RwKBxHCdcpJlXuaBlM', 'price': '0.00338500', 'origQty': '2954209.70000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'stopPrice': '0.00000000', 'icebergQty': '0.00000000', 'time': 1703720957750, 'updateTime': 1703720957750, 'isWorking': True, 'workingTime': 1703720957750, 'origQuoteOrderQty': '0.00000000', 'selfTradePreventionMode': 'EXPIRE_MAKER'}
+            '''
             data['coin'] = coin
             data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
             data['is_closed'] = 0
@@ -3101,11 +3089,9 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
     return 
 
 
-
-
 if __name__ == '__main__':
     print('Binance_api.py is running')
     # print(analyze_symbol('ATOM'))
 
-    if not check_column_in_table('target_profit', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'target_profit', 0.01)
-    if not check_column_in_table('manual_order', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'manual_order', 0)
+    # if not check_column_in_table('target_profit', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'target_profit', 0.01)
+    # if not check_column_in_table('manual_order', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'manual_order', 0)
