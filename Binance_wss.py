@@ -152,7 +152,7 @@ def handle_socket_message(msg):
             else:
                 try:
                     table_name = 'binance_limit_buy_order' if msg['S'] == 'BUY' else 'binance_limit_sell_order'
-                    if mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name): send_msg(f'''WSS: {coin} Order {msg['X']}''', TG_BOT_OWNER_ID)
+                    mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
                 except: pass
 
         if msg['X'] == 'FILLED':
