@@ -1151,6 +1151,10 @@ def get_umfuture_profit(from_id=None, coin=None):
 
     return profit
 
+def get_df_from_given_tablename(tablename):
+    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {tablename}')).fetchall())
+    except: df = pd.DataFrame()
+    return df
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")

@@ -1823,16 +1823,12 @@ def analyze_data(df, interval):
     
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
-    good_to_buy = 0
-    good_to_short = 0
-    target_profit = 0
+    good_to_buy, good_to_short, target_profit = 0, 0, 0
     for interval in ['1d', '4h', '1h', '15m', '5m']:
         df = get_kline_data(symbol, interval)
         if not df.empty: 
             result = analyze_data(df, interval)
-            if not result: 
-                print(f"{symbol[:-4]} analyze_data()  {interval} returned None")
-                continue
+            if not result: continue
             if result['long']: 
                 good_to_buy += 1
                 good_to_short -= 1
@@ -1840,23 +1836,36 @@ def analyze_symbol(symbol: str):
                 good_to_short += 1
                 good_to_buy -= 1
             target_profit = max(target_profit, result['target_profit'])
-    print(f"{symbol[:-4]} good_to_buy: {good_to_buy}, good_to_short: {good_to_short}, target_profit: {target_profit}")
-    if good_to_buy >= 1: return {'long': True, 'short': False, 'target_profit': target_profit}
-    if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0}
-    return {'long': False, 'short': False, 'target_profit': 0}
+    if good_to_buy >= 2: return {'long': True, 'short': False, 'target_profit': target_profit}
+    if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0.01}
+    return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
 # Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
+    df = get_df_from_given_tablename('weekly_rsi_over_high')
+    if not df.empty:
+        df = df[(df['symbol']==symbol) & (df['date_of_today']==datetime.now().strftime('%Y-%m-%d')) & (df['interval']==interval) & (df['is_over_high']==1)]
+        if not df.empty: 
+            print(f"FROM TABLE READ: {symbol[:-4]} Weekly RSI_13: OVER_HIGHT")
+            return 1
     df = get_kline_data(symbol, interval)
+    if df.empty: return 0
     df['RSI'] = calculate_rsi(df['Close'], 13)
     latest = df.iloc[-1]
-    print(f"{symbol[:-4]} weekly RSI_13: {latest['RSI']}")
-    if latest['RSI'] > 89: return True
-    return False
-
+    weekly_rsi_over_high_coin = {
+        'coin': symbol[:-4],
+        'symbol': symbol,
+        'RSI': latest['RSI'],
+        'interval': interval,
+        'is_over_high': 0,
+        'date_of_today': datetime.now().strftime('%Y-%m-%d')
+    }
+    weekly_rsi_over_high_coin['is_over_high'] = 1 if latest['RSI'] > 89 else 0
+    if data_to_table(weekly_rsi_over_high_coin, 'weekly_rsi_over_high'): return weekly_rsi_over_high_coin['is_over_high']
+    
 
 # check binance_position_buy and calculate profit based on current price for all coins
 def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
@@ -2762,6 +2771,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
+    remainning_positions = POSITIONS_LIMIT - len(coin_in_positions)
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
@@ -2770,19 +2780,16 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     IGNORE_LIST = get_ignore_list()
     df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
-    if df_ticker.empty:
-        print(f"2) No hot coin today after eliminate the coins in IGNORE_LIST: {IGNORE_LIST}")
-        return []
+    if df_ticker.empty: return []
     if not tradingbot_status:
         print(f"Trading bot is off, only check white_list coins")
         WHITE_LIST = get_white_list()
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
-        if df_ticker.empty:
-            print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
-            return []
+        if df_ticker.empty: return []
     hotcoin_list_of_today = get_hot_coin_list_of_today()
     df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
     df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
+    if df_ticker.empty: return []
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
@@ -2791,25 +2798,21 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         coin = row['coin']
         token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
         if token_info:
-            '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
             df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
             df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
             df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
             df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
             df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
         else: df_ticker.drop(index, inplace=True)
-    if df_ticker.empty:
-        print(f"3) No hot coin today after filtering the coins with market_cap between 100M and 5B and turnover_ratio > ETH's {turnover_ratio_eth} and circulation_ratio > {CIRCULATION_RATIO}")
-        return []
+    if df_ticker.empty: return []
     df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
     df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
     df_ticker = df_ticker.head(10)
     today_hot_coin_list = df_ticker['coin'].values.tolist()
     final_hotcoin_dict = {}
     if today_hot_coin_list: 
-        i = 0
         for index, row in df_ticker.iterrows():
-            if i > 10: break
+            if remainning_positions <= 0: break
             time.sleep(1)
             coin = row['coin']
             if weekly_rsi_over_high(coin): continue
@@ -2818,7 +2821,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
             if not long: continue
             target_profit = long_or_short['target_profit']
             final_hotcoin_dict[coin] = target_profit
-            i += 1
+            remainning_positions -= 1
             price = row['lastPrice']
             priceChangePercent = row['priceChangePercent']
             turnover_ratio = row['turnover_ratio']
@@ -2836,7 +2839,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
             df_hot_coin_history = pd.DataFrame(hot_coin_history, index=[0])
             df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"{i} [{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
+            reply_string = f"[{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
             broadcast_markdown(reply_string)
     return final_hotcoin_dict
 

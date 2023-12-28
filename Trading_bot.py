@@ -148,7 +148,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit 
     except: pass
     REMAINING_POSITIONS = POSITIONS_LIMIT - len(coin_in_positions)
     if REMAINING_POSITIONS <= 0: return
-    print(f'Remaining positions: {REMAINING_POSITIONS}')
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Remaining positions: {REMAINING_POSITIONS}')
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions)
     if not today_hot_coin_dict: return 
     for coin in today_hot_coin_dict:
