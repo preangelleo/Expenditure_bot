@@ -137,8 +137,8 @@ def is_coin_recently_listed(symbol: str, days=7):
 def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear', crontab=False, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
     coin_in_positions = []
     try:
-        df_auto_position = get_df_from_position_buy_table(None, 'binance_position_buy')
-        df_manual_position = get_df_from_position_buy_table(None, 'binance_manually_buy')
+        df_auto_position = get_df_from_position_table(None, 'binance_position_buy')
+        df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
         df_limit_buy_order = get_open_limit_orders(None, 'binance_limit_buy_order')
         if df_auto_position.shape[0] + df_manual_position.shape[0] + df_limit_buy_order.shape[0] >= POSITIONS_LIMIT:
             if not crontab: send_msg(f"{user_nick_name}, You have full positions already ({df_auto_position.shape[0] + df_manual_position.shape[0]}), please wait for some positions to be closed with profit, be patient please 😘\n\nOr, you can send '/set_position_limit 10' to reset the position limit to 10 or any other number. Or cancel some limit orders.", chat_id)

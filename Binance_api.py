@@ -693,13 +693,13 @@ def get_coin_wallet_balance_with_locked():
 
 
 def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
-    df_balance_auto = get_df_from_position_buy_table(None, table_name = 'binance_position_buy')
+    df_balance_auto = get_df_from_position_table(None, table_name = 'binance_position_buy')
     if not df_balance_auto.empty:
         coin_in_auto_position_dict = dict(zip(df_balance_auto['coin'].values, df_balance_auto['executedQty'].values))
         coin_in_auto_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_auto_position_dict.items()])
         send_msg(f"Coins in auto position:\n\n{coin_in_auto_position_dict_str}", chat_id)
 
-    df_balance_manual = get_df_from_position_buy_table(None, table_name = 'binance_manually_buy')
+    df_balance_manual = get_df_from_position_table(None, table_name = 'binance_manually_buy')
     if not df_balance_manual.empty:
         coin_in_manual_position_dict = dict(zip(df_balance_manual['coin'].values, df_balance_manual['executedQty'].values))
         coin_in_manual_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_manual_position_dict.items()])
@@ -1509,10 +1509,10 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try:
         table_name = 'binance_position_buy'
-        df_balance = get_df_from_position_buy_table(coin, table_name)
+        df_balance = get_df_from_position_table(coin, table_name)
         if df_balance.empty: 
             table_name = 'binance_manually_buy'
-            df_balance = get_df_from_position_buy_table(coin, table_name)
+            df_balance = get_df_from_position_table(coin, table_name)
             if df_balance.empty: return send_msg(f'No open position for coin: {coin}', from_id)
     except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
 
@@ -1595,7 +1595,7 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
     if not confirm or confirm.upper() not in ['ALL', 'CONFIRM', 'YES']: return send_msg(f'You need to type ALL or CONFIRM or YES to confirm close all positions.', from_id)
-    df_balance = get_df_from_position_buy_table(coin, table_name = 'binance_position_buy')
+    df_balance = get_df_from_position_table(coin, table_name = 'binance_position_buy')
     if df_balance.empty: return send_msg(f'No open position for close', from_id)
     coin_list = df_balance['coin'].unique().tolist()
     binance_cancel_all_orders(from_id)
@@ -1861,7 +1861,7 @@ def weekly_rsi_over_high(symbol):
 
 # check binance_position_buy and calculate profit based on current price for all coins
 def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
-    df_balance = get_df_from_position_buy_table(coin, table_name)
+    df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: 
         if chat_id: send_msg('No open position currently.', chat_id)
 
@@ -2012,7 +2012,7 @@ def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'
     return df
 
 
-def get_df_from_position_buy_table(coin = None, table_name='binance_position_buy'):
+def get_df_from_position_table(coin = None, table_name='binance_position_buy'):
     df = pd.DataFrame()
     if coin:
         try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE coin = :coin AND is_closed = 0'), {'coin': coin}).fetchall())
@@ -2058,10 +2058,10 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
         if df.empty: return 
         orderId = df['orderId'].values[0]
 
-    df_balance = get_df_from_position_buy_table(coin, table_name)
+    df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: 
         table_name = 'binance_manually_buy'
-        df_balance = get_df_from_position_buy_table(coin, table_name)
+        df_balance = get_df_from_position_table(coin, table_name)
         
     if df_balance.empty: return
 
@@ -2213,7 +2213,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
     target_profit = read_target_profit_default() if not target_profit else float(target_profit)
 
-    df_balance = get_df_from_position_buy_table(coin, table_name)
+    df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: return f'binance_position_buy table does not exist or no position for {coin}'
 
     # if coin is given, filter df_balance with coin
@@ -2226,16 +2226,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
     # get open orders from table binance_limit_sell_order
     df_current_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
-
-    ''' df_current_openorders = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_limit_sell_order WHERE status = :status'), {'status': 'NEW'}).fetchall())
-        symbol     orderId  orderListId           clientOrderId   transactTime         price         origQty executedQty cummulativeQuoteQty status timeInForce   type  side    workingTime selfTradePreventionMode
-    0   FTTUSDT   694080600           -1  RTIfMBTiRUilKbGM6QWnr9  1702353638922    5.50040000   1818.04000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353638922            EXPIRE_MAKER
-    1  SANDUSDT  2770085235           -1  9zS4bRnuK5j9QAjBpoiTcp  1702353640162    0.54850000  18230.00000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353640162            EXPIRE_MAKER
-    2  RUNEUSDT  1254597462           -1  QgEIqdbxJkFL1ht8tgsEB6  1702353641278    6.59900000   1515.40000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353641278            EXPIRE_MAKER
-    3  ORDIUSDT   238514100           -1  hWGYLLB2hBZNqWnhQ1AuMg  1702353642364   51.71000000    193.38000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353642364            EXPIRE_MAKER
-    4  NEARUSDT  2096374086           -1  8fp85ObC2akoeUDfu6Rsu8  1702353643510    2.52500000   3960.70000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702353643510            EXPIRE_MAKER
-    5  AAVEUSDT  1508986514           -1  kOC2n1SN3Yrb0txdhLL0EQ  1702658527940  114.59000000     91.62700000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1702658527940            EXPIRE_MAKER
-    '''
 
     current_orders = get_open_orders_list()
 
@@ -2865,9 +2855,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
 
 # Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
 def binance_adjust_profit(from_id = None):
-    df_auto_position = get_df_from_position_buy_table(None, 'binance_position_buy')
+    df_auto_position = get_df_from_position_table(None, 'binance_position_buy')
     if not df_auto_position.empty: return 0
-    df_manual_position = get_df_from_position_buy_table(None, 'binance_manually_buy')
+    df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
     if not df_manual_position.empty: return 0
 
     # Get the sum of profit of all coins in binance_position_sell table
@@ -2910,7 +2900,7 @@ def binance_adjust_profit(from_id = None):
 
 
 # define a function to set a limit order for a coin in position
-def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
+def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
 
     try: target_profit = float(target_profit)
@@ -2922,26 +2912,6 @@ def manually_limit_order(coin: str, target_profit: float, from_id = TG_BOT_OWNER
     except: return send_msg(f"Error in setting limit order for {coin}", from_id)
 
     return
-
-
-def read_keep_holding_coinlist():
-    df_keep_holding_coinlist = pd.DataFrame(engine.connect().execute(text('SELECT coin, target_profit FROM binance_limit_sell_manually WHERE keep_holding = 1')).fetchall())
-    if not df_keep_holding_coinlist.empty: 
-        # make a dictionary of coin and target_profit
-        reply_dict = df_keep_holding_coinlist.set_index('coin').T.to_dict('records')[0]
-        return reply_dict
-    return {}
-
-
-def release_holding_coin(coin):
-    with engine.connect() as connection:
-        try:
-            connection.execute(text(f'DELETE FROM binance_limit_sell_manually WHERE coin = :coin'), {'coin': coin})
-            connection.commit()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return True
 
 
 # Mark a limit order as canceled in binance_limit_sell_order table
@@ -2982,9 +2952,9 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     if not target_price: return send_msg(f'Target price is not given', chat_id)
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     symbol = coin + 'USDT'
-    df_auto_position = get_df_from_position_buy_table(coin, 'binance_position_buy')
+    df_auto_position = get_df_from_position_table(coin, 'binance_position_buy')
     if not df_auto_position.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
-    df_manual_position = get_df_from_position_buy_table(coin, 'binance_manually_buy')
+    df_manual_position = get_df_from_position_table(coin, 'binance_manually_buy')
     if not df_manual_position.empty: return send_msg(f'Coin {coin} is in manual position, do not double buy', chat_id)
     table_name = 'binance_limit_buy_order'
     df_current_openorders = get_open_limit_orders(symbol, table_name)
@@ -3075,6 +3045,9 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
             reply_msg = f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}'''
             send_msg(reply_msg, TG_BOT_OWNER_ID)
+
+            try: binance_position_set_limit_sell(0.1, TG_BOT_OWNER_ID, coin, 'binance_manually_buy')
+            except: send_msg(f"Error in setting limit order for {coin}", TG_BOT_OWNER_ID)
 
             return True
 
