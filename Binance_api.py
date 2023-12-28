@@ -1845,12 +1845,8 @@ def analyze_symbol(symbol: str):
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
-    df = get_df_from_given_tablename('weekly_rsi_over_high')
-    if not df.empty:
-        df = df[(df['symbol']==symbol) & (df['date_of_today']==datetime.now().strftime('%Y-%m-%d')) & (df['interval']==interval) & (df['is_over_high']==1)]
-        if not df.empty: 
-            print(f"FROM TABLE READ: {symbol[:-4]} Weekly RSI_13: OVER_HIGHT")
-            return 1
+    df = get_filtered_df('weekly_rsi_over_high', ['is_over_high'], {'date_of_today': datetime.now().strftime("%Y-%m-%d"), 'symbol': symbol})
+    if not df.empty: return df['is_over_high'].values[0]
     df = get_kline_data(symbol, interval)
     if df.empty: return 0
     df['RSI'] = calculate_rsi(df['Close'], 13)

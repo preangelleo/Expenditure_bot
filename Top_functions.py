@@ -1151,10 +1151,23 @@ def get_umfuture_profit(from_id=None, coin=None):
 
     return profit
 
+
 def get_df_from_given_tablename(tablename):
     try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {tablename}')).fetchall())
     except: df = pd.DataFrame()
     return df
+
+
+def get_filtered_df(tablename, columns:list = None, filters: dict = None):
+    query = f"SELECT "
+    if columns and type(columns) is list: query += ", ".join(columns)
+    else: query += "*"
+    query += f" FROM {tablename}"
+    if filters and type(filters) is dict: query += " WHERE " + " AND ".join([f"{k} = :{k}" for k in filters])
+    try: return pd.DataFrame(engine.connect().execute(text(query), filters).fetchall())
+    except: return pd.DataFrame()
+    
+
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
