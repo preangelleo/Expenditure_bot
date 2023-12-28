@@ -158,7 +158,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
             print(f'{coin} is recently listed, ignore.')
             continue
         try: 
-            target_profit = float(today_hot_coin_dict[coin]['target_profit'])
+            target_profit = float(today_hot_coin_dict[coin])
             do_market_buy_one_unit(coin, chat_id)
             binance_position_set_limit_sell(target_profit, chat_id, coin, table_name = 'binance_position_buy')
             REMAINING_POSITIONS -= 1
