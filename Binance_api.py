@@ -2135,13 +2135,12 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
             data['sell_bnb_price'] = sell_bnb_price
             data['total_bnb_cost_value'] = total_bnb_cost_value
             data['profit'] = profit
-            
             if data_to_table(data, 'binance_position_sell') and set_limit_order_filled_by_orderId(orderId, 'binance_limit_sell_order') and close_position_status_by_order_id(position_order_id, table_name):
                 df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
                 if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
                 duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
                 duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
-                reply_msg = f'''{coin} Limit Sell Order Filled\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
+                reply_msg = f'''{coin} Limit Sell Order Filled:\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
                 send_msg(reply_msg, TG_BOT_OWNER_ID)
                 return True
         if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
@@ -2275,7 +2274,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
         data_to_table(data, 'binance_limit_sell_order')
 
-        if chat_id: send_msg(f"{coin} Limit Sell Order >> {price} >> {target_profit*100:.2f}%", chat_id)
+        if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
 
     return
 
