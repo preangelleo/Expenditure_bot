@@ -1968,7 +1968,7 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
 
     try: check_profit_and_record(chat_id, crontab_profit_record, book_value, current_positions=df_balance.shape[0])
     except: pass
-
+    
     return
 
 # check_profit_and_record(chat_id=TG_BOT_OWNER_ID, crontab_profit_record=False, book_value=0)
@@ -2222,6 +2222,16 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
     df_balance = get_df_from_position_table(coin, table_name)
     if df_balance.empty: return f'binance_position_buy table does not exist or no position for {coin}'
+    '''
+        symbol     orderId  orderListId           clientOrderId   transactTime       price          origQty      executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode   coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
+    0   ATOMUSDT  2594994242           -1  nzehRqoZxn1F6VUPO43h6C  1703573139555   12.269441     815.03000000     815.03000000       9999.96274000  FILLED         GTC  MARKET  BUY  1703573139555            EXPIRE_MAKER   ATOM      0.028094          267.0         50          0
+    1    APEUSDT  1563146551           -1  kzTIupxmPDyTQS7Lv4TGSJ  1703736326606    1.786000    5599.10000000    5599.10000000       9999.99260000  FILLED         GTC  MARKET  BUY  1703736326606            EXPIRE_MAKER    APE      0.023079          325.8         58          0
+    2   COMPUSDT  1259040501           -1  tFDsPVjfyC59xMIJEx06lG  1703742928420   66.115741     151.24900000     151.24900000       9999.93975000  FILLED         GTC  MARKET  BUY  1703742928420            EXPIRE_MAKER   COMP      0.023196          322.0         59          0
+    3   GALAUSDT  2192893079           -1  7jCq17nhr1AWxeYWK27zk8  1703744426664    0.033265  300613.00000000  300613.00000000       9999.96916000  FILLED         GTC  MARKET  BUY  1703744426664            EXPIRE_MAKER   GALA      0.023164          322.6         60          0
+    4    BCHUSDT  3344597220           -1  wb4USTGwhIQ1faDMsHqlwU  1703746829552  276.508281      36.16500000      36.16500000       9999.92200000  FILLED         GTC  MARKET  BUY  1703746829552            EXPIRE_MAKER    BCH      0.023136          323.2         61          0
+    5   IOTAUSDT   890418913           -1  tlobnAbgvtTMF7m9tEQ8yo  1703751293006    0.285760   34994.00000000   34994.00000000       9999.87230000  FILLED         GTC  MARKET  BUY  1703751293006            EXPIRE_MAKER   IOTA      0.022896          327.7         63          0
+    6  MAGICUSDT   536447518           -1  eHd94BSHWrzFoy38xGPxYT  1703751335800    1.194287    8373.10000000    8373.10000000       9999.88416000  FILLED         GTC  MARKET  BUY  1703751335800            EXPIRE_MAKER  MAGIC      0.022867          327.8         64          0
+    7   IOTAUSDT   890420119           -1  i8ybKXRVeIuCPnoQYouxGW  1703751469707    0.286020   34962.00000000   34962.00000000       9999.82130000  FILLED         GTC  MARKET  BUY  1703751469707            EXPIRE_MAKER   IOTA      0.022684          330.1         65          0'''
 
     if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
 
@@ -2232,6 +2242,15 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
     # get open orders from table binance_limit_sell_order
     df_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
+    '''
+        symbol     orderId  orderListId           clientOrderId   transactTime  ... selfTradePreventionMode target_profit manual_order  coin update_id
+    0    APEUSDT  1564103161           -1  r27CrDgSatQJFTA2fzE0ER  1703800210791  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    1   COMPUSDT  1260149973           -1  leIDjMuONpRhlh6xfzfODt  1703800213770  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    2   GALAUSDT  2194428361           -1  OPLHYxpZGkP7PUFzFoe8ZI  1703800216397  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    3   ATOMUSDT  2606004482           -1  oJLh1ymyBz7lA44WsxYCW1  1703800218922  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    4   IOTAUSDT   891008920           -1  qVxPSe8MiGaX18L5owpxzP  1703800508921  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    5  MAGICUSDT   537758433           -1  AJxDhZmihdIktGEjP05DoJ  1703800810964  ...            EXPIRE_MAKER          0.01          0.0  NONE         0
+    6    BCHUSDT  3346685750           -1  leCYmBQLODeWLygBumg0OZ  1703800813597  ...            EXPIRE_MAKER          0.01          0.0  NONE         0'''
 
     df_openorders = df_openorders[df_openorders['target_profit'] != target_profit]
     if df_openorders.empty: return 
@@ -2241,26 +2260,24 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     if df_balance.empty: return
 
     # keep only symbol, amount, price, executedQty columns from df_balance
-    df_balance = df_balance[['coin', 'symbol', 'price', 'executedQty']]
+    df_balance = df_balance[['coin', 'symbol', 'update_id', 'price', 'executedQty']]
 
-    # keep only symbol, orderId, clientOrderId columns from df_openorders
-    df_openorders = df_openorders[['symbol', 'clientOrderId']]
+    # keep only symbol, orderId, update_id columns from df_openorders
+    df_openorders = df_openorders[['update_id', 'orderId']]
 
     # merge df_balance and df_openorders based on symbol
-    df_balance = pd.merge(df_balance, df_openorders, on='symbol', how='left')
+    df_balance = pd.merge(df_balance, df_openorders, on='update_id', how='left')
 
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         symbol = df_balance.iloc[i]['symbol']
         amount = df_balance.iloc[i]['executedQty']
         buy_price = df_balance.iloc[i]['price']
-        clientOrderId = df_balance.iloc[i]['clientOrderId']
+        orderId = df_balance.iloc[i]['orderId']
         price = buy_price * (1 + float(target_profit))
 
-        cancel_confirm = binance_cancel_order(symbol, clientOrderId)
-
-        # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
-        mark_limit_order_as_canceled(clientOrderId, status=cancel_confirm['status'])
+        cancel_confirm = binance_cancel_order_by_orderId(coin, orderId)
+        mark_limit_order_as_canceled_by_orderId(orderId, status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
 
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
@@ -2269,9 +2286,11 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         data = binance_limit_sell(coin, amount, price)
         if not data: continue
         del data['fills']
+        data['coin'] = coin
+        data['update_id'] = int(df_balance.iloc[i]['update_id'])
         data['target_profit'] = target_profit
         data['manual_order'] = 1 if (table_name and table_name == 'binance_manually_buy') else 0
-
+        
         data_to_table(data, 'binance_limit_sell_order')
 
         if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
@@ -2303,6 +2322,7 @@ def add_cloumn_to_a_table(table_name = 'binance_limit_sell_order', new_colum = '
             print(f"An error occurred: {e}")
             connection.rollback()
     return
+
 
 # Check if a given column in a given table, if not return False, if yes, return True
 def check_column_in_table(column, table):
@@ -3022,5 +3042,28 @@ if __name__ == '__main__':
     print('Binance_api.py is running')
     # print(analyze_symbol('ATOM'))
 
-    # if not check_column_in_table('target_profit', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'target_profit', 0.01)
-    # if not check_column_in_table('manual_order', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'manual_order', 0)
+    # if not check_column_in_table('update_id', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'update_id', 0)
+    # if not check_column_in_table('coin', 'binance_limit_sell_order'): add_cloumn_to_a_table(table_name = 'binance_limit_sell_order', new_colum = 'target_profit', default_value = '')
+    # with engine.connect() as connection:
+    #     try:
+    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order ADD coin VARCHAR(20) NOT NULL DEFAULT 'NONE'"))
+    #         connection.commit()
+    #     except Exception as e:
+    #         print(f"An error occurred: {e}")
+    #         connection.rollback()
+    # # 删除表中的update_id列
+    # with engine.connect() as connection:
+    #     try:
+    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order DROP COLUMN update_id"))
+    #         connection.commit()
+    #     except Exception as e:
+    #         print(f"An error occurred: {e}")
+    #         connection.rollback()
+    # # 添加表中的 update_id 列, integer, default 0
+    # with engine.connect() as connection:
+    #     try:
+    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order ADD update_id INTEGER NOT NULL DEFAULT 0"))
+    #         connection.commit()
+    #     except Exception as e:
+    #         print(f"An error occurred: {e}")
+    #         connection.rollback()
