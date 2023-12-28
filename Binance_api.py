@@ -2783,7 +2783,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = False, tradingbot_status = False, coin_in_positions = []):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]

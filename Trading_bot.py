@@ -149,7 +149,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
             coin_in_positions += df_limit_buy_order['coin'].values.tolist()
     except: pass # if the table is not exist, ignore and wait for the next time to be created automatically
     REMAINING_POSITIONS = POSITIONS_LIMIT - (df_auto_position.shape[0] + df_manual_position.shape[0])
-    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, False, tradingbot_status, coin_in_positions)
+    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions)
     if not today_hot_coin_dict: return 
     for coin in today_hot_coin_dict:
         if REMAINING_POSITIONS <= 0: break
@@ -168,7 +168,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, user_nick_name='Dear'
 
 def only_check_hot_coins(from_id = None):
     tradingbot_status = trading_bot_switch_status()
-    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_check = True, tradingbot_status = tradingbot_status, coin_in_positions=[])
+    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = tradingbot_status, coin_in_positions=[])
 
 
 if __name__ == '__main__':
