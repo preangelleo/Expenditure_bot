@@ -1831,7 +1831,8 @@ def analyze_symbol(symbol: str):
         if not df.empty: 
             result = analyze_data(df, interval)
             if not result: 
-                print(f"{symbol[:-4]} analyze_data() returned None: {interval}")
+                good_to_buy += 1
+                print(f"{symbol[:-4]} analyze_data()  {interval} returned None")
                 continue
             if result['long']: 
                 good_to_buy += 1
