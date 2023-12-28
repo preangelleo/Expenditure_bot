@@ -2109,7 +2109,7 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
             data['orderListId'] = limit_order_data['orderListId']
             data['clientOrderId'] = limit_order_data['clientOrderId']
             data['transactTime'] = limit_order_data.get('transactTime', int(time.time() * 1000))
-            data['price'] = limit_order_data['price']
+            data['price'] = limit_order_data['cummulativeQuoteQty'] / limit_order_data['executedQty']
             data['origQty'] = limit_order_data['origQty']
             data['executedQty'] = limit_order_data['executedQty']
             data['cummulativeQuoteQty'] = limit_order_data['cummulativeQuoteQty']
