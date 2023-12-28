@@ -32,7 +32,7 @@ if __name__ == '__main__':
     try: binance_auto_position_check(None, None, False, table_name='binance_position_buy')
     except: pass
 
-    try: binance_today_hot_coins_check(chat_id = TG_BOT_OWNER_ID, user_nick_name = 'Dear', crontab = True, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
+    try: binance_today_hot_coins_check(chat_id = TG_BOT_OWNER_ID, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
     except: pass
 
     try: read_emails()
