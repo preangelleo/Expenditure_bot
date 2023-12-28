@@ -2975,16 +2975,9 @@ def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     return reply_msg
 
 
-def manually_limit_buy_order(coin: str, price, amount, from_id=TG_BOT_OWNER_ID):
-    polished_parameters = polish_parameters_for_limit_order(coin, price, amount, from_id)
-    if not polished_parameters: return
-    reply_msg = binance_limit_buy(coin, polished_parameters['amount'], polished_parameters['price'])
-    if reply_msg: send_msg(reply_msg, from_id)
-    return reply_msg
-
-
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
-def manually_limit_buy_order_process(target_price, coin, chat_id=TG_BOT_OWNER_ID):
+def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
+    chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
     if not target_price: return send_msg(f'Target price is not given', chat_id)
     coin = coin if not coin.endswith('USDT') else coin[:-4]

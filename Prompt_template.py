@@ -158,7 +158,8 @@ COMMANDS = [
     {"command": 'transfer_between_accounts', 'description': 'Transfer between accounts: MAIN_UMFUTURE, FUNDING_MAIN, etc.'},
     {"command": 'confirm_token', 'description': 'Confirm the token for a previous task to be executed'},
     {"command": 'binance_pay_usdt', 'description': 'Pay a certain amount of USDT to a given TRX address (less then 1000)'},
-    {"command": 'manually_limit_order', 'description': 'Manually place a limit order in Binance and keep holding until it is filled'},
+    {"command": 'manually_limit_sell', 'description': 'Manually place a limit order in Binance and keep holding until it is filled'},
+    {"command": 'manually_limit_buy', 'description': 'Manually place a limit order for a coin at a given price'},
 ]
 
 
@@ -573,5 +574,8 @@ BOT_COMMAND_DICT = {
     'cfm': 'confirm_token',
     'confirm': 'confirm_token',
     'bpu': 'binance_pay_usdt',
-    'mlo': 'manually_limit_order',
+    'mls': 'manually_limit_sell',
+    'mlb': 'manually_limit_buy',
+    'bls': 'binance_limit_sell',
+    'blb': 'binance_limit_buy',
     }
