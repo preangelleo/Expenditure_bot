@@ -576,6 +576,6 @@ BOT_COMMAND_DICT = {
     'bpu': 'binance_pay_usdt',
     'mls': 'manually_limit_sell',
     'mlb': 'manually_limit_buy',
-    'bls': 'binance_limit_sell',
-    'blb': 'binance_limit_buy',
+    'bls': 'manually_limit_sell',
+    'blb': 'manually_limit_buy',
     }

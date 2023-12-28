@@ -2938,6 +2938,9 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
     if not target_price: return send_msg(f'Target price is not given', chat_id)
+    try: target_price = float(target_price)
+    except: return send_msg(f'Target price: {target_price} is not a number', chat_id)
+    coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     symbol = coin + 'USDT'
     df_auto_position = get_df_from_position_table(coin, 'binance_position_buy')
