@@ -2109,7 +2109,7 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
             data['orderListId'] = limit_order_data['orderListId']
             data['clientOrderId'] = limit_order_data['clientOrderId']
             data['transactTime'] = limit_order_data.get('transactTime', int(time.time() * 1000))
-            data['price'] = limit_order_data['cummulativeQuoteQty'] / limit_order_data['executedQty']
+            data['price'] = str(float(limit_order_data['cummulativeQuoteQty']) / float(limit_order_data['executedQty']))
             data['origQty'] = limit_order_data['origQty']
             data['executedQty'] = limit_order_data['executedQty']
             data['cummulativeQuoteQty'] = limit_order_data['cummulativeQuoteQty']
@@ -2141,7 +2141,7 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
                 if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
                 duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
                 duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
-                reply_msg = f'''{coin} Limit Sell Order Filled\n\nSold_Price: {format_number(data['price'])}\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
+                reply_msg = f'''{coin} Limit Sell Order Filled\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
                 send_msg(reply_msg, TG_BOT_OWNER_ID)
                 return True
         if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
