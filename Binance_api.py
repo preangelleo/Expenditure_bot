@@ -2802,8 +2802,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, only_che
         if df_ticker.empty:
             print(f"2-1) No hot coin today after narrowing down to the coins in WHITE_LIST: {WHITE_LIST}")
             return []
-    hotcoin_list_of_today = get_hot_coin_list_of_today()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
+    # hotcoin_list_of_today = get_hot_coin_list_of_today()
+    # df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
     df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
     turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     df_ticker['market_cap'] = 0
