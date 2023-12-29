@@ -2244,6 +2244,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if not manual_force: return
         df_balance = get_df_from_position_table(coin, 'binance_position_buy')
         if df_balance.empty: 
+            if not chat_id: return
             if coin: send_msg(f'No open position for {coin} neither in binance_position_buy nor in binance_manually_buy', chat_id)
             else: send_msg(f'No open position for all coins niether in binance_position_buy nor in binance_manually_buy', chat_id)
             return 
@@ -2943,6 +2944,7 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
 def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'binance_manually_buy'):
     symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
     coin = symbol.replace('USDT', '')
+    chat_id = TG_BOT_OWNER_ID if not trading_bot_switch_status() else None
 
     if not orderId:
         df = get_open_limit_orders(symbol, 'binance_limit_buy_order')
@@ -2952,34 +2954,6 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
     data = check_order_status_by_orderId(coin, orderId)
 
     if data:
-        ''' {
-        "symbol": "CAKEUSDT",
-        "orderId": 513570977,
-        "orderListId": -1,
-        "clientOrderId": "1uDKFPwUZ3KciXE0UTY1XR",
-        "transactTime": 1685853893276,
-        "price": "0.00000000",
-        "origQty": "571.10000000",
-        "executedQty": "571.10000000",
-        "cummulativeQuoteQty": "999.99610000",
-        "status": "FILLED",
-        "timeInForce": "GTC",
-        "type": "LIMIT",
-        "side": "BUY",
-        "workingTime": 1685853893276,
-        "fills": [
-            {
-            "price": "1.75100000",
-            "qty": "199.50000000",
-            "commission": "0.00085585",
-            "commissionAsset": "BNB",
-            "tradeId": 73422265
-            },
-            ......
-        ],
-        "selfTradePreventionMode": "NONE"
-        }'''
-
         # Check if the order is filled, if yes, do market sell
         if data['status'] == 'FILLED':
             '''{'symbol': 'RSRUSDT', 'orderId': 756116674, 'orderListId': -1, 'clientOrderId': 'YSA5RwKBxHCdcpJlXuaBlM', 'price': '0.00338500', 'origQty': '2954209.70000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'stopPrice': '0.00000000', 'icebergQty': '0.00000000', 'time': 1703720957750, 'updateTime': 1703720957750, 'isWorking': True, 'workingTime': 1703720957750, 'origQuoteOrderQty': '0.00000000', 'selfTradePreventionMode': 'EXPIRE_MAKER'}
@@ -3008,18 +2982,17 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
             # Mark the limit order as filled in binance_limit_sell_order table
             set_limit_order_filled_by_orderId(orderId, 'binance_limit_buy_order')
+            
+            if chat_id: send_msg(f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}''', chat_id)
 
-            reply_msg = f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}'''
-            send_msg(reply_msg, TG_BOT_OWNER_ID)
-
-            try: binance_position_set_limit_sell(0.1, TG_BOT_OWNER_ID, coin, 'binance_manually_buy')
-            except: send_msg(f"Error in setting limit order for {coin}", TG_BOT_OWNER_ID)
+            try: binance_position_set_limit_sell(0.1, chat_id, coin, 'binance_manually_buy')
+            except: send_msg(f"Error in setting limit order for {coin}", chat_id)
 
             return True
 
         if data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, data['status'], 'binance_limit_buy_order')
 
-    return 
+    return
 
 
 if __name__ == '__main__':
