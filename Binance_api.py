@@ -1953,9 +1953,9 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
         '''{'long': True, 'short': False}'''
         long = long_or_short['long']
         short = long_or_short['short']
-        target_profit = long_or_short['target_profit'] if long_or_short['target_profit'] > 0.01 else 0.01
+        target_profit = 0.01
 
-        if not long: 
+        if short: 
 
             if reply_dict['up_ratio'] >= target_profit:
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
@@ -2588,23 +2588,16 @@ def get_hot_coin_list_of_today():
 
 
 def calculate_hot_coin_price_change(from_id=None):
-    # from hot_coin_history select the latest date, then select all rows with that date
-    latest_date = pd.DataFrame(engine.connect().execute(text('SELECT MAX(date) FROM hot_coin_history')).fetchall())
-    latest_date = latest_date.values[0][0]
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date = :date'), {'date': latest_date}).fetchall())
-    except: return 'hot_coin_history table does not exist'
-
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
+    except: return
     if df.empty: return 'hot_coin_history table is empty'
-
-    # get current price of coin
     df_current_price = get_token_price_table()
-
-    # merge df and df_current_price
     df = pd.merge(df, df_current_price, how='left', on='coin')
-
-    # calculate the price up percentage, make sure the data type is float
     df['price_up_percentage'] = (df['lastPrice'] - df['price']) / df['price'] * 100
-
+    df = df[df['price_up_percentage'] > 0]
+    if df.empty: return
+    df = df.sort_values(by='price_up_percentage', ascending=False).reset_index(drop=True)
     for index, row in df.iterrows():
         coin = row['coin']
         price = row['price']
@@ -2618,8 +2611,6 @@ def calculate_hot_coin_price_change(from_id=None):
         reply_string = f"{index+1}. [{coin}]({URL}) \nReport Price: {format_number(price)}\nCurrent Price: {format_number(lastPrice)}\nPrice % Change: {price_up_percentage:.2f}%\nTime Delta: {time_delta}"
         if not from_id: broadcast_markdown(reply_string)
         else: send_msg_markdown(reply_string, from_id)
-        # send_msg_markdown(reply_string, TG_BOT_OWNER_ID)
-
     return
 
 
