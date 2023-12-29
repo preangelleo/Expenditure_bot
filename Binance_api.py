@@ -2226,10 +2226,11 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         else: send_msg(f'No open position for all coins', chat_id)
         return 
     df_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
-    df_openorders = df_openorders[df_openorders['target_profit'] != target_profit]
     df_balance = df_balance[['coin', 'symbol', 'update_id', 'price', 'executedQty']]
-    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order']]
+    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
     df_balance = pd.merge(df_balance, df_openorders, on='update_id', how='left')
+    df_balance = df_balance[df_balance['target_profit'] != target_profit]
+    if df_balance.empty: return
     if not manual_force: df_balance = df_balance[df_balance['manual_order'] != 1]
     if df_balance.empty: return
     print(df_balance)
