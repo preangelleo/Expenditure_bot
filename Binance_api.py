@@ -2047,8 +2047,9 @@ def get_df_from_position_table(coin = None, table_name='binance_position_buy'):
 
 # from table_name get the latest given coin row
 def get_latest_row_from_position_table(coin, table_name='binance_position_buy'):
+    symbol = coin.upper() + 'USDT' if not coin.endswith('USDT') else coin.upper()
     df = pd.DataFrame()
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE coin = :coin ORDER BY transactTime DESC LIMIT 1'), {'coin': coin}).fetchall())
+    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
     except: pass
     return df
 
@@ -2148,6 +2149,26 @@ def binance_limit_sell_order_status(symbol, orderId=None, table_name = 'binance_
     return 
 
 
+# Define a function to alter the given column 's value, identify by symbol, select the latest one row
+def alter_binance_position_sell_table_executedQty(symbol, adjust_value):
+    symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
+    df = get_latest_row_from_position_table(symbol, 'binance_position_sell')
+    if df.empty: return
+    adjust_value = float(adjust_value)
+    update_id = int(df['update_id'].values[0])
+    executedQty = float(df['executedQty'].values[0])
+    adjust_value_percent = adjust_value / executedQty
+    new_executedQty = executedQty + adjust_value
+    cummulativeQuoteQty = float(df['cummulativeQuoteQty'].values[0])
+    new_cummulativeQuoteQty = cummulativeQuoteQty * (1 + adjust_value_percent)
+    profit = float(df['profit'].values[0])
+    new_profit = profit * (1 + adjust_value_percent)
+    with engine.connect() as connection:
+        connection.execute(text(f"UPDATE binance_position_sell SET executedQty = :executedQty, cummulativeQuoteQty = :cummulativeQuoteQty, profit = :profit WHERE update_id = :update_id"), {'executedQty': new_executedQty, 'cummulativeQuoteQty': new_cummulativeQuoteQty, 'profit': new_profit, 'update_id': update_id})
+        connection.commit()
+    return True
+
+
 # define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED' if status is not 'FILLED'
 def binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection:
@@ -2236,6 +2257,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     if df_balance.empty: return
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
+        symbol = df_balance.iloc[i]['symbol']
         amount = df_balance.iloc[i]['executedQty']
         buy_price = df_balance.iloc[i]['price']
         orderId = df_balance.iloc[i]['orderId']
@@ -2246,13 +2268,24 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
         price = polished_parameters['price']
-        data = binance_limit_sell(coin, amount, price)
+        need_to_adjust = False
+        try: data = binance_limit_sell(coin, amount, price)
+        except:
+            df_coin_balance = get_user_asset()
+            df_coin_balance = df_coin_balance[df_coin_balance['asset']==coin]
+            if df_coin_balance.empty: continue
+            new_amount = df_coin_balance['free'].values[0]
+            new_amount = float(new_amount)
+            need_to_adjust = True
+            try: data = binance_limit_sell(coin, new_amount, price)
+            except Exception as e: print(f"An error occurred while calling binance_limit_sell(): \nCoin: {coin}\nAmount: {amount}\nPrice: {price}\n\n{e}\n\n")
         if not data: continue
         del data['fills']
         data['coin'] = coin
         data['update_id'] = int(df_balance.iloc[i]['update_id'])
         data['target_profit'] = target_profit
         data['manual_order'] = 1 if table_name == 'binance_manually_buy' or manual_force else 0
+        if need_to_adjust: alter_binance_position_sell_table_executedQty(symbol, amount - new_amount)
         data_to_table(data, 'binance_limit_sell_order')
         if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
     return
