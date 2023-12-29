@@ -2586,7 +2586,7 @@ def read_latest_sell_price(coin, from_id):
 def get_hot_coin_list_of_today():
     hotcoin_list = []
     today_date = datetime.now().strftime('%Y-%m-%d')
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
     hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
