@@ -14,7 +14,7 @@ if __name__ == '__main__':
     try: current_bot_status = trading_bot_switch_status()
     except: pass
 
-    try: binance_adjust_profit(from_id = None)
+    try: binance_adjust_profit()
     except Exception as e: print(f'binance_adjust_profit() error:\n\n{e}\n\n')
 
     try: binance_auto_position_check(None, None, True, table_name='binance_position_buy')

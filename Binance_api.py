@@ -688,7 +688,11 @@ def get_coin_wallet_balance_all():
 
 def get_coin_wallet_balance_with_locked():
     df = get_user_asset()
-    if not df.empty: return dict(zip(df['asset'].values, df['free'].values + df['locked'].values))
+    if not df.empty: 
+        # convert free and locked to float
+        df['free'] = df['free'].astype(float)
+        df['locked'] = df['locked'].astype(float)
+        return dict(zip(df['asset'].values, df['free'].values + df['locked'].values))
     else: return {}
 
 
@@ -2822,15 +2826,12 @@ def binance_adjust_profit():
     if not df_auto_position.empty: return 0
     df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
     if not df_manual_position.empty: return 0
-
-    # Get the sum of profit of all coins in binance_position_sell table
     df_profit = pd.DataFrame(engine.connect().execute(text('SELECT sum(profit) FROM binance_position_sell')).fetchall())
     df_profit.columns = ['profit']
     profit = df_profit['profit'][0]
     spot_balance = get_coin_wallet_balance_with_locked()
-    '''{'BNB': '2.043559780', 'ONG': '131820', 'USDT': '100161.787261640'}'''
-    USDT_balance = float(spot_balance['USDT'])
-    amount_to_be_adjusted = USDT_balance - (INITIAL_FUND + profit)
+    USDT_balance = int(spot_balance['USDT'])
+    amount_to_be_adjusted = USDT_balance - (INITIAL_FUND + int(profit))
     if int(amount_to_be_adjusted) != 0:
         adjust_dict = {
             "symbol": "ADJUSTUSDT",
