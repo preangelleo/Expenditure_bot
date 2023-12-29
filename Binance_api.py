@@ -2285,7 +2285,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         data['update_id'] = int(df_balance.iloc[i]['update_id'])
         data['target_profit'] = target_profit
         data['manual_order'] = 1 if table_name == 'binance_manually_buy' or manual_force else 0
-        # if need_to_adjust: alter_binance_position_sell_table_executedQty(symbol, amount - new_amount)
+        if need_to_adjust: alter_binance_position_sell_table_executedQty(symbol, amount - new_amount)
         data_to_table(data, 'binance_limit_sell_order')
         if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
     return
