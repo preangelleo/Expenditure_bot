@@ -1989,6 +1989,14 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
             annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
             # annualized_return with percentage format
             annualized_return = f"{annualized_return * 100:.2f}%"
+            # Send profit_sum to chat_id
+            chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
+            investment_return = net_profit_sum / INITIAL_FUND
+            # investment_return with percentage format
+            investment_return = f"{investment_return * 100:.2f}%"
+            summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nNet_Profit: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {current_positions}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
+            send_msg(summary_msg, chat_id)
+
             if crontab_profit_record:
                 # Record net_profit_sum to table net_profit_daily_record
                 with engine.connect() as connection:
@@ -2011,14 +2019,6 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 plot_net_profit_sum(chat_id)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
 
-            # Send profit_sum to chat_id
-            chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
-            investment_return = net_profit_sum / INITIAL_FUND
-            # investment_return with percentage format
-            investment_return = f"{investment_return * 100:.2f}%"
-            summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nNet_Profit: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {current_positions}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
-            send_msg(summary_msg, chat_id)
-    
     return 
 
 
@@ -2779,7 +2779,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         else: df_ticker.drop(index, inplace=True)
     if df_ticker.empty: return []
     df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
-    df_ticker = df_ticker.sort_values(by='turnover_by_priceChangePercent', ascending=False)
+    df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
     df_ticker = df_ticker.head(10)
     today_hot_coin_list = df_ticker['coin'].values.tolist()
     final_hotcoin_dict = {}
@@ -2809,10 +2809,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
                 'token_slug': token_slug,
                 'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
-            df_hot_coin_history = pd.DataFrame(hot_coin_history, index=[0])
-            df_hot_coin_history.to_sql('hot_coin_history', engine, if_exists='append', index=False)
+            data_to_table(hot_coin_history, 'hot_coin_history')
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"[{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)} | {round(turnover_by_priceChangePercent*100, 3)}"
+            reply_string = f"[{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)}"
             broadcast_markdown(reply_string)
     return final_hotcoin_dict
 
@@ -2860,6 +2859,7 @@ def binance_adjust_profit():
         df_adjust.to_sql('binance_position_sell', engine, if_exists='append', index=False)
         reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
         send_msg(reply_string, TG_BOT_OWNER_ID)
+        send_email('Binance Adjust Profit', reply_string, GMAIL_ADDRESS_MAIN)
     return amount_to_be_adjusted
 
 
@@ -2997,30 +2997,3 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    # print(analyze_symbol('ATOM'))
-
-    # if not check_column_in_table('update_id', 'binance_limit_sell_order'): add_cloumn_to_a_table('binance_limit_sell_order', 'update_id', 0)
-    # if not check_column_in_table('coin', 'binance_limit_sell_order'): add_cloumn_to_a_table(table_name = 'binance_limit_sell_order', new_colum = 'target_profit', default_value = '')
-    # with engine.connect() as connection:
-    #     try:
-    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order ADD coin VARCHAR(20) NOT NULL DEFAULT 'NONE'"))
-    #         connection.commit()
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-    #         connection.rollback()
-    # # 删除表中的update_id列
-    # with engine.connect() as connection:
-    #     try:
-    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order DROP COLUMN update_id"))
-    #         connection.commit()
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-    #         connection.rollback()
-    # # 添加表中的 update_id 列, integer, default 0
-    # with engine.connect() as connection:
-    #     try:
-    #         connection.execute(text(f"ALTER TABLE binance_limit_sell_order ADD update_id INTEGER NOT NULL DEFAULT 0"))
-    #         connection.commit()
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-    #         connection.rollback()
