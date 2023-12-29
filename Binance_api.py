@@ -2219,21 +2219,21 @@ def is_scientific_notation(number):
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, table_name = 'binance_position_buy', manual_force = False):
     target_profit = read_target_profit_default() if not target_profit else float(target_profit)
     df_balance = get_df_from_position_table(coin, table_name)
-    if df_balance.empty: return f'binance_position_buy table does not exist or no position for {coin}'
-    if coin: df_balance = df_balance[df_balance['coin']==coin.upper()]
     if df_balance.empty: 
-        if coin: send_msg(f'No open position for {coin}', chat_id)
-        else: send_msg(f'No open position for all coins', chat_id)
-        return 
-    df_openorders = get_open_limit_orders(None, table_name = 'binance_limit_sell_order')
+        if not manual_force: return
+        df_balance = get_df_from_position_table(coin, 'binance_position_buy')
+        if df_balance.empty: 
+            if coin: send_msg(f'No open position for {coin} neither in binance_position_buy nor in binance_manually_buy', chat_id)
+            else: send_msg(f'No open position for all coins niether in binance_position_buy nor in binance_manually_buy', chat_id)
+            return 
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
     df_balance = df_balance[['coin', 'symbol', 'update_id', 'price', 'executedQty']]
     df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
     df_balance = pd.merge(df_balance, df_openorders, on='update_id', how='left')
     df_balance = df_balance[df_balance['target_profit'] != target_profit]
     if df_balance.empty: return
-    if not manual_force: df_balance = df_balance[df_balance['manual_order'] != 1]
+    if not manual_force and table_name != 'binance_manually_buy': df_balance = df_balance[df_balance['manual_order'] != 1]
     if df_balance.empty: return
-    print(df_balance)
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         amount = df_balance.iloc[i]['executedQty']
@@ -2252,7 +2252,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         data['coin'] = coin
         data['update_id'] = int(df_balance.iloc[i]['update_id'])
         data['target_profit'] = target_profit
-        data['manual_order'] = 1 if (table_name and table_name == 'binance_manually_buy') or manual_force else 0
+        data['manual_order'] = 1 if table_name == 'binance_manually_buy' or manual_force else 0
         data_to_table(data, 'binance_limit_sell_order')
         if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
     return
@@ -2847,22 +2847,7 @@ def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_
 
     if target_profit < 0: return send_msg(f"Target profit must be a positive float number", from_id)
 
-    try: binance_position_set_limit_sell(target_profit, from_id, coin, 'binance_manually_buy')
-    except: return send_msg(f"Error in setting limit order for {coin}", from_id)
-
-    return
-
-
-# define a function to set a limit order for a coin in position
-def manually_limit_sell_coin_from_auto_position(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
-    coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
-
-    try: target_profit = float(target_profit)
-    except: return send_msg(f"Target profit must be a number, 0.01 means 1%", from_id)
-
-    if target_profit < 0: return send_msg(f"Target profit must be a positive float number", from_id)
-
-    try: binance_position_set_limit_sell(target_profit, from_id, coin, 'binance_position_buy', manual_force = True)
+    try: binance_position_set_limit_sell(target_profit, from_id, coin, 'binance_manually_buy', manual_force = True)
     except: return send_msg(f"Error in setting limit order for {coin}", from_id)
 
     return
