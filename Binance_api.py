@@ -2866,13 +2866,13 @@ def binance_hot_coins_calculation(trading_volume_limit = TRADING_VOLUME_LIMIT, t
     return df 
 
 
-
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
     remainning_positions = POSITIONS_LIMIT - len(coin_in_positions)
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
+    # df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
+    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.00001) & (df_ticker['lastPrice'] < 5000)]
     if df_ticker.empty: return []
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     IGNORE_LIST = get_ignore_list()
@@ -2887,7 +2887,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
     df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
     if df_ticker.empty: return []
-    turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+    try: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
+    except: turnover_ratio_eth = 0.03
     df_ticker['market_cap'] = 0
     df_ticker['fully_diluted_market_cap'] = 0
     df_ticker['ratio'] = 0.01
