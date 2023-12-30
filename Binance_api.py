@@ -2696,8 +2696,8 @@ def get_hot_coin_list_of_today():
 
 
 def calculate_hot_coin_price_change(from_id=None):
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{yesterday_date}%"}).fetchall())
     except: return
     if df.empty: return 'hot_coin_history table is empty'
     df_current_price = get_token_price_table()
