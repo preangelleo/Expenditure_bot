@@ -2785,22 +2785,6 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
     except: return 
 
 
-def binance_hot_coins_calculation(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
-    remainning_positions = POSITIONS_LIMIT - len(coin_in_positions)
-    price_change_limit = 30 if tradingbot_status else 15
-    df_ticker = pd.read_json(BINANCE_TICKER_URL)
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < price_change_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
-    df['norm_priceChange'] = (df['priceChangePercent'] - df['priceChangePercent'].min()) / (df['priceChangePercent'].max() - df['priceChangePercent'].min())
-    df['norm_volume'] = (df['quoteVolume'] - df['quoteVolume'].min()) / (df['quoteVolume'].max() - df['quoteVolume'].min())
-    threshold = df['norm_volume'].median()
-    df['higher_odds_to_rise'] = df.apply(lambda row: 1 if row['norm_priceChange'] > row['norm_volume'] and row['norm_volume'] < threshold else 0, axis=1)
-    # Select only the coins that have higher_odds_to_rise = 1
-    df = df[df['higher_odds_to_rise'] == 1]
-    return df 
-
-
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
     remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
