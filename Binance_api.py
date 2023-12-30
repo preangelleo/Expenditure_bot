@@ -1912,6 +1912,7 @@ def analyze_symbol(symbol: str):
     good_to_buy, good_to_short, target_profit = 0, 0, 0
     for interval in ['4h', '1h', '15m', '5m']:
         print(f"Symbol: {symbol}, Interval: {interval}")
+        time.sleep(1)
         try: df = get_kline_data(symbol, interval)
         except: df = pd.DataFrame()
         if not df.empty: 
