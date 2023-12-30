@@ -2347,7 +2347,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         coin = df_balance.iloc[i]['coin']
         symbol = df_balance.iloc[i]['symbol']
         amount = df_balance.iloc[i]['executedQty']
-        buy_price = df_balance.iloc[i]['price']
+        buy_price = float(df_balance.iloc[i]['price'])
         orderId = df_balance.iloc[i]['orderId']
         price = buy_price * (1 + float(target_profit))
         if not pd.isna(orderId):
