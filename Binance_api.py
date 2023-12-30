@@ -1992,7 +1992,7 @@ def weekly_rsi_over_high(symbol):
     weekly_rsi_over_high_coin['is_over_high'] = 1 if latest['RSI'] > 89 else 0
     if data_to_table(weekly_rsi_over_high_coin, 'weekly_rsi_over_high'): return weekly_rsi_over_high_coin['is_over_high']
     
-
+# binance_auto_position_check('IOTA', TG_BOT_OWNER_ID, crontab_profit_record=False, table_name = 'binance_position_buy')
 # check binance_position_buy and calculate profit based on current price for all coins
 def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
     df_balance = get_df_from_position_table(coin, table_name)
@@ -2372,7 +2372,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         price = buy_price * (1 + float(target_profit))
         if not pd.isna(orderId):
             cancel_confirm = binance_cancel_order_by_orderId(coin, orderId)
-            mark_limit_order_as_canceled_by_orderId(orderId, status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
+            if cancel_confirm: mark_limit_order_as_canceled_by_orderId(int(orderId), status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
+            else: continue
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
         amount = polished_parameters['amount']
         price = polished_parameters['price']
@@ -2394,8 +2395,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         data['target_profit'] = target_profit
         data['manual_order'] = 1 if table_name == 'binance_manually_buy' or manual_force else 0
         if need_to_adjust: alter_binance_position_sell_table_executedQty(symbol, amount - new_amount)
-        data_to_table(data, 'binance_limit_sell_order')
-        if chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
+        if data_to_table(data, 'binance_limit_sell_order') and chat_id: send_msg(f"{coin} Limit Sell Order >> {format_number(price)} >> {target_profit*100:.2f}%", chat_id)
     return
 
 
