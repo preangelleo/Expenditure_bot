@@ -199,6 +199,15 @@ def display_binance_position_sell():
     return
 
 
+def display_open_position():
+    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
+    with st.expander("Open Positions", expanded=False): 
+        if df_buy.empty:
+            st.write("No open positions currently.")
+        else: st.table(df_buy)
+    return 
+
+
 def main():
     display_header()
     
