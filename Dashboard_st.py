@@ -177,7 +177,7 @@ def display_coin_lists(engine):
 
 
 def display_binance_position_sell():
-    df_sell = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" ORDER BY update_id DESC')).fetchall())
+    df_sell = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" AND price != 0 ORDER BY update_id DESC')).fetchall())
     df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
     df_merged = pd.merge(df_buy, df_sell, on='update_id', suffixes=('_buy', '_sell'))
     df_merged['coin'] = df_merged['symbol_buy'].str[:-4]
