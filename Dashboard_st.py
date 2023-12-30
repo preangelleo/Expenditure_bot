@@ -176,7 +176,7 @@ def display_coin_lists(engine):
         with st.expander("Ignore List", expanded=False): st.table(df_ignorelist)
 
 
-def display_binance_position_sell():
+def display_binance_position_sell(engine):
     df_sell = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" AND price != 0 ORDER BY update_id DESC')).fetchall())
     df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
     df_merged = pd.merge(df_buy, df_sell, on='update_id', suffixes=('_buy', '_sell'))
@@ -199,7 +199,7 @@ def display_binance_position_sell():
     return
 
 
-def display_open_position():
+def display_open_position(engine):
     df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
     with st.expander("Open Positions", expanded=False): 
         if df_buy.empty:
