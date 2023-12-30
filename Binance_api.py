@@ -1920,7 +1920,7 @@ def analyze_data(df, interval):
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-    print(f"General_condition: {general_condition}, current_condition: {current_condition}, RSI: {df['RSI'].iloc[-1]}, RSI_SMA: {df['RSI_SMA'].iloc[-1]}")
+    print(f"General_condition: {general_condition}, current_condition: {current_condition}")
     if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
