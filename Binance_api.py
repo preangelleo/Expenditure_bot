@@ -1922,14 +1922,16 @@ def analyze_data(df, interval):
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-    print(f"General_condition: {general_condition}, current_condition: {current_condition}")
+    # print(f"General_condition: {general_condition}, current_condition: {current_condition}")
     if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
+        deviation_percentage = float(deviation_percentage)
         if 0.1 > deviation_percentage > 0: return {'interval': interval, 'target_profit': 0.1 - 0.01 - deviation_percentage, 'long': True, 'short': False}
     if general_condition == -1 and not current_condition and df['RSI'].iloc[-1] < df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < df['RSI_SMA'].iloc[-1]:
         min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - min_sma) / min_sma
+        deviation_percentage = float(deviation_percentage)
         if 0 > deviation_percentage > -0.1: return {'interval': interval, 'target_profit': 0.1 - 0.01 + deviation_percentage, 'long': False, 'short': True}
     else: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
@@ -1948,7 +1950,7 @@ def analyze_symbol(symbol: str):
             if not result['long'] and interval in ['5m', '15m']: break
             if result['long']: good_to_buy += 1
             target_profit = max(target_profit, result['target_profit'])
-            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': float(target_profit)}
+            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
@@ -2890,9 +2892,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     if today_hot_coin_list: 
         for index, row in df_ticker.iterrows():
             if remainning_positions <= 0: break
-            time.sleep(1)
             coin = row['coin']
-            if weekly_rsi_over_high(coin): continue
+            # if weekly_rsi_over_high(coin): continue
             long_or_short = analyze_symbol(coin)
             long = long_or_short['long']
             if not long: continue
