@@ -2736,13 +2736,46 @@ def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
 
 # df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info')).fetchall())
 
+def read_and_save_token_market_cap_table(coin: str, current_date = datetime.now().strftime("%Y-%m-%d")):
+    try:
+        # Reusing a persistent connection or a connection from a pool
+        connection = engine.connect()
+        query = text('SELECT * FROM token_cmc_info WHERE coin = :coin AND updated_date = :current_date ORDER BY updated_date DESC LIMIT 1')
+        
+        # Using bind parameters for prepared statements
+        df_token_cmc_info = pd.DataFrame(connection.execute(query, {'coin': coin, 'current_date': current_date}).fetchall())
+
+    except SQLAlchemyError as e:
+        print(f"Database error occurred: {e}")
+        df_token_cmc_info = pd.DataFrame()
+
+    finally: connection.close()
+
+    return df_token_cmc_info
+
+def read_and_save_token_market_cap_table_with_no_dateinput(coin: str):
+    try:
+        # Reusing a persistent connection or a connection from a pool
+        connection = engine.connect()
+        query = text('SELECT * FROM token_cmc_info WHERE coin = :coin')
+        
+        # Using bind parameters for prepared statements
+        df_token_cmc_info = pd.DataFrame(connection.execute(query, {'coin': coin}).fetchall())
+
+    except SQLAlchemyError as e:
+        print(f"Database error occurred: {e}")
+        df_token_cmc_info = pd.DataFrame()
+
+    finally: connection.close()
+
+    return df_token_cmc_info
+
 def read_and_save_token_market_cap(coin: str):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     current_date = datetime.now().strftime("%Y-%m-%d")
     token_cmc_info_dict = {}
-    try: df_token_cmc_info = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}" AND updated_date = "{current_date}" ORDER BY updated_date DESC LIMIT 1')).fetchall())
-    except: df_token_cmc_info = pd.DataFrame()
+    df_token_cmc_info = read_and_save_token_market_cap_table(coin, current_date)
     if not df_token_cmc_info.empty: token_cmc_info_dict = df_token_cmc_info.to_dict(orient='records')[0]
     else:
         IGNORE_LIST = get_ignore_list()
@@ -2797,7 +2830,7 @@ def read_and_save_token_market_cap(coin: str):
                 }
             df_token_cmc_info = pd.DataFrame(token_cmc_info_dict, index=[0])
             try: 
-                df_token_check = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info WHERE coin = "{coin}"')).fetchall())
+                df_token_check = read_and_save_token_market_cap_table_with_no_dateinput(coin)
                 if not df_token_check.empty: update_coin_info_to_token_cmc_info_table(token_cmc_info_dict)
                 else: df_token_cmc_info.to_sql('token_cmc_info', engine, if_exists='append', index=False)
             except Exception as e: print(f"An error occurred: {e}")
@@ -2888,9 +2921,10 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     if df_ticker.empty: return []
     try: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     except: turnover_ratio_eth = 0.03
-    df_ticker['market_cap'] = 0
-    df_ticker['fully_diluted_market_cap'] = 0
-    df_ticker['ratio'] = 0.01
+    df_ticker = df_ticker.copy()
+    df_ticker.loc[:, 'market_cap'] = 0
+    df_ticker.loc[:, 'fully_diluted_market_cap'] = 0
+    df_ticker.loc[:, 'ratio'] = 0.01
     for index, row in df_ticker.iterrows():
         coin = row['coin']
         token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
