@@ -2038,10 +2038,9 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
         long_or_short = analyze_symbol(coin)
         '''{'long': True, 'short': False}'''
         long = long_or_short['long']
-        short = long_or_short['short']
         target_profit = 0.01
 
-        if short: 
+        if not long: 
 
             if reply_dict['up_ratio'] >= target_profit:
                 if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
