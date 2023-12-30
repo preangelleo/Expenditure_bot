@@ -1900,7 +1900,9 @@ def calculate_odds(df, period=13):
     df.loc[df['up_change_by_volume'] < df['avg_up_change_by_volume_negative'], 'conditions_boolean'] = -1
     df.loc[:, 'Open Time'] = pd.to_datetime(df['Open Time'], unit='ms')
     last_condition = df['conditions_boolean'].iloc[-1]
-    return last_condition
+    previous_condition = df['conditions_boolean'].iloc[-2]
+    general_condition = max(last_condition, previous_condition) if last_condition >= 0 else last_condition
+    return general_condition
 
 
 def analyze_data(df, interval):
