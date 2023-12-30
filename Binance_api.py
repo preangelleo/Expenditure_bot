@@ -2734,148 +2734,21 @@ def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
             connection.rollback()
     return 
 
-# df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info')).fetchall())
-
-def read_and_save_token_market_cap_table(coin: str, current_date = datetime.now().strftime("%Y-%m-%d")):
-    print(f"Reading token_cmc_info table for {coin} with date")
-    try:
-        # Reusing a persistent connection or a connection from a pool
-        connection = engine.connect()
-        query = text('SELECT * FROM token_cmc_info WHERE coin = :coin AND updated_date = :current_date ORDER BY updated_date DESC LIMIT 1')
-        
-        # Using bind parameters for prepared statements
-        df_token_cmc_info = pd.DataFrame(connection.execute(query, {'coin': coin, 'current_date': current_date}).fetchall())
-
-    except SQLAlchemyError as e:
-        print(f"Database error occurred: {e}")
-        df_token_cmc_info = pd.DataFrame()
-
-    finally: connection.close()
-
-    return df_token_cmc_info
-
-def read_and_save_token_market_cap_table_with_no_dateinput(coin: str):
-    print(f"Reading token_cmc_info table for {coin} without date")
-    try:
-        # Reusing a persistent connection or a connection from a pool
-        connection = engine.connect()
-        query = text('SELECT * FROM token_cmc_info WHERE coin = :coin')
-        
-        # Using bind parameters for prepared statements
-        df_token_cmc_info = pd.DataFrame(connection.execute(query, {'coin': coin}).fetchall())
-
-    except SQLAlchemyError as e:
-        print(f"Database error occurred: {e}")
-        df_token_cmc_info = pd.DataFrame()
-
-    finally: connection.close()
-
-    return df_token_cmc_info
-
-def read_and_save_token_market_cap(coin: str):
-    coin = coin.upper()
-    coin = coin[:-4] if coin.endswith('USDT') else coin
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    token_cmc_info_dict = {}
-    df_token_cmc_info = read_and_save_token_market_cap_table(coin, current_date)
-    if not df_token_cmc_info.empty: token_cmc_info_dict = df_token_cmc_info.to_dict(orient='records')[0]
-    else:
-        IGNORE_LIST = get_ignore_list()
-        WHITE_LIST = get_white_list()
-        token_info = get_token_info_from_coinmarketcap(coin)
-        if token_info:
-            # get max supply or total supply, whichever is larger
-            max_supply = token_info['max_supply']
-            total_supply = token_info['total_supply']
-            if max_supply > total_supply: total_supply = max_supply
-            token_slug = token_info['slug']
-            cmc_rank = token_info['cmc_rank']
-            is_fiat = token_info['is_fiat']
-            date_added = token_info['date_added']
-            token_name = token_info['name']
-            price_of_today = token_info['quote']['USD']['price']
-            volume_24h = token_info['quote']['USD']['volume_24h']
-            market_cap = token_info['quote']['USD']['market_cap']
-            fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
-            circulating_supply = token_info['circulating_supply']
-            circulating_ratio = circulating_supply / total_supply
-            circulating_ratio = round(circulating_ratio, 2)
-            turnover_ratio = volume_24h / market_cap
-            updated_date = datetime.now().strftime("%Y-%m-%d")
-            token_tag = ', '.join(token_info['tags']) if token_info['tags'] else ''
-            in_ignorelist = 1 if coin in IGNORE_LIST else 0
-            in_whitelist = 1 if coin in WHITE_LIST else 0
-
-            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: 
-                add_coin_to_ignore_list(coin, TG_BOT_OWNER_ID)
-                in_ignorelist = 1
-            
-            token_cmc_info_dict = {
-                'coin': coin, 
-                'token_name': token_name, 
-                'cmc_rank': cmc_rank, 
-                'is_fiat': is_fiat, 
-                'in_ignorelist': in_ignorelist,
-                'in_whitelist': in_whitelist,
-                'total_supply': total_supply,
-                'date_added': date_added, 
-                'price_of_today': price_of_today, 
-                'volume_24h': volume_24h, 
-                'market_cap': market_cap, 
-                'fully_diluted_market_cap': fully_diluted_market_cap, 
-                'circulating_supply': circulating_supply, 
-                'circulating_ratio': circulating_ratio, 
-                'turnover_ratio': turnover_ratio, 
-                'updated_date': updated_date,
-                'token_slug': token_slug,
-                'token_tag': token_tag,
-                }
-            df_token_cmc_info = pd.DataFrame(token_cmc_info_dict, index=[0])
-            try: 
-                df_token_check = read_and_save_token_market_cap_table_with_no_dateinput(coin)
-                if not df_token_check.empty: update_coin_info_to_token_cmc_info_table(token_cmc_info_dict)
-                else: df_token_cmc_info.to_sql('token_cmc_info', engine, if_exists='append', index=False)
-            except Exception as e: print(f"An error occurred: {e}")
-    return token_cmc_info_dict
-'''{
-  "coin": "RSR",
-  "token_name": "Reserve Rights",
-  "cmc_rank": 249,
-  "is_fiat": 0,
-  "in_ignorelist": 1,
-  "in_whitelist": 1,
-  "total_supply": 100000000000,
-  "date_added": "2019-05-24T00:00:00.000Z",
-  "price_of_today": 0.003625399340507161,
-  "volume_24h": 54124697.02542073,
-  "market_cap": 183445206.62966236,
-  "fully_diluted_market_cap": 362539934.05,
-  "circulating_supply": 50600000000,
-  "circulating_ratio": 0.51,
-  "turnover_ratio": 0.2950455780220369,
-  "updated_date": "2023-12-26",
-  "token_slug": "reserve-rights",
-  "token_tag": "store-of-value, defi, coinbase-ventures-portfolio, dcg-portfolio, real-world-assets"
-}'''
-# result = read_and_save_token_market_cap(coin = 'RSR')
-# print(json.dumps(result, indent=2))
-
-# pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info')).fetchall())
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
 def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
+    token_symbol = token_symbol.upper()
     if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     try:
-        token_info = read_and_save_token_market_cap(coin = token_symbol)
+        token_info = get_token_info_from_coinmarketcap(token_symbol)
         if token_info:
             if token_info['is_fiat']: return
-            if token_info['in_ignorelist']: return
-            if token_info['market_cap'] < MARKET_CAP_DOWN_LIMIT: return
-            if token_info['circulating_ratio'] < CIRCULATION_RATIO: return 
-            token_info = get_token_info_from_coinmarketcap(token_symbol)
             fully_diluted_market_cap = token_info['quote']['USD']['fully_diluted_market_cap']
+            if fully_diluted_market_cap > FULLLY_DILUTED_MARKET_CAP_UP_LIMIT: return
             market_cap = token_info['quote']['USD']['market_cap']
+            if market_cap < MARKET_CAP_DOWN_LIMIT: return
             circulating_ratio = token_info['circulating_supply'] / token_info['total_supply']
+            if circulating_ratio < CIRCULATION_RATIO : return
             turnover_ratio = token_info['quote']['USD']['volume_24h'] / market_cap
             turnover_ratio = round(turnover_ratio, 2)
             if turnover_ratio < turnover_ratio_eth: return
@@ -2921,15 +2794,15 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
     df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
     if df_ticker.empty: return []
-    try: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
-    except: turnover_ratio_eth = 0.03
+    df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
+    df_ticker = df_ticker.head(10)
     df_ticker = df_ticker.copy()
     df_ticker.loc[:, 'market_cap'] = 0
     df_ticker.loc[:, 'fully_diluted_market_cap'] = 0
     df_ticker.loc[:, 'ratio'] = 0.01
     for index, row in df_ticker.iterrows():
         coin = row['coin']
-        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth)
+        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth=0.05)
         if token_info:
             df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
             df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
@@ -2947,7 +2820,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         for index, row in df_ticker.iterrows():
             if remainning_positions <= 0: break
             coin = row['coin']
-            # if weekly_rsi_over_high(coin): continue
             long_or_short = analyze_symbol(coin)
             long = long_or_short['long']
             if not long: continue
