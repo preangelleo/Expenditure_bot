@@ -26,8 +26,5 @@ if __name__ == '__main__':
     try: calculate_hot_coin_price_change()
     except Exception as e: print(f'calculate_hot_coin_price_change() error:\n\n{e}\n\n')
 
-    try: binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status, coin_in_positions=[])
-    except Exception as e: print(f'binance_today_hot_coin() error:\n\n{e}\n\n')
-
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')

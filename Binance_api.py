@@ -2801,8 +2801,8 @@ def binance_hot_coins_calculation(trading_volume_limit = TRADING_VOLUME_LIMIT, t
     return df 
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
-    remainning_positions = POSITIONS_LIMIT - len(coin_in_positions)
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
+    remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]

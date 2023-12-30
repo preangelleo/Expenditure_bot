@@ -142,10 +142,12 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit 
             df_limit_buy_order['coin'] = df_limit_buy_order['symbol'].apply(lambda x: x[:-4])
             coin_in_positions += df_limit_buy_order['coin'].values.tolist()
     except: pass
-    REMAINING_POSITIONS = POSITIONS_LIMIT - len(coin_in_positions)
-    if REMAINING_POSITIONS <= 0: return
+    coin_in_positions_len = len(coin_in_positions)
+    REMAINING_POSITIONS = POSITIONS_LIMIT - coin_in_positions_len
+    if REMAINING_POSITIONS <= 0: return binance_today_hot_coin(TRADING_VOLUME_LIMIT,  tradingbot_status, coin_in_positions_len)
+
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Remaining positions: {REMAINING_POSITIONS}')
-    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions)
+    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions_len, coin_in_positions)
     if not today_hot_coin_dict: return 
     for coin in today_hot_coin_dict:
         # if is_coin_recently_listed(coin, 7): continue
@@ -160,7 +162,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit 
 
 def only_check_hot_coins(from_id = None):
     tradingbot_status = trading_bot_switch_status()
-    return binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = tradingbot_status, coin_in_positions=[])
+    return binance_today_hot_coin(TRADING_VOLUME_LIMIT, tradingbot_status, 0)
 
 
 if __name__ == '__main__':
