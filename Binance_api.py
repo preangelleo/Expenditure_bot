@@ -1839,9 +1839,9 @@ def update_kline_data_from_binance_to_table(symbol: str, interval: str):
 def get_kline_data(symbol, interval):
     symbol = symbol.upper()
     symbol = symbol + 'USDT' if not symbol.endswith('USDT') else symbol
-    df = update_kline_data_from_binance_to_table(symbol, interval)
-    if df.empty: return pd.DataFrame()
-    df = df.sort_values(by='Close Time', ascending=True)
+    try: df = update_kline_data_from_binance_to_table(symbol, interval)
+    except: df = pd.DataFrame()
+    if not df.empty: df = df.sort_values(by='Close Time', ascending=True)
     return df
 
 def calculate_sma(data, period):
