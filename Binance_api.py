@@ -2737,6 +2737,7 @@ def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
 # df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM token_cmc_info')).fetchall())
 
 def read_and_save_token_market_cap_table(coin: str, current_date = datetime.now().strftime("%Y-%m-%d")):
+    print(f"Reading token_cmc_info table for {coin} with date")
     try:
         # Reusing a persistent connection or a connection from a pool
         connection = engine.connect()
@@ -2754,6 +2755,7 @@ def read_and_save_token_market_cap_table(coin: str, current_date = datetime.now(
     return df_token_cmc_info
 
 def read_and_save_token_market_cap_table_with_no_dateinput(coin: str):
+    print(f"Reading token_cmc_info table for {coin} without date")
     try:
         # Reusing a persistent connection or a connection from a pool
         connection = engine.connect()
