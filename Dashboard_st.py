@@ -200,7 +200,14 @@ def display_binance_position_sell(engine):
 
 
 def display_open_position(engine):
-    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, orderId, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 0 ORDER BY update_id DESC')).fetchall())
+    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT coin, type, orderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 0 ORDER BY update_id DESC')).fetchall())
+    # Add duration column
+    df_buy['duration'] = int(time.time() * 1000) - df_buy['transactTime']
+    df_buy['duration_hour'] = df_buy['duration'].apply(lambda x: int(x/1000/60/60))
+    # Make transactTime string format
+    df_buy['transactTime'] = df_buy['transactTime'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+    # drop 'duration' column
+    df_buy.drop(['duration'], axis=1, inplace=True)
     with st.expander("Open Positions", expanded=False): 
         if df_buy.empty:
             st.write("No open positions currently.")
