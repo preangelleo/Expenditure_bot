@@ -72,10 +72,8 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     '''{'long': True, 'short': False}'''
     long = long_or_short['long']
     short = long_or_short['short']
-
     if long: 
         if weekly_rsi_over_high(symbol): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
-
         turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
         token_info = get_token_market_cap_and_ratio(symbol, turnover_ratio_eth)
         if token_info:
@@ -90,10 +88,8 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
             reply_string = f"[{symbol}]({URL}) | Rank {coin_rank} | {format_number(current_price)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}\nFully_Diluted_Market_Cap: {format_number(fully_diluted_market_cap)}"
             send_msg_markdown(reply_string, from_id)
             return send_msg(f"{symbol.upper()} is good to buy now.", from_id)
-        else: send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
-
-    elif short: return send_msg(f"{symbol.upper()} is good to short now.", from_id)
-
+        else: return send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
+    elif short and weekly_rsi_over_high(symbol): return send_msg(f"{symbol.upper()} is good to short now.", from_id)
     return send_msg(f"{symbol.upper()} is not good to long or short now. Wait for the next chance. Be patient please 😘", from_id)
 
 

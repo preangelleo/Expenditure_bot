@@ -1764,18 +1764,84 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
     return send_img(chat_id, filename)
 
 
-def get_kline_data(symbol, interval):
+def update_kline_data_from_binance_to_table(symbol: str, interval: str):
+    try: df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 1")).fetchall())
+    except: df = pd.DataFrame()
+    if not df.empty: 
+        last_close_time = df.iloc[-1]['Close Time']
+        last_close_time = int(last_close_time.timestamp() * 1000)
+        last_open_time_str = df.iloc[-1]['Open Time']
+        last_open_time = int(last_open_time_str.timestamp() * 1000)
+        current_utc_time = int(time.time() * 1000)
+        if last_close_time >= current_utc_time: 
+            # Only need to update the last 1 row
+            url = f"https://api.binance.com/api/v3/klines"
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'startTime': last_open_time,
+            }
+            response = requests.get(url, params=params)
+            data = response.json()
+            if not data: return pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
+            df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+            df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+            df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
+            df['High'] = pd.to_numeric(df['High'], errors='coerce')
+            df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+            df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+            df['Open Time'] = pd.to_datetime(df['Open Time'], unit='ms')
+            df['Close Time'] = pd.to_datetime(df['Close Time'], unit='ms')
+            df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
+            df = df.drop(columns=['Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+            # Before append the last row, delete the last row in the table with the same open time
+            with engine.connect() as con:
+                con.execute(text(f"DELETE FROM {symbol}_{interval}_kline_data WHERE `Open Time` = '{last_open_time_str}'"))
+                con.commit()
+            execution_if_exists = 'append'
+            df.to_sql(f"{symbol}_{interval}_kline_data", engine, if_exists=execution_if_exists, index=False)
+            df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
+            return df
+        else: open_time = last_close_time + 1
+    else:
+        if interval == '4h': open_time = int(time.time() * 1000) - 500 * 4 * 60 * 60 * 1000
+        elif interval == '1h': open_time = int(time.time() * 1000) - 500 * 60 * 60 * 1000
+        elif interval == '5m': open_time = int(time.time() * 1000) - 500 * 5 * 60 * 1000
+        elif interval == '1d': open_time = int(time.time() * 1000) - 500 * 24 * 60 * 60 * 1000
+        elif interval == '1w': open_time = int(time.time() * 1000) - 500 * 7 * 24 * 60 * 60 * 1000
+        elif interval == '1M': open_time = int(time.time() * 1000) - 500 * 30 * 24 * 60 * 60 * 1000
+        elif interval == '15m': open_time = int(time.time() * 1000) - 500 * 365 * 24 * 60 * 60 * 1000
+        else: return print(f"Interval {interval} is not supported.")
     url = f"https://api.binance.com/api/v3/klines"
     params = {
         'symbol': symbol,
-        'interval': interval
+        'interval': interval,
+        'startTime': open_time
     }
     response = requests.get(url, params=params)
     data = response.json()
+    if not data: return pd.DataFrame()
     df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
-    df['Close'] = pd.to_numeric(df['Close'])
-    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'])
-    # print(df)
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+    df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
+    df['High'] = pd.to_numeric(df['High'], errors='coerce')
+    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+    df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+    df['Open Time'] = pd.to_datetime(df['Open Time'], unit='ms')
+    df['Close Time'] = pd.to_datetime(df['Close Time'], unit='ms')
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
+    df = df.drop(columns=['Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+    execution_if_exists = 'replace'
+    df.to_sql(f"{symbol}_{interval}_kline_data", engine, if_exists=execution_if_exists, index=False)
+    df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY 'Close Time' DESC LIMIT 500")).fetchall())
+    return df
+
+def get_kline_data(symbol, interval):
+    symbol = symbol.upper()
+    symbol = symbol + 'USDT' if not symbol.endswith('USDT') else symbol
+    df = update_kline_data_from_binance_to_table(symbol, interval)
+    if df.empty: return pd.DataFrame()
+    df = df.sort_values(by='Close Time', ascending=True)
     return df
 
 def calculate_sma(data, period):
@@ -1797,61 +1863,57 @@ def calculate_macd(data, short_window=12, long_window=26, signal=9):
     return macd, signal_line
 
 
-def analyze_data(df, interval):
-    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
-    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
-    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
+def calculate_odds(df, period=13):
+    df['up_percentage_change'] = ((df['Close'] - df['Open']) / df['Open']) * 100
+    df['up_change_by_volume'] = df['up_percentage_change'] / df['Quote Asset Volume']
+    positive_changes = df[df['up_percentage_change'] > 0]
+    negative_changes = df[df['up_percentage_change'] < 0]
+    df['avg_up_change_by_volume_positive'] = positive_changes['up_change_by_volume'].rolling(window=period).mean()
+    df['avg_up_change_by_volume_negative'] = negative_changes['up_change_by_volume'].rolling(window=period).mean()
+    df['conditions_boolean'] = 0
+    df.loc[df['up_change_by_volume'] > df['avg_up_change_by_volume_positive'], 'conditions_boolean'] = 1
+    df.loc[df['up_change_by_volume'] < df['avg_up_change_by_volume_negative'], 'conditions_boolean'] = -1
+    df.loc[:, 'Open Time'] = pd.to_datetime(df['Open Time'], unit='ms')
+    last_condition = df['conditions_boolean'].iloc[-1]
+    return last_condition
 
+
+def analyze_data(df, interval):
+    general_condition = calculate_odds(df, period=13)
     df['RSI'] = calculate_rsi(df['Close'], 13)
     df['RSI_SMA'] = calculate_sma(df['RSI'], 13)
-
     df['Quote Asset Volume SMA'] = calculate_sma(df['Quote Asset Volume'], 34)
-
     df['SMA_13'] = calculate_sma(df['Close'], 13)
     df['SMA_21'] = calculate_sma(df['Close'], 21)
     df['SMA_34'] = calculate_sma(df['Close'], 34)
     df['SMA_55'] = calculate_sma(df['Close'], 55)
     df['SMA_89'] = calculate_sma(df['Close'], 89)
-
-    target_profit = 0
-    # This is a very basic and not necessarily accurate approach
     current_price = df['Close'].iloc[-1]
-
     condition_1d = df['SMA_55'].iloc[-1] > df['SMA_89'].iloc[-1]
     condition_4h = df['SMA_34'].iloc[-1] > df['SMA_55'].iloc[-1]
     condition_1h = df['SMA_21'].iloc[-1] > df['SMA_34'].iloc[-1]
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
-
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-
-    if current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
-
-        # Price higher than max(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89) 
+    print(f"STARTING ANALYZE: general_condition: {general_condition}, current_condition: {current_condition}, RSI: {df['RSI'].iloc[-1]}, RSI_SMA: {df['RSI_SMA'].iloc[-1]}")
+    if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
-        if deviation_percentage > 0.2: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
-        if deviation_percentage > 0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
-
-        # Price lower than min(SMA_13, SMA_21, SMA_34, SMA_55, SMA_89)
+        if 0.1 > deviation_percentage > 0: return {'interval': interval, 'target_profit': 0.1 - 0.01 - deviation_percentage, 'long': True, 'short': False}
+    if general_condition == -1 and not current_condition and df['RSI'].iloc[-1] < df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < df['RSI_SMA'].iloc[-1]:
         min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - min_sma) / min_sma
-        if deviation_percentage < -0.2: return {'interval': interval, 'target_profit': abs(deviation_percentage) - 0.2, 'long': True, 'short': False}
-        if deviation_percentage < -0.1: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
-
-        target_profit = 0.1 - deviation_percentage
-        for sma in ['SMA_89', 'SMA_55', 'SMA_34', 'SMA_21', 'SMA_13']:
-            if current_price > df[sma].iloc[-1] and df['Close'].iloc[-2] < df[sma].iloc[-2]: return {'interval': interval, 'target_profit': target_profit, 'long': True, 'short': False}
-            if current_price < df[sma].iloc[-1] and df['Close'].iloc[-2] > df[sma].iloc[-2]: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': True}
-
+        if 0 > deviation_percentage > -0.1: return {'interval': interval, 'target_profit': 0.1 - 0.01 + deviation_percentage, 'long': False, 'short': True}
     else: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
     
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, good_to_short, target_profit = 0, 0, 0
-    for interval in ['1d', '4h', '1h', '15m', '5m']:
-        df = get_kline_data(symbol, interval)
+    for interval in ['4h', '1h', '15m', '5m']:
+        print(f"Symbol: {symbol}, Interval: {interval}")
+        try: df = get_kline_data(symbol, interval)
+        except: df = pd.DataFrame()
         if not df.empty: 
             result = analyze_data(df, interval)
             if not result: continue
@@ -1863,11 +1925,10 @@ def analyze_symbol(symbol: str):
                 good_to_buy -= 1
             target_profit = max(target_profit, result['target_profit'])
     if good_to_buy >= 2: return {'long': True, 'short': False, 'target_profit': target_profit}
-    if good_to_short >= 4: return {'long': False, 'short': True, 'target_profit': 0.01}
+    if good_to_short >= 3: return {'long': False, 'short': True, 'target_profit': 0.01}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
-# Define a function to check if the weekly interval rsi is over 90, if yes, remove from white_list
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
@@ -2745,6 +2806,23 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
             coin_rank = token_info['cmc_rank']
             return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug'], 'current_price': current_price, 'coin_rank': coin_rank}
     except: return 
+
+
+def binance_hot_coins_calculation(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
+    remainning_positions = POSITIONS_LIMIT - len(coin_in_positions)
+    price_change_limit = 30 if tradingbot_status else 15
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df = df_ticker[(df_ticker['priceChangePercent'] > 1) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['priceChangePercent'] < price_change_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 1000)]
+    df['norm_priceChange'] = (df['priceChangePercent'] - df['priceChangePercent'].min()) / (df['priceChangePercent'].max() - df['priceChangePercent'].min())
+    df['norm_volume'] = (df['quoteVolume'] - df['quoteVolume'].min()) / (df['quoteVolume'].max() - df['quoteVolume'].min())
+    threshold = df['norm_volume'].median()
+    df['higher_odds_to_rise'] = df.apply(lambda row: 1 if row['norm_priceChange'] > row['norm_volume'] and row['norm_volume'] < threshold else 0, axis=1)
+    # Select only the coins that have higher_odds_to_rise = 1
+    df = df[df['higher_odds_to_rise'] == 1]
+    return df 
+
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions = []):
