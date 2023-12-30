@@ -1948,7 +1948,7 @@ def analyze_symbol(symbol: str):
             if not result['long'] and interval in ['5m', '15m']: break
             if result['long']: good_to_buy += 1
             target_profit = max(target_profit, result['target_profit'])
-            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': float(target_profit)}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
