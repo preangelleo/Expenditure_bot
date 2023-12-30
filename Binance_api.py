@@ -1879,6 +1879,8 @@ def calculate_odds(df, period=13):
 
 
 def analyze_data(df, interval):
+    print(f"STARTING ANALYZE: {interval}\n")
+    print(df)
     general_condition = calculate_odds(df, period=13)
     df['RSI'] = calculate_rsi(df['Close'], 13)
     df['RSI_SMA'] = calculate_sma(df['RSI'], 13)
@@ -1895,7 +1897,7 @@ def analyze_data(df, interval):
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-    print(f"STARTING ANALYZE: general_condition: {general_condition}, current_condition: {current_condition}, RSI: {df['RSI'].iloc[-1]}, RSI_SMA: {df['RSI_SMA'].iloc[-1]}")
+    print(f"General_condition: {general_condition}, current_condition: {current_condition}, RSI: {df['RSI'].iloc[-1]}, RSI_SMA: {df['RSI_SMA'].iloc[-1]}")
     if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
@@ -1910,7 +1912,7 @@ def analyze_data(df, interval):
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, good_to_short, target_profit = 0, 0, 0
-    for interval in ['4h', '1h', '15m', '5m']:
+    for interval in ['1h', '15m']:
         print(f"Symbol: {symbol}, Interval: {interval}")
         time.sleep(1)
         try: df = get_kline_data(symbol, interval)
@@ -1925,8 +1927,8 @@ def analyze_symbol(symbol: str):
                 good_to_short += 1
                 good_to_buy -= 1
             target_profit = max(target_profit, result['target_profit'])
-    if good_to_buy >= 2: return {'long': True, 'short': False, 'target_profit': target_profit}
-    if good_to_short >= 3: return {'long': False, 'short': True, 'target_profit': 0.01}
+    if good_to_buy >= 1: return {'long': True, 'short': False, 'target_profit': target_profit}
+    if good_to_short >= 1: return {'long': False, 'short': True, 'target_profit': 0.01}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
