@@ -1904,8 +1904,6 @@ def calculate_odds(df, period=13):
 
 
 def analyze_data(df, interval):
-    print(f"STARTING ANALYZE: {interval}\n")
-    print(df)
     general_condition = calculate_odds(df, period=13)
     df['RSI'] = calculate_rsi(df['Close'], 13)
     df['RSI_SMA'] = calculate_sma(df['RSI'], 13)
