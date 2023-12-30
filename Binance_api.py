@@ -1940,7 +1940,7 @@ def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, target_profit = 0, 0
     for interval in ['5m', '15m', '1h', '4h']:
-        print(f"Symbol: {symbol}, Interval: {interval}")
+        if interval in ['4h']: print(f"Symbol: {symbol}, Interval: {interval}")
         time.sleep(1)
         df = get_kline_data(symbol, interval)
         if not df.empty: 
@@ -1951,6 +1951,24 @@ def analyze_symbol(symbol: str):
             if result['long']: good_to_buy += 1
             target_profit = max(target_profit, result['target_profit'])
             if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+    return {'long': False, 'short': False, 'target_profit': 0.01}
+
+
+def analyze_symbol_prudently(symbol: str):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    good_to_buy, good_to_short, target_profit = 0, 0, 0
+    for interval in ['5m', '15m', '1h', '4h']:
+        if interval in ['4h']: print(f"Symbol: {symbol}, Interval: {interval}")
+        time.sleep(1)
+        df = get_kline_data(symbol, interval)
+        if not df.empty: 
+            result = analyze_data(df, interval)
+            if not result: continue
+            if result['short']: good_to_short += 1
+            elif result['long']: good_to_buy += 1
+            target_profit = max(target_profit, result['target_profit'])
+            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+            if good_to_short >= 3: return {'long': False, 'short': True, 'target_profit': target_profit}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
