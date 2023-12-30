@@ -1915,8 +1915,7 @@ def analyze_symbol(symbol: str):
     for interval in ['1h', '15m']:
         print(f"Symbol: {symbol}, Interval: {interval}")
         time.sleep(1)
-        try: df = get_kline_data(symbol, interval)
-        except: df = pd.DataFrame()
+        df = get_kline_data(symbol, interval)
         if not df.empty: 
             result = analyze_data(df, interval)
             if not result: continue
