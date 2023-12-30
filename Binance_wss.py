@@ -145,17 +145,15 @@ def handle_socket_message(msg):
         coin = symbol.replace('USDT', '')
         clientOrderId = msg['C'] if msg['C'] else msg['c']
         orderId = msg['i']
+        table_name = 'binance_limit_buy_order' if msg['S'] == 'BUY' else 'binance_limit_sell_order'
         
-        if msg['X'] in ['CANCELED', 'CANCELLED', 'EXPIRED']:
+        if msg['X'] in ['CANCELED', 'CANCELLED']:
             ''' {'e': 'executionReport', 'E': 1703029327337, 's': 'RUNEUSDT', 'c': 'web_4ef308e8a5034b259fd36acf1b18fdd6', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '1515.40000000', 'p': '6.66500000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': 'KkrTVdDuxAc5ggTIUErslC', 'x': 'CANCELED', 'X': 'CANCELED', 'r': 'NONE', 'i': 1269148511, 'l': '0.00000000', 'z': '0.00000000', 'L': '0.00000000', 'n': '0', 'N': None, 'T': 1703029327336, 't': -1, 'I': 2630955099, 'w': False, 'm': False, 'M': False, 'O': 1703019729294, 'Z': '0.00000000', 'Y': '0.00000000', 'Q': '0.00000000', 'W': 1703019729294, 'V': 'EXPIRE_MAKER'}'''
-            if not clientOrderId: send_msg(f'''{coin} Limit Order Canceled\n\nConfused clientOrderId: \nmsg['c']: {msg['c']}\nmsg['C']: {msg['C']}''', TG_BOT_OWNER_ID)
-            else:
-                try:
-                    table_name = 'binance_limit_buy_order' if msg['S'] == 'BUY' else 'binance_limit_sell_order'
-                    mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
-                except: pass
+            if msg['c'].startswith('web_'): mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
 
-        if msg['X'] == 'FILLED':
+        elif msg['X'] in ['EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
+
+        elif msg['X'] == 'FILLED':
             # check direction is BUY or SELL
             if msg['S'] == 'SELL':
                 '''{'e': 'executionReport', 'E': 1703032385551, 's': 'NEARUSDT', 'c': 'b1vSFIYMRLWZrz4ecPsPaZ', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '3960.70000000', 'p': '2.55000000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 2110473867, 'l': '3960.70000000', 'z': '3960.70000000', 'L': '2.55000000', 'n': '0.02982221', 'N': 'BNB', 'T': 1703032385543, 't': 138267320, 'I': 4348096316, 'w': False, 'm': True, 'M': True, 'O': 1703019732394, 'Z': '10099.78500000', 'Y': '10099.78500000', 'Q': '0.00000000', 'W': 1703019732394, 'V': 'EXPIRE_MAKER'}'''
