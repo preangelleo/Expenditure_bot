@@ -335,7 +335,7 @@ def get_api_functions_str(chat_id=TG_BOT_OWNER_ID):
 # 账户API交易状态(USER_DATA), 获取 api 账户交易状态详情, 权重(IP): 1
 # GET /sapi/v1/account/apiTradingStatus (HMAC SHA256)
 # https://binance-docs.github.io/apidocs/spot/cn/#api-user_data 
-def get_api_status():
+def get_api_status(from_id=TG_BOT_OWNER_ID):
     PATH = '/sapi/v1/account/apiTradingStatus'
     timestamp = int(time.time() * 1000)
     params = {
@@ -349,6 +349,7 @@ def get_api_status():
         if r.status_code != 200:
             return
         data = r.json()
+        if from_id: send_msg('\n'.join([f'{key}: {value}' for key, value in data['data'].items()]), from_id)
         return data
     except Exception as e:
         print(e)
@@ -1836,13 +1837,37 @@ def update_kline_data_from_binance_to_table(symbol: str, interval: str):
     df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY 'Close Time' DESC LIMIT 500")).fetchall())
     return df
 
+
+def get_kline_data_from_binance(symbol: str, interval: str):
+    url = f"https://api.binance.com/api/v3/klines"
+    params = {
+        'symbol': symbol,
+        'interval': interval
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    if not data: return pd.DataFrame()
+    df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+    df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
+    df['High'] = pd.to_numeric(df['High'], errors='coerce')
+    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+    df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+    df['Open Time'] = pd.to_datetime(df['Open Time'], unit='ms')
+    df['Close Time'] = pd.to_datetime(df['Close Time'], unit='ms')
+    df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
+    df = df.drop(columns=['Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
+    return df
+
+
 def get_kline_data(symbol, interval):
     symbol = symbol.upper()
     symbol = symbol + 'USDT' if not symbol.endswith('USDT') else symbol
-    try: df = update_kline_data_from_binance_to_table(symbol, interval)
+    try: df = get_kline_data_from_binance(symbol, interval)
     except: df = pd.DataFrame()
-    if not df.empty: df = df.sort_values(by='Close Time', ascending=True)
+    # if not df.empty: df = df.sort_values(by='Close Time', ascending=True)
     return df
+
 
 def calculate_sma(data, period):
     return data.rolling(window=period).mean()
@@ -1912,7 +1937,7 @@ def analyze_data(df, interval):
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, good_to_short, target_profit = 0, 0, 0
-    for interval in ['1h', '15m']:
+    for interval in ['4h', '1h', '15m', '5m']:
         print(f"Symbol: {symbol}, Interval: {interval}")
         time.sleep(1)
         df = get_kline_data(symbol, interval)
@@ -1926,8 +1951,8 @@ def analyze_symbol(symbol: str):
                 good_to_short += 1
                 good_to_buy -= 1
             target_profit = max(target_profit, result['target_profit'])
-    if good_to_buy >= 1: return {'long': True, 'short': False, 'target_profit': target_profit}
-    if good_to_short >= 1: return {'long': False, 'short': True, 'target_profit': 0.01}
+    if good_to_buy >= 2: return {'long': True, 'short': False, 'target_profit': target_profit}
+    if good_to_short >= 3: return {'long': False, 'short': True, 'target_profit': 0.01}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 

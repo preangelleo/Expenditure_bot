@@ -160,6 +160,7 @@ COMMANDS = [
     {"command": 'binance_pay_usdt', 'description': 'Pay a certain amount of USDT to a given TRX address (less then 1000)'},
     {"command": 'manually_limit_sell', 'description': 'Manually place a limit order in Binance and keep holding until it is filled'},
     {"command": 'manually_limit_buy', 'description': 'Manually place a limit order for a coin at a given price'},
+    {"command": 'get_api_status', 'description': 'Get the status of the Binance API'},
 ]
 
 
@@ -578,4 +579,5 @@ BOT_COMMAND_DICT = {
     'mlb': 'manually_limit_buy',
     'bls': 'manually_limit_sell',
     'blb': 'manually_limit_buy',
+    'gas': 'get_api_status',
     }
