@@ -1943,7 +1943,7 @@ def analyze_symbol(symbol: str):
             result = analyze_data(df, interval)
             if not result: continue
             if result['short']: break
-            if not result['long'] and interval == '5m': break
+            if not result['long'] and interval in ['5m', '15m']: break
             if result['long']: good_to_buy += 1
             target_profit = max(target_profit, result['target_profit'])
             if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
