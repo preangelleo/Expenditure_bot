@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # except: pass
 
-    chat_id = TG_BOT_OWNER_ID if not current_bot_status else None
+    chat_id = TG_BOT_OWNER_ID 
     try: binance_today_hot_coins_check(chat_id, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
     except: pass
 
