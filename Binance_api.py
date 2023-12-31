@@ -1515,12 +1515,17 @@ def get_open_orders_list(from_id=None, side = 'SELL', output_format = 'dict'):
         df = df[df['side']==side]
         if df.empty: return {}
         if output_format.lower() == 'df': return df
+        # select only the coin and orderId, make a dict {symbol: orderId}
+        if from_id:
+            # Make a column of coin, symbol[:-4]
+            df['coin'] = df['symbol'].apply(lambda x: x[:-4])
+            df_orderId = df.loc[:, ['coin', 'orderId']]
+            df_orderId_dict = df_orderId.set_index('coin').to_dict()['orderId']
+            df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_orderId_dict.items()])
+            send_msg(f"Open {side} orders:\n\n{df_dict_string}", from_id)
         # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
         df = df.loc[:, ['symbol', 'clientOrderId']]
         df_dict = df.set_index('symbol').to_dict()['clientOrderId']
-        if from_id:
-            df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
-            send_msg(f"Open {side} orders:\n\n{df_dict_string}", from_id)
         return df_dict
     else: 
         print(r.json())
