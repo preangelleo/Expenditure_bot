@@ -89,6 +89,8 @@ ETHERSCAN_WALLET_URL_PREFIX = 'https://etherscan.io/address/'
 ETHERSCAN_TX_URL_PREFIX = 'https://etherscan.io/tx/'
 ETHERSCAN_TOKEN_URL_PREFIX = 'https://etherscan.io/token/'
 
+COINBASE_API_KEY = os.getenv('COINBASE_API_KEY')
+COINBASE_API_SECRET = os.getenv('COINBASE_API_SECRET')
 
 INFURA_KEY = os.getenv('INFURA_KEY')
 INFURA_URL = os.getenv('INFURA_URL')
@@ -1169,15 +1171,102 @@ def get_filtered_df(tablename, columns:list = None, filters: dict = None):
     except: return pd.DataFrame()
     
 
+def get_trading_pairs_from_coinbase():
+    print("CALLING get_trading_pairs_from_coinbase()")
+    # Coinbase Pro API endpoint for trading pairs
+    url = 'https://api.pro.coinbase.com/products'
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        trading_pairs = []
+        for pair in data:
+            trading_pairs.append(pair['id'])
+
+        return trading_pairs
+    except requests.exceptions.RequestException as e:
+        print(f"Error while fetching trading pairs: {e}")
+        return []
+    
+
+# make trading_pairs = get_trading_pairs_from_coinbase() a list with only the coin name
+def get_coin_list_from_trading_pairs():
+    trading_pairs = get_trading_pairs_from_coinbase()
+    coin_list = []
+    for pair in trading_pairs:
+        # keep only the USDT pair
+        if pair.endswith('-USDT'): coin_list.append(pair.split('-')[0])
+    coin_list = list(set(coin_list))
+    return coin_list
+
+def get_symbol_list_from_trading_pairs():
+    trading_pairs = get_trading_pairs_from_coinbase()
+    symbol_list = []
+    for pair in trading_pairs:
+        # keep only the USDT pair
+        if pair.endswith('-USDT'): symbol_list.append(pair)
+    return symbol_list
+
+# NOT SUCCESSFUL
+def coinbase_market_buy_order(product_id, funds = '10000'):
+    """
+    Place a market buy order on Coinbase Pro.
+
+    :param api_url: URL of the Coinbase Pro API.
+    :param api_key: Your Coinbase Pro API key.
+    :param secret_key: Your Coinbase Pro API secret key.
+    :param passphrase: Your Coinbase Pro API passphrase.
+    :param product_id: The product to buy (e.g., 'BTC-USD').
+    :param funds: The amount of funds (in quote currency) to use for the purchase.
+    """
+
+    api_url = 'https://api.pro.coinbase.com'
+    api_key = os.getenv('COINBASE_API_KEY')
+    secret_key = os.getenv('COINBASE_API_SECRET')
+    passphrase = os.getenv('COINBASE_API_PASSPHRASE')
+
+    if product_id not in COINBASE_SYMBOL_LIST: 
+        coinbase_product_id_list = get_symbol_list_from_trading_pairs()
+        if product_id not in coinbase_product_id_list: return f"Product_id {product_id} not in COINBASE_SYMBOL_LIST"
+
+    timestamp = str(time.time())
+    method = 'POST'
+    path = '/orders'
+    body = json.dumps({
+        'type': 'market',
+        'side': 'buy',
+        'product_id': product_id,
+        'funds': str(funds)
+    })
+
+    # Create a signature
+    message = timestamp + method + path + body
+    hmac_key = base64.b64decode(secret_key)
+    signature = hmac.new(hmac_key, message.encode(), hashlib.sha256)
+    signature_b64 = base64.b64encode(signature.digest())
+
+    # Define the request headers
+    headers = {
+        'Content-Type': 'application/json',
+        'CB-ACCESS-KEY': api_key,
+        'CB-ACCESS-SIGN': signature_b64,
+        'CB-ACCESS-TIMESTAMP': timestamp,
+        'CB-ACCESS-PASSPHRASE': passphrase
+    }
+
+    # Send the request
+    response = requests.post(api_url + path, headers=headers, data=body)
+    
+    if response.status_code == 200: return response.json()
+    else: return response.json()  # Contains the error message
+
+
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-
-    # address = '0x7bc198266f1552223A17a6a7660f3feF9171B888'
-
-    # Example usage
-    # url = "https://www.cnn.com/2023/12/17/politics/bob-good-house-freedom-caucus/index.html"
-    # text_output = fetch_text_from_url(url)
-    # print(text_output)
-    app_name = 'carta'
-    get_otp(app_name, from_id=TG_BOT_OWNER_ID)
+    # Example Usage
+    order = coinbase_market_buy_order('DOT-USDT', '10000')
+    print(order)
+        

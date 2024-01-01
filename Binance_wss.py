@@ -34,8 +34,7 @@ def handle_socket_message(msg):
         try:
             bnb_df = df[df['asset'] == 'BNB']
             if not bnb_df.empty:
-                bnb_free = bnb_df['free'].values[0]
-                if bnb_free < 2: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
+                if bnb_df['free'].values[0] < 2: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
         except Exception as e: print(f'check_and_buy_bnb() error:\n\n{e}\n\n')
 
 

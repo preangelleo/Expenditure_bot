@@ -2694,10 +2694,18 @@ def binance_market_buy_quantity(coin, quantity):
 
 # Check if bnb balance is less than 1, if yes, buy 1 bnb
 def check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID):
+    time.sleep(1)
     coin = coin.upper()
 
     try: check_limit = float(check_limit)
     except: return send_msg(f'check_limit: {check_limit} is not a number', chat_id)
+
+    bnb_data = get_coin_wallet_balance_with_locked()
+    if not bnb_data: return send_msg(f'Failed to get coin wallet balance with locked', chat_id)
+
+    # check if bnb balance is less than check_limit
+    bnb_balance = bnb_data.get(coin, 0)
+    if bnb_balance >= check_limit: return
 
     # print(f'bnb_balance: {bnb_balance} is less than check_limit: {check_limit}, trying to buy {check_limit} {coin}')
     data = binance_market_buy_quantity(coin, check_limit)
@@ -2842,6 +2850,11 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         print(f"Trading bot is off, only check white_list coins")
         WHITE_LIST = get_white_list()
         df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
+        if df_ticker.empty: return []
+        try: coinbase_coin_list = get_coin_list_from_trading_pairs()
+        except: coinbase_coin_list = COINBASE_COIN_LIST
+        # Keep only the coins in COINBASE_TRADING_LIST
+        df_ticker = df_ticker[df_ticker['coin'].isin(coinbase_coin_list)]
         if df_ticker.empty: return []
     hotcoin_list_of_today = get_hot_coin_list_of_today()
     df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
