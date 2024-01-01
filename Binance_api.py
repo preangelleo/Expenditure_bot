@@ -3173,7 +3173,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
 
 
-def montly_summary():
+def monthly_summary():
     df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, transactTime, profit FROM binance_position_sell')).fetchall())
     ''' df_profit  binance_position_sell
         symbol   transactTime      profit

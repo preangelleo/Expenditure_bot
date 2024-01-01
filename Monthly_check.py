@@ -19,5 +19,5 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(timeframe='1M', from_id=TG_BOT_OWNER_ID)
     except: pass
 
-    try: montly_summary()
+    try: monthly_summary()
     except: pass
