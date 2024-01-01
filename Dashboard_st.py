@@ -215,6 +215,30 @@ def display_open_position(engine):
     return 
 
 
+def display_funding_account_positions(engine):
+    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_positions WHERE is_closed = 0')).fetchall())
+    except: pd.DataFrame()
+    with st.expander("Funding Account Positions", expanded=False): 
+        if df.empty: 
+            st.write("No funding account positions currently.")
+        else:
+            st.table(df)
+
+
+def display_funding_account_performance(engine):
+    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
+    except: pd.DataFrame()
+
+    with st.expander("Funding Account Performance", expanded=False): 
+        if df.empty: 
+            st.write("No funding account performance data.")
+        else:
+            total_profit = df['prfit'].sum()
+            st.write(f"Total Profit: {format_number(total_profit)}")
+            st.table(df)
+
+
+
 def main():
     display_header()
     
@@ -223,6 +247,10 @@ def main():
     display_open_position(engine)
 
     display_binance_position_sell(engine)
+
+    display_funding_account_positions(engine)
+
+    display_funding_account_performance(engine)
 
     display_coin_lists(engine)
     # Call other display functions here
