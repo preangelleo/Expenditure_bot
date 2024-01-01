@@ -1538,7 +1538,7 @@ def close_postive_positions(from_id=TG_BOT_OWNER_ID):
     return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 00.1" or "stp 0.01". This is equal to close all positive positions, calling market sell to close positions that are with 0.01 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0.01" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
     
 
-def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
+def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try:
         table_name = 'binance_position_buy'
@@ -1650,8 +1650,9 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
         current_orders_df = current_orders_df.sort_values(by=['price'])
         current_orders_df = current_orders_df.head(1)
         orderId = current_orders_df['orderId'].values[0]
-        if binance_cancel_order_by_orderId(coin, orderId): 
-            if mark_limit_order_as_canceled_by_orderId(orderId, 'CANCELED', 'binance_limit_sell_order'): do_market_sell(coin, from_id)
+        binance_cancel_order_by_orderId(coin, orderId)
+        mark_limit_order_as_canceled_by_orderId(orderId, 'CANCELED', 'binance_limit_sell_order')
+    do_market_sell(coin, from_id)
     return 
 
 
@@ -3118,25 +3119,76 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
         'time_string': time_string,
         'is_closed': 0,
     }
-    data['price'] = cummulativeQuoteQty / executedQty
+    new_data['price'] = cummulativeQuoteQty / executedQty
     if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     return send_msg(f'''Funding account bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}''', from_id)
 
+# Define a function to reverse the process of binance_funding_buy_and_hold
+def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    df = get_df_from_position_table(coin, 'binance_funding_positions')
+    if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
+    transId = funding_main_transfer_with_check_and_send(coin, df['executedQty'].values[0], from_id)
+    if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
+    data = binance_market_sell(coin, df['executedQty'].values[0])
+    if not data: return send_msg(f'Failed to do market sell for coin: {coin}', from_id)
+    print(data)
+    sold_price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+    previous_price = df['price'].values[0]
+    price_up_percentage = (sold_price - previous_price) / previous_price * 100
+    orderId_sold = int(data['orderId'])
+    orderId_bought = int(df['orderId'].values[0])
+    profit = float(data['cummulativeQuoteQty']) - float(df['cumulativeQuoteQty'].values[0])
+    new_data = {
+        'coin': coin,
+        'symbol': coin + 'USDT',
+        'orderId': orderId_sold,
+        'clientOrderId': data['clientOrderId'],
+        'executedQty': data['executedQty'],
+        'cumulativeQuoteQty': data['cummulativeQuoteQty'],
+        'type': data['type'],
+        'side': data['side'],
+        'status': data['status'],
+        'timestamp': data['transactTime'],
+        'previous_price': previous_price,
+        'sold_price': sold_price,
+        'price_up_percentage': price_up_percentage,
+        'prfit': profit,
+        'orderId_buy': orderId_bought,
+        'duration': data['transactTime'] - df['timestamp'].values[0],
+    }
+    close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
+    if data_to_table(new_data, 'binance_funding_profits'): main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
+    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit''', from_id)
 
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
+    df = get_df_from_position_table(None, 'binance_funding_profits')
     df = get_df_from_position_table(None, 'binance_funding_positions')
     '''   
-        coin    symbol     orderId                         clientOrderId  executedQty  cumulativeQuoteQty    type side  status      timestamp          time_string  is_closed
-    0   APE   APEUSDT  1567069655                OJI93BRwJQfmnIcvRZOrzK       6218.9         9999.991200  MARKET  BUY  FILLED  1704092565026  2023-12-31 23:02:45          0
-    1   RSR   RSRUSDT   758494578  web_bd28016534954a5ead85ff199f30b118    3165996.2         9999.999768  MARKET  BUY  FILLED  1704087041236  2023-12-31 21:30:41          0
-    2   OGN   OGNUSDT   776636675  web_b89e4b1952ff45fe994d6cc5f5d67b80      72824.0         9999.871400  MARKET  BUY  FILLED  1704087977864  2023-12-31 21:46:17          0
-    3   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh      16554.4         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
-    4  BAKE  BAKEUSDT   713900783                M4QFPMOLYkKkGKIiKwWbDB      21254.1         9999.993490  MARKET  BUY  FILLED  1704095282066  2023-12-31 23:48:02          0
-    5   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh      16554.4         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
+    coin    symbol     orderId                         clientOrderId  executedQty  cumulativeQuoteQty    type side  status      timestamp          time_string  is_closed
+    0   APE   APEUSDT  1567069655                OJI93BRwJQfmnIcvRZOrzK     6218.900         9999.991200  MARKET  BUY  FILLED  1704092565026  2023-12-31 23:02:45          0
+    1   RSR   RSRUSDT   758494578  web_bd28016534954a5ead85ff199f30b118  3165996.200         9999.999768  MARKET  BUY  FILLED  1704087041236  2023-12-31 21:30:41          0
+    2   OGN   OGNUSDT   776636675  web_b89e4b1952ff45fe994d6cc5f5d67b80    72824.000         9999.871400  MARKET  BUY  FILLED  1704087977864  2023-12-31 21:46:17          0
+    3  BAKE  BAKEUSDT   713900783                M4QFPMOLYkKkGKIiKwWbDB    21254.100         9999.993490  MARKET  BUY  FILLED  1704095282066  2023-12-31 23:48:02          0
+    4   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh    16554.400         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
+    5  MOVR  MOVRUSDT   203717986                zn2D5LOjIHQJ9qyU1PjSOy      387.765         9999.985463  MARKET  BUY  FILLED  1704095910830  2023-12-31 23:58:30          0
     '''
-    # Remove the last row, the duplicated row of crv from table of binance_funding_positions
+    # Add a new column for binance_funding_positions : price, value is cummulativeQuoteQty / executedQty
+    with engine.connect() as connection:
+        try:
+            connection.execute(text("ALTER TABLE binance_funding_positions ADD COLUMN price FLOAT"))
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    # Update value for price column
+    df['price'] = df['cumulativeQuoteQty'] / df['executedQty']
+    # Update binance_funding_positions table
+    df.to_sql('binance_funding_positions', engine, if_exists='replace', index=False)
+
     # with engine.connect() as connection:
     #     try:
     #         connection.execute(text("DELETE FROM binance_funding_positions WHERE coin = 'CRV' AND orderId = 1161373035"))
