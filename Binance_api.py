@@ -3166,9 +3166,8 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
     duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
     duration_days = round(duration_days, 2) if duration_days != 0 else 1
-    anaulized_profit = total_profit_by_initialfund / duration_days * 365
     
-    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\nDuration: {duration_days} days\nAnnualized_Profit: {anaulized_profit:.2f}%''', from_id)
+    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
 
 
 if __name__ == '__main__':
