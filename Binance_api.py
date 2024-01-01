@@ -3123,6 +3123,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     return send_msg(f'''Funding account bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}''', from_id)
 
+
 # Define a function to reverse the process of binance_funding_buy_and_hold
 def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
@@ -3168,6 +3169,60 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     duration_days = round(duration_days, 2) if duration_days != 0 else 1
     
     return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
+
+
+def montly_summary():
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, transactTime, profit FROM binance_position_sell')).fetchall())
+    ''' df_profit  binance_position_sell
+        symbol   transactTime      profit
+    0    FTTUSDT  1702224291468  789.421552
+    1   EGLDUSDT  1702267644918  237.486573
+    2    IMXUSDT  1702267667019   57.087613
+    3    SNXUSDT  1702267684943   56.354097
+    4    INJUSDT  1702308983629  -22.595406
+    ..       ...            ...         ...
+    65   BCHUSDT  1703913825876   86.187633
+    66  IOTAUSDT  1703987430064   84.908796
+    67  IOTAUSDT  1703987580499   86.174984
+    68   NMRUSDT  1704058829381   83.834451
+    69   INJUSDT  1704134604365  249.412075
+    '''
+    # Add string format column of transactTime
+    df_profit['time_string_month'] = df_profit['transactTime'].apply(lambda x: datetime.fromtimestamp(x / 1000).strftime('%Y-%m'))
+    # select only the rows in last month
+    last_month = datetime.now().month - 1 if datetime.now().month != 1 else 12
+    last_month_year = datetime.now().year - 1 if datetime.now().month == 1 else datetime.now().year
+    df_profit = df_profit[df_profit['time_string_month'] == f'{last_month_year}-{last_month}']
+    '''
+        symbol   transactTime      profit time_string_month
+    0    FTTUSDT  1702224291468  789.421552           2023-12
+    1   EGLDUSDT  1702267644918  237.486573           2023-12
+    2    IMXUSDT  1702267667019   57.087613           2023-12
+    3    SNXUSDT  1702267684943   56.354097           2023-12
+    4    INJUSDT  1702308983629  -22.595406           2023-12
+    ..       ...            ...         ...               ...
+    64  IOTAUSDT  1703819030583   85.958474           2023-12
+    65   BCHUSDT  1703913825876   86.187633           2023-12
+    66  IOTAUSDT  1703987430064   84.908796           2023-12
+    67  IOTAUSDT  1703987580499   86.174984           2023-12
+    68   NMRUSDT  1704058829381   83.834451           2023-12
+    '''
+    df_profit['coin'] = df_profit['symbol'].apply(lambda x: x[:-4])
+    trading_counts = df_profit.shape[0]
+    total_profit = df_profit['profit'].sum()
+    total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
+    df_profit = df_profit.groupby('coin').sum().reset_index()
+    # best performance coin
+    df_profit = df_profit.sort_values(by='profit', ascending=False).reset_index(drop=True)
+    best_coin = df_profit['coin'][0]
+    best_coin_profit = df_profit['profit'][0]
+    worst_coin = df_profit['coin'][df_profit.shape[0] - 1]
+    worst_coin_profit = df_profit['profit'][df_profit.shape[0] - 1]
+    # summary
+    reply_sumary = f"Trading Counts: {trading_counts}\nTotal Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\n\nBest Coin: {best_coin} >> {format_number(best_coin_profit)}\nWorst Coin: {worst_coin} >> {format_number(worst_coin_profit)}"
+    send_msg(f"Trading Bot Performance Summary of {last_month_year}-{last_month}:\n\n{reply_sumary}", TG_BOT_OWNER_ID)
+    send_email(f'Trading Bot Performance Summary of {last_month_year}-{last_month}', reply_sumary, GMAIL_ADDRESS_MAIN)
+    return reply_sumary
 
 
 if __name__ == '__main__':

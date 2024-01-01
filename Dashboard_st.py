@@ -233,7 +233,7 @@ def display_funding_account_performance(engine):
         if df.empty: 
             st.write("No funding account performance data.")
         else:
-            total_profit = df['prfit'].sum()
+            total_profit = df['profit'].sum()
             st.write(f"Total Profit: {format_number(total_profit)}")
             st.table(df)
 
