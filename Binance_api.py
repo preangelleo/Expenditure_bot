@@ -3096,8 +3096,9 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     if not tranId: return
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
-    # data = check_order_status_by_orderId(coin, orderId)
+    print(f"Market buy {coin} done: {data}")
     orderId = int(data['orderId'])
+    data = check_order_status_by_orderId(coin, orderId)
     executedQty = float(data['executedQty'])
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     time_string = datetime.fromtimestamp(data['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
