@@ -1518,7 +1518,7 @@ def get_open_orders_list(from_id=None, side = 'SELL', output_format = 'dict'):
         # select only the coin and orderId, make a dict {symbol: orderId}
         if from_id:
             # Make a column of coin, symbol[:-4]
-            df['coin'] = df['symbol'].apply(lambda x: x[:-4])
+            df['coin'] = df['symbol'].apply(lambda x: x[:-4])  
             df_orderId = df.loc[:, ['coin', 'orderId']]
             df_orderId_dict = df_orderId.set_index('coin').to_dict()['orderId']
             df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_orderId_dict.items()])
@@ -2036,7 +2036,18 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
             send_msg('No open auto trading position currently.', chat_id)
             check_profit_and_record(chat_id, crontab_profit_record)
         return 'No open position for all coins'
-
+    ''' df_balance
+        symbol     orderId  orderListId           clientOrderId   transactTime      price          origQty      executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode   coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
+    0   ATOMUSDT  2594994242           -1  nzehRqoZxn1F6VUPO43h6C  1703573139555  12.269441     815.03000000     815.03000000       9999.96274000  FILLED         GTC  MARKET  BUY  1703573139555            EXPIRE_MAKER   ATOM      0.028094          267.0         50          0
+    1    APEUSDT  1563146551           -1  kzTIupxmPDyTQS7Lv4TGSJ  1703736326606   1.786000    5599.10000000    5599.10000000       9999.99260000  FILLED         GTC  MARKET  BUY  1703736326606            EXPIRE_MAKER    APE      0.023079          325.8         58          0
+    2   COMPUSDT  1259040501           -1  tFDsPVjfyC59xMIJEx06lG  1703742928420  66.115741     151.24900000     151.24900000       9999.93975000  FILLED         GTC  MARKET  BUY  1703742928420            EXPIRE_MAKER   COMP      0.023196          322.0         59          0
+    3   GALAUSDT  2192893079           -1  7jCq17nhr1AWxeYWK27zk8  1703744426664   0.033265  300613.00000000  300613.00000000       9999.96916000  FILLED         GTC  MARKET  BUY  1703744426664            EXPIRE_MAKER   GALA      0.023164          322.6         60          0
+    4  MAGICUSDT   536447518           -1  eHd94BSHWrzFoy38xGPxYT  1703751335800   1.194287    8373.10000000    8373.10000000       9999.88416000  FILLED         GTC  MARKET  BUY  1703751335800            EXPIRE_MAKER  MAGIC      0.022867          327.8         64          0
+    5    AXSUSDT  1529428898           -1  3lnY18BYAM1eS9rSno5QHr  1703832021678   9.466903    1056.31000000    1056.31000000       9999.98390000  FILLED         GTC  MARKET  BUY  1703832021678            EXPIRE_MAKER    AXS      0.023442          318.4         69          0
+    6    RAYUSDT   369596700           -1  knDkQKPzyNatbZwPWnZXIF  1703860824698   1.499552    6668.60000000    6668.60000000       9999.91187000  FILLED         GTC  MARKET  BUY  1703860824698            EXPIRE_MAKER    RAY      0.023596          317.3         70          0
+    7    LDOUSDT   563593983           -1  OppvkuurOIENEhu5X4JIyY  1703911579588   2.944679    3395.95000000    3395.95000000       9999.98258000  FILLED         GTC  MARKET  BUY  1703911579588            EXPIRE_MAKER    LDO      0.023705          316.7         71          0
+    8    INJUSDT   943892832           -1  abf8pDB4Z7qdi40GtwMpOk  1703996307435  37.900541     263.80000000     263.80000000       9998.16280000  FILLED         GTC  MARKET  BUY  1703996307435            EXPIRE_MAKER    INJ      0.023388          320.4         75          0
+    '''
     if coin: 
         df_balance = df_balance[df_balance['coin']==coin.upper()]
         if df_balance.empty: 
@@ -2065,9 +2076,23 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
     # sort by profit
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
-    current_orders = get_open_orders_list()
+    # current_orders = get_open_orders_list()
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
+    ''' df_openorders
+        update_id    orderId  manual_order  target_profit
+    0         58  1564103161           0.0           0.01
+    1         59  1260149973           0.0           0.01
+    2         60  2194428361           0.0           0.01
+    3         50  2606004482           0.0           0.01
+    4         64   537758433           0.0           0.01
+    5         71   563654955           0.0           0.01
+    6         69  1530461001           0.0           0.01
+    7         70   370170247           0.0           0.01
+    8         75   948790445           1.0           0.10'''
     book_value = 0
     for_reply = {}
+    limit_order_target_profit = read_target_profit_default()
 
     for i in range(df_balance.shape[0]):
         # ignore coin BNB, ONG
@@ -2089,18 +2114,28 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
         for_reply['Order_ID'] = reply_dict['orderId']
         for_reply['Update_ID'] = reply_dict['update_id']
 
+        coin_limit_orderId = 0
+        
+        # from df_openorders get the orderId and target_profit and manual_order of coin
+        df_openorders_coin = df_openorders[df_openorders['update_id'] == reply_dict['update_id']]
+        if not df_openorders_coin.empty:
+            if df_openorders_coin['manual_order'].values[0] == 1: continue
+            coin_limit_orderId = df_openorders_coin['orderId'].values[0]
+            limit_order_target_profit = df_openorders_coin['target_profit'].values[0]
+
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
         long_or_short = analyze_symbol(coin)
         '''{'long': True, 'short': False}'''
         long = long_or_short['long']
-        target_profit = 0.01
+        short = long_or_short['short']
+        target_profit = max(long_or_short['target_profit'], limit_order_target_profit)
 
-        if not long: 
+        if short: 
 
             if reply_dict['up_ratio'] >= target_profit:
-                if symbol in current_orders: binance_cancel_order(coin, current_orders[symbol])
+                if coin_limit_orderId: binance_cancel_order_by_orderId(symbol, coin_limit_orderId)
                 do_market_sell(coin, chat_id)
                 continue
             
