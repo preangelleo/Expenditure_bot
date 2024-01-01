@@ -3155,15 +3155,15 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
         'previous_price': previous_price,
         'sold_price': sold_price,
         'price_up_percentage': price_up_percentage,
-        'prfit': profit,
+        'profit': profit,
         'orderId_buy': orderId_bought,
         'duration': data['transactTime'] - df['timestamp'].values[0],
     }
     close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
     data_to_table(new_data, 'binance_funding_profits')
     main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
-    df = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(prfit) FROM binance_funding_profits')).fetchall())
-    total_profit = float(df['SUM(prfit)'].values[0])
+    df = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(profit) FROM binance_funding_profits')).fetchall())
+    total_profit = float(df['SUM(profit)'].values[0])
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
     duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
     duration_days = round(duration_days, 2) if duration_days != 0 else 1
