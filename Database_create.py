@@ -570,6 +570,19 @@ def save_table_structures():
         with open(f"table_structure.sql", "a") as f:
             f.write(f"{result[0][1]}\n\n")
 
+# Set year column value of binance_funding_profits table to 2004 and Month column value to 1
+def set_year_month():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Set year column value of binance_funding_profits table to 2044 and Month column value to 1
+    cursor.execute(f"UPDATE binance_funding_profits SET year = 2024, Month = 1")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"Year column value of binance_funding_profits table set to 2004 and Month column value to 1 successfully!")
+    return True
 
 if __name__ == '__main__':
     print("Create database and tables...")

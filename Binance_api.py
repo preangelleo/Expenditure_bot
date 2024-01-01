@@ -3158,6 +3158,8 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
         'profit': profit,
         'orderId_buy': orderId_bought,
         'duration': data['transactTime'] - df['timestamp'].values[0],
+        'year': int(datetime.now().year),
+        'Month': int(datetime.now().month),
     }
     close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
     data_to_table(new_data, 'binance_funding_profits')
@@ -3209,7 +3211,7 @@ def montly_summary():
     '''
     df_profit['coin'] = df_profit['symbol'].apply(lambda x: x[:-4])
     trading_counts = df_profit.shape[0]
-    total_profit = df_profit['profit'].sum()
+    total_profit = df_profit['profit'].astype(float).sum()
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
     df_profit = df_profit.groupby('coin').sum().reset_index()
     # best performance coin
@@ -3218,6 +3220,11 @@ def montly_summary():
     best_coin_profit = df_profit['profit'][0]
     worst_coin = df_profit['coin'][df_profit.shape[0] - 1]
     worst_coin_profit = df_profit['profit'][df_profit.shape[0] - 1]
+
+    # df = pd.DataFrame(engine.connect().execute(text(f'SELECT coin, profit, year, Month FROM binance_funding_profits WHERE year = {last_month_year} AND Month = {last_month}')).fetchall())
+    # if not df.empty:
+    #     funding_profit = df['profit'].astype(float).sum()
+
     # summary
     reply_sumary = f"Trading Counts: {trading_counts}\nTotal Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\n\nBest Coin: {best_coin} >> {format_number(best_coin_profit)}\nWorst Coin: {worst_coin} >> {format_number(worst_coin_profit)}"
     send_msg(f"Trading Bot Performance Summary of {last_month_year}-{last_month}:\n\n{reply_sumary}", TG_BOT_OWNER_ID)
@@ -3227,64 +3234,5 @@ def montly_summary():
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    df = get_df_from_position_table(None, 'binance_funding_profits')
-    df = get_df_from_position_table(None, 'binance_funding_positions')
-    '''   
-    coin    symbol     orderId                         clientOrderId  executedQty  cumulativeQuoteQty    type side  status      timestamp          time_string  is_closed
-    0   APE   APEUSDT  1567069655                OJI93BRwJQfmnIcvRZOrzK     6218.900         9999.991200  MARKET  BUY  FILLED  1704092565026  2023-12-31 23:02:45          0
-    1   RSR   RSRUSDT   758494578  web_bd28016534954a5ead85ff199f30b118  3165996.200         9999.999768  MARKET  BUY  FILLED  1704087041236  2023-12-31 21:30:41          0
-    2   OGN   OGNUSDT   776636675  web_b89e4b1952ff45fe994d6cc5f5d67b80    72824.000         9999.871400  MARKET  BUY  FILLED  1704087977864  2023-12-31 21:46:17          0
-    3  BAKE  BAKEUSDT   713900783                M4QFPMOLYkKkGKIiKwWbDB    21254.100         9999.993490  MARKET  BUY  FILLED  1704095282066  2023-12-31 23:48:02          0
-    4   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh    16554.400         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
-    5  MOVR  MOVRUSDT   203717986                zn2D5LOjIHQJ9qyU1PjSOy      387.765         9999.985463  MARKET  BUY  FILLED  1704095910830  2023-12-31 23:58:30          0
-    '''
-    # Add a new column for binance_funding_positions : price, value is cummulativeQuoteQty / executedQty
-    with engine.connect() as connection:
-        try:
-            connection.execute(text("ALTER TABLE binance_funding_positions ADD COLUMN price FLOAT"))
-            connection.commit()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    # Update value for price column
-    df['price'] = df['cumulativeQuoteQty'] / df['executedQty']
-    # Update binance_funding_positions table
-    df.to_sql('binance_funding_positions', engine, if_exists='replace', index=False)
-
-    # with engine.connect() as connection:
-    #     try:
-    #         connection.execute(text("DELETE FROM binance_funding_positions WHERE coin = 'CRV' AND orderId = 1161373035"))
-    #         connection.commit()
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-    #         connection.rollback()
-    # from_id=TG_BOT_OWNER_ID
-    # orderId_list = {
-    #     'CRV': 1161373035,
-    # }
-    # for k, v in orderId_list.items():
-    #     coin = k
-    #     orderId = v
-    #     data = check_order_status_by_orderId(coin, orderId)
-    #     if not data: 
-    #         print(f"Failed to get data for {coin}: {orderId}")
-    #         continue
-    #     executedQty = float(data['executedQty'])
-    #     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
-    #     time_string = datetime.fromtimestamp(data['updateTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-    #     new_data = {
-    #         'coin': coin,
-    #         'symbol': coin + 'USDT',
-    #         'orderId': orderId,
-    #         'clientOrderId': data['clientOrderId'],
-    #         'executedQty': executedQty,
-    #         'cumulativeQuoteQty': cummulativeQuoteQty,
-    #         'type': data['type'],
-    #         'side': data['side'],
-    #         'status': data['status'],
-    #         'timestamp': data['updateTime'],
-    #         'time_string': time_string,
-    #         'is_closed': 0,
-    #     }
-    #     data['price'] = cummulativeQuoteQty / executedQty
-    #     if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
+    df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, transactTime, profit FROM binance_funding_profits')).fetchall())
