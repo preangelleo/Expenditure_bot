@@ -3161,6 +3161,26 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
         'year': int(datetime.now().year),
         'Month': int(datetime.now().month),
     }
+    ''' CREATE TABLE `binance_funding_profits` (
+    `coin` text,
+    `symbol` text,
+    `orderId` bigint DEFAULT NULL,
+    `clientOrderId` text,
+    `executedQty` text,
+    `cumulativeQuoteQty` text,
+    `type` text,
+    `side` text,
+    `status` text,
+    `timestamp` bigint DEFAULT NULL,
+    `previous_price` double DEFAULT NULL,
+    `sold_price` double DEFAULT NULL,
+    `price_up_percentage` double DEFAULT NULL,
+    `profit` double DEFAULT NULL,
+    `orderId_buy` bigint DEFAULT NULL,
+    `duration` bigint DEFAULT NULL,
+    `year` int DEFAULT NULL,
+    `Month` int DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
     close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
     data_to_table(new_data, 'binance_funding_profits')
     main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
@@ -3169,7 +3189,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
     duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
     duration_days = round(duration_days, 2) if duration_days != 0 else 1
-    
+    set_year_month()
     return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
 
 
@@ -3235,4 +3255,3 @@ def monthly_summary():
 if __name__ == '__main__':
     print('Binance_api.py is running')
     df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, transactTime, profit FROM binance_funding_profits')).fetchall())

@@ -570,19 +570,57 @@ def save_table_structures():
         with open(f"table_structure.sql", "a") as f:
             f.write(f"{result[0][1]}\n\n")
 
-# Set year column value of binance_funding_profits table to 2004 and Month column value to 1
+
+# Set year and Month of NoN to current year and Month value
 def set_year_month():
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
     # Set year column value of binance_funding_profits table to 2044 and Month column value to 1
-    cursor.execute(f"UPDATE binance_funding_profits SET year = 2024, Month = 1")
+    cursor.execute(f"UPDATE binance_funding_profits SET year = {datetime.now().year}, Month = {datetime.now().month} WHERE year IS NULL OR Month IS NULL")
     # Commit the session
     conn.commit()
     cursor.close()
     conn.close()
     print(f"Year column value of binance_funding_profits table set to 2004 and Month column value to 1 successfully!")
     return True
+
+
+# print the structure of binance_funding_profits
+def print_binance_funding_profits_structure():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # print the structure of binance_funding_profits
+    cursor.execute(f"SHOW CREATE TABLE binance_funding_profits")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(result[0][1])
+    return True
+''' CREATE TABLE `binance_funding_profits` (
+  `coin` text,
+  `symbol` text,
+  `orderId` bigint DEFAULT NULL,
+  `clientOrderId` text,
+  `executedQty` text,
+  `cumulativeQuoteQty` text,
+  `type` text,
+  `side` text,
+  `status` text,
+  `timestamp` bigint DEFAULT NULL,
+  `previous_price` double DEFAULT NULL,
+  `sold_price` double DEFAULT NULL,
+  `price_up_percentage` double DEFAULT NULL,
+  `profit` double DEFAULT NULL,
+  `orderId_buy` bigint DEFAULT NULL,
+  `duration` bigint DEFAULT NULL,
+  `year` int DEFAULT NULL,
+  `Month` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
+
 
 if __name__ == '__main__':
     print("Create database and tables...")
