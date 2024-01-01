@@ -3096,13 +3096,63 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     if not tranId: return
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
+    # data = check_order_status_by_orderId(coin, orderId)
+    orderId = int(data['orderId'])
     executedQty = float(data['executedQty'])
-    data['coin'] = coin
-    data['price'] = float(data['cummulativeQuoteQty']) / executedQty
-    data['is_closed'] = 0
-    if data_to_table(data, 'binance_funding_position'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
+    cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
+    time_string = datetime.fromtimestamp(data['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+    new_data = {
+        'coin': coin,
+        'symbol': coin + 'USDT',
+        'orderId': orderId,
+        'clientOrderId': data['clientOrderId'],
+        'executedQty': executedQty,
+        'cumulativeQuoteQty': cummulativeQuoteQty,
+        'type': data['type'],
+        'side': data['side'],
+        'status': data['status'],
+        'timestamp': data['updateTime'],
+        'time_string': time_string,
+        'is_closed': 0,
+    }
+    data['price'] = cummulativeQuoteQty / executedQty
+    if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     return send_msg(f'''Funding account bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}''', from_id)
+
 
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
+    df = get_df_from_position_table(None, 'binance_funding_positions')
+    # from_id=TG_BOT_OWNER_ID
+    # orderId_list = {
+    #     'APE': 1567069655,
+    #     'RSR': 758494578,
+    #     'OGN': 776636675
+    # }
+    # for k, v in orderId_list.items():
+    #     coin = k
+    #     orderId = v
+    #     data = check_order_status_by_orderId(coin, orderId)
+    #     if not data: 
+    #         print(f"Failed to get data for {coin}: {orderId}")
+    #         continue
+    #     executedQty = float(data['executedQty'])
+    #     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
+    #     time_string = datetime.fromtimestamp(data['updateTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+    #     new_data = {
+    #         'coin': coin,
+    #         'symbol': coin + 'USDT',
+    #         'orderId': orderId,
+    #         'clientOrderId': data['clientOrderId'],
+    #         'executedQty': executedQty,
+    #         'cumulativeQuoteQty': cummulativeQuoteQty,
+    #         'type': data['type'],
+    #         'side': data['side'],
+    #         'status': data['status'],
+    #         'timestamp': data['updateTime'],
+    #         'time_string': time_string,
+    #         'is_closed': 0,
+    #     }
+    #     data['price'] = cummulativeQuoteQty / executedQty
+    #     if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
