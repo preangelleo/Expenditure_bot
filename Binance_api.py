@@ -608,7 +608,7 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = main_funding_transfer(coin, amount)
-                if tranId: return send_msg(f'已经成功将 {format_number(amount)} {coin} 从现货账户转入到资金账户, tranId: \n{tranId}', from_id)
+                if tranId: return send_msg(f"Successfully transfered {format_number(amount)} {coin} from spot account to funding account.", from_id)
             else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
@@ -3159,8 +3159,16 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
         'duration': data['transactTime'] - df['timestamp'].values[0],
     }
     close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
-    if data_to_table(new_data, 'binance_funding_profits'): main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
-    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit''', from_id)
+    data_to_table(new_data, 'binance_funding_profits')
+    main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
+    df = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(prfit) FROM binance_funding_profits')).fetchall())
+    total_profit = float(df['SUM(prfit)'].values[0])
+    total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
+    duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
+    duration_days = round(duration_days, 2) if duration_days != 0 else 1
+    anaulized_profit = total_profit_by_initialfund / duration_days * 365
+    
+    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\nDuration: {duration_days} days\nAnnualized_Profit: {anaulized_profit:.2f}%''', from_id)
 
 
 if __name__ == '__main__':
