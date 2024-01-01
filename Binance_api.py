@@ -3096,9 +3096,11 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     if not tranId: return
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
-    print(f"Market buy {coin} done: {data}")
+    ''' data
+    {'symbol': 'BAKEUSDT', 'orderId': 713900783, 'orderListId': -1, 'clientOrderId': 'M4QFPMOLYkKkGKIiKwWbDB', 'transactTime': 1704095282066, 'price': '0.00000000', 'origQty': '21254.10000000', 'executedQty': '21254.10000000', 'cummulativeQuoteQty': '9999.99349000', 'status': 'FILLED', 'timeInForce': 'GTC', 'type': 'MARKET', 'side': 'BUY', 'workingTime': 1704095282066, 'fills': [{'price': '0.47040000', 'qty': '404.00000000', 'commission': '0.00046249', 'commissionAsset': 'BNB', 'tradeId': 69777560}, {'price': '0.47040000', 'qty': '185.00000000', 'commission': '0.00021178', 'commissionAsset': 'BNB', 'tradeId': 69777561}, {'price': '0.47040000', 'qty': '16.60000000', 'commission': '0.00001899', 'commissionAsset': 'BNB', 'tradeId': 69777562}, {'price': '0.47050000', 'qty': '20648.50000000', 'commission': '0.02363840', 'commissionAsset': 'BNB', 'tradeId': 69777563}], 'selfTradePreventionMode': 'EXPIRE_MAKER'}
+    '''
     orderId = int(data['orderId'])
-    data = check_order_status_by_orderId(coin, orderId)
+    # data = check_order_status_by_orderId(coin, orderId)
     executedQty = float(data['executedQty'])
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     time_string = datetime.fromtimestamp(data['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
@@ -3112,7 +3114,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
         'type': data['type'],
         'side': data['side'],
         'status': data['status'],
-        'timestamp': data['updateTime'],
+        'timestamp': data['transactTime'],
         'time_string': time_string,
         'is_closed': 0,
     }
@@ -3125,11 +3127,26 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
 if __name__ == '__main__':
     print('Binance_api.py is running')
     df = get_df_from_position_table(None, 'binance_funding_positions')
+    '''   
+        coin    symbol     orderId                         clientOrderId  executedQty  cumulativeQuoteQty    type side  status      timestamp          time_string  is_closed
+    0   APE   APEUSDT  1567069655                OJI93BRwJQfmnIcvRZOrzK       6218.9         9999.991200  MARKET  BUY  FILLED  1704092565026  2023-12-31 23:02:45          0
+    1   RSR   RSRUSDT   758494578  web_bd28016534954a5ead85ff199f30b118    3165996.2         9999.999768  MARKET  BUY  FILLED  1704087041236  2023-12-31 21:30:41          0
+    2   OGN   OGNUSDT   776636675  web_b89e4b1952ff45fe994d6cc5f5d67b80      72824.0         9999.871400  MARKET  BUY  FILLED  1704087977864  2023-12-31 21:46:17          0
+    3   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh      16554.4         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
+    4  BAKE  BAKEUSDT   713900783                M4QFPMOLYkKkGKIiKwWbDB      21254.1         9999.993490  MARKET  BUY  FILLED  1704095282066  2023-12-31 23:48:02          0
+    5   CRV   CRVUSDT  1161373035                X7O7HDYyEXIaJzW9HxeOfh      16554.4         9999.998190  MARKET  BUY  FILLED  1704094994212  2023-12-31 23:43:14          0
+    '''
+    # Remove the last row, the duplicated row of crv from table of binance_funding_positions
+    # with engine.connect() as connection:
+    #     try:
+    #         connection.execute(text("DELETE FROM binance_funding_positions WHERE coin = 'CRV' AND orderId = 1161373035"))
+    #         connection.commit()
+    #     except Exception as e:
+    #         print(f"An error occurred: {e}")
+    #         connection.rollback()
     # from_id=TG_BOT_OWNER_ID
     # orderId_list = {
-    #     'APE': 1567069655,
-    #     'RSR': 758494578,
-    #     'OGN': 776636675
+    #     'CRV': 1161373035,
     # }
     # for k, v in orderId_list.items():
     #     coin = k
