@@ -3088,6 +3088,21 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
     return
 
+# Define a function to transfer 10000 usdt from funding to main, then market buy the given coin and then transfer all of the coin bought to funding account
+def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    tranId = funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
+    if not tranId: return
+    data = binance_market_buy(coin, CHECK_SIZE)
+    if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
+    executedQty = float(data['executedQty'])
+    data['coin'] = coin
+    data['price'] = float(data['cummulativeQuoteQty']) / executedQty
+    data['is_closed'] = 0
+    if data_to_table(data, 'binance_funding_position'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
+    return send_msg(f'''Funding account bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}''', from_id)
+
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
