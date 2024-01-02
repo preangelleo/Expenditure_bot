@@ -209,8 +209,7 @@ def display_open_position(engine):
     # drop 'duration' column
     df_buy.drop(['duration'], axis=1, inplace=True)
     with st.expander("Open Positions", expanded=False): 
-        if df_buy.empty:
-            st.write("No open positions currently.")
+        if df_buy.empty: st.write("No open positions currently.")
         else: st.table(df_buy)
     return 
 
@@ -219,10 +218,8 @@ def display_funding_account_positions(engine):
     try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_positions WHERE is_closed = 0')).fetchall())
     except: pd.DataFrame()
     with st.expander("Funding Account Positions", expanded=False): 
-        if df.empty: 
-            st.write("No funding account positions currently.")
-        else:
-            st.table(df)
+        if df.empty: st.write("No funding account positions currently.")
+        else: st.table(df)
 
 
 def display_funding_account_performance(engine):
@@ -237,7 +234,7 @@ def display_funding_account_performance(engine):
             st.table(df)
 
 
-def daily_profit_take_record(engine):
+def display_daily_profit_take(engine):
     try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
     except: df_today = pd.DataFrame()
 
@@ -261,7 +258,7 @@ def main():
 
     display_coin_lists(engine)
 
-    daily_profit_take_record(engine)
+    display_daily_profit_take(engine)
     # Call other display functions here
 
 if __name__ == "__main__":

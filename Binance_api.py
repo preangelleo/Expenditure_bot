@@ -2208,11 +2208,17 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
     return 
 
-
+# df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
 def check_today_profit_sum():
     timestamp_of_today_started_in_ms = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, workingTime, profit FROM binance_position_sell WHERE workingTime >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
-    if df_profit.empty: return {'profit_sum': 0, 'profit_coinlist': []}
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
+    # give df_funding one more day's timestamp
+    timestamp_of_today_started_in_ms -= 24 * 60 * 60 * 1000
+    df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
+    if df_profit.empty and df_funding.empty: return {'profit_sum': 0, 'profit_coinlist': []}
+    # if not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
+    if df_profit.empty and not df_funding.empty: df_profit = df_funding
+    elif not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
     df_profit['profit'] = df_profit['profit'].astype(float)
     profit_coinlist = []
     for coin in df_profit['symbol'].unique():
@@ -2393,6 +2399,7 @@ def daily_profit_take_last_check():
     send_email(reply_title, new_data['coinlist'], GMAIL_ADDRESS_MAIN)
 
     return 
+
 
 
 def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'):
