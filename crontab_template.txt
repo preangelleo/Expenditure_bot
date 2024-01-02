@@ -1,4 +1,5 @@
 */5 * * * * cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Binance_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
+3 * * * * cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Hourly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
 17 5 * * * cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Profit_record.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
 21 6 * * 1 cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Weekly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
 13 8 1 * * cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Monthly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
