@@ -2209,6 +2209,24 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
     return 
 
 
+def check_today_profit_sum():
+    timestamp_of_today_started_in_ms = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, workingTime, profit FROM binance_position_sell WHERE workingTime >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
+    if df_profit.empty: return {'profit_sum': 0, 'profit_coinlist': []}
+    df_profit['profit'] = df_profit['profit'].astype(float)
+    profit_coinlist = []
+    for coin in df_profit['symbol'].unique():
+        df_profit_coin = df_profit[df_profit['symbol'] == coin]
+        profit_coinlist.append(f"{coin[:-4]}: {format_number(df_profit_coin['profit'].sum())} usdt")
+    profit_sum = df_profit['profit'].sum()
+    reply_dict = {
+        'profit_sum': profit_sum,
+        'profit_coinlist': profit_coinlist
+    }
+    return reply_dict
+
+
+
 def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
     # Check if today's record exists
     try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
@@ -2285,9 +2303,14 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     df_balance = df_balance[df_balance['profit'] > 100]
     if df_balance.empty: return print(f"No coin with profit > 100 usdt")
 
+    try: today_realized_profit_dict = check_today_profit_sum()
+    except: today_realized_profit_dict = {'profit_sum': 0, 'profit_coinlist': []}
+    today_realized_profit = today_realized_profit_dict['profit_sum']
+    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
+
     # Calculate current positive profit sum
     profit_sum = df_balance['profit'].astype(float).sum()
-    if profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
+    if profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15 - today_realized_profit: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
 
     # current_orders = get_open_orders_list()
     df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
@@ -2306,8 +2329,8 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     '''
     
     # For the coins in df_balance, do market sell in order of profit from high to low untill profit_take reaches daily_profit_target, then break the loop. But before market sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
-    profit_take = 0
-    profit_coinlist = []
+    profit_take = today_realized_profit
+    profit_coinlist = today_realized_profit_coinlist
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         symbol = df_balance.iloc[i]['symbol']
@@ -2343,6 +2366,31 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
     send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
     send_msg(reply_msg, chat_id)
+
+    return 
+
+
+def daily_profit_take_last_check():
+    # Check if today's record exists
+    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
+    except: df_today = pd.DataFrame()
+    if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
+
+    try: today_realized_profit_dict = check_today_profit_sum()
+    except: today_realized_profit_dict = {'profit_sum': 0, 'profit_coinlist': []}
+    today_realized_profit = today_realized_profit_dict['profit_sum']
+    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
+
+    new_data = {
+        'date': datetime.now().strftime('%Y-%m-%d'),
+        'profit': today_realized_profit,
+        'coinlist': '\n'.join(today_realized_profit_coinlist) if today_realized_profit_coinlist else 'None'
+    }
+    
+    data_to_table(new_data, 'daily_profit_take')
+
+    reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(today_realized_profit)} usdt"
+    send_email(reply_title, new_data['coinlist'], GMAIL_ADDRESS_MAIN)
 
     return 
 
