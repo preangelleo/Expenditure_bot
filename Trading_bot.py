@@ -149,14 +149,7 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit 
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Remaining positions: {REMAINING_POSITIONS}')
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions_len, coin_in_positions)
     if not today_hot_coin_dict: return 
-    for coin in today_hot_coin_dict:
-        # if is_coin_recently_listed(coin, 7): continue
-        try: 
-            try: target_profit = float(today_hot_coin_dict[coin])
-            except: target_profit = read_target_profit_default() if tradingbot_status else 0.01
-            do_market_buy_one_unit(coin, chat_id)
-            binance_position_set_limit_sell(target_profit, chat_id, coin, table_name = 'binance_position_buy')
-        except Exception as e: print(f'Failed to buy {coin} or set limit order...\n\n{e}')
+    for coin in today_hot_coin_dict: do_market_buy_one_unit(coin, chat_id)
     return
 
 

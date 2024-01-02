@@ -2130,26 +2130,26 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
         df_openorders_coin = df_openorders[df_openorders['update_id'] == reply_dict['update_id']]
         if not df_openorders_coin.empty:
             if df_openorders_coin['manual_order'].values[0] == 1: continue
-            coin_limit_orderId = df_openorders_coin['orderId'].values[0]
-            limit_order_target_profit = df_openorders_coin['target_profit'].values[0]
+            coin_limit_orderId = int(df_openorders_coin['orderId'].values[0])
+            # limit_order_target_profit = df_openorders_coin['target_profit'].values[0]
 
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
 
         long_or_short = analyze_symbol(coin)
         '''{'long': True, 'short': False}'''
-        long = long_or_short['long']
+        # long = long_or_short['long']
         short = long_or_short['short']
-        target_profit = max(long_or_short['target_profit'], limit_order_target_profit)
+        # target_profit = max(long_or_short['target_profit'], limit_order_target_profit)
 
         if short: 
 
-            if reply_dict['up_ratio'] >= target_profit:
+            if reply_dict['up_ratio'] >= 0.01:
                 if coin_limit_orderId: binance_cancel_order_by_orderId(symbol, coin_limit_orderId)
                 do_market_sell(coin, chat_id)
                 continue
             
-            binance_position_set_limit_sell(target_profit, chat_id, coin, table_name = 'binance_position_buy')
+            binance_position_set_limit_sell(0.01, chat_id, coin, table_name = 'binance_position_buy')
 
         book_value += reply_dict['profit']
 
