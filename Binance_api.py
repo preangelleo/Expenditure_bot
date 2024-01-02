@@ -1318,6 +1318,7 @@ def binance_cancel_order(coin: str, clientOrderId):
         print(r.json())
         return
 
+
 def binance_cancel_order_by_orderId(coin: str, orderId):
     coin = coin.upper()
     symbol = coin if coin.endswith('USDT') else coin + 'USDT'
@@ -1573,6 +1574,8 @@ def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
 
     df_coin_balance = get_user_asset()
 
+    profit_of_coin = 0
+
     for index, row in df_balance.iterrows():
         amount = float(row['executedQty'])
         update_id = int(row['update_id'])
@@ -1626,7 +1629,10 @@ def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
 
         send_msg(f'''Sold_Coin: {coin}\nSold_Price: {format_number(data['price'])}\nSold_Amount: {format_number(amount)}\nCommition_Fee: {format_number(total_bnb_cost_value)} usdt\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\nUpdate_ID: {update_id}''', from_id)
 
-    return
+        profit_of_coin += profit
+
+    return profit_of_coin
+
 
 
 # get the latest sold coin from binance_position_sell
@@ -1653,7 +1659,7 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
         orderId = int(orderId)
         try: binance_cancel_order_by_orderId(coin, orderId)
         except: pass
-        try: mark_limit_order_as_canceled_by_orderId(orderId, 'CANCELED', 'binance_limit_sell_order')
+        try: mark_limit_order_as_canceled_by_orderId(orderId)
         except: pass
     do_market_sell(coin, from_id)
     return 
@@ -2199,6 +2205,144 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
                 plot_net_profit_sum(chat_id)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
+
+    return 
+
+
+def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
+    # Check if today's record exists
+    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
+    except: df_today = pd.DataFrame()
+    if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
+
+    try: df_balance = pd.DataFrame(engine.connect().execute(text(f'SELECT coin, orderId, price, executedQty, update_id FROM {table_name} WHERE is_closed = 0')).fetchall())
+    except: df_balance = pd.DataFrame()
+    if df_balance.empty: return print('No open position for all coins')
+
+    ''' df_balance
+        coin     orderId       price      executedQty  update_id
+    0   ATOM  2594994242   12.269441     815.03000000         50
+    1    APE  1563146551    1.786000    5599.10000000         58
+    2   COMP  1259040501   66.115741     151.24900000         59
+    3   GALA  2192893079    0.033265  300613.00000000         60
+    4  MAGIC   536447518    1.194287    8373.10000000         64
+    5    GRT  1394304791    0.223840   44674.00000000         78
+    6   KP3R   299940454  117.460950      85.13000000         79
+    7   DYDX  1158058662    3.029887    3300.45000000         81'''
+
+    # get current price for all coins
+    try: df = get_token_price_table()
+    except: df = pd.DataFrame()
+    if df.empty: return print('Failed to fetch price info')
+
+    ''' df
+            symbol     lastPrice      coin
+    0         BTCUSDT  45159.840000       BTC
+    1         ETHUSDT   2369.650000       ETH
+    2         BNBUSDT    310.200000       BNB
+    3         BCCUSDT      0.000000       BCC
+    4         NEOUSDT     13.930000       NEO
+    ..            ...           ...       ...
+    471       JTOUSDT      1.931600       JTO
+    472  1000SATSUSDT      0.000782  1000SATS
+    473      BONKUSDT      0.000014      BONK
+    474       ACEUSDT      9.998400       ACE
+    475       NFPUSDT      0.838690       NFP'''
+
+    # merge df_balance and df based on coin since df and df_balance all have coin column
+    df_balance = pd.merge(df_balance, df, on='coin', how='left')
+
+    ''' df_balance
+        coin     orderId       price      executedQty  update_id     symbol  lastPrice
+    0   ATOM  2594994242   12.269441     815.03000000         50   ATOMUSDT   11.12700
+    1    APE  1563146551    1.786000    5599.10000000         58    APEUSDT    1.69600
+    2   COMP  1259040501   66.115741     151.24900000         59   COMPUSDT   59.09000
+    3   GALA  2192893079    0.033265  300613.00000000         60   GALAUSDT    0.03108
+    4  MAGIC   536447518    1.194287    8373.10000000         64  MAGICUSDT    1.15770
+    5    GRT  1394304791    0.223840   44674.00000000         78    GRTUSDT    0.21030
+    6   KP3R   299940454  117.460950      85.13000000         79   KP3RUSDT  100.43000
+    7   DYDX  1158058662    3.029887    3300.45000000         81   DYDXUSDT    3.01700
+    '''
+
+    # convert df_balance['executedQty'] to float and calculate profit
+    df_balance['executedQty'] = df_balance['executedQty'].astype(float)
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
+
+    ''' df_balance
+        coin     orderId       price  executedQty  update_id     symbol  lastPrice      profit
+    7   DYDX  1158058662    3.029887     3300.450         81   DYDXUSDT    3.01700   -42.53330
+    4  MAGIC   536447518    1.194287     8373.100         64  MAGICUSDT    1.15770  -306.34629
+    1    APE  1563146551    1.786000     5599.100         58    APEUSDT    1.69600  -503.91900
+    5    GRT  1394304791    0.223840    44674.000         78    GRTUSDT    0.21030  -604.87400
+    3   GALA  2192893079    0.033265   300613.000         60   GALAUSDT    0.03108  -656.91712
+    0   ATOM  2594994242   12.269441      815.030         50   ATOMUSDT   11.12700  -931.12393
+    2   COMP  1259040501   66.115741      151.249         59   COMPUSDT   59.09000 -1062.63634
+    6   KP3R   299940454  117.460950       85.130         79   KP3RUSDT  100.43000 -1449.84480'''
+
+    df_balance = df_balance.sort_values(by='profit', ascending=False)
+
+    # Select only the coins with profit > 0
+    df_balance = df_balance[df_balance['profit'] > 100]
+    if df_balance.empty: return print(f"No coin with profit > 100 usdt")
+
+    # Calculate current positive profit sum
+    profit_sum = df_balance['profit'].astype(float).sum()
+    if profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
+
+    # current_orders = get_open_orders_list()
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
+
+    ''' df_openorders
+        update_id     orderId  manual_order  target_profit
+    0         60  2194428361           0.0       0.010000
+    1         64   537758433           0.0       0.010000
+    2         59  1264191411           1.0       0.150000
+    3         50  2614183942           1.0       0.200000
+    4         58  1567072325           1.0       0.400000
+    5         78  1394304988           0.0       0.074970
+    6         79   299940682           0.0       0.084427
+    7         81  1158062337           1.0       0.020000
+    '''
+    
+    # For the coins in df_balance, do market sell in order of profit from high to low untill profit_take reaches daily_profit_target, then break the loop. But before market sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
+    profit_take = 0
+    profit_coinlist = []
+    for i in range(df_balance.shape[0]):
+        coin = df_balance.iloc[i]['coin']
+        symbol = df_balance.iloc[i]['symbol']
+        # from df_openorders get the orderId and target_profit and manual_order of coin
+        df_openorders_coin = df_openorders[df_openorders['update_id'] == df_balance.iloc[i]['update_id']]
+        if not df_openorders_coin.empty:
+            coin_limit_orderId = int(df_openorders_coin['orderId'].values[0])
+            try: binance_cancel_order_by_orderId(symbol, coin_limit_orderId)
+            except Exception as e: print(f"Failed to cancel order: {coin_limit_orderId}, error: {e}")
+            try: mark_limit_order_as_canceled_by_orderId(coin_limit_orderId)
+            except Exception as e: print(f"Failed to mark order as canceled: {coin_limit_orderId}, error: {e}")
+        coin_profit = do_market_sell(coin, chat_id)
+        profit_take += coin_profit
+        profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
+        if profit_take >= daily_profit_target: break
+
+    profit_coinlist_string = '\n'.join(profit_coinlist)
+    
+    new_data = {
+        'date': datetime.now().strftime('%Y-%m-%d'),
+        'profit': profit_take,
+        'coinlist': profit_coinlist_string
+    }
+    
+    data_to_table(new_data, 'daily_profit_take')
+
+    # Check total profit take of this month
+    try: df_monthly_profit_take = pd.DataFrame(engine.connect().execute(text('SELECT * FROM monthly_profit_take WHERE month = :month'), {'month': datetime.now().strftime('%Y-%m')}).fetchall())
+    except: df_monthly_profit_take = pd.DataFrame()
+    if not df_monthly_profit_take.empty: profit_coinlist_string += f"\n\nProfit Take of this month: {format_number(df_monthly_profit_take['profit'].astype(float).sum())} usdt"
+
+    reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
+    reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
+    send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
+    send_msg(reply_msg, chat_id)
 
     return 
 
