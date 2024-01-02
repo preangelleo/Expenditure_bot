@@ -13,21 +13,6 @@ if __name__ == '__main__':
     try: current_bot_status = trading_bot_switch_status()
     except: pass
 
-    # try: 
-    #     long_or_short = analyze_symbol('BTC')
-    #     '''{'long': True, 'short': False}'''
-    #     long = long_or_short['long']
-    #     short = long_or_short['short']
-
-    #     if long and not current_bot_status: 
-    #         webhook_switch_on_bot(f"BTC is good to long now. Turning on the bot", TG_BOT_OWNER_ID)
-    #         current_bot_status = True
-    #     if short and current_bot_status: 
-    #         webhook_switch_off_bot(f"BTC is good to short now. Turning off the bot", TG_BOT_OWNER_ID)
-    #         current_bot_status = False
-
-    # except: pass
-
     chat_id = TG_BOT_OWNER_ID 
     try: binance_today_hot_coins_check(chat_id, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
     except: pass
