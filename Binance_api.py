@@ -3014,6 +3014,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker.loc[:, 'market_cap'] = 0
     df_ticker.loc[:, 'fully_diluted_market_cap'] = 0
     df_ticker.loc[:, 'ratio'] = 0.01
+    start_loop_coinlist = df_ticker['coin'].values.tolist()
+    print(f"coinlist_before_cmc: {' '.join(start_loop_coinlist)}")
     for index, row in df_ticker.iterrows():
         coin = row['coin']
         token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth=0.05)
@@ -3029,6 +3031,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
     df_ticker = df_ticker.head(10)
     today_hot_coin_list = df_ticker['coin'].values.tolist()
+    print(f"coinlist_after_cmc: {' '.join(today_hot_coin_list)}")
     final_hotcoin_dict = {}
     if today_hot_coin_list: 
         for index, row in df_ticker.iterrows():
@@ -3058,6 +3061,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
             reply_string = f"[{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)}"
             broadcast_markdown(reply_string)
+    print(f"final_hotcoin_dict: {' '.join(final_hotcoin_dict.keys())}")
     return final_hotcoin_dict
 
 

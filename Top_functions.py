@@ -216,7 +216,7 @@ def send_to_gmail_main(message, subject = 'From Python Bot'):
 
 # 从 Coinmarketcap 给定 token 的价格等数据, 返回一个字典
 def get_token_info_from_coinmarketcap(token_symbol):
-    print(f"CALLING get_token_info_from_coinmarketcap() for {token_symbol}")
+    # print(f"CALLING get_token_info_from_coinmarketcap() for {token_symbol}")
     # CoinMarketCap API endpoint
     url = f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol={token_symbol}'
 
