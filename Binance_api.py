@@ -1650,8 +1650,11 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
         current_orders_df = current_orders_df.sort_values(by=['price'])
         current_orders_df = current_orders_df.head(1)
         orderId = current_orders_df['orderId'].values[0]
-        binance_cancel_order_by_orderId(coin, orderId)
-        mark_limit_order_as_canceled_by_orderId(orderId, 'CANCELED', 'binance_limit_sell_order')
+        orderId = int(orderId)
+        try: binance_cancel_order_by_orderId(coin, orderId)
+        except: pass
+        try: mark_limit_order_as_canceled_by_orderId(orderId, 'CANCELED', 'binance_limit_sell_order')
+        except: pass
     do_market_sell(coin, from_id)
     return 
 
