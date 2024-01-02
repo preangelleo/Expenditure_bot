@@ -237,10 +237,16 @@ def display_funding_account_performance(engine):
 def display_daily_profit_take(engine):
     try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
     except: df_today = pd.DataFrame()
-
+    ''' df_today
+        date       profit                                           coinlist
+    0  2024-1-1  4887.028962  PERP: 685 usdt\nBAKE: 2,175 usdt\nAPE: 525 usd...'''
     with st.expander("Daily Profit Take Record", expanded=False): 
         if df_today.empty: st.write("No daily profit take record.")
-        else: st.table(df_today)
+        else: 
+            total_profit_take_of_this_year = df_today[df_today['date'].apply(lambda x: x.split('-')[0] == str(datetime.now().year))]['profit'].sum()
+            total_profit_take_of_this_month = df_today[df_today['date'].apply(lambda x: x.split('-')[1] == str(datetime.now().month))]['profit'].sum()
+            st.write(f"Total Profit Take of This Year: {format_number(total_profit_take_of_this_year)} | Total Profit Take of This Month: {format_number(total_profit_take_of_this_month)}")
+            st.table(df_today)
 
 
 def main():
