@@ -230,13 +230,20 @@ def display_funding_account_performance(engine):
     except: pd.DataFrame()
 
     with st.expander("Funding Account Performance", expanded=False): 
-        if df.empty: 
-            st.write("No funding account performance data.")
+        if df.empty: st.write("No funding account performance data.")
         else:
             total_profit = df['profit'].sum()
             st.write(f"Total Profit: {format_number(total_profit)}")
             st.table(df)
 
+
+def daily_profit_take_record(engine):
+    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
+    except: df_today = pd.DataFrame()
+
+    with st.expander("Daily Profit Take Record", expanded=False): 
+        if df_today.empty: st.write("No daily profit take record.")
+        else: st.table(df_today)
 
 
 def main():
@@ -253,6 +260,8 @@ def main():
     display_funding_account_performance(engine)
 
     display_coin_lists(engine)
+
+    daily_profit_take_record(engine)
     # Call other display functions here
 
 if __name__ == "__main__":
