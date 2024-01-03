@@ -622,6 +622,7 @@ def print_binance_funding_profits_structure():
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
 
 
+
 if __name__ == '__main__':
     print("Create database and tables...")
     # Initial Step 1: Create database
