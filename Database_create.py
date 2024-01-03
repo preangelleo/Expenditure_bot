@@ -600,27 +600,6 @@ def print_binance_funding_profits_structure():
     conn.close()
     print(result[0][1])
     return True
-''' CREATE TABLE `binance_funding_profits` (
-  `coin` text,
-  `symbol` text,
-  `orderId` bigint DEFAULT NULL,
-  `clientOrderId` text,
-  `executedQty` text,
-  `cumulativeQuoteQty` text,
-  `type` text,
-  `side` text,
-  `status` text,
-  `timestamp` bigint DEFAULT NULL,
-  `previous_price` double DEFAULT NULL,
-  `sold_price` double DEFAULT NULL,
-  `price_up_percentage` double DEFAULT NULL,
-  `profit` double DEFAULT NULL,
-  `orderId_buy` bigint DEFAULT NULL,
-  `duration` bigint DEFAULT NULL,
-  `year` int DEFAULT NULL,
-  `Month` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
-
 
 
 if __name__ == '__main__':

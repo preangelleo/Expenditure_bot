@@ -2210,9 +2210,14 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
 # df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
 def check_today_profit_sum():
-    timestamp_of_today_started_in_ms = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
-    df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
+    # Read the largest update_timestamp from daily_profit_take table
+    try: df_daily_profit_take = pd.DataFrame(engine.connect().execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
+    except: df_daily_profit_take = pd.DataFrame()
+    if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
+    else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    update_timestamp = int(update_timestamp)
+    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
     if df_profit.empty and df_funding.empty: return {'profit_sum': 0, 'profit_coinlist': []}
     # if not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
     if df_profit.empty and not df_funding.empty: df_profit = df_funding
@@ -2230,13 +2235,41 @@ def check_today_profit_sum():
     return reply_dict
 
 
-
 def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
     # Check if today's record exists
     try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
     except: df_today = pd.DataFrame()
     if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
 
+    try: today_realized_profit_dict = check_today_profit_sum()
+    except: today_realized_profit_dict = {'profit_sum': 0, 'profit_coinlist': []}
+
+    today_realized_profit = today_realized_profit_dict['profit_sum']
+    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
+
+    if today_realized_profit >= daily_profit_target: 
+        # For the coins in df_balance, do market sell in order of profit from high to low untill profit_take reaches daily_profit_target, then break the loop. But before market sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
+        profit_take = today_realized_profit
+        profit_coinlist = today_realized_profit_coinlist
+        profit_coinlist_string = '\n'.join(profit_coinlist)
+        
+        new_data = {
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'profit': profit_take,
+            'coinlist': profit_coinlist_string,
+            'update_timestamp': int(datetime.now().timestamp() * 1000)
+        }
+        
+        data_to_table(new_data, 'daily_profit_take')
+
+        reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
+        reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
+        send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
+        send_msg(reply_msg, chat_id)
+        send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
+
+        return print(f"Today's profit has been taken: {today_realized_profit_dict['profit_sum']}")
+    
     try: df_balance = pd.DataFrame(engine.connect().execute(text(f'SELECT coin, orderId, price, executedQty, update_id FROM {table_name} WHERE is_closed = 0')).fetchall())
     except: df_balance = pd.DataFrame()
     if df_balance.empty: return print('No open position for all coins')
@@ -2307,11 +2340,6 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     df_balance = df_balance[df_balance['profit'] > 100]
     if df_balance.empty: return print(f"No coin with profit > 100 usdt")
 
-    try: today_realized_profit_dict = check_today_profit_sum()
-    except: today_realized_profit_dict = {'profit_sum': 0, 'profit_coinlist': []}
-    today_realized_profit = today_realized_profit_dict['profit_sum']
-    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
-
     # Calculate current positive profit sum
     profit_sum = df_balance['profit'].astype(float).sum()
     if profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15 - today_realized_profit: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
@@ -2356,15 +2384,11 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     new_data = {
         'date': datetime.now().strftime('%Y-%m-%d'),
         'profit': profit_take,
-        'coinlist': profit_coinlist_string
+        'coinlist': profit_coinlist_string,
+        'update_timestamp': int(datetime.now().timestamp() * 1000)
     }
     
     data_to_table(new_data, 'daily_profit_take')
-
-    # Check total profit take of this month
-    try: df_monthly_profit_take = pd.DataFrame(engine.connect().execute(text('SELECT * FROM monthly_profit_take WHERE month = :month'), {'month': datetime.now().strftime('%Y-%m')}).fetchall())
-    except: df_monthly_profit_take = pd.DataFrame()
-    if not df_monthly_profit_take.empty: profit_coinlist_string += f"\n\nProfit Take of this month: {format_number(df_monthly_profit_take['profit'].astype(float).sum())} usdt"
 
     reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
     reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
@@ -3438,17 +3462,13 @@ def monthly_summary():
     trading_counts = df_profit.shape[0]
     total_profit = df_profit['profit'].astype(float).sum()
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
-    df_profit = df_profit.groupby('coin').sum().reset_index()
+    df_profit = df_profit.groupby('coin').sum(numeric_only=True).reset_index()
     # best performance coin
     df_profit = df_profit.sort_values(by='profit', ascending=False).reset_index(drop=True)
     best_coin = df_profit['coin'][0]
     best_coin_profit = df_profit['profit'][0]
     worst_coin = df_profit['coin'][df_profit.shape[0] - 1]
     worst_coin_profit = df_profit['profit'][df_profit.shape[0] - 1]
-
-    # df = pd.DataFrame(engine.connect().execute(text(f'SELECT coin, profit, year, Month FROM binance_funding_profits WHERE year = {last_month_year} AND Month = {last_month}')).fetchall())
-    # if not df.empty:
-    #     funding_profit = df['profit'].astype(float).sum()
 
     # summary
     reply_sumary = f"Trading Counts: {trading_counts}\nTotal Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\n\nBest Coin: {best_coin} >> {format_number(best_coin_profit)}\nWorst Coin: {worst_coin} >> {format_number(worst_coin_profit)}"
@@ -3459,4 +3479,4 @@ def monthly_summary():
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
+    monthly_summary()
