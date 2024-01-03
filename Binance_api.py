@@ -2212,8 +2212,6 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 def check_today_profit_sum():
     timestamp_of_today_started_in_ms = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
     df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
-    # give df_funding one more day's timestamp
-    timestamp_of_today_started_in_ms -= 24 * 60 * 60 * 1000
     df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp >= :current_timestamp'), {'current_timestamp': timestamp_of_today_started_in_ms}).fetchall())
     if df_profit.empty and df_funding.empty: return {'profit_sum': 0, 'profit_coinlist': []}
     # if not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
