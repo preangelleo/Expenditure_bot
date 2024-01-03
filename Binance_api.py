@@ -2370,6 +2370,7 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
     send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
     send_msg(reply_msg, chat_id)
+    send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
 
     return 
 
