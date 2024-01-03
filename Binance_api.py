@@ -3326,7 +3326,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     }
     new_data['price'] = cummulativeQuoteQty / executedQty
     if data_to_table(new_data, 'binance_funding_positions'): main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
-    return send_msg(f'''Funding account bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}''', from_id)
+    return send_msg(f'''Funding account bought {coin} at {format_number(new_data['price'])} usdt/{coin.lower()}''', from_id)
 
 
 # Define a function to reverse the process of binance_funding_buy_and_hold
