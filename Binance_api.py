@@ -3495,18 +3495,14 @@ def rsi_bottom_coins():
     IGNORE_LIST = get_ignore_list()
     df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
     if df_ticker.empty: return []
-    print(df_ticker)
     today_date = datetime.now().strftime('%Y-%m-%d')
     today_hour_minute = datetime.now().strftime("%H:%M")
     final_bottom_list = []
     reply_msg_list = []
     for index, row in df_ticker.iterrows():
         coin = row['coin']
-        print(f"RSR analyzing: {coin}")
         coin_rsi_1d = analyze_rsi(coin, interval = '1d')
-        if not coin_rsi_1d or coin_rsi_1d > 20: continue
-        print(f"coin_rsi_1d: {coin_rsi_1d}")
-        print(f"CoinMarketCap Checking: {coin}")
+        if np.isnan(coin_rsi_1d) or coin_rsi_1d > 20: continue
         token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth=0.05)
         if not token_info: continue
         market_cap = token_info['market_cap']
@@ -3522,7 +3518,6 @@ def rsi_bottom_coins():
             'date': today_date,
             'hour_minute': today_hour_minute,
             }
-        print(f"bottom_rsi_coins: {bottom_rsi_coins}")
         data_to_table(bottom_rsi_coins, 'bottom_rsi_coins')
         reply_msg_list.append(f"{coin} | PRICE: {format_number(price)} | RSI_1d: {coin_rsi_1d:.2f} | M/V: {turnover_ratio:.2f} | {format_number(market_cap)} / {format_number(fully_diluted_market_cap)} = {circulating_ratio:.2f}")
     if final_bottom_list: 
