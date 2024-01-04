@@ -3047,7 +3047,7 @@ def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
 
 
 # From the returned dictionary, get market_cap, fully_diluted_market_cap and calculate the circulating ratio
-def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=None):
+def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=0.05):
     token_symbol = token_symbol.upper()
     if not turnover_ratio_eth: turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
     try:
@@ -3499,10 +3499,19 @@ def rsi_bottom_coins():
     today_date = datetime.now().strftime('%Y-%m-%d')
     today_hour_minute = datetime.now().strftime("%H:%M")
     final_bottom_list = []
+    reply_msg_list = []
     for index, row in df_ticker.iterrows():
         coin = row['coin']
         coin_rsi_1d = analyze_rsi(coin, interval = '1d')
-        if coin_rsi_1d > 20: continue
+        if not coin_rsi_1d or coin_rsi_1d > 20: continue
+        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth=0.05)
+        if not token_info: continue
+
+        market_cap = token_info['market_cap']
+        fully_diluted_market_cap = token_info['fully_diluted_market_cap']
+        circulating_ratio = token_info['circulation_ratio']
+        turnover_ratio = token_info['turnover_ratio']
+        
         final_bottom_list.append(coin)
         price = row['lastPrice']
         bottom_rsi_coins = {
@@ -3512,13 +3521,17 @@ def rsi_bottom_coins():
             'date': today_date,
             'hour_minute': today_hour_minute,
             }
+        
         data_to_table(bottom_rsi_coins, 'bottom_rsi_coins')
+        reply_msg_list.append(f"{coin} | PRICE: {format_number(price)} | RSI_1d: {coin_rsi_1d:.2f} | M/V: {turnover_ratio:.2f} | {format_number(market_cap)} / {format_number(fully_diluted_market_cap)} = {circulating_ratio:.2f}")
 
-    if final_bottom_list: send_msg(f"RSI Bottom Coins {today_date}: \n\n{' '.join(final_bottom_list)}", TG_BOT_OWNER_ID)
+    if final_bottom_list: 
+        send_msg(f"RSI Bottom Coins {today_date}: \n\n{', '.join(final_bottom_list)}", TG_BOT_OWNER_ID)
+        send_email(f'RSI Bottom Coins {today_date}', '\n'.join(reply_msg_list), GMAIL_ADDRESS_MAIN)
     
     return final_bottom_list
 
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
-    monthly_summary()
+    df = get_df_from_given_tablename('weekly_rsi_over_high')
