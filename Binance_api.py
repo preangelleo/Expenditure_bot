@@ -2243,6 +2243,18 @@ def check_today_profit_sum():
     return reply_dict
 
 
+# Define a funcition to check today's profit manually from telegram and return with the profit sum and coinlist
+def profit_taken_today(chat_id=TG_BOT_OWNER_ID):
+    try: today_realized_profit_dict = check_today_profit_sum()
+    except: today_realized_profit_dict = {'profit_sum': 0, 'profit_coinlist': []}
+    if today_realized_profit_dict['profit_sum'] == 0: return send_msg('No profit taken yet today', chat_id)
+    today_realized_profit = today_realized_profit_dict['profit_sum']
+    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
+    reply_title = f"Today's Realized Profit: {format_number(today_realized_profit)} usdt"
+    reply_msg = f"{reply_title}\n\n" + '\n'.join(today_realized_profit_coinlist)
+    return send_msg(reply_msg, chat_id)
+
+
 def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
     # Check if today's record exists
     try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())

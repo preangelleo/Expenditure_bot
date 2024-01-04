@@ -46,6 +46,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'hot_coin_update': calculate_hot_coin_price_change,
     'get_future_profit': get_umfuture_profit,
     'get_api_status': get_api_status,
+    'profit_taken_today': profit_taken_today,
     }
 
 
