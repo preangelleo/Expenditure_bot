@@ -1933,6 +1933,14 @@ def calculate_macd(data, short_window=12, long_window=26, signal=9):
     return macd, signal_line
 
 
+def analyze_rsi(coin, interval = '1d'):
+    df = get_kline_data(coin, interval)
+    if df.empty: return 50
+    df['RSI'] = calculate_rsi(df['Close'], 13)
+    last_rsi = df['RSI'].iloc[-1]
+    return float(last_rsi)
+
+
 def calculate_odds(df, period=13):
     df['up_percentage_change'] = ((df['Close'] - df['Open']) / df['Open']) * 100
     df['up_change_by_volume'] = df['up_percentage_change'] / df['Quote Asset Volume']
@@ -3475,6 +3483,40 @@ def monthly_summary():
     send_msg(f"Trading Bot Performance Summary of {last_month_year}-{last_month}:\n\n{reply_sumary}", TG_BOT_OWNER_ID)
     send_email(f'Trading Bot Performance Summary of {last_month_year}-{last_month}', reply_sumary, GMAIL_ADDRESS_MAIN)
     return reply_sumary
+
+
+def rsi_bottom_coins():
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df_ticker = df_ticker[(df_ticker['priceChangePercent'] < 0) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
+    if df_ticker.empty: return []
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    IGNORE_LIST = get_ignore_list()
+    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
+    if df_ticker.empty: return []
+    df_ticker = df_ticker.copy()
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    today_hour_minute = datetime.now().strftime("%H:%M")
+    final_bottom_list = []
+    for index, row in df_ticker.iterrows():
+        coin = row['coin']
+        coin_rsi_1d = analyze_rsi(coin, interval = '1d')
+        if coin_rsi_1d > 20: continue
+        final_bottom_list.append(coin)
+        price = row['lastPrice']
+        bottom_rsi_coins = {
+            'coin': coin, 
+            'price': price, 
+            'coin_rsi_1d': coin_rsi_1d,
+            'date': today_date,
+            'hour_minute': today_hour_minute,
+            }
+        data_to_table(bottom_rsi_coins, 'bottom_rsi_coins')
+
+    if final_bottom_list: send_msg(f"RSI Bottom Coins {today_date}: \n\n{' '.join(final_bottom_list)}", TG_BOT_OWNER_ID)
+    
+    return final_bottom_list
 
 
 if __name__ == '__main__':

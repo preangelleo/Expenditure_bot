@@ -26,5 +26,8 @@ if __name__ == '__main__':
     try: calculate_hot_coin_price_change()
     except Exception as e: print(f'calculate_hot_coin_price_change() error:\n\n{e}\n\n')
 
+    try: rsi_bottom_coins()
+    except Exception as e: print(f'rsi_bottom_coins() error:\n\n{e}\n\n')
+
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
