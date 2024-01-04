@@ -163,6 +163,7 @@ COMMANDS = [
     {"command": 'get_api_status', 'description': 'Get the status of the Binance API'},
     {"command": 'funding_market_buy', 'description': 'Funding account market buy a given coin and hold in funding account'},
     {"command": 'funding_market_sell', 'description': 'Funding account market sell a given coin and calculate the profit'},
+    {"command": 'profit_taken_today', 'description': 'Calculate the sum of profit taken today'},
 ]
 
 
