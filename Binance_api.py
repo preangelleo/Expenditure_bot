@@ -3379,67 +3379,74 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     df = get_df_from_position_table(coin, 'binance_funding_positions')
     if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
-    transId = funding_main_transfer_with_check_and_send(coin, df['executedQty'].values[0], from_id)
-    if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
-    data = binance_market_sell(coin, df['executedQty'].values[0])
-    if not data: return send_msg(f'Failed to do market sell for coin: {coin}', from_id)
-    print(data)
-    sold_price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-    previous_price = df['price'].values[0]
-    price_up_percentage = (sold_price - previous_price) / previous_price * 100
-    orderId_sold = int(data['orderId'])
-    orderId_bought = int(df['orderId'].values[0])
-    profit = float(data['cummulativeQuoteQty']) - float(df['cumulativeQuoteQty'].values[0])
-    new_data = {
-        'coin': coin,
-        'symbol': coin + 'USDT',
-        'orderId': orderId_sold,
-        'clientOrderId': data['clientOrderId'],
-        'executedQty': data['executedQty'],
-        'cumulativeQuoteQty': data['cummulativeQuoteQty'],
-        'type': data['type'],
-        'side': data['side'],
-        'status': data['status'],
-        'timestamp': data['transactTime'],
-        'previous_price': previous_price,
-        'sold_price': sold_price,
-        'price_up_percentage': price_up_percentage,
-        'profit': profit,
-        'orderId_buy': orderId_bought,
-        'duration': data['transactTime'] - df['timestamp'].values[0],
-        'year': int(datetime.now().year),
-        'Month': int(datetime.now().month),
-    }
-    ''' CREATE TABLE `binance_funding_profits` (
-    `coin` text,
-    `symbol` text,
-    `orderId` bigint DEFAULT NULL,
-    `clientOrderId` text,
-    `executedQty` text,
-    `cumulativeQuoteQty` text,
-    `type` text,
-    `side` text,
-    `status` text,
-    `timestamp` bigint DEFAULT NULL,
-    `previous_price` double DEFAULT NULL,
-    `sold_price` double DEFAULT NULL,
-    `price_up_percentage` double DEFAULT NULL,
-    `profit` double DEFAULT NULL,
-    `orderId_buy` bigint DEFAULT NULL,
-    `duration` bigint DEFAULT NULL,
-    `year` int DEFAULT NULL,
-    `Month` int DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
-    close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
-    data_to_table(new_data, 'binance_funding_profits')
-    main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
-    df = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(profit) FROM binance_funding_profits')).fetchall())
-    total_profit = float(df['SUM(profit)'].values[0])
-    total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
-    duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
-    duration_days = round(duration_days, 2) if duration_days != 0 else 1
-    set_year_month()
-    return send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
+    # sort df by price, ascending
+    df = df.sort_values(by='price', ascending=True)
+    for index, row in df.iterrows():
+        executedQty = float(row['executedQty'])
+        cumulativeQuoteQty = float(row['cumulativeQuoteQty'])
+        timestamp = row['timestamp']
+        previous_price = row['price']
+        orderId_bought = int(row['orderId'])
+        transId = funding_main_transfer_with_check_and_send(coin, executedQty, from_id)
+        if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
+        data = binance_market_sell(coin, executedQty)
+        if not data: return send_msg(f'Failed to do market sell for coin: {coin}', from_id)
+        print(data)
+        sold_price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+        price_up_percentage = (sold_price - previous_price) / previous_price * 100
+        orderId_sold = int(data['orderId'])
+        profit = float(data['cummulativeQuoteQty']) - cumulativeQuoteQty
+        new_data = {
+            'coin': coin,
+            'symbol': coin + 'USDT',
+            'orderId': orderId_sold,
+            'clientOrderId': data['clientOrderId'],
+            'executedQty': data['executedQty'],
+            'cumulativeQuoteQty': data['cummulativeQuoteQty'],
+            'type': data['type'],
+            'side': data['side'],
+            'status': data['status'],
+            'timestamp': data['transactTime'],
+            'previous_price': previous_price,
+            'sold_price': sold_price,
+            'price_up_percentage': price_up_percentage,
+            'profit': profit,
+            'orderId_buy': orderId_bought,
+            'duration': data['transactTime'] - timestamp,
+            'year': int(datetime.now().year),
+            'Month': int(datetime.now().month),
+        }
+        ''' CREATE TABLE `binance_funding_profits` (
+        `coin` text,
+        `symbol` text,
+        `orderId` bigint DEFAULT NULL,
+        `clientOrderId` text,
+        `executedQty` text,
+        `cumulativeQuoteQty` text,
+        `type` text,
+        `side` text,
+        `status` text,
+        `timestamp` bigint DEFAULT NULL,
+        `previous_price` double DEFAULT NULL,
+        `sold_price` double DEFAULT NULL,
+        `price_up_percentage` double DEFAULT NULL,
+        `profit` double DEFAULT NULL,
+        `orderId_buy` bigint DEFAULT NULL,
+        `duration` bigint DEFAULT NULL,
+        `year` int DEFAULT NULL,
+        `Month` int DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'''
+        close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
+        data_to_table(new_data, 'binance_funding_profits')
+        main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
+        df_profit = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(profit) FROM binance_funding_profits')).fetchall())
+        total_profit = float(df_profit['SUM(profit)'].values[0])
+        total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
+        duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
+        duration_days = round(duration_days, 2) if duration_days != 0 else 1
+        set_year_month()
+        send_msg(f'''Funding account sold {coin} with {price_up_percentage:.2f}% {format_number(profit)} usdt profit in {duration_days} days\n\nFunding_Account_Performance:\nTotal_Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%''', from_id)
+        return
 
 
 def monthly_summary():
