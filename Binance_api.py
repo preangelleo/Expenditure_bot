@@ -1539,6 +1539,105 @@ def close_postive_positions(from_id=TG_BOT_OWNER_ID):
     return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 00.1" or "stp 0.01". This is equal to close all positive positions, calling market sell to close positions that are with 0.01 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0.01" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
     
 
+def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    try:
+        table_name = 'binance_position_buy'
+        df_balance = get_df_from_position_table(coin, table_name)
+        if df_balance.empty: 
+            table_name = 'binance_manually_buy'
+            df_balance = get_df_from_position_table(coin, table_name)
+            if df_balance.empty: return send_msg(f'No open position for coin: {coin}', from_id)
+    except: return send_msg(f"Reading binance_position_buy table failed.", from_id)
+    ''' df_balance
+        symbol    orderId  orderListId           clientOrderId   transactTime     price         origQty     executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
+    0  IOTAUSDT  894789971           -1  Q2PK6GQH2qtsC3i3w7VobL  1703957426334  0.321490  31105.00000000  31105.00000000       9999.94120000  FILLED         GTC  MARKET  BUY  1703957426334            EXPIRE_MAKER  IOTA      0.023459          319.1         72          0
+    1  IOTAUSDT  894792027           -1  Hm9d0zr0INyo6JMVHfpJ7T  1703957455933  0.323036  30956.00000000  30956.00000000       9999.88890000  FILLED         GTC  MARKET  BUY  1703957455933            EXPIRE_MAKER  IOTA      0.023347          318.9         73          0'''
+    # Sort df_balance by price, ascending
+    df_balance = df_balance.sort_values(by=['price'], ascending=True)
+    
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    ''' df_openorders
+        symbol     orderId  orderListId           clientOrderId   transactTime        price          origQty executedQty cummulativeQuoteQty status timeInForce   type  side    workingTime selfTradePreventionMode  target_profit  manual_order   coin  update_id
+    0    APEUSDT  1564103161           -1  r27CrDgSatQJFTA2fzE0ER  1703800210791   1.80400000    5599.10000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703800210791            EXPIRE_MAKER           0.01           0.0    APE         58
+    1   COMPUSDT  1260149973           -1  leIDjMuONpRhlh6xfzfODt  1703800213770  66.78000000     151.24900000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703800213770            EXPIRE_MAKER           0.01           0.0   COMP         59
+    2   GALAUSDT  2194428361           -1  OPLHYxpZGkP7PUFzFoe8ZI  1703800216397   0.03360000  300613.00000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703800216397            EXPIRE_MAKER           0.01           0.0   GALA         60
+    3   ATOMUSDT  2606004482           -1  oJLh1ymyBz7lA44WsxYCW1  1703800218922  12.39200000     815.03000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703800218922            EXPIRE_MAKER           0.01           0.0   ATOM         50
+    4  MAGICUSDT   537758433           -1  AJxDhZmihdIktGEjP05DoJ  1703800810964   1.20620000    8373.10000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703800810964            EXPIRE_MAKER           0.01           0.0  MAGIC         64
+    5    LDOUSDT   563654955           -1  9oRzx4FrYcLnGI4BcTiwkV  1703913612361   2.97400000    3395.95000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703913612361            EXPIRE_MAKER           0.01           0.0    LDO         71
+    6    AXSUSDT  1530461001           -1  d5ULLdHmFg0TNCTDzEcGxc  1703913615630   9.56000000    1056.31000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703913615630            EXPIRE_MAKER           0.01           0.0    AXS         69
+    7    RAYUSDT   370170247           -1  jw1IYanyNrpbkYqvdXlEBN  1703913622232   1.51450000    6668.60000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703913622232            EXPIRE_MAKER           0.01           0.0    RAY         70
+    8   IOTAUSDT   894853055           -1  Mc9ZWrZRi8nISwFiEBrEWt  1703960091802   0.32630000   30956.00000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703960091802            EXPIRE_MAKER           0.01           0.0   IOTA         73
+    9   IOTAUSDT   894904977           -1  NSjJZ2GPsa8NWAKMCjCi0j  1703963157534   0.32470000   31105.00000000  0.00000000          0.00000000    NEW         GTC  LIMIT  SELL  1703963157534            EXPIRE_MAKER           0.01           0.0   IOTA         72'''
+
+    for index, row in df_balance.iterrows():
+        amount = float(row['executedQty'])
+        update_id = int(row['update_id'])
+        buy_cost_value = float(row['cummulativeQuoteQty'])
+        buy_cost_bnb = float(row['buy_cost_bnb'])
+        buy_bnb_price = float(row['buy_bnb_price'])
+        open_position_time = int(row['transactTime'])
+        position_order_id = int(row['orderId'])
+
+        # Check if the update_id is still in open orders
+        df_need_to_cancel = df_openorders[df_openorders['update_id']==update_id]
+        if not df_need_to_cancel.empty:
+            open_limit_sell_orderId = int(df_need_to_cancel['orderId'].values[0])
+            try: binance_cancel_order_by_orderId(coin, open_limit_sell_orderId)
+            except Exception as e: print(f'Cancel order {open_limit_sell_orderId} failed: {e}')
+            try: mark_limit_order_as_canceled_by_orderId(open_limit_sell_orderId)
+            except Exception as e: print(f'Mark order {open_limit_sell_orderId} as canceled failed: {e}')
+
+        df_coin_balance = get_user_asset()
+
+        # check coin balance see if it is enough
+        coin_balance = df_coin_balance[df_coin_balance['asset']==coin]
+        if coin_balance.empty: send_msg(f'No balance for coin: {coin}', from_id)
+
+        balance = float(coin_balance['free'].values[0])
+        if balance < amount: send_msg(f'Balance {balance} is not sufficient for amount: {amount}', from_id)
+
+        data = binance_market_sell(coin, amount)
+        if not data: send_msg(f'Failed to do market sell for coin: {coin}', from_id)
+
+        # convert data['fills] to dataframe
+        df_fills = pd.DataFrame(data['fills'])
+
+        # calculate sum of commission
+        sell_cost_bnb = df_fills['commission'].astype(float).sum()
+
+        # check price of bnb
+        df_bnb_price = get_token_price('BNB')
+        sell_bnb_price = df_bnb_price if df_bnb_price else 0
+
+        total_bnb_cost_value = buy_cost_bnb * buy_bnb_price + sell_cost_bnb * sell_bnb_price
+
+        profit = float(data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
+
+        if profit < 0: add_coin_to_ignore_list(coin, from_id)
+
+        # delete fills from data
+        del data['fills']
+
+        data['update_id'] = update_id
+        data['sell_cost_bnb'] = sell_cost_bnb
+        data['sell_bnb_price'] = sell_bnb_price
+        data['total_bnb_cost_value'] = total_bnb_cost_value
+        data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+        data['profit'] = profit
+
+        data_to_table(data, 'binance_position_sell')
+        close_position_status_by_order_id(position_order_id, table_name)
+
+        duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
+        duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+
+        send_msg(f'''Sold_Coin: {coin}\nSold_Price: {format_number(data['price'])}\nSold_Amount: {format_number(amount)}\nCommition_Fee: {format_number(total_bnb_cost_value)} usdt\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\nUpdate_ID: {update_id}''', from_id)
+
+        return profit
+
+
 def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try:
@@ -1646,23 +1745,23 @@ def get_latest_sold_coin():
     return coin
 
 
-def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
-    current_orders_df = get_open_orders_list(None, 'SELL', output_format = 'df')
-    coin = coin.upper()
-    symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
-    # get the row with symbol with the lowest price
-    current_orders_df = current_orders_df[current_orders_df['symbol']==symbol]
-    if not current_orders_df.empty: 
-        current_orders_df = current_orders_df.sort_values(by=['price'])
-        current_orders_df = current_orders_df.head(1)
-        orderId = current_orders_df['orderId'].values[0]
-        orderId = int(orderId)
-        try: binance_cancel_order_by_orderId(coin, orderId)
-        except: pass
-        try: mark_limit_order_as_canceled_by_orderId(orderId)
-        except: pass
-    do_market_sell(coin, from_id)
-    return 
+# def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
+#     current_orders_df = get_open_orders_list(None, 'SELL', output_format = 'df')
+#     coin = coin.upper()
+#     symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
+#     # get the row with symbol with the lowest price
+#     current_orders_df = current_orders_df[current_orders_df['symbol']==symbol]
+#     if not current_orders_df.empty: 
+#         current_orders_df = current_orders_df.sort_values(by=['price'])
+#         current_orders_df = current_orders_df.head(1)
+#         orderId = current_orders_df['orderId'].values[0]
+#         orderId = int(orderId)
+#         try: binance_cancel_order_by_orderId(coin, orderId)
+#         except: pass
+#         try: mark_limit_order_as_canceled_by_orderId(orderId)
+#         except: pass
+#     do_market_sell(coin, from_id)
+#     return 
 
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
