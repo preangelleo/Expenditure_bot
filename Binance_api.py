@@ -2563,6 +2563,10 @@ def daily_overhigh_profit_take(overhigh_profit=3000, table_name = 'binance_posit
 
     df_balance = df_balance.sort_values(by='profit', ascending=False)
 
+    # df_overlow_profit = df_balance[df_balance['profit'] <= -1 * CHECK_SIZE / 2]
+    # if not df_overlow_profit.empty: 
+    #     for index, row in df_overlow_profit.iterrows(): switch_position_from_main_to_funding(row['coin'], from_id)
+    
     # Select only the coins with profit > 0
     df_balance = df_balance[df_balance['profit'] >= overhigh_profit]
     if df_balance.empty: return print(f"No coin with profit > {overhigh_profit} usdt")
