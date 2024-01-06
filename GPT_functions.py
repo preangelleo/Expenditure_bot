@@ -109,7 +109,7 @@ def insert_new_gpt_response_record(from_id, message_id, prompt, response):
     }
 
     df = pd.DataFrame([new_response_dict])
-    df.to_sql('gpt_response', engine, if_exists='append', index=False)
+    with engine.connect() as connection: df.to_sql('gpt_response', connection, if_exists='append', index=False)
 
     return True
 

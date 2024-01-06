@@ -34,12 +34,12 @@ def on_message(ws, message):
                     'trade_id': data['o']['c']
                 }
                 df = pd.DataFrame(new_data, index=[0])
-                df.to_sql('umfuture_orders_short', engine, if_exists='append', index=False)
+                with engine.connect() as connection: df.to_sql('umfuture_orders_short', connection, if_exists='append', index=False)
             except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
 
         if data['o']['S'] == 'BUY' and data['o']['ps'] == 'SHORT':
             try:
-                df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_short WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'SELL'}).fetchall())
+                with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM umfuture_orders_short WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'SELL'}).fetchall())
                 if not df.empty:
                     price_change = float(df['price'].iloc[0]) - float(data['o']['ap'])
                     profit = price_change / float(df['price'].iloc[0]) * 10000
@@ -58,8 +58,7 @@ def on_message(ws, message):
                         'duration': duration
                     }
                     df = pd.DataFrame(new_data, index=[0])
-                    df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
-                    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
+                    with engine.connect() as connection: df.to_sql('umfuture_orders_profit', connection, if_exists='append', index=False)
                     profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 
@@ -76,13 +75,12 @@ def on_message(ws, message):
                     'trade_time': data['o']['T'],
                     'trade_id': data['o']['c']
                 }
-                df = pd.DataFrame(new_data, index=[0])
-                df.to_sql('umfuture_orders_long', engine, if_exists='append', index=False)
+                data_to_table(new_data, 'umfuture_orders_long')
             except Exception as e: print(f"UMFUTURE Send Message Error: \n\n{e}\n\n")
         
         if data['o']['S'] == 'SELL' and data['o']['ps'] == 'LONG':
             try:
-                df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_long WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'BUY'}).fetchall())
+                with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM umfuture_orders_long WHERE coin = :coin AND type = :type ORDER BY trade_time DESC LIMIT 1'), {'coin': coin, 'type': 'BUY'}).fetchall())
                 if not df.empty:
                     price_change = float(data['o']['ap']) - float(df['price'].iloc[0])
                     profit = price_change / float(df['price'].iloc[0]) * 10000
@@ -99,9 +97,7 @@ def on_message(ws, message):
                         'trade_id': data['o']['c'],
                         'duration': duration
                     }
-                    df = pd.DataFrame(new_data, index=[0])
-                    df.to_sql('umfuture_orders_profit', engine, if_exists='append', index=False)
-                    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
+                    data_to_table(new_data, 'umfuture_orders_profit')
                     profit = get_umfuture_profit(TG_BOT_OWNER_ID, coin)
             except: pass
 

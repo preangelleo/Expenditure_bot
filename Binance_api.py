@@ -10,7 +10,7 @@ POSITIONS_LIMIT = positions_limit if positions_limit else int(INITIAL_FUND / CHE
 
 # from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
 def read_target_profit_default(from_id=None):
-    df_target_profit = pd.DataFrame(engine.connect().execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
+    with engine.connect() as connection: df_target_profit = pd.DataFrame(connection.execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
     target_profit = float(df_target_profit['TargetProfit'].values[0])
     if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
     return target_profit
@@ -274,7 +274,7 @@ def get_exchange_info_symbols(coin: str):
 
     # make response to a dataframe and append to binance_exchange_info table
     df_response = pd.DataFrame(response, index=[0])
-    df_response.to_sql('binance_exchange_info', engine, if_exists='append', index=False)
+    with engine.connect() as connection: df_response.to_sql('binance_exchange_info', connection, if_exists='append', index=False)
 
     return response
 
@@ -984,11 +984,7 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
         'created_at': datetime.now(),
         'withdraw_id_binance': 'waiting_for_update'
     }
-
-    df = pd.DataFrame(data, index=[0])
-    df.to_sql('binance_withdraw_task', engine, if_exists='append', index=False)
-
-    # del status, withdraw_id_binance, withdraw_id_self,from_id, created_at, updated_at from data
+    data_to_table(data, 'binance_withdraw_task')
     del data['withdraw_id_binance']
     del data['withdraw_id_self']
     del data['from_id']
@@ -1015,10 +1011,8 @@ def update_binance_withdraw_task(withdraw_id_self, withdraw_id_binance):
 
 # define a function to read binance_withdraw_task where status = 'pending' and withdraw_id_binance = 'waiting_for_update' and withdraw_id_self = given token, if exist, call bianance_withdraw() and update withdraw_id_binance, status, updated_at
 def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
-    # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_withdraw_task')).fetchall())
-
     try:
-        df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
         if df.empty: 
             reply_msg = f'No withdraw task with token: {token}'
             send_msg(reply_msg, from_id)
@@ -1100,14 +1094,8 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
     # Market sell ONG for USDT
     data = binance_market_sell('ONG', ong_amount)
     if not data: return send_msg(f'Failed to market sell ONG for USDT.', from_id)
-
     del data['fills']
-
-    df = pd.DataFrame(data, index=[0])
-    df.to_sql('binance_ong_sell_history', engine, if_exists='append', index=False)
-    print(f"Market sell ONG for USDT:\n\n{df}\n\n")
-
-    # withdraw USDT to target address
+    data_to_table(data, 'binance_ong_sell_history')
     return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
 
@@ -1556,7 +1544,7 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     1  IOTAUSDT  894792027           -1  Hm9d0zr0INyo6JMVHfpJ7T  1703957455933  0.323036  30956.00000000  30956.00000000       9999.88890000  FILLED         GTC  MARKET  BUY  1703957455933            EXPIRE_MAKER  IOTA      0.023347          318.9         73          0'''
     # Sort df_balance by price, ascending
     df_balance = df_balance.sort_values(by=['price'], ascending=True)
-    
+
     df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
     ''' df_openorders
         symbol     orderId  orderListId           clientOrderId   transactTime        price          origQty executedQty cummulativeQuoteQty status timeInForce   type  side    workingTime selfTradePreventionMode  target_profit  manual_order   coin  update_id
@@ -1737,31 +1725,12 @@ def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
 # get the latest sold coin from binance_position_sell
 def get_latest_sold_coin():
     try:
-        df_latest_sold_coin = pd.DataFrame(engine.connect().execute(text("SELECT * FROM binance_position_sell ORDER BY transactTime DESC LIMIT 1")).fetchall())
+        with engine.connect() as connection: df_latest_sold_coin = pd.DataFrame(connection.execute(text("SELECT * FROM binance_position_sell ORDER BY transactTime DESC LIMIT 1")).fetchall())
         if df_latest_sold_coin.empty: return
     except: return
     coin = df_latest_sold_coin['symbol'].values[0]
     coin = coin.replace('USDT', '') if coin.endswith('USDT') else coin
     return coin
-
-
-# def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
-#     current_orders_df = get_open_orders_list(None, 'SELL', output_format = 'df')
-#     coin = coin.upper()
-#     symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
-#     # get the row with symbol with the lowest price
-#     current_orders_df = current_orders_df[current_orders_df['symbol']==symbol]
-#     if not current_orders_df.empty: 
-#         current_orders_df = current_orders_df.sort_values(by=['price'])
-#         current_orders_df = current_orders_df.head(1)
-#         orderId = current_orders_df['orderId'].values[0]
-#         orderId = int(orderId)
-#         try: binance_cancel_order_by_orderId(coin, orderId)
-#         except: pass
-#         try: mark_limit_order_as_canceled_by_orderId(orderId)
-#         except: pass
-#     do_market_sell(coin, from_id)
-#     return 
 
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
@@ -1845,7 +1814,7 @@ def do_market_buy(coin: str, value):
 
     # Read out the max update_id from binance_position_buy table
     try:
-        df_max_update_id = pd.DataFrame(engine.connect().execute(text('SELECT MAX(update_id) FROM binance_position_buy')).fetchall())
+        with engine.connect() as connection: df_max_update_id = pd.DataFrame(connection.execute(text('SELECT MAX(update_id) FROM binance_position_buy')).fetchall())
         if not df_max_update_id.empty: update_id = df_max_update_id['MAX(update_id)'].values[0]
     except: pass
 
@@ -1873,7 +1842,7 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
 
     try:
         # Read data from the table into a DataFrame
-        df = pd.DataFrame(engine.connect().execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
         # print(df)
 
         # if the df is empty, return a default image
@@ -1910,7 +1879,8 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
 
 
 def update_kline_data_from_binance_to_table(symbol: str, interval: str):
-    try: df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 1")).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 1")).fetchall())
     except: df = pd.DataFrame()
     if not df.empty: 
         last_close_time = df.iloc[-1]['Close Time']
@@ -1928,7 +1898,9 @@ def update_kline_data_from_binance_to_table(symbol: str, interval: str):
             }
             response = requests.get(url, params=params)
             data = response.json()
-            if not data: return pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
+            if not data: 
+                with engine.connect() as connection: reply_df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
+                return reply_df
             df = pd.DataFrame(data, columns=['Open Time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close Time', 'Quote Asset Volume', 'Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
             df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
             df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
@@ -1944,8 +1916,8 @@ def update_kline_data_from_binance_to_table(symbol: str, interval: str):
                 con.execute(text(f"DELETE FROM {symbol}_{interval}_kline_data WHERE `Open Time` = '{last_open_time_str}'"))
                 con.commit()
             execution_if_exists = 'append'
-            df.to_sql(f"{symbol}_{interval}_kline_data", engine, if_exists=execution_if_exists, index=False)
-            df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
+            with engine.connect() as connection: df.to_sql(f"{symbol}_{interval}_kline_data", connection, if_exists=execution_if_exists, index=False)
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 500")).fetchall())
             return df
         else: open_time = last_close_time + 1
     else:
@@ -1977,8 +1949,8 @@ def update_kline_data_from_binance_to_table(symbol: str, interval: str):
     df['Quote Asset Volume'] = pd.to_numeric(df['Quote Asset Volume'], errors='coerce')
     df = df.drop(columns=['Number of Trades', 'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'])
     execution_if_exists = 'replace'
-    df.to_sql(f"{symbol}_{interval}_kline_data", engine, if_exists=execution_if_exists, index=False)
-    df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY 'Close Time' DESC LIMIT 500")).fetchall())
+    with engine.connect() as connection: df.to_sql(f"{symbol}_{interval}_kline_data", connection, if_exists=execution_if_exists, index=False)
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY 'Close Time' DESC LIMIT 500")).fetchall())
     return df
 
 
@@ -2067,6 +2039,7 @@ def analyze_data(df, interval):
     df['SMA_34'] = calculate_sma(df['Close'], 34)
     df['SMA_55'] = calculate_sma(df['Close'], 55)
     df['SMA_89'] = calculate_sma(df['Close'], 89)
+    max_close_price = df['High'].max()
     current_price = df['Close'].iloc[-1]
     condition_1d = df['SMA_55'].iloc[-1] > df['SMA_89'].iloc[-1]
     condition_4h = df['SMA_34'].iloc[-1] > df['SMA_55'].iloc[-1]
@@ -2074,12 +2047,11 @@ def analyze_data(df, interval):
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-    # print(f"General_condition: {general_condition}, current_condition: {current_condition}")
     if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
         max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - max_sma) / max_sma
         deviation_percentage = float(deviation_percentage)
-        if 0.1 > deviation_percentage > 0: return {'interval': interval, 'target_profit': 0.1 - 0.01 - deviation_percentage, 'long': True, 'short': False}
+        if 0.1 > deviation_percentage > 0 and not (interval == '4h' and current_price > max_close_price * 0.9): return {'interval': interval, 'target_profit': 0.1 - 0.01 - deviation_percentage, 'long': True, 'short': False}
     if general_condition == -1 and not current_condition and df['RSI'].iloc[-1] < df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < df['RSI_SMA'].iloc[-1]:
         min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
         deviation_percentage = (current_price - min_sma) / min_sma
@@ -2270,10 +2242,10 @@ def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=F
 def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_value=0, current_positions=0):
     if chat_id or crontab_profit_record: 
         # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-        df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT * FROM binance_position_sell')).fetchall())
         if not df_profit.empty: 
             # From binance_position_buy read out the earliest transactTime
-            df_earliest_transactTime = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
+            with engine.connect() as conn: df_earliest_transactTime = pd.DataFrame(conn.execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
             earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
             # print('earliest_transactTime: ', earliest_transactTime)
             duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
@@ -2315,16 +2287,17 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
     return 
 
-# df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
+
 def check_today_profit_sum():
     # Read the largest update_timestamp from daily_profit_take table
-    try: df_daily_profit_take = pd.DataFrame(engine.connect().execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
+    try: 
+        with engine.connect() as connection: df_daily_profit_take = pd.DataFrame(connection.execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
     except: df_daily_profit_take = pd.DataFrame()
     if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
     else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
     update_timestamp = int(update_timestamp)
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
-    df_funding = pd.DataFrame(engine.connect().execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    with engine.connect() as connection: df_funding = pd.DataFrame(connection.execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
     if df_profit.empty and df_funding.empty: return {'profit_sum': 0, 'profit_coinlist': []}
     # if not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
     if df_profit.empty and not df_funding.empty: df_profit = df_funding
@@ -2356,7 +2329,8 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID):
 
 def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
     # Check if today's record exists
-    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
+    try: 
+        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
     except: df_today = pd.DataFrame()
     if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
 
@@ -2389,7 +2363,8 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
 
         return print(f"Today's profit has been taken: {today_realized_profit_dict['profit_sum']}")
     
-    try: df_balance = pd.DataFrame(engine.connect().execute(text(f'SELECT coin, orderId, price, executedQty, update_id FROM {table_name} WHERE is_closed = 0')).fetchall())
+    try: 
+        with engine.connect() as connection: df_balance = pd.DataFrame(connection.execute(text(f'SELECT coin, orderId, price, executedQty, update_id FROM {table_name} WHERE is_closed = 0')).fetchall())
     except: df_balance = pd.DataFrame()
     if df_balance.empty: return print('No open position for all coins')
 
@@ -2518,9 +2493,154 @@ def daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_b
     return 
 
 
+# Check today's position profit, if any coin's profit is over 30%, do market sell and take the profit
+def daily_overhigh_profit_take(overhigh_profit=3000, table_name = 'binance_position_buy', from_id=TG_BOT_OWNER_ID):
+    try: 
+        with engine.connect() as connection: df_balance = pd.DataFrame(connection.execute(text(f'SELECT coin, orderId, price, executedQty, cummulativeQuoteQty, update_id, transactTime FROM {table_name} WHERE is_closed = 0')).fetchall())
+    except: df_balance = pd.DataFrame()
+    if df_balance.empty: return print('No open position for all coins')
+
+    ''' df_balance
+        coin     orderId       price      executedQty  update_id
+    0   ATOM  2594994242   12.269441     815.03000000         50
+    1    APE  1563146551    1.786000    5599.10000000         58
+    2   COMP  1259040501   66.115741     151.24900000         59
+    3   GALA  2192893079    0.033265  300613.00000000         60
+    4  MAGIC   536447518    1.194287    8373.10000000         64
+    5    GRT  1394304791    0.223840   44674.00000000         78
+    6   KP3R   299940454  117.460950      85.13000000         79
+    7   DYDX  1158058662    3.029887    3300.45000000         81'''
+
+    # get current price for all coins
+    try: df = get_token_price_table()
+    except: df = pd.DataFrame()
+    if df.empty: return print('Failed to fetch price info')
+
+    ''' df
+            symbol     lastPrice      coin
+    0         BTCUSDT  45159.840000       BTC
+    1         ETHUSDT   2369.650000       ETH
+    2         BNBUSDT    310.200000       BNB
+    3         BCCUSDT      0.000000       BCC
+    4         NEOUSDT     13.930000       NEO
+    ..            ...           ...       ...
+    471       JTOUSDT      1.931600       JTO
+    472  1000SATSUSDT      0.000782  1000SATS
+    473      BONKUSDT      0.000014      BONK
+    474       ACEUSDT      9.998400       ACE
+    475       NFPUSDT      0.838690       NFP'''
+
+    # merge df_balance and df based on coin since df and df_balance all have coin column
+    df_balance = pd.merge(df_balance, df, on='coin', how='left')
+
+    ''' df_balance
+        coin     orderId       price      executedQty  update_id     symbol  lastPrice
+    0   ATOM  2594994242   12.269441     815.03000000         50   ATOMUSDT   11.12700
+    1    APE  1563146551    1.786000    5599.10000000         58    APEUSDT    1.69600
+    2   COMP  1259040501   66.115741     151.24900000         59   COMPUSDT   59.09000
+    3   GALA  2192893079    0.033265  300613.00000000         60   GALAUSDT    0.03108
+    4  MAGIC   536447518    1.194287    8373.10000000         64  MAGICUSDT    1.15770
+    5    GRT  1394304791    0.223840   44674.00000000         78    GRTUSDT    0.21030
+    6   KP3R   299940454  117.460950      85.13000000         79   KP3RUSDT  100.43000
+    7   DYDX  1158058662    3.029887    3300.45000000         81   DYDXUSDT    3.01700
+    '''
+
+    # convert df_balance['executedQty'] to float and calculate profit
+    df_balance['executedQty'] = df_balance['executedQty'].astype(float)
+    df_balance['cummulativeQuoteQty'] = df_balance['cummulativeQuoteQty'].astype(float)
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
+
+    ''' df_balance
+        coin     orderId       price  executedQty  update_id     symbol  lastPrice      profit
+    7   DYDX  1158058662    3.029887     3300.450         81   DYDXUSDT    3.01700   -42.53330
+    4  MAGIC   536447518    1.194287     8373.100         64  MAGICUSDT    1.15770  -306.34629
+    1    APE  1563146551    1.786000     5599.100         58    APEUSDT    1.69600  -503.91900
+    5    GRT  1394304791    0.223840    44674.000         78    GRTUSDT    0.21030  -604.87400
+    3   GALA  2192893079    0.033265   300613.000         60   GALAUSDT    0.03108  -656.91712
+    0   ATOM  2594994242   12.269441      815.030         50   ATOMUSDT   11.12700  -931.12393
+    2   COMP  1259040501   66.115741      151.249         59   COMPUSDT   59.09000 -1062.63634
+    6   KP3R   299940454  117.460950       85.130         79   KP3RUSDT  100.43000 -1449.84480'''
+
+    df_balance = df_balance.sort_values(by='profit', ascending=False)
+
+    # Select only the coins with profit > 0
+    df_balance = df_balance[df_balance['profit'] >= overhigh_profit]
+    if df_balance.empty: return print(f"No coin with profit > {overhigh_profit} usdt")
+
+    # current_orders = get_open_orders_list()
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
+
+    ''' df_openorders
+        update_id     orderId  manual_order  target_profit
+    0         60  2194428361           0.0       0.010000
+    1         64   537758433           0.0       0.010000
+    2         59  1264191411           1.0       0.150000
+    3         50  2614183942           1.0       0.200000
+    4         58  1567072325           1.0       0.400000
+    5         78  1394304988           0.0       0.074970
+    6         79   299940682           0.0       0.084427
+    7         81  1158062337           1.0       0.020000
+    '''
+    
+    for i in range(df_balance.shape[0]):
+        coin = df_balance.iloc[i]['coin']
+        symbol = df_balance.iloc[i]['symbol']
+        amount = df_balance.iloc[i]['executedQty']
+        buy_cummulativeQuoteQty = df_balance.iloc[i]['cummulativeQuoteQty']
+        update_id = int(df_balance.iloc[i]['update_id'])
+        position_order_id = int(df_balance.iloc[i]['orderId'])
+        open_position_time = int(df_balance.iloc[i]['transactTime'])
+        # from df_openorders get the orderId and target_profit and manual_order of coin
+        df_openorders_coin = df_openorders[df_openorders['update_id'] == update_id]
+        if not df_openorders_coin.empty:
+            coin_limit_orderId = int(df_openorders_coin['orderId'].values[0])
+            try: binance_cancel_order_by_orderId(symbol, coin_limit_orderId)
+            except Exception as e: print(f"Failed to cancel order: {coin_limit_orderId}, error: {e}")
+            try: mark_limit_order_as_canceled_by_orderId(coin_limit_orderId)
+            except Exception as e: print(f"Failed to mark order as canceled: {coin_limit_orderId}, error: {e}")
+
+        data = binance_market_sell(coin, amount)
+        if not data: send_msg(f'Failed to do market sell for coin: {coin}', from_id)
+
+        # convert data['fills] to dataframe
+        df_fills = pd.DataFrame(data['fills'])
+
+        # calculate sum of commission
+        sell_cost_bnb = df_fills['commission'].astype(float).sum()
+
+        # check price of bnb
+        df_bnb_price = get_token_price('BNB')
+        sell_bnb_price = df_bnb_price if df_bnb_price else 0
+
+        total_bnb_cost_value = (sell_cost_bnb * sell_bnb_price) * 2
+
+        profit = float(data['cummulativeQuoteQty']) - buy_cummulativeQuoteQty - total_bnb_cost_value
+
+        del data['fills']
+
+        data['update_id'] = update_id
+        data['sell_cost_bnb'] = sell_cost_bnb
+        data['sell_bnb_price'] = sell_bnb_price
+        data['total_bnb_cost_value'] = total_bnb_cost_value
+        data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+        data['profit'] = profit
+
+        data_to_table(data, 'binance_position_sell')
+        close_position_status_by_order_id(position_order_id, table_name)
+
+        duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
+        duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
+
+        send_msg(f'''Sold_Coin: {coin}\nSold_Price: {format_number(data['price'])}\nSold_Amount: {format_number(amount)}\nCommition_Fee: {format_number(total_bnb_cost_value)} usdt\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\nUpdate_ID: {update_id}''', from_id)
+    
+    return 
+
+
 def daily_profit_take_last_check():
     # Check if today's record exists
-    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
+    try: 
+        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
     except: df_today = pd.DataFrame()
     if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
 
@@ -2547,10 +2667,12 @@ def daily_profit_take_last_check():
 def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'):
     df = pd.DataFrame()
     if symbol:
-        try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT orderId, clientOrderId FROM {table_name} WHERE symbol = :symbol AND status = "NEW" ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
+        try: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT orderId, clientOrderId FROM {table_name} WHERE symbol = :symbol AND status = "NEW" ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
         except: pass
     else:
-        try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE status = "NEW"')).fetchall())
+        try: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE status = "NEW"')).fetchall())
         except: pass
     return df
 
@@ -2558,11 +2680,13 @@ def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'
 def get_df_from_position_table(coin = None, table_name='binance_position_buy'):
     df = pd.DataFrame()
     if coin:
-        try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE coin = :coin AND is_closed = 0'), {'coin': coin}).fetchall())
+        try: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE coin = :coin AND is_closed = 0'), {'coin': coin}).fetchall())
         except: pass
         return df
     else:
-        try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE is_closed = 0')).fetchall())
+        try: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE is_closed = 0')).fetchall())
         except: pass
     return df
 
@@ -2571,7 +2695,8 @@ def get_df_from_position_table(coin = None, table_name='binance_position_buy'):
 def get_latest_row_from_position_table(coin, table_name='binance_position_buy'):
     symbol = coin.upper() + 'USDT' if not coin.endswith('USDT') else coin.upper()
     df = pd.DataFrame()
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {table_name} WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
     except: pass
     return df
 
@@ -2658,7 +2783,7 @@ def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_posit
             data_to_table(data, 'binance_position_sell')
             set_limit_order_filled_by_orderId(orderId, 'binance_limit_sell_order')
             close_position_status_by_order_id(position_order_id, table_name)
-            df_profit = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_position_sell')).fetchall())
+            with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT * FROM binance_position_sell')).fetchall())
             if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
             duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
             duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
@@ -2819,7 +2944,7 @@ def data_to_table(data, table_name):
     df = pd.DataFrame(data, index=[0])
     if df.empty: return
     try: 
-        df.to_sql(table_name, engine, if_exists='append', index=False)
+        with engine.connect() as connection: df.to_sql(table_name, connection, if_exists='append', index=False)
         return True
     except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
     return
@@ -2855,7 +2980,8 @@ def binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 3, fr
     days_ago_millis = int(time.time() * 1000) - (transactTime * 24 * 60 * 60 * 1000)
     query = "SELECT * FROM binance_position_buy WHERE is_closed = 0 AND transactTime < :three_days_ago"
     
-    try: df_balance = pd.DataFrame(engine.connect().execute(text(query), {'three_days_ago': days_ago_millis}).fetchall())
+    try: 
+        with engine.connect() as connection: df_balance = pd.DataFrame(connection.execute(text(query), {'three_days_ago': days_ago_millis}).fetchall())
     except: return 'binance_position_buy table does not exist'
 
     if df_balance.empty: return f'No open position in binance_position_buy table that has been holden for more than {transactTime} days'
@@ -3092,7 +3218,8 @@ def read_latest_sell_price(coin, from_id):
     
     symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
 
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_position_sell WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM binance_position_sell WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
     except: return send_msg(f'binance_position_sell table does not exist', from_id)
 
     if df.empty: return send_msg(f'No sell record for {coin}', from_id)
@@ -3111,7 +3238,8 @@ def read_latest_sell_price(coin, from_id):
 def get_hot_coin_list_of_today():
     hotcoin_list = []
     today_date = datetime.now().strftime('%Y-%m-%d')
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
     hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
@@ -3119,7 +3247,8 @@ def get_hot_coin_list_of_today():
 
 def calculate_hot_coin_price_change(from_id=None):
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{yesterday_date}%"}).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{yesterday_date}%"}).fetchall())
     except: return
     if df.empty: return 'hot_coin_history table is empty'
     df_current_price = get_token_price_table()
@@ -3182,10 +3311,19 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=0.05):
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
     remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
+    with engine.connect() as connection:
+        try: previous_ticker = pd.DataFrame(connection.execute(text('SELECT * FROM previous_ticker')).fetchall())
+        except: previous_ticker = pd.DataFrame()
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker = df_ticker[(df_ticker['priceChangePercent'] > 0) & (df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
+    with engine.connect() as connection: df_ticker.to_sql('previous_ticker', connection, if_exists='replace', index=False)
+    if not previous_ticker.empty:
+        # select the coins that lastPrice is higher than previous lastPrice
+        df_merge = pd.merge(df_ticker, previous_ticker, on='symbol', how='left')
+        df_merge_symbols = df_merge[df_merge['lastPrice_x'] > df_merge['lastPrice_y']]
+        df_ticker = df_ticker[df_ticker['symbol'].isin(df_merge_symbols['symbol'])]
+    df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
     if df_ticker.empty: return []
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     IGNORE_LIST = get_ignore_list()
@@ -3268,7 +3406,7 @@ def binance_adjust_profit():
     if not df_auto_position.empty: return 0
     df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
     if not df_manual_position.empty: return 0
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT sum(profit) FROM binance_position_sell')).fetchall())
+    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT sum(profit) FROM binance_position_sell')).fetchall())
     df_profit.columns = ['profit']
     profit = df_profit['profit'][0]
     spot_balance = get_coin_wallet_balance_with_locked()
@@ -3299,7 +3437,7 @@ def binance_adjust_profit():
             }
         # make dictionary to dataframe
         df_adjust = pd.DataFrame(adjust_dict, index=[0])
-        df_adjust.to_sql('binance_position_sell', engine, if_exists='append', index=False)
+        with engine.connect() as connection: df_adjust.to_sql('binance_position_sell', connection, if_exists='append', index=False)
         reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
         send_msg(reply_string, TG_BOT_OWNER_ID)
         send_email('Binance Adjust Profit', reply_string, GMAIL_ADDRESS_MAIN)
@@ -3538,7 +3676,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
         close_position_status_by_order_id(orderId_bought, table_name='binance_funding_positions')
         data_to_table(new_data, 'binance_funding_profits')
         main_funding_transfer_with_check_and_send('USDT', new_data['cumulativeQuoteQty'], from_id)
-        df_profit = pd.DataFrame(engine.connect().execute(text(f'SELECT SUM(profit) FROM binance_funding_profits')).fetchall())
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT SUM(profit) FROM binance_funding_profits')).fetchall())
         total_profit = float(df_profit['SUM(profit)'].values[0])
         total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
         duration_days = new_data['duration'] / 1000 / 60 / 60 / 24
@@ -3549,7 +3687,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def monthly_summary():
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT symbol, transactTime, profit FROM binance_position_sell')).fetchall())
+    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, transactTime, profit FROM binance_position_sell')).fetchall())
     ''' df_profit  binance_position_sell
         symbol   transactTime      profit
     0    FTTUSDT  1702224291468  789.421552

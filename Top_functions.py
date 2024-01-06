@@ -525,7 +525,7 @@ def alter_expenditure_record(id, column_name, new_value, from_id=TG_BOT_OWNER_ID
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe
 def get_all_expenditure_records(from_id = TG_BOT_OWNER_ID):
     query = f"SELECT * FROM user_expenditures_record WHERE From_id = '{str(from_id)}'"
-    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(query)).fetchall())
     return df
 
 
@@ -604,7 +604,7 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 
     if not query: return send_msg("Something wrong with the query, please check the code", from_id)
 
-    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(query)).fetchall())
 
     print(df)
 
@@ -616,7 +616,7 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 
 # Read out ignore_list table and return a list of ignored coins
 def get_ignore_list(from_id = None):
-    df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text("SELECT symbol FROM ignore_coin_list")).fetchall())
     ignore_list = df['symbol'].values.tolist()
     if not ignore_list and from_id: return send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC", from_id)
     if from_id: send_msg(f"Ignore list:\n{', '.join(ignore_list)}\n\nUse below command to remove any coin from ignore list.\n\n/remove_ignore_coin BTC", from_id)
@@ -625,7 +625,7 @@ def get_ignore_list(from_id = None):
 
 # Read out white_list table and return a list of white coins
 def get_white_list(from_id = None):
-    df = pd.DataFrame(engine.connect().execute(text("SELECT symbol FROM white_list")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text("SELECT symbol FROM white_list")).fetchall())
     white_list = df['symbol'].values.tolist()
     if not white_list:
         if from_id: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
@@ -766,7 +766,7 @@ def insert_telegram_message_from_webhook(message):
     df = pd.DataFrame([new_message_dict])
 
     # Save the dataframe to the table 'telegram_messages'
-    df.to_sql('telegram_messages', engine, if_exists='append', index=False)
+    with engine.connect() as connection: df.to_sql('telegram_messages', connection, if_exists='append', index=False)
     return True
 
 
@@ -819,7 +819,8 @@ def get_latest_message_from_telegram_messages_table(from_id=None):
         "text": 'This is only for the initial value before the table was created'
     }
 
-    try: df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM telegram_messages ORDER BY update_id DESC LIMIT 2')).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM telegram_messages ORDER BY update_id DESC LIMIT 2')).fetchall())
     except: return latest_message_dict
 
     # Convert the 2 row dataframe to a dictionary
@@ -1142,8 +1143,10 @@ def get_otp(app_name, from_id=TG_BOT_OWNER_ID):
 def get_umfuture_profit(from_id=None, coin=None):
     profit = 0
     try:
-        if not coin: df = pd.DataFrame(engine.connect().execute(text('SELECT SUM(profit) FROM umfuture_orders_profit')).fetchall())
-        else: df = pd.DataFrame(engine.connect().execute(text('SELECT SUM(profit) FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
+        if not coin: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT SUM(profit) FROM umfuture_orders_profit')).fetchall())
+        else: 
+            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT SUM(profit) FROM umfuture_orders_profit WHERE coin = :coin'), {'coin': coin}).fetchall())
         if not df.empty:
             profit = df[0][0]
             profit = format_number(profit)
@@ -1156,7 +1159,8 @@ def get_umfuture_profit(from_id=None, coin=None):
 
 
 def get_df_from_given_tablename(tablename):
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM {tablename}')).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {tablename}')).fetchall())
     except: df = pd.DataFrame()
     return df
 
@@ -1167,7 +1171,9 @@ def get_filtered_df(tablename, columns:list = None, filters: dict = None):
     else: query += "*"
     query += f" FROM {tablename}"
     if filters and type(filters) is dict: query += " WHERE " + " AND ".join([f"{k} = :{k}" for k in filters])
-    try: return pd.DataFrame(engine.connect().execute(text(query), filters).fetchall())
+    try: 
+        with engine.connect() as connection: reply_df = pd.DataFrame(connection.execute(text(query), filters).fetchall())
+        return reply_df
     except: return pd.DataFrame()
     
 

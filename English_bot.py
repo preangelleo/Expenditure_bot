@@ -3,7 +3,7 @@ from GPT_functions import *
 
 def st_find_ranks_for_word(key_word):
     engine = get_remote_db_connection()
-    df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM db_daily_words WHERE word = '{key_word}'")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM db_daily_words WHERE word = '{key_word}'")).fetchall())
     if df.empty: return 
     word_dict = df.iloc[0].to_dict()
     return word_dict
@@ -26,7 +26,7 @@ def find_words_for_bot_user(word:str, from_id=TG_BOT_OWNER_ID):
     word = word.lower()
     engine = get_remote_db_connection()
 
-    df = pd.DataFrame(engine.connect().execute(text(f"SELECT * FROM db_daily_words WHERE word = '{word}'")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM db_daily_words WHERE word = '{word}'")).fetchall())
     if df.empty: return 
 
     word_dict = df.iloc[0].to_dict()
@@ -43,7 +43,7 @@ def find_words_for_bot_user(word:str, from_id=TG_BOT_OWNER_ID):
     
     send_msg('\n'.join(f"{k}:\t {v}" for k, v in word_trans.items() if v), from_id)
     
-    df = pd.DataFrame(engine.connect().execute(text(f"SELECT explanation FROM gpt_english_explanation WHERE word = '{word}'")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT explanation FROM gpt_english_explanation WHERE word = '{word}'")).fetchall())
     if not df.empty: send_msg(df.iloc[0].to_dict().get('explanation', 'None'), from_id)
     else: 
         try: explanation = chat_gpt_english(word)
@@ -56,8 +56,7 @@ def find_words_for_bot_user(word:str, from_id=TG_BOT_OWNER_ID):
                 'gpt_model': DEFAULT_MODEL,
                 'update_time': datetime.now()
             }
-            df = pd.DataFrame([new_record])
-            df.to_sql('gpt_english_explanation', engine, if_exists='append', index=False)
+            data_to_table(new_record, 'gpt_english_explanation')
             print(f'New record added to gpt_english_explanation table: {word}')
             send_msg(explanation, from_id)
     
@@ -67,9 +66,3 @@ def find_words_for_bot_user(word:str, from_id=TG_BOT_OWNER_ID):
 if __name__ == "__main__":
     print('English_bot.py is running ...')
 
-    word = 'Laureate'
-    word = 'creation'
-    # df = pd.DataFrame(engine.connect().execute(text(f"SELECT explanation FROM gpt_english_explanation")).fetchall())
-    # print(df)
-
-    find_words_for_bot_user(word, from_id=TG_BOT_OWNER_ID)

@@ -29,8 +29,7 @@ def handle_socket_message(msg):
         df['free'] = df['f'].astype(float)
         df['locked'] = df['l'].astype(float)
         df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
-        df.to_sql('binance_balance_history', engine, if_exists='append', index=False)
-        # df = pd.DataFrame(engine.connect().execute(text('SELECT * FROM binance_balance_history WHERE asset = :asset ORDER BY timestamp DESC LIMIT 1'), {'asset': 'BNB'}).fetchall())
+        with engine.connect() as connection: df.to_sql('binance_balance_history', connection, if_exists='append', index=False)
         try:
             bnb_df = df[df['asset'] == 'BNB']
             if not bnb_df.empty:

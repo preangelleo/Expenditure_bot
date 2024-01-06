@@ -69,7 +69,7 @@ def display_header():
 def read_plot_expenditure_table():
     today_year = datetime.now().year
     query = f"SELECT Date, Time, Spent, Category, Merchant, ItemName, Price FROM user_expenditures_record WHERE From_id = {TG_BOT_OWNER_ID} AND Date LIKE '{today_year}%' ORDER BY Date, Time"
-    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(query)).fetchall())
     
     # Making 'Spent' column numeric and splitting data based on expenditure size
     df['Spent'] = pd.to_numeric(df['Spent'])

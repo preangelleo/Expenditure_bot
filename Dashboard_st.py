@@ -71,16 +71,16 @@ def display_header():
 
 def plot_annualized_return(engine):
     query = "SELECT Date, NetProfit FROM net_profit_daily_record"
-    df = pd.DataFrame(engine.connect().execute(text(query)).fetchall(), columns=['Date', 'NetProfit'])
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(query)).fetchall(), columns=['Date', 'NetProfit'])
 
     # Calculate Bot Running Time
-    df_earliest = pd.DataFrame(engine.connect().execute(text('SELECT MIN(transactTime) FROM binance_position_buy')).fetchall(), columns=['transactTime'])
+    with engine.connect() as connection: df_earliest = pd.DataFrame(connection.execute(text('SELECT MIN(transactTime) FROM binance_position_buy')).fetchall(), columns=['transactTime'])
     earliest_transactTime = df_earliest['transactTime'].iloc[0]
     duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
     duration_day = f'{int(duration / 24)} D {int(duration % 24)} H' if duration > 24 else f'{int(duration)} Hours'
 
     # Calculate Annualized APY
-    df_profit = pd.DataFrame(engine.connect().execute(text('SELECT SUM(profit) FROM binance_position_sell')).fetchall(), columns=['profit'])
+    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT SUM(profit) FROM binance_position_sell')).fetchall(), columns=['profit'])
     profit_sum = df_profit['profit'].iloc[0]
     roi = profit_sum / INITIAL_FUND
     annualized_return = profit_sum / (duration / 24 / 365) / INITIAL_FUND
@@ -122,10 +122,10 @@ def plot_performance_by_coin(engine):
     sell_query = "SELECT symbol, SUM(profit) as total_profit FROM binance_position_sell GROUP BY symbol"
     sell_count_query = "SELECT symbol, COUNT(*) as trade_count FROM binance_position_sell GROUP BY symbol"
     
-    result = engine.connect().execute(text(sell_query)).fetchall()
+    with engine.connect() as connection: result = connection.execute(text(sell_query)).fetchall()
     df_sell = pd.DataFrame(result, columns=['symbol', 'total_profit'])
     
-    count_result = engine.connect().execute(text(sell_count_query)).fetchall()
+    with engine.connect() as connection: count_result = connection.execute(text(sell_count_query)).fetchall()
     df_count = pd.DataFrame(count_result, columns=['symbol', 'trade_count'])
 
     # Merge the two dataframes on symbol
@@ -177,8 +177,8 @@ def display_coin_lists(engine):
 
 
 def display_binance_position_sell(engine):
-    df_sell = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" AND price != 0 ORDER BY update_id DESC')).fetchall())
-    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
+    with engine.connect() as connection: df_sell = pd.DataFrame(connection.execute(text('SELECT symbol, type, profit, clientOrderId, transactTime, price, update_id FROM binance_position_sell WHERE clientOrderId != "AAAAAAAAAAAAAAAAAAAAAA" AND price != 0 ORDER BY update_id DESC')).fetchall())
+    with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT symbol, type, clientOrderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 1 ORDER BY update_id DESC')).fetchall())
     df_merged = pd.merge(df_buy, df_sell, on='update_id', suffixes=('_buy', '_sell'))
     df_merged['coin'] = df_merged['symbol_buy'].str[:-4]
     df_merged['duration'] = df_merged['transactTime_sell'] - df_merged['transactTime_buy']
@@ -200,7 +200,7 @@ def display_binance_position_sell(engine):
 
 
 def display_open_position(engine):
-    df_buy = pd.DataFrame(engine.connect().execute(text('SELECT coin, type, orderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 0 ORDER BY update_id DESC')).fetchall())
+    with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, type, orderId, transactTime, price, update_id FROM binance_position_buy WHERE is_closed = 0 ORDER BY update_id DESC')).fetchall())
     # Add duration column
     df_buy['duration'] = int(time.time() * 1000) - df_buy['transactTime']
     df_buy['duration_hour'] = df_buy['duration'].apply(lambda x: int(x/1000/60/60))
@@ -215,7 +215,8 @@ def display_open_position(engine):
 
 
 def display_funding_account_positions(engine):
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_positions WHERE is_closed = 0')).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM binance_funding_positions WHERE is_closed = 0')).fetchall())
     except: pd.DataFrame()
     with st.expander("Funding Account Positions", expanded=False): 
         if df.empty: st.write("No funding account positions currently.")
@@ -223,7 +224,8 @@ def display_funding_account_positions(engine):
 
 
 def display_funding_account_performance(engine):
-    try: df = pd.DataFrame(engine.connect().execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM binance_funding_profits')).fetchall())
     except: pd.DataFrame()
 
     with st.expander("Funding Account Performance", expanded=False): 
@@ -235,7 +237,8 @@ def display_funding_account_performance(engine):
 
 
 def display_daily_profit_take(engine):
-    try: df_today = pd.DataFrame(engine.connect().execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
+    try: 
+        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
     except: df_today = pd.DataFrame()
     with st.expander("Daily Profit Take Record", expanded=False): 
         if df_today.empty: st.write("No daily profit take record.")
