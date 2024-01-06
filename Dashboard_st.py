@@ -244,11 +244,12 @@ def display_daily_profit_take(engine):
         if df_today.empty: st.write("No daily profit take record.")
         else: 
             total_profit_take_of_this_year = df_today[df_today['date'].apply(lambda x: x.split('-')[0] == str(datetime.now().year))]['profit'].sum()
-            # date = '2024-01-05, when select month, there's '0' in front of '1', so we need to make sure the month is 2 digits
             today_month = datetime.now().month
             today_month = f'0{today_month}' if today_month < 10 else today_month
             total_profit_take_of_this_month = df_today[df_today['date'].apply(lambda x: x.split('-')[1] == str(today_month))]['profit'].sum()
             st.write(f"Total Profit Take of This Year: {format_number(total_profit_take_of_this_year)} | Total Profit Take of This Month: {format_number(total_profit_take_of_this_month)}")
+            df_today['profit'] = df_today['profit'].apply(lambda x: int(x))
+            df_today['update_timestamp'] = df_today['update_timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%H:%M'))
             st.table(df_today)
 
 
