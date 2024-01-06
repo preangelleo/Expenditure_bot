@@ -3645,6 +3645,50 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     return send_msg(f'''Funding account bought {coin} at {format_number(new_data['price'])} usdt/{coin.lower()}''', from_id)
 
 
+# Transfer a given coin from main account to funding account, and close position in binance_position_buy table, and add position to binance_funding_positions table, if limit order in binance_limit_sell_order, cancel it first, then transfer the coin to funding account
+def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    df = get_df_from_position_table(coin, 'binance_position_buy')
+    if df.empty: return send_msg(f'No {coin} position in main account', from_id)
+    ''' binance_position_buy
+        symbol    orderId  orderListId           clientOrderId   transactTime      price      origQty  executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
+    0  KP3RUSDT  299940454           -1  0Bdmn2xGbxFqNzsCITmgLw  1704165866038  117.46095  85.13000000  85.13000000       9999.45070000  FILLED         GTC  MARKET  BUY  1704165866038            EXPIRE_MAKER  KP3R      0.023503          318.0         79          0'''
+
+    update_id = int(df['update_id'].values[0])
+    # current_orders = get_open_orders_list()
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df_openorders = df_openorders[df_openorders['update_id'] == update_id]
+    # Check if update_id is in df_openorders
+    if not df_openorders.empty:
+        cancel_orderId = int(df_openorders['orderId'].values[0])
+        binance_cancel_order_by_orderId(coin, cancel_orderId)
+        mark_limit_order_as_canceled_by_orderId(cancel_orderId)
+
+    new_data = {
+        'coin': coin,
+        'symbol': coin + 'USDT',
+        'price': df['price'].values[0],
+        'orderId': df['orderId'].values[0],
+        'clientOrderId': df['clientOrderId'].values[0],
+        'executedQty': df['executedQty'].values[0],
+        'cumulativeQuoteQty': df['cummulativeQuoteQty'].values[0],
+        'type': df['type'].values[0],
+        'side': df['side'].values[0],
+        'status': df['status'].values[0],
+        'timestamp': df['transactTime'].values[0],
+        'time_string': datetime.fromtimestamp(df['transactTime'].values[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),
+        'is_closed': 0,
+    }
+
+    if data_to_table(new_data, 'binance_funding_positions'): 
+        main_funding_transfer_with_check_and_send(coin, new_data['executedQty'], from_id)
+        close_position_status_by_order_id(int(new_data['orderId']))
+        funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
+
+    return send_msg(f'''{coin} position has been switched to funding account successfully!''', from_id)
+
+
 # Define a function to reverse the process of binance_funding_buy_and_hold
 def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
