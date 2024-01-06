@@ -3350,8 +3350,9 @@ def update_get_token_total_supply():
     print(f"Updating token supply info for {df_ticker.shape[0]} coins")
     for index, row in df_ticker.iterrows():
         coin = row['symbol'][:-4]
+        print(f"Updating token supply info for {coin}")
         get_token_total_supply(coin)
-        
+
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
     remainning_positions = POSITIONS_LIMIT - coin_in_positions_len

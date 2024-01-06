@@ -259,9 +259,12 @@ def get_token_info(coin: str, from_id=TG_BOT_OWNER_ID):
         'Current_Price': f"{format_number(token_info['quote']['USD']['price'])} usd/{coin.lower()}",
         'FD_Market_Cap': f"{format_number(token_info['quote']['USD']['fully_diluted_market_cap'])} usd",
         'Trading_Volume': f"{format_number(token_info['quote']['USD']['volume_24h'])} usd",
+        'Turnover_Ratio': 'N/A',
         '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
         'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     }
+    try: output_dict['Turnover_Ratio'] = f"{format_number(float(token_info['quote']['USD']['volume_24h']) / float(token_info['quote']['USD']['market_cap']) * 100)}%",
+    except: pass
     # 用 '\n' join k: v
     output_dict_str = '\n'.join([f"{k}: {v}" for k, v in output_dict.items()])
 
