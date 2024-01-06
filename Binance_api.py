@@ -3239,7 +3239,7 @@ def get_hot_coin_list_of_today():
     hotcoin_list = []
     today_date = datetime.now().strftime('%Y-%m-%d')
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coins_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
     hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
@@ -3309,6 +3309,50 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=0.05):
     except: return 
 
 
+# Get the total supply of a given token and append the token info to the token_info dict
+def get_token_total_supply(coin):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE coin = :coin'), {'coin': coin}).fetchall())
+    if not df.empty: return df.to_dict(orient='records')[0]
+    try: token_info = get_token_info_from_coinmarketcap(coin)
+    except: return 
+    if not token_info: return
+    ignore_coin_list = get_ignore_list()
+    white_list = get_white_list()
+    data = {
+        'coin': coin,
+        'symbol': token_info['symbol']+ 'USDT',
+        'total_supply': token_info['total_supply'],
+        'max_supply': token_info['max_supply'],
+        'circulating_supply': token_info['circulating_supply'],
+        'is_ignore': 1 if coin in ignore_coin_list else 0,
+        'is_white': 1 if coin in white_list else 0,
+        'is_stablecoin': 1 if token_info['is_fiat'] or 'USD' in coin else 0,
+        'token_tags': ', '.join(token_info['tags']) if token_info['tags'] else 'None',
+        'slug': token_info['slug'],
+        'token_name': token_info['name'],
+        'date_added': token_info['date_added'],
+        'is_active': token_info['is_active'],
+        }
+    data_to_table(data, 'token_supply_info')
+    return data
+
+
+def update_get_token_total_supply():
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+    # find out the coins in df_ticker but not in df_token_info
+    df_ticker = df_ticker[~df_ticker['symbol'].isin(df_token_info['symbol'])]
+    if df_ticker.empty: return
+    print(f"Updating token supply info for {df_ticker.shape[0]} coins")
+    for index, row in df_ticker.iterrows():
+        coin = row['symbol'][:-4]
+        get_token_total_supply(coin)
+        
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
     remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
     with engine.connect() as connection:
@@ -3319,85 +3363,75 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
     with engine.connect() as connection: df_ticker.to_sql('previous_ticker', connection, if_exists='replace', index=False)
     if not previous_ticker.empty:
-        # select the coins that lastPrice is higher than previous lastPrice
         df_merge = pd.merge(df_ticker, previous_ticker, on='symbol', how='left')
         df_merge_symbols = df_merge[df_merge['lastPrice_x'] > df_merge['lastPrice_y']]
         df_ticker = df_ticker[df_ticker['symbol'].isin(df_merge_symbols['symbol'])]
+    # UTC 0 is 16 of Los Angeles time, so when it's 17:00 in Los Angeles, it's 1:00 in UTC time, then the quoteVolume is only for the last hour
+    hours_passed_since_utc_0 = datetime.utcnow().hour
+    simulated_quoteVolume_per_hour = trading_volume_limit / 24
+    trading_hours = hours_passed_since_utc_0 + 1
+    trading_volume_limit = simulated_quoteVolume_per_hour * trading_hours
     df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
     if df_ticker.empty: return []
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
-    IGNORE_LIST = get_ignore_list()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(IGNORE_LIST)]
-    if df_ticker.empty: return []
-    if not tradingbot_status:
-        print(f"Trading bot is off, only check white_list coins")
-        WHITE_LIST = get_white_list()
-        df_ticker = df_ticker[df_ticker['coin'].isin(WHITE_LIST)]
-        if df_ticker.empty: return []
+    try:
+        with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+    except: 
+        for index, row in df_ticker.iterrows():
+            time.sleep(1)
+            coin = row['coin']
+            get_token_total_supply(coin)
+        with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+    df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
+    df_merge = df_merge[df_merge['is_ignore'] != 1]
+    if df_merge.empty: return []
+    df_merge = df_merge[df_merge['is_stablecoin'] != 1]
+    if df_merge.empty: return []
+    if not tradingbot_status: 
+        df_merge = df_merge[df_merge['is_white'] == 1]
+        if df_merge.empty: return []
         try: coinbase_coin_list = get_coin_list_from_trading_pairs()
         except: coinbase_coin_list = COINBASE_COIN_LIST
         # Keep only the coins in COINBASE_TRADING_LIST
-        df_ticker = df_ticker[df_ticker['coin'].isin(coinbase_coin_list)]
-        if df_ticker.empty: return []
+        df_merge = df_merge[df_merge['coin'].isin(coinbase_coin_list)]
+        if df_merge.empty: return []
+    df_merge['marketcap'] = df_merge['total_supply'] * df_merge['lastPrice']
+    df_merge['turnover_ratio'] = df_merge['quoteVolume'] / df_merge['marketcap']
+    df_merge['circulating_ratio'] = df_merge['circulating_supply'] / df_merge['total_supply']
+    df_merge = df_merge[df_merge['circulating_ratio'] > CIRCULATION_RATIO]
+    if df_merge.empty: return []
+    df_merge = df_merge[df_merge['marketcap'] < FULLLY_DILUTED_MARKET_CAP_UP_LIMIT]
+    if df_merge.empty: return []
     hotcoin_list_of_today = get_hot_coin_list_of_today()
-    df_ticker = df_ticker[~df_ticker['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_ticker
-    df_ticker = df_ticker[~df_ticker['coin'].isin(coin_in_positions)] if coin_in_positions else df_ticker
+    df_merge = df_merge[~df_merge['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_merge
+    if df_merge.empty: return []
+    df_merge = df_merge[~df_merge['coin'].isin(coin_in_positions)] if coin_in_positions else df_merge
+    if df_merge.empty: return []
+    df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
+    df_merge = df_merge.head(30)
+    df_ticker = df_ticker[df_ticker['coin'].isin(df_merge['coin'])]
     if df_ticker.empty: return []
-    df_ticker = df_ticker.sort_values(by='quoteVolume', ascending=False)
-    df_ticker = df_ticker.head(10)
-    df_ticker = df_ticker.copy()
-    df_ticker.loc[:, 'market_cap'] = 0
-    df_ticker.loc[:, 'fully_diluted_market_cap'] = 0
-    df_ticker.loc[:, 'ratio'] = 0.01
-    start_loop_coinlist = df_ticker['coin'].values.tolist()
-    print(f"coinlist_before_cmc: {' '.join(start_loop_coinlist)}")
-    for index, row in df_ticker.iterrows():
-        coin = row['coin']
-        token_info = get_token_market_cap_and_ratio(coin, turnover_ratio_eth=0.05)
-        if token_info:
-            df_ticker.loc[index, 'market_cap'] = int(token_info['market_cap'])
-            df_ticker.loc[index, 'fully_diluted_market_cap'] = int(token_info['fully_diluted_market_cap'])
-            df_ticker.loc[index, 'circulation_ratio'] = float(token_info['circulation_ratio'])
-            df_ticker.loc[index, 'turnover_ratio'] = float(token_info['turnover_ratio'])
-            df_ticker.loc[index, 'token_slug'] = token_info['token_slug']
-        else: df_ticker.drop(index, inplace=True)
-    if df_ticker.empty: return []
-    df_ticker['turnover_by_priceChangePercent'] = df_ticker['turnover_ratio'] / df_ticker['priceChangePercent']
-    df_ticker = df_ticker.sort_values(by='turnover_ratio', ascending=False)
-    df_ticker = df_ticker.head(10)
     today_hot_coin_list = df_ticker['coin'].values.tolist()
     print(f"coinlist_after_cmc: {' '.join(today_hot_coin_list)}")
-    final_hotcoin_dict = {}
-    if today_hot_coin_list: 
-        for index, row in df_ticker.iterrows():
-            if remainning_positions <= 0: break
-            coin = row['coin']
-            long_or_short = analyze_symbol(coin)
-            long = long_or_short['long']
-            if not long: continue
-            target_profit = long_or_short['target_profit']
-            final_hotcoin_dict[coin] = target_profit
-            remainning_positions -= 1
-            price = row['lastPrice']
-            priceChangePercent = row['priceChangePercent']
-            turnover_ratio = row['turnover_ratio']
-            turnover_by_priceChangePercent = row['turnover_by_priceChangePercent']
-            token_slug = row['token_slug']
-            hot_coin_history = {
-                'coin': coin, 
-                'priceChangePercent': priceChangePercent, 
-                'price': price, 
-                'turnover_ratio': turnover_ratio, 
-                'turnover_by_priceChangePercent': turnover_by_priceChangePercent,
-                'token_slug': token_slug,
-                'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
-                }
-            data_to_table(hot_coin_history, 'hot_coin_history')
-            URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"[{coin}]({URL}) | +{priceChangePercent}% | {format_number(price)} | {round(turnover_ratio, 2)}"
-            broadcast_markdown(reply_string)
-    print(f"final_hotcoin_dict: {' '.join(final_hotcoin_dict.keys())}")
-    return final_hotcoin_dict
+    final_hotcoins_list = []
+    for index, row in df_ticker.iterrows():
+        if remainning_positions <= 0: break
+        coin = row['coin']
+        long_or_short = analyze_symbol(coin)
+        long = long_or_short['long']
+        if not long: continue
+        final_hotcoins_list.append(coin)
+        remainning_positions -= 1
+        price = row['lastPrice']
+        hot_coin_history = {
+            'coin': coin, 
+            'price': price, 
+            'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
+            }
+        data_to_table(hot_coin_history, 'hot_coins_history')
+        reply_string = f"{coin} | {format_number(price)}"
+        broadcast_text(reply_string)
+    return final_hotcoins_list
 
 
 # Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
