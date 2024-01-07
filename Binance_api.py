@@ -1520,6 +1520,32 @@ def get_open_orders_list(from_id=None, side = 'SELL', output_format = 'dict'):
         print(r.json())
         return {}
 
+def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    if df_openorders.empty: return send_msg('No open limit sell orders.', from_id)
+    # Select columns: coin, target_profit, price, manual_order, orderId, update_id, transactTime
+    df_openorders = df_openorders.loc[:, ['coin', 'target_profit', 'price', 'manual_order', 'orderId', 'update_id', 'transactTime']]
+    ''' df_openorders
+    coin  target_profit        price  manual_order     orderId  update_id   transactTime
+    0  GALA           0.01   0.03360000           0.0  2194428361         60  1703800216397
+    1  COMP           0.15  76.03000000           1.0  1264191411         59  1704084079897
+    2  ATOM           0.20  14.72300000           1.0  2614183942         50  1704084120988
+    3   APE           0.40   2.50000000           1.0  1567072325         58  1704093018339
+    4   GRT           0.01   0.22610000           0.0  1397133202         78  1704304654077
+    5  HBAR           0.01   0.09960000           0.0   783188222         84  1704330207320
+    6   LSK           0.01   1.77800000           0.0   320284512         85  1704330209484
+    7  ORDI           0.01  87.85000000           0.0   519807222         88  1704330211612
+    8  ARPA           0.30   0.09608000           0.0   789104110         95  1704606659419'''
+    reply_msg_list = []
+    for index, row in df_openorders.iterrows():
+        coin = row['coin']
+        target_profit = row['target_profit']
+        price = row['price']
+        manual_order = 'M' if row['manual_order'] == 1 else 'A'
+        reply_msg = f"{coin}: {int(target_profit*100)}% | {manual_order} | {format_number(price)}"
+        reply_msg_list.append(reply_msg)
+    reply_msg = '\n'.join(reply_msg_list)
+    return send_msg(reply_msg, from_id)
 
 
 # Define a function to sell all of the profit position

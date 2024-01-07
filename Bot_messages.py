@@ -40,7 +40,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'read_bot_status': read_trading_bot_status,
     'close_postive_positions': close_postive_positions,
     'read_target_profit': read_target_profit_default,
-    'open_orders_list': get_open_orders_list,
+    'open_orders_list': get_open_limit_orders_for_user,
     'cancel_all_orders': binance_cancel_all_orders,
     'read_positions_limit': read_positions_limit,
     'hot_coin_update': calculate_hot_coin_price_change,
