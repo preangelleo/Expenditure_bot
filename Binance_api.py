@@ -977,7 +977,8 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     del data['created_at']
 
     string_dict = '\n'.join([f'{k}: {v}' for k, v in data.items()])
-    reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nYou can reply: \n/confirm {withdraw_id_self}\n\nOr click the following link to confirm"
+    if str(from_id) == str(TG_BOT_OWNER_ID): reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nYou can reply: \n/confirm {withdraw_id_self}\n\nOr click the following link to confirm"
+    else: reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nClick the following link to confirm"
     send_msg(reply_string_from_dict, from_id)
 
     confirm_link_markdown = f"[CONFIRM_WITHDRAW](https://wh.leowang.net/confirmation/{withdraw_token})"
