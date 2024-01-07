@@ -58,44 +58,6 @@ def create_expenditure_record_table():
     return True
 
 
-'''ignore_coin_list | CREATE TABLE `ignore_coin_list` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `symbol` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=221 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci |
-'''
-def create_ignore_coin_list_table():
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Create a new table 'ignore_coin_list'
-    cursor.execute("CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print("Table 'ignore_coin_list' created successfully!")
-    return True
-
-
-def insert_initial_ignore_list():
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Insert initial ignore list
-    for symbol in INITIAL_IGNORE_LIST: 
-        # Check if the symbol is already in the table
-        cursor.execute(f"SELECT * FROM ignore_coin_list WHERE symbol = '{symbol}'")
-        result = cursor.fetchall()
-        if len(result) == 0: cursor.execute(f"INSERT INTO ignore_coin_list (symbol) VALUES ('{symbol}')")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print("Initial ignore list inserted successfully!")
-    return True
-
-
 # Create a table 'net_profit_daily_record' to record the net profit, net profit sum of each day
 def create_net_profit_daily_record_table():
     # Create a new session
@@ -498,32 +460,6 @@ def remove_white_list_by_username(username):
     return True
 
 
-# DELETE coin from ignore_coin_list where symbol = 'coin'
-def remove_from_ignore_coin_table(coin):
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM ignore_coin_list WHERE symbol = '{coin}'")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print(f"{coin} removed from ignore_coin_list successfully!")
-    return True
-
-
-def remove_from_white_list_table(coin):
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM white_list WHERE symbol = '{coin}'")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print(f"{coin} removed from white_list successfully!")
-    return True
-
 
 def remove_from_future_profit_table(coin):
     # Create a new session
@@ -610,11 +546,11 @@ if __name__ == '__main__':
     # Initial Step 2: Create user_expenditures_record tables
     create_expenditure_record_table()
 
-    # Initial Step 3: Create ignore_coin_list tables
-    create_ignore_coin_list_table()
+    # Initial Step 3: Create OTP tables
+    create_one_time_passcode_table()
 
-    # Initial Step 4: Insert initial ignore list
-    insert_initial_ignore_list()
+    # Initial Step 4: Create position_limit tables
+    create_position_limit_table()
 
     # Initial Step 5: Create net_profit_daily_record tables
     create_net_profit_daily_record_table()
@@ -624,10 +560,9 @@ if __name__ == '__main__':
 
     # Initial Step 7: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
     create_target_profit_table()
-    set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05)))
 
-    # Initial Step 8: Create position_limit tables
-    create_position_limit_table()
+    # Initial Step 8: Insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
+    set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05)))
 
     # Initial Step 9: Insert a new record into table "position_limit", make PositionLimit = int(INITIAL_FUND / CHECK_SIZE)
     set_position_limit_default()
@@ -644,8 +579,6 @@ if __name__ == '__main__':
     # Initial Step 13: Create white_list_users tables
     create_white_list_users_table()
 
-    # Initial Step 14: Create one_time_passcode tables
-    create_one_time_passcode_table()
     
     trading_bot_status = trading_bot_switch_status()
     if not trading_bot_status: print("Trading bot is OFF!")

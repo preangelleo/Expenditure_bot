@@ -37,25 +37,11 @@ def read_positions_limit(from_id=TG_BOT_OWNER_ID):
     return POSITIONS_LIMIT
 
 
-# from "CREATE TABLE IF NOT EXISTS ignore_coin_list (id INT NOT NULL AUTO_INCREMENT, symbol VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))" table remove the given coin
-def remove_from_ignore_coin_list(coin: str, chat_id=TG_BOT_OWNER_ID):
-    coin = coin.upper()
-    if remove_from_ignore_coin_table(coin): send_msg(f"Removed {coin} from ignore coin list.", chat_id)
-    else: send_msg(f"Failed to remove {coin} from ignore coin list.", chat_id)
-
-
 def remove_from_future_profit(coin: str, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     if remove_from_future_profit_table(coin): send_msg(f"Removed {coin} from future profit table.", chat_id)
     else: send_msg(f"Failed to remove {coin} from future profit table.", chat_id)
 
-
-# remove coin from white_list table
-def remove_from_white_list(coin: str, chat_id=TG_BOT_OWNER_ID):
-    coin = coin.upper()
-    if remove_from_white_list_table(coin): send_msg(f"Removed {coin} from white list.", chat_id)
-    else: send_msg(f"Failed to remove {coin} from white list.", chat_id)
-    
 
 def network_name_change(str_name: str):
     str_name = str_name.upper()
@@ -1629,7 +1615,7 @@ def force_do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
 
         profit = float(data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
 
-        if profit < 0: add_coin_to_ignore_list(coin, from_id)
+        if profit < 0: set_coin_ignore(coin, from_id)
 
         # delete fills from data
         del data['fills']
@@ -1722,7 +1708,7 @@ def do_market_sell(coin, from_id=TG_BOT_OWNER_ID):
 
         profit = float(data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
 
-        if profit < 0: add_coin_to_ignore_list(coin, from_id)
+        if profit < 0: set_coin_ignore(coin, from_id)
 
         # delete fills from data
         del data['fills']
@@ -3348,16 +3334,16 @@ def get_token_total_supply(coin):
     try: token_info = get_token_info_from_coinmarketcap(coin)
     except: return 
     if not token_info: return
-    ignore_coin_list = get_ignore_list()
-    white_list = get_white_list()
+    # ignore_coin_list = get_ignore_list()
+    # white_list = get_white_list()
     data = {
         'coin': coin,
         'symbol': token_info['symbol']+ 'USDT',
         'total_supply': token_info['total_supply'],
         'max_supply': token_info['max_supply'],
         'circulating_supply': token_info['circulating_supply'],
-        'is_ignore': 1 if coin in ignore_coin_list else 0,
-        'is_white': 1 if coin in white_list else 0,
+        'is_ignore': 0,
+        'is_white': 0,
         'is_stablecoin': 1 if token_info['is_fiat'] or 'USD' in coin else 0,
         'token_tags': ', '.join(token_info['tags']) if token_info['tags'] else 'None',
         'slug': token_info['slug'],
@@ -3367,6 +3353,98 @@ def get_token_total_supply(coin):
         }
     data_to_table(data, 'token_supply_info')
     return data
+
+
+def set_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE token_supply_info SET is_ignore = 1 WHERE coin = :coin"), {'coin': coin})
+            connection.commit()
+            if from_id: send_msg(f"Successfully added {coin} to ignore list", from_id)
+        except Exception as e:
+            if from_id: send_msg(f"Failed to add {coin} to ignore list", from_id)
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
+
+
+def remove_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE token_supply_info SET is_ignore = 0 WHERE coin = :coin"), {'coin': coin})
+            connection.commit()
+            if from_id: send_msg(f"Successfully removed {coin} from ignore list", from_id)
+        except Exception as e:
+            if from_id: send_msg(f"Failed to remove {coin} from ignore list", from_id)
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
+
+
+def get_ignore_list(from_id=TG_BOT_OWNER_ID):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE is_ignore = 1')).fetchall())
+        if not df.empty:
+            ignore_coin_list = df['coin'].values.tolist()
+            if from_id: send_msg(f"Current ignore list: \n\n{', '.join(ignore_coin_list)}", from_id)
+            return ignore_coin_list
+    except: df = pd.DataFrame()
+    if df.empty: send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC", from_id)
+    return []
+
+
+def set_coin_white(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE token_supply_info SET is_white = 1 WHERE coin = :coin"), {'coin': coin})
+            connection.commit()
+            if from_id: send_msg(f"Successfully added {coin} to white list", from_id)
+        except Exception as e:
+            if from_id: send_msg(f"Failed to add {coin} to white list", from_id)
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
+
+
+def remove_coin_white(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin[:-4] if coin.endswith('USDT') else coin
+    if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    with engine.connect() as connection:
+        try:
+            # Execute the query with the updated update_id
+            connection.execute(text("UPDATE token_supply_info SET is_white = 0 WHERE coin = :coin"), {'coin': coin})
+            connection.commit()
+            if from_id: send_msg(f"Successfully removed {coin} from white list", from_id)
+        except Exception as e:
+            if from_id: send_msg(f"Failed to remove {coin} from white list", from_id)
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
+
+
+def get_white_list(from_id=TG_BOT_OWNER_ID):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE is_white = 1')).fetchall())
+        if not df.empty: 
+            white_list = df['coin'].values.tolist()
+            if from_id: send_msg(f"Current white list: \n\n{', '.join(white_list)}", from_id)
+            return white_list
+    except: df = pd.DataFrame()
+    if df.empty: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
+    return []
 
 
 def update_get_token_total_supply():
