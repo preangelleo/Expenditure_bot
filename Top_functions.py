@@ -711,7 +711,7 @@ def update_text_for_a_given_message_id(message_id, text, from_id=TG_BOT_OWNER_ID
     cursor = conn.cursor()
     # Check if the symbol is already in the table
     try: cursor.execute(f"UPDATE telegram_messages SET text = '{text}' WHERE message_id = {message_id}")
-    except Exception as e: return send_msg(f"No message_id as {message_id} in the table.\n\n{e}", from_id)
+    except: pass
 
     # Commit the session
     conn.commit()

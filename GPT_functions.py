@@ -100,17 +100,13 @@ def get_total_spend_of_any_year_any_month(from_id=TG_BOT_OWNER_ID, year=str(date
 # Instert a new row into 'gpt_response' table from input message_id, chat_id, prompt, response
 def insert_new_gpt_response_record(from_id, message_id, prompt, response):
     if not message_id or not prompt or not response or not from_id: return
-
     new_response_dict = {
         'message_id': message_id,
         'from_id': from_id,
         'prompt': prompt,
         'response': response
     }
-
-    df = pd.DataFrame([new_response_dict])
-    with engine.connect() as connection: df.to_sql('gpt_response', connection, if_exists='append', index=False)
-
+    data_to_table(new_response_dict, 'gpt_response')
     return True
 
 
@@ -122,7 +118,7 @@ def get_latest_message_from_gpt_response_table():
     return latest_message_dict
 
 
-@retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
+# @retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
 def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = None, message_id=None):
 
     if not prompt and not image_url: return
@@ -165,12 +161,11 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
     # Step 2: check if the model wanted to call a function
     if tool_calls:
         need_to_sum = False
-        send_msg('GPT is calling the functions...', chat_id)
         # Step 3: call the function
         available_functions = {
             "insert_new_expenditure_record": insert_new_expenditure_record,
             "get_total_spend_of_any_year_any_month": get_total_spend_of_any_year_any_month,
-            "add_coin_to_ignore_list": add_coin_to_ignore_list,
+            "add_coin_to_ignore_list": set_coin_ignore,
             "get_ignore_list": get_ignore_list,
             "funding_main_transfer_all_usdt": funding_main_transfer_all_usdt,
             "get_btc_data_with_rsi": get_btc_data_with_rsi,
@@ -183,15 +178,16 @@ def run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL
 
         for tool_call in tool_calls:
             function_name = tool_call.function.name
+            send_msg(f'GPT is calling: \n{function_name}()', chat_id)
             need_to_sum = True if function_name == "insert_new_expenditure_record" else need_to_sum
 
             function_to_call = available_functions[function_name]
             function_args = json.loads(tool_call.function.arguments)
             try: function_to_call(**function_args)
-            except: pass
+            except Exception as e: send_msg(f'Failed to call \n{function_name}() with error: \n\n{e}', chat_id)
 
             try: insert_new_gpt_response_record(from_id, message_id, prompt, function_name)
-            except: pass
+            except Exception as e: send_msg(f'Failed to insert new gpt response record with error: \n\n{e}', chat_id)
 
         if need_to_sum:
             # Calculate the total spent of this year (sum the spent of this year)
