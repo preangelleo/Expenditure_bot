@@ -3672,7 +3672,8 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     data = binance_limit_buy(coin, amount, price)
     del data['fills']
     clientOrderId = data['clientOrderId']
-    if data_to_table(data, table_name) and chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {clientOrderId}", chat_id)
+    orderId = data['orderId']
+    if data_to_table(data, table_name) and chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {orderId}", chat_id)
     return
 
 
