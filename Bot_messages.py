@@ -55,6 +55,8 @@ ONE_PARAMETER_COMMAND_LIST = {
     'add_white_list': {'function': set_coin_white, 'description': 'You need to input a coin symbol after this command, for example: /add_white_list BTC'},
     'get_coin_info': {'function': get_token_info, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
+    'refill_stella_danli': {'function': refill_stella_danli, 'description': 'You need to input a usdt amount after this command, for example: /refill_stella_danli 1000'},
+    'refill_stella_leo': {'function': refill_stella_leo, 'description': 'You need to input a usdt amount after this command, for example: /refill_stella_leo 1000'},
     'position_coin_check': {'function': bot_call_binance_position_check_coin, 'description': 'You need to input a coin symbol after this command, for example: /position_coin_check BTC'},
     'binance_market_sell': {'function': force_do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
     'binance_market_buy': {'function': manually_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
@@ -75,6 +77,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
     'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
     }
+
 
 TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
@@ -353,6 +356,7 @@ def handel_telegram_message_from_webhook_non_owner(message):
             if command_word in ['get_otp']: 
                 app_name = text_prompt.lower().split()[1] if len(text_prompt.lower().split()) > 1 else 'carta'
                 return get_otp(app_name, from_id)
+            if command_word in ['refill_stella_danli']: return refill_1000_danli(from_id)
 
         return send_msg(f"Sorry, you are not allowed to use /{command_word} command.", from_id)
 

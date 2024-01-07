@@ -1044,6 +1044,17 @@ def handle_webhook_confirmation(token: str, from_id=TG_BOT_OWNER_ID):
     return
 
 
+def refill_stella_danli(usdt_amount, from_id=TG_BOT_OWNER_ID):
+    return binance_pay_usdt(usdt_amount, os.getenv('STELLA_DANLI_ADDRESS'), from_id)
+
+def refill_1000_danli(from_id=None):
+    if from_id: return binance_pay_usdt(1000, os.getenv('STELLA_DANLI_ADDRESS'), from_id)
+
+
+def refill_stella_leo(usdt_amount, from_id=TG_BOT_OWNER_ID):
+    return binance_pay_usdt(usdt_amount, os.getenv('STELLA_LEO_ADDRESS'), from_id)
+
+
 # Define binance_pay_usdt, user input a usdt amount and a target address; then market sell coin ONG for this target usdt amount, and send the USDT to the target address with TRX network only, usdt input must less than 1000 usd.
 def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWNER_ID):
     try: usdt_amount = float(usdt_amount)

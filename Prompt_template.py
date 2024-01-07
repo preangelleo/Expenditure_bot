@@ -165,6 +165,8 @@ COMMANDS = [
     {"command": 'funding_market_buy', 'description': 'Funding account market buy a given coin and hold in funding account'},
     {"command": 'funding_market_sell', 'description': 'Funding account market sell a given coin and calculate the profit'},
     {"command": 'profit_taken_today', 'description': 'Calculate the sum of profit taken today'},
+    {"command": 'refill_stella_danli', 'description': 'Refill the given amount of USDT to stella account of Danli'},
+    {"command": 'refill_stella_leo', 'description': 'Refill the given amount of USDT to stella account of Leo'},
 ]
 
 
@@ -588,6 +590,8 @@ BOT_COMMAND_DICT = {
     'fms': 'funding_market_sell',
     'ptt': 'profit_taken_today',
     'swp': 'switch_position',
+    'rsd': 'refill_stella_danli',
+    'rsl': 'refill_stella_leo',
     }
 
 COINBASE_COIN_LIST = ['LQTY', 'ENS', 'MATIC', 'IMX', 'WCFG', 'LINK', 'XYO', 'ERN', 'SAND', 'PERP', 'JASMY', 'API3', 'SUPER', 'LRC', 'NEAR', 'BICO', 'RLY', 'BTC', 'CLV', 'TIME', 'FET', 'DDX', 'DOGE', 'METIS', 'UST', 'REQ', 'ENJ', 'MINA', 'FIS', 'QNT', 'ATA', 'SHIB', 'C98', 'MDT', 'STG', 'GAL', 'FARM', 'NEST', 'TRAC', 'ZEN', 'GMT', 'AIOZ', 'DREP', 'POND', 'POLY', 'TRU', 'BTRST', 'FOX', 'XLM', 'INDEX', 'DYP', 'VGX', 'CHZ', 'STX', 'HBAR', 'POWR', 'DOT', 'WLUNA', 'OP', 'SPELL', 'XCN', 'MCO2', 'RNDR', 'FORT', 'AVAX', 'GNO', 'ETH', 'FIDA', 'SHPING', 'DESO', 'PAX', 'MEDIA', 'MASK', 'HFT', 'HOPR', 'APT', 'POLS', 'GALA', 'ELA', 'ALCX', 'MATH', 'BADGER', 'KSM', 'BIT', 'KRL', 'BOBA', 'PRQ', 'AUCTION', 'WAMPL', 'ORN', 'DIA', 'XRP', 'UPI', 'NCT', 'CTX', 'SUKU', 'RAD', 'ARPA', 'ADA', 'IDEX', 'ACH', 'QSP', 'APE', 'FLOW', 'COVAL', 'AXS', 'ROSE', 'LCX', 'SOL', 'BOND', 'ICP', 'SYLO', 'CRO', 'AGLD', 'ATOM', 'ASM']
