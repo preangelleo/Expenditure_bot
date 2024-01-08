@@ -107,7 +107,7 @@ SENTENCE_AS_PARAMETER_COMMAND_LIST = {
     'save_trivial_record': {"function": save_trivial_record, "description": "You need to input the information you want to be saved after this command, for example: /save_trivial_record I bought 1 BTC on Dec 1, 2023."},
     'search_trivial_records': {"function": search_trivial_records, "description": "You need to input the keywords you want to search after this command, for example: /search_trivial_records BTC"},
     'chatgpt': {"function": ask_gpt, "description": "You need to input a sentence after this command, for example: /chatgpt What is LLM?"},
-    'get_webhook_signature': get_webhook_signature,
+    'get_webhook_signature': {"function": get_webhook_signature, "description": "You need to input a sentence after this command, for example: /get_webhook_signature fms gmt"},
     }
 
 
