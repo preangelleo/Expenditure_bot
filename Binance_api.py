@@ -2933,7 +2933,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         symbol = df_balance.iloc[i]['symbol']
-        amount = df_balance.iloc[i]['executedQty']
+        amount = float(df_balance.iloc[i]['executedQty'])
         buy_price = float(df_balance.iloc[i]['price'])
         orderId = df_balance.iloc[i]['orderId']
         price = buy_price * (1 + float(target_profit))
@@ -2942,7 +2942,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
             if cancel_confirm: mark_limit_order_as_canceled_by_orderId(int(orderId), status=cancel_confirm['status'], table_name = 'binance_limit_sell_order')
             else: continue
         polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
-        amount = polished_parameters['amount']
+        # amount = polished_parameters['amount']
         price = polished_parameters['price']
         need_to_adjust = False
         try: data = binance_limit_sell(coin, amount, price)
