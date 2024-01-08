@@ -592,6 +592,8 @@ BOT_COMMAND_DICT = {
     'swp': 'switch_position',
     'rsd': 'refill_stella_danli',
     'rsl': 'refill_stella_leo',
+    'gws': 'get_webhook_signature',
+    'sign': 'get_webhook_signature',
     }
 
 COINBASE_COIN_LIST = ['LQTY', 'ENS', 'MATIC', 'IMX', 'WCFG', 'LINK', 'XYO', 'ERN', 'SAND', 'PERP', 'JASMY', 'API3', 'SUPER', 'LRC', 'NEAR', 'BICO', 'RLY', 'BTC', 'CLV', 'TIME', 'FET', 'DDX', 'DOGE', 'METIS', 'UST', 'REQ', 'ENJ', 'MINA', 'FIS', 'QNT', 'ATA', 'SHIB', 'C98', 'MDT', 'STG', 'GAL', 'FARM', 'NEST', 'TRAC', 'ZEN', 'GMT', 'AIOZ', 'DREP', 'POND', 'POLY', 'TRU', 'BTRST', 'FOX', 'XLM', 'INDEX', 'DYP', 'VGX', 'CHZ', 'STX', 'HBAR', 'POWR', 'DOT', 'WLUNA', 'OP', 'SPELL', 'XCN', 'MCO2', 'RNDR', 'FORT', 'AVAX', 'GNO', 'ETH', 'FIDA', 'SHPING', 'DESO', 'PAX', 'MEDIA', 'MASK', 'HFT', 'HOPR', 'APT', 'POLS', 'GALA', 'ELA', 'ALCX', 'MATH', 'BADGER', 'KSM', 'BIT', 'KRL', 'BOBA', 'PRQ', 'AUCTION', 'WAMPL', 'ORN', 'DIA', 'XRP', 'UPI', 'NCT', 'CTX', 'SUKU', 'RAD', 'ARPA', 'ADA', 'IDEX', 'ACH', 'QSP', 'APE', 'FLOW', 'COVAL', 'AXS', 'ROSE', 'LCX', 'SOL', 'BOND', 'ICP', 'SYLO', 'CRO', 'AGLD', 'ATOM', 'ASM']

@@ -158,5 +158,29 @@ def only_check_hot_coins(from_id = None):
     return binance_today_hot_coin(TRADING_VOLUME_LIMIT, tradingbot_status, 0)
 
 
+def get_webhook_signature(message, from_id=TG_BOT_OWNER_ID):
+    token = hash_md5(message)
+    data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
+    data_to_table(data, 'webhook_signature')
+    return send_msg(token, from_id)
+
+
+def validate_webhook_signature(token):
+    message = None
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT message FROM webhook_signature WHERE token = '{token}' AND is_used = 0")).fetchall())
+        if not df.empty: message = df['message'].values[0]
+    except: pass
+    return message
+
+
+def set_webhook_signature_used(token):
+    try: 
+        with engine.connect() as connection: connection.execute(text(f"UPDATE webhook_signature SET is_used = 1 WHERE token = '{token}'"))
+        return True
+    except: pass
+    return
+
+
 if __name__ == '__main__':
     print('Start running Trading_bot.py ...')

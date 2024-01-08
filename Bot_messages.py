@@ -107,6 +107,7 @@ SENTENCE_AS_PARAMETER_COMMAND_LIST = {
     'save_trivial_record': {"function": save_trivial_record, "description": "You need to input the information you want to be saved after this command, for example: /save_trivial_record I bought 1 BTC on Dec 1, 2023."},
     'search_trivial_records': {"function": search_trivial_records, "description": "You need to input the keywords you want to search after this command, for example: /search_trivial_records BTC"},
     'chatgpt': {"function": ask_gpt, "description": "You need to input a sentence after this command, for example: /chatgpt What is LLM?"},
+    'get_webhook_signature': get_webhook_signature,
     }
 
 
@@ -366,9 +367,7 @@ def handel_telegram_message_from_webhook_non_owner(message):
         send_msg(message_to_owner, TG_BOT_OWNER_ID)
         return
     
-
     return gemini_gpt(text_prompt, from_id)
-
 
 
 if __name__ == '__main__':
