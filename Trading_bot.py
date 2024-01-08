@@ -145,11 +145,13 @@ def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit 
     coin_in_positions_len = len(coin_in_positions)
     REMAINING_POSITIONS = POSITIONS_LIMIT - coin_in_positions_len
     if REMAINING_POSITIONS <= 0: return binance_today_hot_coin(TRADING_VOLUME_LIMIT,  tradingbot_status, coin_in_positions_len)
-
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Remaining positions: {REMAINING_POSITIONS}')
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions_len, coin_in_positions)
     if not today_hot_coin_dict: return 
-    for coin in today_hot_coin_dict: do_market_buy_one_unit(coin, chat_id)
+    for coin in today_hot_coin_dict: 
+        do_market_buy_one_unit(coin, chat_id)
+        try: binance_position_set_limit_sell(0.1, chat_id, coin)
+        except: pass
     return
 
 
