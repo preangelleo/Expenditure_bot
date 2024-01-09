@@ -8,6 +8,8 @@ CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
 positions_limit = get_position_limit()
 POSITIONS_LIMIT = positions_limit if positions_limit else int(INITIAL_FUND / CHECK_SIZE)
 
+CMC_NO_DATA = ['EUR', 'BEAMX']
+
 # from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
 def read_target_profit_default(from_id=None):
     with engine.connect() as connection: df_target_profit = pd.DataFrame(connection.execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
@@ -3399,7 +3401,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=0.05):
             return {'market_cap': int(market_cap), 'fully_diluted_market_cap': int(fully_diluted_market_cap), 'circulation_ratio': circulating_ratio, 'turnover_ratio': turnover_ratio, 'token_slug': token_info['slug'], 'current_price': current_price, 'coin_rank': coin_rank}
     except: return 
 
-
+# with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
 # Get the total supply of a given token and append the token info to the token_info dict
 def get_token_total_supply(coin):
     coin = coin.upper()
@@ -3537,7 +3539,59 @@ def update_get_token_total_supply():
         get_token_total_supply(coin)
 
 
+def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
+    global CMC_NO_DATA
+    df_ticker = pd.read_json(BINANCE_TICKER_URL)
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
+    if df_ticker.empty: return {}
+    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    try:
+        with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+        df_ticker_missed = df_ticker[~df_ticker['coin'].isin(df_token_info['coin'])]
+        for index, row in df_ticker_missed.iterrows():
+            coin = row['coin']
+            if coin in CMC_NO_DATA: continue
+            data = get_token_total_supply(coin)
+            if not data: 
+                CMC_NO_DATA.append(coin)
+                print(f"CMC_NO_DATA: {CMC_NO_DATA}")
+                continue
+            data = pd.DataFrame([data])  # Convert data to DataFrame
+            if data.empty: CMC_NO_DATA.append(coin)
+            else: df_token_info = pd.concat([df_token_info, data], ignore_index=True)
+            time.sleep(1)
+    except: 
+        for index, row in df_ticker.iterrows():
+            time.sleep(1)
+            coin = row['coin']
+            get_token_total_supply(coin)
+        with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+    df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
+    df_merge = df_merge[df_merge['is_ignore'] != 1]
+    if df_merge.empty: return {}
+    df_merge = df_merge[df_merge['is_stablecoin'] != 1]
+    if df_merge.empty: return {}
+    df_merge['marketcap'] = df_merge['total_supply'] * df_merge['lastPrice']
+    df_merge['turnover_ratio'] = df_merge['quoteVolume'] / df_merge['marketcap']
+    df_merge['circulating_ratio'] = df_merge['circulating_supply'] / df_merge['total_supply']
+    df_merge = df_merge[df_merge['circulating_ratio'] > CIRCULATION_RATIO]
+    if df_merge.empty: return {}
+    df_merge = df_merge[df_merge['marketcap'] < FULLLY_DILUTED_MARKET_CAP_UP_LIMIT]
+    if df_merge.empty: return {}
+    df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
+    df_merge = df_merge.head(int(head))
+    if df_merge.empty: return {}
+    # Make a dict with key as coin and value as turnover_ratio
+    turnover_ratio_dict = df_merge.set_index('coin')['turnover_ratio'].to_dict()
+    reply_string = '\n'.join([f"{k}: {format_number(v)}" for k, v in turnover_ratio_dict.items()])
+    send_msg(reply_string, from_id)
+    return turnover_ratio_dict
+
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
+    global CMC_NO_DATA
     remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
     with engine.connect() as connection:
         try: previous_ticker = pd.DataFrame(connection.execute(text('SELECT * FROM previous_ticker')).fetchall())
@@ -3560,11 +3614,24 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     try:
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
+        df_ticker_missed = df_ticker[~df_ticker['coin'].isin(df_token_info['coin'])]
+        for index, row in df_ticker_missed.iterrows():
+            coin = row['coin']
+            if coin in CMC_NO_DATA: continue
+            data = get_token_total_supply(coin)
+            if not data: 
+                CMC_NO_DATA.append(coin)
+                print(f"CMC_NO_DATA: {CMC_NO_DATA}")
+                continue
+            data = pd.DataFrame([data])  # Convert data to DataFrame
+            if data.empty: CMC_NO_DATA.append(coin)
+            else: df_token_info = pd.concat([df_token_info, data], ignore_index=True)
+            time.sleep(1)
     except: 
         for index, row in df_ticker.iterrows():
-            time.sleep(1)
             coin = row['coin']
             get_token_total_supply(coin)
+            time.sleep(1)
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_merge = df_merge[df_merge['is_ignore'] != 1]
