@@ -2097,9 +2097,52 @@ def analyze_symbol(symbol: str):
             if result['short']: break
             if not result['long'] and interval in ['5m', '15m']: break
             if result['long']: good_to_buy += 1
-            target_profit = max(target_profit, result['target_profit'])
-            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+            if good_to_buy >= 3: 
+                current_price = float(df['Close'].iloc[-1])
+                if current_price > 0:
+                    nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
+                    target_profit = (nearest_resistance_level - current_price) / current_price
+                    if target_profit > 0.03: 
+                        deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
+                        if deviation_percentage < 0.05: return {'long': True, 'short': False, 'target_profit': target_profit}
     return {'long': False, 'short': False, 'target_profit': 0.01}
+
+
+def calculate_vwap(df):
+    # Calculate the volume-weighted average price for each unique price level
+    vwap = (df['High'] * df['Volume']).groupby(df['High']).sum() / df['Volume'].groupby(df['High']).sum()
+    return vwap
+
+def calculate_resistance_support(df, gap=0.2):
+    # Calculate the volume-weighted average price
+    vwap = calculate_vwap(df)
+    # Sort the vwap series
+    vwap_sorted = vwap.sort_values()
+    # Initialize the list of resistance/support levels with the first price
+    levels = [vwap_sorted.iloc[0]]
+    # Iterate over the sorted prices
+    for price in vwap_sorted:
+        # If the current price is more than (1 + gap) times the last level, add it to the list
+        if price > levels[-1] * (1 + gap):
+            levels.append(price)
+    return levels
+'''[0.1412, 0.1695, 0.2048, 0.24600000000000002, 0.2953, 0.35690000000000005, 0.4353]'''
+
+
+# Define a function to get resistance_support_levels and compare with current price, findout the nearest resistance and support level
+def get_resistance_support_levels(df, current_price):
+    try: resistance_support_levels = calculate_resistance_support(df)
+    except: resistance_support_levels = []
+    if not resistance_support_levels: resistance_support_levels = [current_price]
+    # From resistance_support_levels list pick up all of the prices that are higher than current_price
+    resistance_levels = [price for price in resistance_support_levels if price >= current_price]
+    # From resistance_support_levels list pick up all of the prices that are lower than current_price
+    support_levels = [price for price in resistance_support_levels if price <= current_price]
+    # Find out the nearest resistance level
+    nearest_resistance_level = min(resistance_levels) if resistance_levels else current_price
+    # Find out the nearest support level
+    nearest_support_level = max(support_levels) if support_levels else current_price
+    return float(nearest_resistance_level), float(nearest_support_level)
 
 
 def analyze_symbol_prudently(symbol: str):
@@ -2115,7 +2158,14 @@ def analyze_symbol_prudently(symbol: str):
             if result['short']: good_to_short += 1
             elif result['long']: good_to_buy += 1
             target_profit = max(target_profit, result['target_profit'])
-            if good_to_buy >= 3: return {'long': True, 'short': False, 'target_profit': target_profit}
+            if good_to_buy >= 3: 
+                current_price = float(df['Close'].iloc[-1])
+                if current_price > 0:
+                    nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
+                    target_profit = (nearest_resistance_level - current_price) / current_price
+                    if target_profit > 0.03: 
+                        deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
+                        if deviation_percentage < 0.05: return {'long': True, 'short': False, 'target_profit': target_profit}
             if good_to_short >= 3: return {'long': False, 'short': True, 'target_profit': target_profit}
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
@@ -3493,7 +3543,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     trading_hours = hours_passed_since_utc_0 + 1
     trading_volume_limit = simulated_quoteVolume_per_hour * trading_hours
     df_ticker = df_ticker[(df_ticker['quoteVolume'] > trading_volume_limit) & (df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
-    if df_ticker.empty: return []
+    if df_ticker.empty: return {}
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     try:
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
@@ -3505,43 +3555,46 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_merge = df_merge[df_merge['is_ignore'] != 1]
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     df_merge = df_merge[df_merge['is_stablecoin'] != 1]
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     if not tradingbot_status: 
         df_merge = df_merge[df_merge['is_white'] == 1]
-        if df_merge.empty: return []
+        if df_merge.empty: return {}
         try: coinbase_coin_list = get_coin_list_from_trading_pairs()
         except: coinbase_coin_list = COINBASE_COIN_LIST
         # Keep only the coins in COINBASE_TRADING_LIST
         df_merge = df_merge[df_merge['coin'].isin(coinbase_coin_list)]
-        if df_merge.empty: return []
+        if df_merge.empty: return {}
     df_merge['marketcap'] = df_merge['total_supply'] * df_merge['lastPrice']
     df_merge['turnover_ratio'] = df_merge['quoteVolume'] / df_merge['marketcap']
     df_merge['circulating_ratio'] = df_merge['circulating_supply'] / df_merge['total_supply']
     df_merge = df_merge[df_merge['circulating_ratio'] > CIRCULATION_RATIO]
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     df_merge = df_merge[df_merge['marketcap'] < FULLLY_DILUTED_MARKET_CAP_UP_LIMIT]
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     hotcoin_list_of_today = get_hot_coin_list_of_today()
     df_merge = df_merge[~df_merge['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_merge
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     df_merge = df_merge[~df_merge['coin'].isin(coin_in_positions)] if coin_in_positions else df_merge
-    if df_merge.empty: return []
+    if df_merge.empty: return {}
     df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
     df_merge = df_merge.head(30)
     df_ticker = df_ticker[df_ticker['coin'].isin(df_merge['coin'])]
-    if df_ticker.empty: return []
+    if df_ticker.empty: return {}
     today_hot_coin_list = df_ticker['coin'].values.tolist()
     print(f"coinlist_after_cmc: {' '.join(today_hot_coin_list)}")
-    final_hotcoins_list = []
+    final_hotcoins_dict = {}
     for index, row in df_ticker.iterrows():
         if remainning_positions <= 0: break
         coin = row['coin']
-        long_or_short = analyze_symbol(coin)
-        long = long_or_short['long']
+        try: long_or_short = analyze_symbol(coin)
+        except: continue
+        long = long_or_short.get('long')
         if not long: continue
-        final_hotcoins_list.append(coin)
+        target_profit = long_or_short.get('target_profit')
+        if not target_profit: continue
+        final_hotcoins_dict[coin] = target_profit
         remainning_positions -= 1
         price = row['lastPrice']
         hot_coin_history = {
@@ -3552,7 +3605,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         data_to_table(hot_coin_history, 'hot_coins_history')
         reply_string = f"{coin} | {format_number(price)}"
         broadcast_text(reply_string)
-    return final_hotcoins_list
+    return final_hotcoins_dict
 
 
 # Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
