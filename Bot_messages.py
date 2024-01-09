@@ -27,6 +27,7 @@ def set_commands(from_id=TG_BOT_OWNER_ID):
 
 NONE_PARAMETER_COMMAND_LIST = {
     'set_bot_menu': set_commands,
+    'get_top_turnover': top_turnover,
     'get_ignore_list': get_ignore_list, 
     'get_white_list': get_white_list,
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
