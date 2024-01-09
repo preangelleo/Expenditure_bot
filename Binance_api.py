@@ -2170,6 +2170,19 @@ def analyze_symbol_prudently(symbol: str):
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
+def get_resistant_price(symbol: str, interval = '4h'):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    df = get_kline_data(symbol, interval)
+    if not df.empty: 
+        current_price = float(df['Close'].iloc[-1])
+        if current_price > 0:
+            nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
+            target_profit = (nearest_resistance_level - current_price) / current_price
+            deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
+            return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
+    return
+
+
 def weekly_rsi_over_high(symbol):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     interval = '1w'
