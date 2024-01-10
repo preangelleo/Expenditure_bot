@@ -3658,7 +3658,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     hotcoin_list_of_today = get_hot_coin_list_of_today()
     df_merge = df_merge[~df_merge['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_merge
     if df_merge.empty: return {}
-    df_merge = df_merge[~df_merge['coin'].isin(coin_in_positions)] if coin_in_positions else df_merge
+    df_funding_position = get_df_from_position_table(None, 'binance_funding_positions')
+    if not df_funding_position.empty: coin_in_positions += df_funding_position['coin'].values.tolist()
+    df_merge = df_merge[~df_merge['coin'].isin(set(coin_in_positions))] if coin_in_positions else df_merge
     if df_merge.empty: return {}
     df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
     df_merge = df_merge.head(30)
