@@ -2745,7 +2745,8 @@ def daily_profit_take_last_check():
     new_data = {
         'date': datetime.now().strftime('%Y-%m-%d'),
         'profit': today_realized_profit,
-        'coinlist': '\n'.join(today_realized_profit_coinlist) if today_realized_profit_coinlist else 'None'
+        'coinlist': '\n'.join(today_realized_profit_coinlist) if today_realized_profit_coinlist else 'None',
+        'update_timestamp': int(datetime.now().timestamp() * 1000)
     }
     
     data_to_table(new_data, 'daily_profit_take')
@@ -2755,7 +2756,29 @@ def daily_profit_take_last_check():
 
     return 
 
-
+# Define a function to change the NaN value of update_timestamp in daily_profit_take table to the timestamp in ms of 11pm of the date
+def daily_profit_take_update_timestamp():
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take')).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return print('No data in daily_profit_take table')
+    df['update_timestamp'] = df['update_timestamp'].fillna(0)
+    for index, row in df.iterrows():
+        if row['update_timestamp'] == 0:
+            date = row['date']
+            date = datetime.strptime(date, '%Y-%m-%d')
+            date = date.replace(hour=23, minute=0, second=0, microsecond=0)
+            update_timestamp = int(date.timestamp() * 1000)
+            with engine.connect() as connection:
+                try:
+                    # Execute the query with the updated update_id
+                    connection.execute(text(f"UPDATE daily_profit_take SET update_timestamp = :update_timestamp WHERE date = :date"), {'update_timestamp': update_timestamp, 'date': row['date']})
+                    connection.commit()
+                    print(f"Successfully updated update_timestamp for date: {row['date']}")
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    connection.rollback()
+    return
 
 def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'):
     df = pd.DataFrame()

@@ -249,9 +249,7 @@ def display_daily_profit_take(engine):
             total_profit_take_of_this_month = df_today[df_today['date'].apply(lambda x: x.split('-')[1] == str(today_month))]['profit'].sum()
             st.write(f"Total Profit Take of This Year: {format_number(total_profit_take_of_this_year)} | Total Profit Take of This Month: {format_number(total_profit_take_of_this_month)}")
             df_today['profit'] = df_today['profit'].apply(lambda x: int(x))
-            # Drop update_timestamp column
-            df_today.drop(['update_timestamp'], axis=1, inplace=True)
-            # df_today['update_timestamp'] = df_today['update_timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%H:%M'))
+            df_today['update_timestamp'] = df_today['update_timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%H:%M'))
             st.table(df_today)
 
 
