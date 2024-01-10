@@ -3599,6 +3599,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    # If 'UP' or 'DOWN' in symbol, ignore it
+    df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
     with engine.connect() as connection: df_ticker.to_sql('previous_ticker', connection, if_exists='replace', index=False)
     if not previous_ticker.empty:
         df_merge = pd.merge(df_ticker, previous_ticker, on='symbol', how='left')
@@ -3660,10 +3662,9 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     if df_merge.empty: return {}
     df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
     df_merge = df_merge.head(30)
-    df_ticker = df_ticker[df_ticker['coin'].isin(df_merge['coin'])]
-    if df_ticker.empty: return {}
+    df_ticker = df_merge.loc[:, ['coin', 'lastPrice']]
     today_hot_coin_list = df_ticker['coin'].values.tolist()
-    print(f"coinlist_after_cmc: {' '.join(today_hot_coin_list)}")
+    print(f"TOP 30 coins sorted by turnover_ratio: {' '.join(today_hot_coin_list)}")
     final_hotcoins_dict = {}
     for index, row in df_ticker.iterrows():
         if remainning_positions <= 0: break
