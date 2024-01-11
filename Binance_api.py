@@ -3388,7 +3388,7 @@ def get_hot_coin_list_of_today():
     hotcoin_list = []
     today_date = datetime.now().strftime('%Y-%m-%d')
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coins_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM hot_coins_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
     hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
@@ -4168,6 +4168,111 @@ def rsi_bottom_coins():
         send_msg(f"RSI Bottom Coins {today_date}: \n\n{', '.join(final_bottom_list)}", TG_BOT_OWNER_ID)
         send_email(f'RSI Bottom Coins {today_date}', '\n'.join(reply_msg_list), GMAIL_ADDRESS_MAIN)
     return final_bottom_list
+
+
+def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
+    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
+    if not today_hot_coin_dict: return 
+    today_hot_coinlist = list(today_hot_coin_dict.keys())
+    try: 
+        with engine.connect() as connection: df_balance = pd.DataFrame(connection.execute(text(f'SELECT coin, orderId, price, executedQty, update_id FROM {table_name} WHERE is_closed = 0')).fetchall())
+    except: df_balance = pd.DataFrame()
+    if df_balance.empty: return print('No open position for all coins')
+
+    ''' df_balance
+        coin     orderId       price      executedQty  update_id
+    0   ATOM  2594994242   12.269441     815.03000000         50
+    1    APE  1563146551    1.786000    5599.10000000         58
+    2   COMP  1259040501   66.115741     151.24900000         59
+    3   GALA  2192893079    0.033265  300613.00000000         60
+    4  MAGIC   536447518    1.194287    8373.10000000         64
+    5    GRT  1394304791    0.223840   44674.00000000         78
+    6   KP3R   299940454  117.460950      85.13000000         79
+    7   DYDX  1158058662    3.029887    3300.45000000         81'''
+
+    remain_position_length = POSITIONS_LIMIT - df_balance.shape[0]
+    position_list = df_balance['coin'].tolist()
+    original_remain_position_length = remain_position_length
+
+    # get current price for all coins
+    try: df = get_token_price_table()
+    except: df = pd.DataFrame()
+    if df.empty: return print('Failed to fetch price info')
+
+    # merge df_balance and df based on coin since df and df_balance all have coin column
+    df_balance = pd.merge(df_balance, df, on='coin', how='left')
+    # convert df_balance['executedQty'] to float and calculate profit
+    df_balance['executedQty'] = df_balance['executedQty'].astype(float)
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
+
+    ''' df_balance
+        coin     orderId       price  executedQty  update_id     symbol  lastPrice      profit
+    7   DYDX  1158058662    3.029887     3300.450         81   DYDXUSDT    3.01700   -42.53330
+    4  MAGIC   536447518    1.194287     8373.100         64  MAGICUSDT    1.15770  -306.34629
+    1    APE  1563146551    1.786000     5599.100         58    APEUSDT    1.69600  -503.91900
+    5    GRT  1394304791    0.223840    44674.000         78    GRTUSDT    0.21030  -604.87400
+    3   GALA  2192893079    0.033265   300613.000         60   GALAUSDT    0.03108  -656.91712
+    0   ATOM  2594994242   12.269441      815.030         50   ATOMUSDT   11.12700  -931.12393
+    2   COMP  1259040501   66.115741      151.249         59   COMPUSDT   59.09000 -1062.63634
+    6   KP3R   299940454  117.460950       85.130         79   KP3RUSDT  100.43000 -1449.84480'''
+
+    df_balance = df_balance.sort_values(by='profit', ascending=False)
+    df_balance = df_balance[df_balance['profit'] > grid_profit_target]
+    if df_balance.empty:
+        if not original_remain_position_length: return
+        profit_coinlist = []
+        mutual_coinlist = []
+        lost_coinlist = position_list
+    else:
+        remain_position_length += df_balance.shape[0]
+        profit_coinlist = df_balance['coin'].tolist()
+        lost_coinlist = [coin for coin in position_list if coin not in profit_coinlist]
+        mutual_coinlist = [coin for coin in profit_coinlist if coin in today_hot_coinlist]
+    
+    remain_position_length -= len(mutual_coinlist)
+    good_to_sell_balance_df = df_balance[~df_balance['coin'].isin(mutual_coinlist)]
+
+    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
+
+    ''' df_openorders
+        update_id     orderId  manual_order  target_profit
+    0         60  2194428361           0.0       0.010000
+    1         64   537758433           0.0       0.010000
+    2         59  1264191411           1.0       0.150000
+    3         50  2614183942           1.0       0.200000
+    4         58  1567072325           1.0       0.400000
+    5         78  1394304988           0.0       0.074970
+    6         79   299940682           0.0       0.084427
+    7         81  1158062337           1.0       0.020000
+    '''
+
+    for coin in today_hot_coinlist: 
+        if remain_position_length <= 0: break
+        if coin in lost_coinlist: continue
+        if coin in mutual_coinlist: continue
+        target_profit = today_hot_coin_dict[coin]
+        if not target_profit or target_profit < 0.03: continue
+        if original_remain_position_length <= 0: 
+            # Sell the most profitable coin and release the position for new hot coin, before sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
+            coin_to_sell = good_to_sell_balance_df['coin'].values[0]
+            update_id = int(good_to_sell_balance_df['update_id'].values[0])
+            df_openorders_coin = df_openorders[df_openorders['update_id'] == update_id]
+            if not df_openorders_coin.empty:
+                coin_limit_orderId = int(df_openorders_coin['orderId'].values[0])
+                try: binance_cancel_order_by_orderId(coin_to_sell, coin_limit_orderId)
+                except Exception as e: print(f"Failed to cancel order: {coin_limit_orderId}, error: {e}")
+                try: mark_limit_order_as_canceled_by_orderId(coin_limit_orderId)
+                except Exception as e: print(f"Failed to mark order as canceled: {coin_limit_orderId}, error: {e}")
+            do_market_sell(coin_to_sell, chat_id)
+        try:
+            do_market_buy_one_unit(coin, chat_id)
+            binance_position_set_limit_sell(target_profit, chat_id, coin)
+            remain_position_length -= 1
+            original_remain_position_length -= 1
+        except: continue
+
+    return 
 
 
 if __name__ == '__main__':
