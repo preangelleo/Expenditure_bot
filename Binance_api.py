@@ -1050,6 +1050,7 @@ def handle_webhook_confirmation(token: str, from_id=TG_BOT_OWNER_ID):
 def refill_stella_danli(usdt_amount, from_id=TG_BOT_OWNER_ID):
     return binance_pay_usdt(usdt_amount, os.getenv('STELLA_DANLI_ADDRESS'), from_id)
 
+
 def refill_1000_danli(from_id=None):
     if from_id: return binance_pay_usdt(1000, os.getenv('STELLA_DANLI_ADDRESS'), from_id)
 
@@ -1071,7 +1072,17 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
 
     usdt_amount = round(usdt_amount, 2)
 
-    if funding_main_transfer_with_check_and_send('USDT', usdt_amount, from_id): return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
+    if funding_main_transfer_with_check_and_send('USDT', usdt_amount, from_id): 
+        data = {
+            'coin': 'USDT',
+            'amount': usdt_amount,
+            'network': 'TRX',
+            'to_address': target_address,
+            'from_id': from_id,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M')
+        }
+        data_to_table(data, 'binance_pay_records')
+        return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
     # Get ONG price
     ong_price = get_token_price('ONG')
@@ -1096,6 +1107,17 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
     if not data: return send_msg(f'Failed to market sell ONG for USDT.', from_id)
     del data['fills']
     data_to_table(data, 'binance_ong_sell_history')
+
+    data = {
+        'coin': 'USDT',
+        'amount': usdt_amount,
+        'network': 'TRX',
+        'to_address': target_address,
+        'from_id': from_id,
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M')
+    }
+    data_to_table(data, 'binance_pay_records')
+
     return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
 
