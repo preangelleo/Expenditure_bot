@@ -2839,7 +2839,18 @@ def get_latest_row_from_position_table(coin, table_name='binance_position_buy'):
     return df
 
 
+def check_position_duration_for_ignore_list(orderId, time_limit = 3):
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, transactTime FROM binance_position_buy WHERE orderId = :orderId AND is_closed = 0'), {'orderId': int(orderId)}).fetchall())
+    if df.empty: return print(f"No position for orderId: {orderId}")
+    start_timestampt = df['transactTime'].values[0]
+    duration = (int(time.time() * 1000) - start_timestampt) / 1000 / 60 / 60 / 24
+    if duration >= time_limit: set_coin_ignore(df['coin'].values[0])
+    return
+
+
 def close_position_status_by_order_id(order_id, table_name='binance_position_buy'):
+    try: check_position_duration_for_ignore_list(order_id)
+    except: pass
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
