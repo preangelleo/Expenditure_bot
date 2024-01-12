@@ -2111,8 +2111,7 @@ def analyze_data(df, interval):
 def analyze_symbol(symbol: str):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, target_profit = 0, 0
-    for interval in ['5m', '15m', '1h', '4h']:
-        if interval in ['4h']: print(f"Symbol: {symbol}, Interval: {interval}")
+    for interval in ['5m', '4h']:
         time.sleep(1)
         df = get_kline_data(symbol, interval)
         if not df.empty: 
@@ -2121,7 +2120,7 @@ def analyze_symbol(symbol: str):
             if result['short']: break
             if not result['long'] and interval in ['5m', '15m']: break
             if result['long']: good_to_buy += 1
-            if good_to_buy > 3: 
+            if good_to_buy > 1: 
                 current_price = float(df['Close'].iloc[-1])
                 if current_price > 0:
                     nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
