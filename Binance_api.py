@@ -3699,6 +3699,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         except: coinbase_coin_list = COINBASE_COIN_LIST
         df_merge = df_merge[df_merge['coin'].isin(coinbase_coin_list)]
         if df_merge.empty: return {}
+    df_merge = df_merge.copy()
     df_merge['marketcap'] = df_merge['total_supply'] * df_merge['lastPrice']
     df_merge['turnover_ratio'] = df_merge['quoteVolume'] / df_merge['marketcap']
     df_merge['circulating_ratio'] = df_merge['circulating_supply'] / df_merge['total_supply']
