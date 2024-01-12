@@ -2087,7 +2087,6 @@ def analyze_data(df, interval):
     df['SMA_34'] = calculate_sma(df['Close'], 34)
     df['SMA_55'] = calculate_sma(df['Close'], 55)
     df['SMA_89'] = calculate_sma(df['Close'], 89)
-    max_close_price = df['High'].max()
     current_price = df['Close'].iloc[-1]
     condition_1d = df['SMA_55'].iloc[-1] > df['SMA_89'].iloc[-1]
     condition_4h = df['SMA_34'].iloc[-1] > df['SMA_55'].iloc[-1]
@@ -2095,32 +2094,23 @@ def analyze_data(df, interval):
     condition_15m = df['SMA_13'].iloc[-1] > df['SMA_21'].iloc[-1]
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
-    if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: 
-        max_sma = max(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
-        deviation_percentage = (current_price - max_sma) / max_sma
-        deviation_percentage = float(deviation_percentage)
-        if 0.1 > deviation_percentage > 0 and not (interval == '4h' and current_price > max_close_price * 0.9): return {'interval': interval, 'target_profit': 0.1 - 0.01 - deviation_percentage, 'long': True, 'short': False}
-    if general_condition == -1 and not current_condition and df['RSI'].iloc[-1] < df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < df['RSI_SMA'].iloc[-1]:
-        min_sma = min(df['SMA_13'].iloc[-1], df['SMA_21'].iloc[-1], df['SMA_34'].iloc[-1], df['SMA_55'].iloc[-1], df['SMA_89'].iloc[-1])
-        deviation_percentage = (current_price - min_sma) / min_sma
-        deviation_percentage = float(deviation_percentage)
-        if 0 > deviation_percentage > -0.1: return {'interval': interval, 'target_profit': 0.1 - 0.01 + deviation_percentage, 'long': False, 'short': True}
+    if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: return {'interval': interval, 'long': True, 'short': False}
     else: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
 
     
-def analyze_symbol(symbol: str):
+def analyze_symbol(symbol: str, interval_list = ['5m', '15m', '1h', '4h']):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     good_to_buy, target_profit = 0, 0
-    for interval in ['5m', '4h']:
+    interval_list_length = len(interval_list)
+    for interval in interval_list:
         time.sleep(1)
         df = get_kline_data(symbol, interval)
         if not df.empty: 
             result = analyze_data(df, interval)
             if not result: continue
-            if result['short']: break
-            if not result['long'] and interval in ['5m', '15m']: break
-            if result['long']: good_to_buy += 1
-            if good_to_buy > 1: 
+            if not result['long']: break
+            good_to_buy += 1
+            if good_to_buy >= interval_list_length: 
                 current_price = float(df['Close'].iloc[-1])
                 if current_price > 0:
                     nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
