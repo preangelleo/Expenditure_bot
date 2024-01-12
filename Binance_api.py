@@ -3646,9 +3646,8 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     return turnover_ratio_dict
 
 
-def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, coin_in_positions_len = 0, coin_in_positions = []):
+def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
     global CMC_NO_DATA
-    remainning_positions = POSITIONS_LIMIT - coin_in_positions_len
     with engine.connect() as connection:
         try: previous_ticker = pd.DataFrame(connection.execute(text('SELECT * FROM previous_ticker')).fetchall())
         except: previous_ticker = pd.DataFrame()
@@ -3692,31 +3691,18 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
             time.sleep(1)
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
-    df_merge = df_merge[df_merge['is_ignore'] != 1]
+    # Select from df_merge where is_ignore = 0, is_stablecoin = 0, is_white = 1
+    df_merge = df_merge.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_merge.empty: return {}
-    df_merge = df_merge[df_merge['is_stablecoin'] != 1]
-    if df_merge.empty: return {}
-    if not tradingbot_status: 
-        df_merge = df_merge[df_merge['is_white'] == 1]
-        if df_merge.empty: return {}
+    if not tradingbot_status:
         try: coinbase_coin_list = get_coin_list_from_trading_pairs()
         except: coinbase_coin_list = COINBASE_COIN_LIST
-        # Keep only the coins in COINBASE_TRADING_LIST
         df_merge = df_merge[df_merge['coin'].isin(coinbase_coin_list)]
         if df_merge.empty: return {}
     df_merge['marketcap'] = df_merge['total_supply'] * df_merge['lastPrice']
     df_merge['turnover_ratio'] = df_merge['quoteVolume'] / df_merge['marketcap']
     df_merge['circulating_ratio'] = df_merge['circulating_supply'] / df_merge['total_supply']
-    df_merge = df_merge[df_merge['circulating_ratio'] > CIRCULATION_RATIO]
-    if df_merge.empty: return {}
-    df_merge = df_merge[df_merge['marketcap'] < FULLLY_DILUTED_MARKET_CAP_UP_LIMIT]
-    if df_merge.empty: return {}
-    hotcoin_list_of_today = get_hot_coin_list_of_today()
-    df_merge = df_merge[~df_merge['coin'].isin(hotcoin_list_of_today)] if hotcoin_list_of_today else df_merge
-    if df_merge.empty: return {}
-    df_funding_position = get_df_from_position_table(None, 'binance_funding_positions')
-    if not df_funding_position.empty: coin_in_positions += df_funding_position['coin'].values.tolist()
-    df_merge = df_merge[~df_merge['coin'].isin(set(coin_in_positions))] if coin_in_positions else df_merge
+    df_merge = df_merge.query('circulating_ratio > @CIRCULATION_RATIO and marketcap < @FULLLY_DILUTED_MARKET_CAP_UP_LIMIT')
     if df_merge.empty: return {}
     df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
     df_merge = df_merge.head(30)
@@ -3724,6 +3710,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     today_hot_coin_list = df_ticker['coin'].values.tolist()
     print(f"TOP 30 coins sorted by turnover_ratio: {' '.join(today_hot_coin_list)}")
     final_hotcoins_dict = {}
+    remainning_positions = 10
     for index, row in df_ticker.iterrows():
         if remainning_positions <= 0: break
         coin = row['coin']
@@ -4170,6 +4157,31 @@ def rsi_bottom_coins():
     return final_bottom_list
 
 
+def get_current_positions_from_other_tables():
+    coin_in_positions = []
+    try:
+        df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
+        df_limit_buy_order = get_open_limit_orders(None, 'binance_limit_buy_order')
+        df_funding_position = get_df_from_position_table(None, 'binance_funding_positions')
+        if not df_manual_position.empty: coin_in_positions += df_manual_position['coin'].values.tolist()
+        if not df_funding_position.empty: coin_in_positions += df_funding_position['coin'].values.tolist()
+        if not df_limit_buy_order.empty: 
+            df_limit_buy_order['coin'] = df_limit_buy_order['symbol'].apply(lambda x: x[:-4])
+            coin_in_positions += df_limit_buy_order['coin'].values.tolist()
+    except: pass
+    coin_in_positions = list(set(coin_in_positions))
+    return coin_in_positions
+
+
+def get_current_positions_from_all_tables(from_id = None):
+    coin_in_positions = get_current_positions_from_other_tables()
+    df = get_df_from_position_table(None, 'binance_position_buy')
+    if not df.empty: coin_in_positions += df['coin'].values.tolist()
+    coin_in_positions = list(set(coin_in_positions))
+    if from_id: send_msg(f"Current Positions: \n{', '.join(coin_in_positions)}", from_id)
+    return coin_in_positions
+
+
 def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID):
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
@@ -4246,11 +4258,13 @@ def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLU
     6         79   299940682           0.0       0.084427
     7         81  1158062337           1.0       0.020000
     '''
+    
+    in_positions = get_current_positions_from_other_tables()
+    coins_should_ignore = in_positions + mutual_coinlist + lost_coinlist
 
     for coin in today_hot_coinlist: 
         if remain_position_length <= 0: break
-        if coin in lost_coinlist: continue
-        if coin in mutual_coinlist: continue
+        if coin in coins_should_ignore: continue
         target_profit = today_hot_coin_dict[coin]
         if not target_profit or target_profit < 0.03: continue
         if original_remain_position_length <= 0: 

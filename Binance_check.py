@@ -13,10 +13,6 @@ if __name__ == '__main__':
     try: current_bot_status = trading_bot_switch_status()
     except: pass
 
-    # chat_id = TG_BOT_OWNER_ID 
-    # try: binance_today_hot_coins_check(chat_id, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status)
-    # except: pass
-
     try: grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID)
     except: pass
 

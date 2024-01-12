@@ -130,36 +130,9 @@ def is_coin_recently_listed(symbol: str, days=7):
     return True
 
 
-def binance_today_hot_coins_check(chat_id=TG_BOT_OWNER_ID, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
-    coin_in_positions = []
-    try:
-        df_auto_position = get_df_from_position_table(None, 'binance_position_buy')
-        df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
-        df_limit_buy_order = get_open_limit_orders(None, 'binance_limit_buy_order')
-        if not df_auto_position.empty: coin_in_positions = df_auto_position['coin'].values.tolist()
-        if not df_manual_position.empty: coin_in_positions += df_manual_position['coin'].values.tolist()
-        if not df_limit_buy_order.empty: 
-            df_limit_buy_order['coin'] = df_limit_buy_order['symbol'].apply(lambda x: x[:-4])
-            coin_in_positions += df_limit_buy_order['coin'].values.tolist()
-    except: pass
-    coin_in_positions_len = len(coin_in_positions)
-    REMAINING_POSITIONS = POSITIONS_LIMIT - coin_in_positions_len
-    if REMAINING_POSITIONS <= 0: return binance_today_hot_coin(TRADING_VOLUME_LIMIT,  tradingbot_status, coin_in_positions_len)
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Remaining positions: {REMAINING_POSITIONS}')
-    today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status, coin_in_positions_len, coin_in_positions)
-    if not today_hot_coin_dict: return 
-    for coin in today_hot_coin_dict: 
-        target_profit = today_hot_coin_dict[coin]
-        if not target_profit or target_profit < 0.03: continue
-        do_market_buy_one_unit(coin, chat_id)
-        try: binance_position_set_limit_sell(target_profit, chat_id, coin)
-        except: pass
-    return
-
-
 def only_check_hot_coins(from_id = None):
     tradingbot_status = trading_bot_switch_status()
-    return binance_today_hot_coin(TRADING_VOLUME_LIMIT, tradingbot_status, 0)
+    return binance_today_hot_coin(TRADING_VOLUME_LIMIT, tradingbot_status)
 
 
 def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
