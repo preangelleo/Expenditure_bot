@@ -3684,7 +3684,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_merge = df_merge.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_merge.empty: return {}
     if not tradingbot_status:
-        try: coinbase_coin_list = get_coin_list_from_trading_pairs()
+        try: coinbase_coin_list = read_coinbase_coin_list()
         except: coinbase_coin_list = COINBASE_COIN_LIST
         df_merge = df_merge[df_merge['coin'].isin(coinbase_coin_list)]
         if df_merge.empty: return {}

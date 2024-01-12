@@ -1136,7 +1136,22 @@ def get_coin_list_from_trading_pairs():
         # keep only the USDT pair
         if pair.endswith('-USDT'): coin_list.append(pair.split('-')[0])
     coin_list = list(set(coin_list))
+    # Save to table
+    with engine.connect() as connection: pd.DataFrame(coin_list).to_sql('coinbase_coin_list', connection, if_exists='replace', index=False)
     return coin_list
+
+
+# Read coinbase_coin_list and get the coin list
+def read_coinbase_coin_list():
+    coin_list = []
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM coinbase_coin_list')).fetchall())
+        if not df.empty: 
+            coin_list = df.iloc[:, 0].values.tolist()
+            coin_list = list(set(coin_list))
+    except: pass
+    return coin_list
+
 
 def get_symbol_list_from_trading_pairs():
     trading_pairs = get_trading_pairs_from_coinbase()
@@ -1145,6 +1160,7 @@ def get_symbol_list_from_trading_pairs():
         # keep only the USDT pair
         if pair.endswith('-USDT'): symbol_list.append(pair)
     return symbol_list
+
 
 # NOT SUCCESSFUL
 def coinbase_market_buy_order(product_id, funds = '10000'):

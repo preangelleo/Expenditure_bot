@@ -29,5 +29,8 @@ if __name__ == '__main__':
     try: rsi_bottom_coins()
     except Exception as e: print(f'rsi_bottom_coins() error:\n\n{e}\n\n')
 
+    try: get_coin_list_from_trading_pairs()
+    except Exception as e: print(f'get_coin_list_from_trading_pairs() error:\n\n{e}\n\n')
+
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
