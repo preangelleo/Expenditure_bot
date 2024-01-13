@@ -2837,10 +2837,10 @@ def get_latest_row_from_position_table(coin, table_name='binance_position_buy'):
     return df
 
 
-def check_position_duration_for_ignore_list(orderId, time_limit = 3):
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, transactTime FROM binance_position_buy WHERE orderId = :orderId AND is_closed = 0'), {'orderId': int(orderId)}).fetchall())
+def check_position_duration_for_ignore_list(orderId, time_limit = 3, table_name='binance_position_buy'):
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE orderId = :orderId AND is_closed = 0'), {'orderId': int(orderId)}).fetchall())
     if df.empty: return print(f"No position for orderId: {orderId}")
-    start_timestampt = df['transactTime'].values[0]
+    start_timestampt = df['transactTime'].values[0] if 'transactTime' in df.columns else df['workingTime'].values[0] if 'workingTime' in df.columns else df['time'].values[0] if 'time' in df.columns else df['updateTime'].values[0] if 'updateTime' in df.columns else datetime.now().timestamp() * 1000
     duration = (int(time.time() * 1000) - start_timestampt) / 1000 / 60 / 60 / 24
     if duration >= time_limit: set_coin_ignore(df['coin'].values[0])
     return
@@ -2878,7 +2878,8 @@ def set_limit_order_filled_by_orderId(orderId, table_name = 'binance_limit_sell_
 def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_position_buy'):
     coin = symbol.replace('USDT', '')
     if not orderId: return print(f"orderId must be provided.")
-    df = get_open_limit_orders(None, 'binance_limit_sell_order')
+    # df = get_open_limit_orders(None, 'binance_limit_sell_order')
+    df  = get_df_from_given_tablename('binance_limit_sell_order')
     if df.empty: return print(f"No open limit sell order for {coin}")
     df = df[df['orderId'] == orderId]
     if df.empty: return print(f"No open limit sell order for {coin} with orderId: {orderId}")
@@ -2914,7 +2915,7 @@ def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_posit
             buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
             buy_cost_bnb = float(df_balance['buy_cost_bnb'].values[0])
             buy_bnb_price = float(df_balance['buy_bnb_price'].values[0])
-            open_position_time = int(df_balance['transactTime'].values[0])
+            open_position_time = int(df_balance['transactTime'].values[0]) if 'transactTime' in df_balance.columns else int(df_balance['workingTime'].values[0]) if 'workingTime' in df_balance.columns else int(df_balance['time'].values[0]) if 'time' in df_balance.columns else int(df_balance['updateTime'].values[0]) if 'updateTime' in df_balance.columns else datetime.now().timestamp() * 1000
             position_order_id = int(df_balance['orderId'].values[0])
             sell_cost_bnb = buy_cost_bnb
             df_bnb_price = get_token_price('BNB')
