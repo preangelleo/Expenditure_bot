@@ -3937,8 +3937,20 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
                 del data['fills']
             else: commission = float(data['cummulativeQuoteQty']) * 0.00075 / bnb_price
             data['buy_cost_bnb'] = commission
+            # read the max update_id from binance_manually_buy
+            try:
+                with engine.connect() as connection: df_max_update_id = pd.DataFrame(connection.execute(text('SELECT max(update_id) FROM binance_manually_buy')).fetchall())
+            except: df_max_update_id = pd.DataFrame()
+            update_id = df_max_update_id['max(update_id)'][0] + 1 if not df_max_update_id.empty else 1
+            data['update_id'] = update_id
 
-            data_to_table(data, table_name)
+            df = pd.DataFrame(data, index=[0])
+            try: 
+                with engine.connect() as connection: df.to_sql(table_name, connection, if_exists='replace', index=False)
+                return True
+            except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
+
+            # data_to_table(data, table_name)
 
             # Mark the limit order as filled in binance_limit_sell_order table
             set_limit_order_filled_by_orderId(orderId, 'binance_limit_buy_order')
