@@ -2874,14 +2874,21 @@ def set_limit_order_filled_by_orderId(orderId, table_name = 'binance_limit_sell_
     return
 
 
+# Get binance_limit_sell_order df by orderId
+def get_df_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE orderId = :orderId'), {'orderId': orderId}).fetchall())
+    except: df = pd.DataFrame()
+    return df
+
 # Define a function to check orderid and update status
 def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_position_buy'):
-    coin = symbol.replace('USDT', '')
     if not orderId: return print(f"orderId must be provided.")
-    # df = get_open_limit_orders(None, 'binance_limit_sell_order')
-    df  = get_df_from_given_tablename('binance_limit_sell_order')
-    if df.empty: return print(f"No open limit sell order for {coin}")
-    df = df[df['orderId'] == orderId]
+    try: orderId = int(orderId)
+    except: return print(f"orderId must be integer.")
+    if not symbol: return print(f"symbol must be provided.")
+    coin = symbol.replace('USDT', '')
+    df = get_df_by_orderId(orderId, 'binance_limit_sell_order')
     if df.empty: return print(f"No open limit sell order for {coin} with orderId: {orderId}")
     update_id = df['update_id'].values[0]
     manual_order = df['manual_order'].values[0]
