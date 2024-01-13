@@ -2389,19 +2389,28 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
 
 def check_today_profit_sum():
-    # Read the largest update_timestamp from daily_profit_take table
     try: 
         with engine.connect() as connection: df_daily_profit_take = pd.DataFrame(connection.execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
     except: df_daily_profit_take = pd.DataFrame()
     if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
     else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
     update_timestamp = int(update_timestamp)
-    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
-    with engine.connect() as connection: df_funding = pd.DataFrame(connection.execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
-    if df_profit.empty and df_funding.empty: return {'profit_sum': 0, 'profit_coinlist': []}
-    # if not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
-    if df_profit.empty and not df_funding.empty: df_profit = df_funding
-    elif not df_profit.empty and not df_funding.empty: df_profit = pd.concat([df_profit, df_funding])
+    try:
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, profit FROM binance_position_sell WHERE workingTime > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    except: df_profit = pd.DataFrame()
+    try:
+        with engine.connect() as connection: df_funding = pd.DataFrame(connection.execute(text(f'SELECT symbol, profit FROM binance_funding_profits WHERE timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    except: df_funding = pd.DataFrame()
+    try:
+        with engine.connect() as connection: df_partially_filled = pd.DataFrame(connection.execute(text(f'SELECT symbol, profit FROM partially_filled_order WHERE sold_timestamp > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    except: df_partially_filled = pd.DataFrame()
+
+    # Concatenate df_profit and df_funding and df_partially_filled
+    df = pd.concat([df_profit, df_funding, df_partially_filled])
+    if df.empty: return {'profit_sum': 0, 'profit_coinlist': []}
+    # Calculate the sum of profit for each coin
+    df_profit = df.groupby('symbol').sum().reset_index()
+    # Convert profit to float
     df_profit['profit'] = df_profit['profit'].astype(float)
     profit_coinlist = []
     for coin in df_profit['symbol'].unique():
@@ -2928,9 +2937,57 @@ def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_posit
             reply_msg = f'''{coin} Limit Sell Order Filled:\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
             send_msg(reply_msg, TG_BOT_OWNER_ID)
             return True
-        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
-
+        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: 
+            mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
+            try:
+                origQty = float(limit_order_data.get('origQty', 0))
+                executedQty = float(limit_order_data.get('executedQty', 0))
+                usdt_cost = float(limit_order_data.get('cummulativeQuoteQty', 0))
+                commition_fee = usdt_cost * 0.0015
+                if executedQty > 0 and executedQty < origQty:
+                    limit_order_data['price'] = usdt_cost / executedQty
+                    limit_order_data['coin'] = limit_order_data['symbol'].replace('USDT', '')
+                    limit_order_data['filled_percentage'] = executedQty / origQty
+                    limit_order_data['is_closed'] = 0
+                    limit_order_data['sold_price'] = 0
+                    limit_order_data['sold_orderId'] = 0
+                    limit_order_data['sold_timestamp'] = 0
+                    limit_order_data['profit'] = 0
+                    limit_order_data['commition_fee'] = commition_fee
+                    data_to_table(limit_order_data, 'partially_filled_order')
+                    send_msg(f"Partially Filled Order has been canceled. \n\nCoin: {coin}\nPrice: {format_number(limit_order_data['price'])}\nFilled Percent: {format_number(limit_order_data['filled_percentage']*100)}%\nUSDT_cost: {format_number(usdt_cost)} usdt\nOrderId: {orderId}", TG_BOT_OWNER_ID)
+            except Exception as e: print(f"Failed to save partially filled order: {e}")
     return 
+
+
+# Using market sell to close a given orderId from partially_filled_order and update the table with sold_price, sold_orderId, sold_timestamp, profit, is_closed
+def close_orderId(orderId, from_id = TG_BOT_OWNER_ID, table_name = 'partially_filled_order'):
+    try: orderId = int(orderId)
+    except: return send_msg(f"orderId {orderId} must be an integer", from_id)
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE orderId = :orderId'), {'orderId': orderId}).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"No partially filled order with orderId: {orderId}", from_id)
+    coin = df['coin'].values[0]
+    order_data = do_market_sell(coin, from_id)
+    if not order_data: return send_msg(f"Failed to do market sell for coin: {coin}", from_id)
+    if order_data['status'] == 'FILLED':
+        sold_orderId = order_data['orderId']
+        cummulativeQuoteQty = float(order_data['cummulativeQuoteQty'])
+        executedQty = float(order_data['executedQty'])
+        sold_price = cummulativeQuoteQty / executedQty
+        profit = cummulativeQuoteQty - float(df['cummulativeQuoteQty'].values[0]) - float(df['commition_fee'].values[0])
+        sold_timestamp = datetime.now().timestamp() * 1000
+        with engine.connect() as connection:
+            try:
+                # Execute the query with the updated update_id
+                connection.execute(text(f"UPDATE {table_name} SET sold_price = :sold_price, sold_orderId = :sold_orderId, sold_timestamp = :sold_timestamp, profit = :profit, is_closed = 1 WHERE orderId = :orderId"), {'sold_price': sold_price, 'sold_orderId': sold_orderId, 'sold_timestamp': sold_timestamp, 'profit': profit, 'orderId': orderId})
+                connection.commit()
+                return send_msg(f"Partially Filled Order Closed:\nCoin: {coin}\nPrice: {format_number(sold_price)}\nProfit: {format_number(profit)} usdt\nOrderId: {sold_orderId}", from_id)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                connection.rollback()
+    return send_msg(f"Failed to close partially filled order with orderId: {orderId}", from_id)
 
 
 # Define a function to alter the given column 's value, identify by symbol, select the latest one row
@@ -3973,6 +4030,20 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         main_funding_transfer_with_check_and_send(coin, new_data['executedQty'], from_id)
         close_position_status_by_order_id(int(new_data['orderId']))
     return send_msg(f'''{coin} position has been switched to funding account successfully!''', from_id)
+
+
+def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    df = get_df_from_position_table(coin, 'binance_funding_positions')
+    if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
+    # sort df by price, ascending
+    df = df.sort_values(by='price', ascending=True)
+    # Make a dict of price and orderId
+    price_orderId_dict = df.set_index('price')['orderId'].to_dict()
+    reply_string = '\n'.join([f"{v}: {format_number(k)} usdt/{coin.lower()}" for k, v in price_orderId_dict.items()])
+    send_msg(reply_string, from_id)
+    return price_orderId_dict
 
 
 # Define a function to reverse the process of binance_funding_buy_and_hold
