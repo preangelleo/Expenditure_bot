@@ -3926,21 +3926,17 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
             data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
             data['is_closed'] = 0
 
-            # convert data['fills] to dataframe
-            df_fills = pd.DataFrame(data['fills'])
-
-            # calculate sum of commission, commision is string, convert to float first then sum
-            commission = df_fills['commission'].astype(float).sum()
-            data['buy_cost_bnb'] = commission
-
             # get bnb price
             df_bnb_price = get_token_price('BNB')
             bnb_price = df_bnb_price if df_bnb_price else 300
-
             data['buy_bnb_price'] = bnb_price
 
-            # delete fills from data
-            if 'fills' in data: del data['fills']
+            if 'fills' in data: 
+                df_fills = pd.DataFrame(data['fills'])
+                commission = df_fills['commission'].astype(float).sum()
+                del data['fills']
+            else: commission = float(data['cummulativeQuoteQty']) * 0.00075 / bnb_price
+            data['buy_cost_bnb'] = commission
 
             data_to_table(data, table_name)
 
