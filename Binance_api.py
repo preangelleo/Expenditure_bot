@@ -3911,6 +3911,7 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
     if not orderId:
         df = get_open_limit_orders(symbol, 'binance_limit_buy_order')
+        df = get_df_from_given_tablename('binance_limit_buy_order')
         if df.empty: return 
         orderId = df['orderId'].values[0]
 
@@ -3939,7 +3940,7 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
             data['buy_bnb_price'] = bnb_price
 
             # delete fills from data
-            del data['fills']
+            if 'fills' in data: del data['fills']
 
             data_to_table(data, table_name)
 
