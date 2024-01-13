@@ -2883,11 +2883,10 @@ def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_posit
     df = df[df['orderId'] == orderId]
     if df.empty: return print(f"No open limit sell order for {coin} with orderId: {orderId}")
     update_id = df['update_id'].values[0]
+    manual_order = df['manual_order'].values[0]
+    if manual_order == 1: table_name = 'binance_manually_buy'
     if symbol != df['symbol'].values[0]: return print(f"Input Symbol: {symbol} does not match with df symbol: {df['symbol'].values[0]}")
     df_balance = get_df_from_position_table(coin, table_name)
-    if df_balance.empty: 
-        table_name = 'binance_manually_buy'
-        df_balance = get_df_from_position_table(coin, table_name)    
     if df_balance.empty: return print(f"No open position for {coin}")
     df_balance = df_balance[df_balance['update_id'] == update_id]
     if df_balance.empty: return print(f"No open position for {coin} with update_id: {update_id}")
