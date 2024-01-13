@@ -3944,20 +3944,14 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
             update_id = df_max_update_id['max(update_id)'][0] + 1 if not df_max_update_id.empty else 1
             data['update_id'] = update_id
 
-            df = pd.DataFrame(data, index=[0])
-            try: 
-                with engine.connect() as connection: df.to_sql(table_name, connection, if_exists='replace', index=False)
-                return True
-            except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
-
-            # data_to_table(data, table_name)
+            data_to_table(data, table_name)
 
             # Mark the limit order as filled in binance_limit_sell_order table
             set_limit_order_filled_by_orderId(orderId, 'binance_limit_buy_order')
             
             if chat_id: send_msg(f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}''', chat_id)
 
-            try: binance_position_set_limit_sell(0.1, chat_id, coin, 'binance_manually_buy')
+            try: binance_position_set_limit_sell(0.1, chat_id, coin, 'binance_manually_buy', manual_force = True)
             except: send_msg(f"Error in setting limit order for {coin}", chat_id)
 
             return True
