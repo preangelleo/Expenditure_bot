@@ -3233,6 +3233,7 @@ def update_position_table_amount(amount: float, orderId_create: int):
             connection.rollback()
     return
 
+
 # Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
     df_balance = read_position_table_account(0, coin, 'spot')
@@ -3256,6 +3257,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         price_create = float(df_balance.iloc[i]['price_create'])
         orderId_create = int(df_balance.iloc[i]['orderId_create'])
         orderId_close = int(df_balance.iloc[i]['orderId_close'])
+        current_target_profit = float(df_balance.iloc[i]['target_profit'])
+        if current_target_profit == target_profit: continue
         if orderId_close: 
             if is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
             else: continue
