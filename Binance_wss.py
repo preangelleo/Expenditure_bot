@@ -153,11 +153,11 @@ def handle_socket_message(msg):
 
         elif msg['X'] == 'FILLED':
             # check direction is BUY or SELL
-            if msg['S'] == 'SELL':
+            if msg['S'] == 'SELL' and msg['o'] == 'LIMIT':
                 '''{'e': 'executionReport', 'E': 1703032385551, 's': 'NEARUSDT', 'c': 'b1vSFIYMRLWZrz4ecPsPaZ', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '3960.70000000', 'p': '2.55000000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 2110473867, 'l': '3960.70000000', 'z': '3960.70000000', 'L': '2.55000000', 'n': '0.02982221', 'N': 'BNB', 'T': 1703032385543, 't': 138267320, 'I': 4348096316, 'w': False, 'm': True, 'M': True, 'O': 1703019732394, 'Z': '10099.78500000', 'Y': '10099.78500000', 'Q': '0.00000000', 'W': 1703019732394, 'V': 'EXPIRE_MAKER'}'''
                 try: binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_position_buy')
                 except: pass
-            elif msg['S'] == 'BUY':
+            elif msg['S'] == 'BUY' and msg['o'] == 'LIMIT':
                 try: binance_limit_buy_order_status(symbol, orderId, table_name = 'binance_manually_buy')
                 except: pass
 

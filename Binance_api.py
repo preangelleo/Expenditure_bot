@@ -2881,6 +2881,7 @@ def get_df_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
     except: df = pd.DataFrame()
     return df
 
+
 # Define a function to check orderid and update status
 def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_position_buy'):
     if not orderId: return print(f"orderId must be provided.")
@@ -2946,24 +2947,6 @@ def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_posit
             return True
         if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: 
             mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
-            try:
-                origQty = float(limit_order_data.get('origQty', 0))
-                executedQty = float(limit_order_data.get('executedQty', 0))
-                usdt_cost = float(limit_order_data.get('cummulativeQuoteQty', 0))
-                commition_fee = usdt_cost * 0.0015
-                if executedQty > 0 and executedQty < origQty:
-                    limit_order_data['price'] = usdt_cost / executedQty
-                    limit_order_data['coin'] = limit_order_data['symbol'].replace('USDT', '')
-                    limit_order_data['filled_percentage'] = executedQty / origQty
-                    limit_order_data['is_closed'] = 0
-                    limit_order_data['sold_price'] = 0
-                    limit_order_data['sold_orderId'] = 0
-                    limit_order_data['sold_timestamp'] = 0
-                    limit_order_data['profit'] = 0
-                    limit_order_data['commition_fee'] = commition_fee
-                    data_to_table(limit_order_data, 'partially_filled_order')
-                    send_msg(f"Partially Filled Order has been canceled. \n\nCoin: {coin}\nPrice: {format_number(limit_order_data['price'])}\nFilled Percent: {format_number(limit_order_data['filled_percentage']*100)}%\nUSDT_cost: {format_number(usdt_cost)} usdt\nOrderId: {orderId}", TG_BOT_OWNER_ID)
-            except Exception as e: print(f"Failed to save partially filled order: {e}")
     return 
 
 
@@ -3910,6 +3893,7 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     return
 
 
+
 # Define a function to check orderid and update status
 def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'binance_manually_buy'):
     symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
@@ -3918,7 +3902,6 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
 
     if not orderId:
         df = get_open_limit_orders(symbol, 'binance_limit_buy_order')
-        df = get_df_from_given_tablename('binance_limit_buy_order')
         if df.empty: return 
         orderId = df['orderId'].values[0]
 
@@ -3946,7 +3929,7 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
             data['buy_cost_bnb'] = commission
             # read the max update_id from binance_manually_buy
             try:
-                with engine.connect() as connection: df_max_update_id = pd.DataFrame(connection.execute(text('SELECT max(update_id) FROM binance_manually_buy')).fetchall())
+                with engine.connect() as connection: df_max_update_id = pd.DataFrame(connection.execute(text(f'SELECT max(update_id) FROM {table_name}')).fetchall())
             except: df_max_update_id = pd.DataFrame()
             update_id = df_max_update_id['max(update_id)'][0] + 1 if not df_max_update_id.empty else 1
             data['update_id'] = update_id
@@ -3958,13 +3941,32 @@ def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'bina
             
             if chat_id: send_msg(f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}''', chat_id)
 
-            try: binance_position_set_limit_sell(0.1, chat_id, coin, 'binance_manually_buy', manual_force = True)
+            try: binance_position_set_limit_sell(0.1, chat_id, coin, table_name, manual_force = True)
             except: send_msg(f"Error in setting limit order for {coin}", chat_id)
 
             return True
 
-        if data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, data['status'], 'binance_limit_buy_order')
-
+        if data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: 
+            mark_limit_order_as_canceled_by_orderId(orderId, data['status'], 'binance_limit_buy_order')
+            try:
+                limit_order_data = data
+                origQty = float(limit_order_data.get('origQty', 0))
+                executedQty = float(limit_order_data.get('executedQty', 0))
+                usdt_cost = float(limit_order_data.get('cummulativeQuoteQty', 0))
+                commition_fee = usdt_cost * 0.0015
+                if executedQty > 0 and executedQty < origQty:
+                    limit_order_data['price'] = usdt_cost / executedQty
+                    limit_order_data['coin'] = limit_order_data['symbol'].replace('USDT', '')
+                    limit_order_data['filled_percentage'] = executedQty / origQty
+                    limit_order_data['is_closed'] = 0
+                    limit_order_data['sold_price'] = 0
+                    limit_order_data['sold_orderId'] = 0
+                    limit_order_data['sold_timestamp'] = 0
+                    limit_order_data['profit'] = 0
+                    limit_order_data['commition_fee'] = commition_fee
+                    data_to_table(limit_order_data, 'partially_filled_order')
+                    send_msg(f"Partially Filled Order has been canceled. \n\nCoin: {coin}\nPrice: {format_number(limit_order_data['price'])}\nFilled Percent: {format_number(limit_order_data['filled_percentage']*100)}%\nUSDT_cost: {format_number(usdt_cost)} usdt\nOrderId: {orderId}", TG_BOT_OWNER_ID)
+            except Exception as e: print(f"Failed to save partially filled order: {e}")
     return
 
 # Define a function to transfer 10000 usdt from funding to main, then market buy the given coin and then transfer all of the coin bought to funding account
