@@ -1775,8 +1775,7 @@ def do_market_buy(coin: str, value):
         return reply_msg
     data = binance_market_buy(coin, value)
     if not data: return f'Failed to do market buy for coin: {coin}'
-    try: instert_position_table(data, account = 'spot')
-    except Exception as e: print(f'Insert position table failed: {e}')
+    instert_position_table(data, account = 'spot')
     return f'''Bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}'''
 
 
@@ -2730,8 +2729,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if not data: continue
         if need_to_adjust: update_position_table_amount(amount, orderId_create)
         orderId_close = int(data['orderId'])
-        try: update_limit_orderId_in_position_table(orderId_create, int(data['orderId']), target_profit, is_manual)
-        except Exception as e: send_msg(f"Failed to update_limit_orderId_in_position_table(): \nCoin: {coin}\nAmount: {amount}\nPrice: {price}\n\n{e}\n\n", chat_id)
+        update_limit_orderId_in_position_table(orderId_create, int(data['orderId']), target_profit, is_manual)
         send_msg(f"Limit Sell Order Set:\nCoin: {coin}\nAmount: {format_number(amount)}\nPrice: {format_number(price)}\nTarget_profit: {target_profit*100:.2f}%\nOrderId: {orderId_close}", chat_id)
     return
 
@@ -3431,15 +3429,11 @@ def binance_adjust_profit():
 # define a function to set a limit order for a coin in position
 def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
-
     try: target_profit = float(target_profit)
     except: return send_msg(f"Target profit must be a number, 0.01 means 1%", from_id)
-
     if target_profit < 0: return send_msg(f"Target profit must be a positive float number", from_id)
-
     try: binance_position_set_limit_sell(target_profit, from_id, coin, is_manual = 1)
     except: return send_msg(f"Error in setting limit order for {coin}", from_id)
-
     return
 
 
@@ -3505,6 +3499,18 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     if data_to_table(data, table_name) and chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {orderId}", chat_id)
     return
 
+
+def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWNER_ID):
+    if not orderId_create: return send_msg(f'orderId_create is not given', chat_id)
+    symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
+    coin = symbol.replace('USDT', '')
+    try: orderId_create = int(orderId_create)
+    except: return send_msg(f'orderId_create: {orderId_create} is not a number', chat_id)
+    data = check_order_status_by_orderId(coin, orderId_create)
+    if not data: return send_msg(f'Failed to get order status by orderId: {orderId_create}', chat_id)
+    instert_position_table(data, account = 'spot')
+    price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+    return send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
 
 
 # Define a function to check orderid and update status
