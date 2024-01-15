@@ -10,9 +10,6 @@ if __name__ == '__main__':
     try: daily_profit_take(daily_profit_target=1000, table_name = 'binance_position_buy', chat_id=TG_BOT_OWNER_ID)
     except Exception as e: print(f'daily_profit_take() error:\n\n{e}\n\n')
 
-    try: daily_overhigh_profit_take(overhigh_profit=3000, table_name = 'binance_position_buy', from_id=TG_BOT_OWNER_ID)
-    except Exception as e: print(f'daily_overhigh_profit_take() error:\n\n{e}\n\n')
-
     # Check if it's UTC 11pm, if yes run daily_profit_take_last_check()
     if datetime.now().strftime("%H") == '23':
         try: daily_profit_take_last_check()
