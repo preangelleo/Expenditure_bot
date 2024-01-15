@@ -3830,9 +3830,7 @@ def grid_profit_take(grid_profit_target=1000, trading_volume_limit = TRADING_VOL
             coin_df = good_to_sell_balance_df[good_to_sell_balance_df['coin'] == coin]
             if not coin_df.empty:
                 orderId_close = int(coin_df['orderId_close'].values[0])
-                if orderId_close:
-                    try: binance_cancel_order_by_orderId(coin, orderId_close)
-                    except Exception as e: print(f"Failed to cancel order for {coin}: {orderId_close}, error: \n\n{e}")
+                if orderId_close: binance_cancel_order_by_orderId(coin, orderId_close)
                 orderId_create = int(coin_df['orderId_create'].values[0])
                 do_market_sell_by_orderId_create(orderId_create, chat_id, coin_df, coin)
         try:
