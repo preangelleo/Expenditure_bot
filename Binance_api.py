@@ -1631,8 +1631,8 @@ def update_position_table_for_limit_sell_order(coin: str, orderId: int, from_id=
         return update_position_table(data, from_id)
 
 
-def update_position_table_with_orderId(coin, orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID, row = {}, data = {}):
-    if not row: 
+def update_position_table_with_orderId(coin, orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID, row = pd.DataFrame(), data = {}):
+    if row.empty: 
         if not orderId_create: return send_msg(f'row or orderId_create has to be provided at least one.', from_id)
         orderId_create = int(orderId_create)
         df = read_position_table_by_orderId_create(orderId_create)
@@ -1652,7 +1652,7 @@ def update_position_table_with_orderId(coin, orderId_create, orderId_close, from
         return update_position_table(data, from_id)
 
 
-def do_market_sell_by_orderId_create(orderId_create = None, from_id=TG_BOT_OWNER_ID, coin_df = pd.DataFrame(), coin = None):
+def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWNER_ID, coin_df = pd.DataFrame(), coin = None):
     if coin_df.empty: 
         if not orderId_create: return send_msg(f'coin_df or orderId_create has to be provided at least one.', from_id)
         orderId_create = int(orderId_create)
