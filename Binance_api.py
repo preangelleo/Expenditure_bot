@@ -2122,145 +2122,69 @@ def weekly_rsi_over_high(symbol):
     if data_to_table(weekly_rsi_over_high_coin, 'weekly_rsi_over_high'): return weekly_rsi_over_high_coin['is_over_high']
     
 
-# binance_auto_position_check('IOTA', TG_BOT_OWNER_ID, crontab_profit_record=False, table_name = 'binance_position_buy')
-# check binance_position_buy and calculate profit based on current price for all coins
 def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
-    df_balance = get_df_from_position_table(coin, table_name)
-    if df_balance.empty: 
-        if chat_id: 
-            send_msg('No open auto trading position currently.', chat_id)
-            check_profit_and_record(chat_id, crontab_profit_record)
-        return 'No open position for all coins'
-    ''' df_balance
-        symbol     orderId  orderListId           clientOrderId   transactTime      price          origQty      executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode   coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
-    0   ATOMUSDT  2594994242           -1  nzehRqoZxn1F6VUPO43h6C  1703573139555  12.269441     815.03000000     815.03000000       9999.96274000  FILLED         GTC  MARKET  BUY  1703573139555            EXPIRE_MAKER   ATOM      0.028094          267.0         50          0
-    1    APEUSDT  1563146551           -1  kzTIupxmPDyTQS7Lv4TGSJ  1703736326606   1.786000    5599.10000000    5599.10000000       9999.99260000  FILLED         GTC  MARKET  BUY  1703736326606            EXPIRE_MAKER    APE      0.023079          325.8         58          0
-    2   COMPUSDT  1259040501           -1  tFDsPVjfyC59xMIJEx06lG  1703742928420  66.115741     151.24900000     151.24900000       9999.93975000  FILLED         GTC  MARKET  BUY  1703742928420            EXPIRE_MAKER   COMP      0.023196          322.0         59          0
-    3   GALAUSDT  2192893079           -1  7jCq17nhr1AWxeYWK27zk8  1703744426664   0.033265  300613.00000000  300613.00000000       9999.96916000  FILLED         GTC  MARKET  BUY  1703744426664            EXPIRE_MAKER   GALA      0.023164          322.6         60          0
-    4  MAGICUSDT   536447518           -1  eHd94BSHWrzFoy38xGPxYT  1703751335800   1.194287    8373.10000000    8373.10000000       9999.88416000  FILLED         GTC  MARKET  BUY  1703751335800            EXPIRE_MAKER  MAGIC      0.022867          327.8         64          0
-    5    AXSUSDT  1529428898           -1  3lnY18BYAM1eS9rSno5QHr  1703832021678   9.466903    1056.31000000    1056.31000000       9999.98390000  FILLED         GTC  MARKET  BUY  1703832021678            EXPIRE_MAKER    AXS      0.023442          318.4         69          0
-    6    RAYUSDT   369596700           -1  knDkQKPzyNatbZwPWnZXIF  1703860824698   1.499552    6668.60000000    6668.60000000       9999.91187000  FILLED         GTC  MARKET  BUY  1703860824698            EXPIRE_MAKER    RAY      0.023596          317.3         70          0
-    7    LDOUSDT   563593983           -1  OppvkuurOIENEhu5X4JIyY  1703911579588   2.944679    3395.95000000    3395.95000000       9999.98258000  FILLED         GTC  MARKET  BUY  1703911579588            EXPIRE_MAKER    LDO      0.023705          316.7         71          0
-    8    INJUSDT   943892832           -1  abf8pDB4Z7qdi40GtwMpOk  1703996307435  37.900541     263.80000000     263.80000000       9998.16280000  FILLED         GTC  MARKET  BUY  1703996307435            EXPIRE_MAKER    INJ      0.023388          320.4         75          0
+    df_balance = read_position_table_account(0, coin, 'spot')
     '''
-    if coin: 
-        df_balance = df_balance[df_balance['coin']==coin.upper()]
-        if df_balance.empty: 
-            if chat_id: send_msg(f'No open position for coin: {coin}', chat_id)
-            return f'No open position for coin: {coin}'
-
-    # get current price for all coins
+       coin    symbol account  price_create      amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
+    0  ATOM  ATOMUSDT    spot     12.269441     815.030  9999.96274      2594994242  1703573139555      MARKET          0          0            0.1          0.0     2660334050           0                      0       0         0         2023            12          25           0            0          0   14.999944  binance
+    1   APE   APEUSDT    spot      1.786000    5599.100  9999.99260      1563146551  1703736326606      MARKET          0          0            0.1          0.0     1582032805           0                      0       0         0         2023            12          27           0            0          0   14.999989  binance
+    2  COMP  COMPUSDT    spot     66.115741     151.249  9999.93975      1259040501  1703742928420      MARKET          0          0            0.1          0.0     1286232395           0                      0       0         0         2023            12          27           0            0          0   14.999910  binance
+    3  GALA  GALAUSDT    spot      0.033265  300613.000  9999.96916      2192893079  1703744426664      MARKET          0          0            0.1          0.0     2225174967           0                      0       0         0         2023            12          27           0            0          0   14.999954  binance
+    4   GRT   GRTUSDT    spot      0.223840   44674.000  9999.81620      1394304791  1704162623034      MARKET          0          0            0.1          0.0     1411409643           0                      0       0         0         2024             1           1           0            0          0   14.999724  binance
+    5  HBAR  HBARUSDT    spot      0.098600  101419.000  9999.91340       782193241  1704245781505      MARKET          0          0            0.1          0.0      790382917           0                      0       0         0         2024             1           2           0            0          0   14.999870  binance
+    6  ORDI  ORDIUSDT    spot     86.979837     114.960  9999.20201       511430308  1704276389162      MARKET          0          0            0.1          0.0      629662801           0                      0       0         0         2024             1           3           0            0          0   14.998803  binance
+    7  ARPA  ARPAUSDT    spot      0.073910  135299.700  9999.99612       786394949  1704511096530      MARKET          0          0            0.1          0.0      799006405           0                      0       0         0         2024             1           5           0            0          0   14.999994  binance'''
     df = get_token_price_table()
-    if df.empty: 
-        if chat_id: send_msg('Failed to fetch price info', chat_id)
-        return 'Failed to fetch price info'
-
-    # merge df_balance and df based on coin since df and df_balance all have coin column
-    df_balance = pd.merge(df_balance, df, on='coin', how='left')
-
-    # convert df_balance['executedQty'] to float and calculate profit
-    df_balance['executedQty'] = df_balance['executedQty'].astype(float)
-    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price']) * df_balance['executedQty']
-
-    # calculate up_ratio in % format
-    df_balance['up_ratio'] = df_balance['lastPrice']/ df_balance['price'] - 1
-
-    # calculate bnb_cost_value
-    df_balance['bnb_cost_value'] = df_balance['buy_cost_bnb'] * df_balance['buy_bnb_price']
-    
-    # sort by profit
+    if df.empty: return 'Failed to fetch price info'
+    df = df.drop(columns=['coin'])
+    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
+    df_balance['up_ratio'] = df_balance['lastPrice']/ df_balance['price_create'] - 1
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-
-    # current_orders = get_open_orders_list()
-    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
-    df_openorders = df_openorders[['update_id', 'orderId', 'manual_order', 'target_profit']]
-
     book_value = 0
     for_reply = {}
-    limit_order_target_profit = read_target_profit_default()
-
     for i in range(df_balance.shape[0]):
         # ignore coin BNB, ONG
         if df_balance.iloc[i]['coin'] in ['BNB', 'ONG', 'USDT', 'USDC']: continue
-
         reply_dict = df_balance.iloc[i].to_dict()
-
         coin = reply_dict['coin']
-        symbol = coin + 'USDT'
-
         for_reply['Coin'] = reply_dict['coin']
-        for_reply['Amount'] = format_number(reply_dict['executedQty'])
+        for_reply['Amount'] = format_number(reply_dict['amount'])
         for_reply['Profit'] = format_number(reply_dict['profit'])
         for_reply['Up_Ratio'] = f"{round(float(reply_dict['up_ratio'])*100, 2)}%"
-        for_reply['Buy_Price'] = f"{reply_dict['price']:.2f}"
+        for_reply['Buy_Price'] = f"{reply_dict['price_create']:.2f}"
         for_reply['Current_Price'] = f"{reply_dict['lastPrice']:.2f}"
-        for_reply['BNB_Cost_Value'] = format_number(reply_dict['bnb_cost_value'])
-        for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['transactTime'] / 1000).strftime('%Y-%m-%d %H:%M')
-        for_reply['Order_ID'] = reply_dict['orderId']
-        for_reply['Update_ID'] = reply_dict['update_id']
-
-        coin_limit_orderId = 0
-        
-        # from df_openorders get the orderId and target_profit and manual_order of coin
-        df_openorders_coin = df_openorders[df_openorders['update_id'] == reply_dict['update_id']]
-        if not df_openorders_coin.empty:
-            if df_openorders_coin['manual_order'].values[0] == 1: continue
-            coin_limit_orderId = int(df_openorders_coin['orderId'].values[0])
-            # limit_order_target_profit = df_openorders_coin['target_profit'].values[0]
-
+        for_reply['Position_Since'] = datetime.fromtimestamp(reply_dict['time_create'] / 1000).strftime('%Y-%m-%d %H:%M')
+        for_reply['Order_ID'] = reply_dict['orderId_create']
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
-
-        long_or_short = analyze_symbol(coin)
-        '''{'long': True, 'short': False}'''
-        # long = long_or_short['long']
-        short = long_or_short['short']
-        # target_profit = max(long_or_short['target_profit'], limit_order_target_profit)
-
-        if short: 
-
-            if reply_dict['up_ratio'] >= 0.01: do_market_sell(coin, chat_id)
-
-            binance_position_set_limit_sell(0.01, chat_id, coin)
-
         book_value += reply_dict['profit']
-
     try: check_profit_and_record(chat_id, crontab_profit_record, book_value, current_positions=df_balance.shape[0])
     except: pass
-    
     return
 
 # check_profit_and_record(chat_id=TG_BOT_OWNER_ID, crontab_profit_record=False, book_value=0)
 
 def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_value=0, current_positions=0):
     if chat_id or crontab_profit_record: 
-        # 读取 binance_position_sell table 中的 profit 列，计算 sum(profit)
-        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT * FROM binance_position_sell')).fetchall())
+        df_profit = read_position_table_account(1, None, 'spot')
         if not df_profit.empty: 
-            # From binance_position_buy read out the earliest transactTime
-            with engine.connect() as conn: df_earliest_transactTime = pd.DataFrame(conn.execute(text('SELECT * FROM binance_position_buy ORDER BY transactTime ASC LIMIT 1')).fetchall())
-            earliest_transactTime = df_earliest_transactTime['transactTime'].astype(int).min()
-            # print('earliest_transactTime: ', earliest_transactTime)
+            with engine.connect() as conn: df_earliest_transactTime = pd.DataFrame(conn.execute(text('SELECT time_create FROM position_table ORDER BY time_create ASC LIMIT 1')).fetchall())
+            earliest_transactTime = int(df_earliest_transactTime['time_create'].values[0])
             duration = (int(time.time() * 1000) - earliest_transactTime) / 1000 / 60 / 60
             duration_day = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
             profit_sum = df_profit['profit'].astype(float).sum()
             net_profit_sum = profit_sum + book_value
             annualized_return = net_profit_sum / (duration / 24 / 365) / INITIAL_FUND
-            # annualized_return with percentage format
             annualized_return = f"{annualized_return * 100:.2f}%"
-            # Send profit_sum to chat_id
             chat_id = chat_id if chat_id else TG_BOT_OWNER_ID
             investment_return = net_profit_sum / INITIAL_FUND
-            # investment_return with percentage format
             investment_return = f"{investment_return * 100:.2f}%"
             summary_msg = f"BOT RUNNING: {duration_day}\n\nInitial Fund: {format_number(INITIAL_FUND)} usdt\nUnrealized_Gain: {format_number(book_value)} usdt\nRealized_Gain: {format_number(profit_sum)} usdt\nNet_Profit: {format_number(net_profit_sum)} usdt\nCurrent_Positions: {current_positions}/{POSITIONS_LIMIT}\n\nInvestment_Return: {investment_return}\nAnnualized_Return: {annualized_return}"
             send_msg(summary_msg, chat_id)
-
             if crontab_profit_record:
-                # Record net_profit_sum to table net_profit_daily_record
                 with engine.connect() as connection:
                     try:
-                        # Check if today's record exists
                         query = "SELECT * FROM net_profit_daily_record WHERE Date = :Date"
                         params = {'Date': datetime.now().strftime('%Y-%m-%d')}
                         result = connection.execute(text(query), params)
@@ -2277,7 +2201,6 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
                 plot_net_profit_sum(chat_id)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
-
     return 
 
 
