@@ -227,6 +227,7 @@ def display_funding_account_performance(engine):
             df.sort_values(by=['profit'], ascending=False, inplace=True)
             df.reset_index(inplace=True)
             df['profit'] = df['profit'].apply(lambda x: format_number(x))
+            st.write("Grouped by coin")
             st.table(df)
 
 
