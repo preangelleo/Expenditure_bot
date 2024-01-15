@@ -686,35 +686,35 @@ def get_coin_wallet_balance_with_locked():
 
 
 def get_coin_wallet_balance_all_str(chat_id=TG_BOT_OWNER_ID):
-    df_balance_auto = get_df_from_position_table(None, table_name = 'binance_position_buy')
-    if not df_balance_auto.empty:
-        coin_in_auto_position_dict = dict(zip(df_balance_auto['coin'].values, df_balance_auto['executedQty'].values))
-        coin_in_auto_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_auto_position_dict.items()])
-        send_msg(f"Coins in auto position:\n\n{coin_in_auto_position_dict_str}", chat_id)
-
-    df_balance_manual = get_df_from_position_table(None, table_name = 'binance_manually_buy')
-    if not df_balance_manual.empty:
-        coin_in_manual_position_dict = dict(zip(df_balance_manual['coin'].values, df_balance_manual['executedQty'].values))
-        coin_in_manual_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_manual_position_dict.items()])
-        send_msg(f"Coins in manual position:\n\n{coin_in_manual_position_dict_str}", chat_id)
-
-    if df_balance_auto.empty and df_balance_manual.empty: 
-        coin_in_position_dict = {}
-        send_msg("Neither coin in auto and manual position.", chat_id)
-        try: binance_adjust_profit(chat_id)
-        except: pass
-    else: coin_in_position_dict = {**coin_in_auto_position_dict, **coin_in_manual_position_dict}
-
-    data = get_coin_wallet_balance_with_locked()
-    if data: 
+    df = read_position_table(0, None)
+    if not df.empty:
+        # select only coin, amount, account columns
+        df = df.loc[:, ['coin', 'amount', 'account']]
+        df_balance_spot = df[df['account'] == 'spot']
+        if not df_balance_spot.empty:
+            coin_in_spot_position_dict = dict(zip(df_balance_spot['coin'].values, df_balance_spot['amount'].values))
+            coin_in_spot_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_spot_position_dict.items()])
+            send_msg(f"Coins in spot position:\n\n{coin_in_spot_position_dict_str}", chat_id)
+        df_balance_funding = df[df['account'] == 'funding']
+        if not df_balance_funding.empty:
+            df_balance_funding_position_dict = dict(zip(df_balance_funding['coin'].values, df_balance_funding['amount'].values))
+            df_balance_funding_position_dict_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in df_balance_funding_position_dict.items()])
+            send_msg(f"Coins in funding position:\n\n{df_balance_funding_position_dict_str}", chat_id)
+    coin_in_position_dict = {**coin_in_spot_position_dict, **df_balance_funding_position_dict}
+    data_spot = get_coin_wallet_balance_with_locked()
+    if data_spot: 
         '''{'AAVE': '091.627', 'BNB': '2.014138090', 'OGN': '0.58882430', 'ONG': '140000', 'RSR': '0.099999980', 'RUNE': '01515.4', 'SAND': '018230', 'USDT': '71305.788331640'}'''
         # Coins in balance except coins in position
-        coin_in_balance_dict = {key: value for key, value in data.items() if key not in coin_in_position_dict.keys()}
+        coin_in_balance_dict = {key: value for key, value in data_spot.items() if key not in coin_in_position_dict.keys()}
         coin_in_balance_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_balance_dict.items()])
-        send_msg(f"Other coins in balance:\n\n{coin_in_balance_str}", chat_id)
-        return
-    
-    else: return send_msg("No balance in your binance spot wallet.", chat_id)
+        send_msg(f"Other coins in spot balance:\n\n{coin_in_balance_str}", chat_id)
+    data_funding = get_coin_funding_balance_all()
+    if data_funding:
+        '''{'ENS': '1', 'GMT': '25468.3', 'KP3R': '85.13', 'LSK': '5681.1', 'ONG': '13182', 'RSR': '17872854.2', 'SXP': '23532.7', 'USDT': '118199.81977274'}'''
+        # Coins in balance except coins in position
+        coin_in_balance_dict = {key: value for key, value in data_funding.items() if key not in coin_in_position_dict.keys()}
+        coin_in_balance_str = '\n'.join([f"{key}: {format_number(value)}" for key, value in coin_in_balance_dict.items()])
+        send_msg(f"Other coins in funding balance:\n\n{coin_in_balance_str}", chat_id)
 
 
 # 通过 get_user_asset() 获取某个 coin 的余额
@@ -1693,9 +1693,9 @@ def get_latest_sold_coin():
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
     if not confirm or confirm.upper() not in ['ALL', 'CONFIRM', 'YES']: return send_msg(f'You need to type ALL or CONFIRM or YES to confirm close all positions.', from_id)
-    df_balance = get_df_from_position_table(coin, table_name = 'binance_position_buy')
+    df_balance = read_position_table()
     if df_balance.empty: return send_msg(f'No open position for close', from_id)
-    coin_list = df_balance['coin'].unique().tolist()
+    coin_list = df_balance['coin'].tolist()
     for coin in coin_list: do_market_sell(coin, from_id)
     return 
 
@@ -2357,54 +2357,6 @@ def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'
     return df
 
 
-def get_df_from_position_table(coin = None, table_name='binance_position_buy'):
-    df = pd.DataFrame()
-    if coin:
-        try: 
-            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE coin = :coin AND is_closed = 0'), {'coin': coin}).fetchall())
-        except: pass
-        return df
-    else:
-        try: 
-            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE is_closed = 0')).fetchall())
-        except: pass
-    return df
-
-
-# from table_name get the latest given coin row
-def get_latest_row_from_position_table(coin, table_name='binance_position_buy'):
-    symbol = coin.upper() + 'USDT' if not coin.endswith('USDT') else coin.upper()
-    df = pd.DataFrame()
-    try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
-    except: pass
-    return df
-
-
-def check_position_duration_for_ignore_list(orderId, time_limit = 3, table_name='binance_position_buy'):
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE orderId = :orderId AND is_closed = 0'), {'orderId': int(orderId)}).fetchall())
-    if df.empty: return print(f"No position for orderId: {orderId}")
-    start_timestampt = df['transactTime'].values[0] if 'transactTime' in df.columns else df['workingTime'].values[0] if 'workingTime' in df.columns else df['time'].values[0] if 'time' in df.columns else df['updateTime'].values[0] if 'updateTime' in df.columns else datetime.now().timestamp() * 1000
-    duration = (int(time.time() * 1000) - start_timestampt) / 1000 / 60 / 60 / 24
-    if duration >= time_limit: set_coin_ignore(df['coin'].values[0])
-    return
-
-
-def close_position_status_by_order_id(order_id, table_name='binance_position_buy'):
-    try: check_position_duration_for_ignore_list(order_id)
-    except: pass
-    with engine.connect() as connection:
-        try:
-            # Execute the query with the updated update_id
-            connection.execute(text(f"UPDATE {table_name} SET is_closed = 1 WHERE orderId = :orderId"), {'orderId': order_id})
-            connection.commit()
-            return True
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return
-
-
 def set_limit_order_filled_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
     with engine.connect() as connection:
         try:
@@ -2426,74 +2378,6 @@ def get_df_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
     return df
 
 
-# Define a function to check orderid and update status
-def binance_limit_sell_order_status(symbol, orderId, table_name = 'binance_position_buy'):
-    if not orderId: return print(f"orderId must be provided.")
-    try: orderId = int(orderId)
-    except: return print(f"orderId must be integer.")
-    if not symbol: return print(f"symbol must be provided.")
-    coin = symbol.replace('USDT', '')
-    df = get_df_by_orderId(orderId, 'binance_limit_sell_order')
-    if df.empty: return print(f"No open limit sell order for {coin} with orderId: {orderId}")
-    update_id = df['update_id'].values[0]
-    manual_order = df['manual_order'].values[0]
-    if manual_order == 1: table_name = 'binance_manually_buy'
-    if symbol != df['symbol'].values[0]: return print(f"Input Symbol: {symbol} does not match with df symbol: {df['symbol'].values[0]}")
-    df_balance = get_df_from_position_table(coin, table_name)
-    if df_balance.empty: return print(f"No open position for {coin}")
-    df_balance = df_balance[df_balance['update_id'] == update_id]
-    if df_balance.empty: return print(f"No open position for {coin} with update_id: {update_id}")
-    limit_order_data = check_order_status_by_orderId(coin, orderId)
-    if limit_order_data: 
-        if limit_order_data['status'] == 'FILLED':
-            # create a dict akin to market sell data structure
-            data = {}
-            data['symbol'] = limit_order_data['symbol']
-            data['orderId'] = limit_order_data['orderId']
-            data['orderListId'] = limit_order_data['orderListId']
-            data['clientOrderId'] = limit_order_data['clientOrderId']
-            data['transactTime'] = limit_order_data.get('transactTime', int(time.time() * 1000))
-            data['price'] = str(float(limit_order_data['cummulativeQuoteQty']) / float(limit_order_data['executedQty']))
-            data['origQty'] = limit_order_data['origQty']
-            data['executedQty'] = limit_order_data['executedQty']
-            data['cummulativeQuoteQty'] = limit_order_data['cummulativeQuoteQty']
-            data['status'] = limit_order_data['status']
-            data['timeInForce'] = limit_order_data['timeInForce']
-            data['type'] = limit_order_data['type']
-            data['side'] = limit_order_data['side']
-            data['workingTime'] = limit_order_data['workingTime']
-            data['selfTradePreventionMode'] = limit_order_data['selfTradePreventionMode']
-            update_id = int(df_balance['update_id'].values[0])
-            buy_cost_value = float(df_balance['cummulativeQuoteQty'].values[0])
-            buy_cost_bnb = float(df_balance['buy_cost_bnb'].values[0])
-            buy_bnb_price = float(df_balance['buy_bnb_price'].values[0])
-            open_position_time = int(df_balance['transactTime'].values[0]) if 'transactTime' in df_balance.columns else int(df_balance['workingTime'].values[0]) if 'workingTime' in df_balance.columns else int(df_balance['time'].values[0]) if 'time' in df_balance.columns else int(df_balance['updateTime'].values[0]) if 'updateTime' in df_balance.columns else datetime.now().timestamp() * 1000
-            position_order_id = int(df_balance['orderId'].values[0])
-            sell_cost_bnb = buy_cost_bnb
-            df_bnb_price = get_token_price('BNB')
-            sell_bnb_price = df_bnb_price if df_bnb_price else 250
-            total_bnb_cost_value = buy_cost_bnb * buy_bnb_price + sell_cost_bnb * sell_bnb_price
-            profit = float(limit_order_data['cummulativeQuoteQty']) - buy_cost_value - total_bnb_cost_value
-            data['update_id'] = update_id
-            data['sell_cost_bnb'] = sell_cost_bnb
-            data['sell_bnb_price'] = sell_bnb_price
-            data['total_bnb_cost_value'] = total_bnb_cost_value
-            data['profit'] = profit
-            data_to_table(data, 'binance_position_sell')
-            set_limit_order_filled_by_orderId(orderId, 'binance_limit_sell_order')
-            close_position_status_by_order_id(position_order_id, table_name)
-            with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT * FROM binance_position_sell')).fetchall())
-            if not df_profit.empty: profit_sum = df_profit['profit'].astype(float).sum()
-            duration = (data['transactTime'] - open_position_time) / 1000 / 60 / 60
-            duration = f'{int(duration / 24)} Days {int(duration % 24)} Hours' if duration > 24 else f'{int(duration)} Hours'
-            reply_msg = f'''{coin} Limit Sell Order Filled:\nTrading_Profit: {format_number(profit)} usdt\nHolding_Duration: {duration}\n\nProfit_Sum: {format_number(profit_sum)} usdt\n'''
-            send_msg(reply_msg, TG_BOT_OWNER_ID)
-            return True
-        if limit_order_data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: 
-            mark_limit_order_as_canceled_by_orderId(orderId, limit_order_data['status'], 'binance_limit_sell_order')
-    return 
-
-
 # Using market sell to close a given orderId from partially_filled_order and update the table with sold_price, sold_orderId, sold_timestamp, profit, is_closed
 def close_orderId(orderId, from_id = TG_BOT_OWNER_ID, table_name = 'partially_filled_order'):
     try: orderId = int(orderId)
@@ -2504,26 +2388,6 @@ def close_orderId(orderId, from_id = TG_BOT_OWNER_ID, table_name = 'partially_fi
     if df.empty: return send_msg(f"No partially filled order with orderId: {orderId}", from_id)
     coin = df['coin'].values[0]
     return do_market_sell(coin, from_id)
-
-
-# Define a function to alter the given column 's value, identify by symbol, select the latest one row
-def alter_binance_position_sell_table_executedQty(symbol, adjust_value):
-    symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
-    df = get_latest_row_from_position_table(symbol, 'binance_position_sell')
-    if df.empty: return
-    adjust_value = float(adjust_value)
-    update_id = int(df['update_id'].values[0])
-    executedQty = float(df['executedQty'].values[0])
-    adjust_value_percent = adjust_value / executedQty
-    new_executedQty = executedQty + adjust_value
-    cummulativeQuoteQty = float(df['cummulativeQuoteQty'].values[0])
-    new_cummulativeQuoteQty = cummulativeQuoteQty * (1 + adjust_value_percent)
-    profit = float(df['profit'].values[0])
-    new_profit = profit * (1 + adjust_value_percent)
-    with engine.connect() as connection:
-        connection.execute(text(f"UPDATE binance_position_sell SET executedQty = :executedQty, cummulativeQuoteQty = :cummulativeQuoteQty, profit = :profit WHERE update_id = :update_id"), {'executedQty': new_executedQty, 'cummulativeQuoteQty': new_cummulativeQuoteQty, 'profit': new_profit, 'update_id': update_id})
-        connection.commit()
-    return True
 
 
 # define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED' if status is not 'FILLED'
@@ -2605,22 +2469,9 @@ def update_position_table_amount(amount: float, orderId_create: int):
     return
 
 
-# Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
     df_balance = read_position_table_account(0, coin, 'spot')
     if df_balance.empty: return
-    '''
-       coin    symbol account  price_create       amount   usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
-    0  ATOM  ATOMUSDT    spot     12.269441      815.030  9999.962740      2594994242  1703573139555      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2023            12          25           0            0          0   14.999944  binance
-    1   APE   APEUSDT    spot      1.786000     5599.100  9999.992600      1563146551  1703736326606      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999989  binance
-    2  COMP  COMPUSDT    spot     66.115741      151.249  9999.939750      1259040501  1703742928420      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999910  binance
-    3  GALA  GALAUSDT    spot      0.033265   300613.000  9999.969160      2192893079  1703744426664      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999954  binance
-    4   GRT   GRTUSDT    spot      0.223840    44674.000  9999.816200      1394304791  1704162623034      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             1           1           0            0          0   14.999724  binance
-    5  HBAR  HBARUSDT    spot      0.098600   101419.000  9999.913400       782193241  1704245781505      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             1           2           0            0          0   14.999870  binance
-    6  ORDI  ORDIUSDT    spot     86.979837      114.960  9999.202010       511430308  1704276389162      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             1           3           0            0          0   14.998803  binance
-    7  ARPA  ARPAUSDT    spot      0.073910   135299.700  9999.996120       786394949  1704511096530      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             1           5           0            0          0   14.999994  binance
-    8   RSR   RSRUSDT    spot      0.002584  3870523.100  9999.999875       767422734  1705267655350      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             1          14           0            0          0   15.000000  binance
-    '''
     target_profit = read_target_profit_default() if not target_profit else float(target_profit)
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
@@ -2690,30 +2541,6 @@ def check_column_in_table(column, table):
         df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {table}")).fetchall())
         if column in df.columns: return True
     return False
-
-
-# check binance_position_buy, find out open positions that's been more than given days, cancel the current limit sell order for them and reset limit sell order at target_profit = 0.01
-def binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 3, from_id = TG_BOT_OWNER_ID):
-    try: transactTime = int(transactTime)
-    except: transactTime = 3
-
-    days_ago_millis = int(time.time() * 1000) - (transactTime * 24 * 60 * 60 * 1000)
-    query = "SELECT * FROM binance_position_buy WHERE is_closed = 0 AND transactTime < :three_days_ago"
-    
-    try: 
-        with engine.connect() as connection: df_balance = pd.DataFrame(connection.execute(text(query), {'three_days_ago': days_ago_millis}).fetchall())
-    except: return 'binance_position_buy table does not exist'
-
-    if df_balance.empty: return f'No open position in binance_position_buy table that has been holden for more than {transactTime} days'
-
-    # for the coins in df_balance, if there's already an open order, check the price, if the price is higher than new target_profit, cancel the order and reset the order at target_profit
-    for index, row in df_balance.iterrows():
-        coin = row['coin']
-        print(f"{index}. COIN: {coin} has been holden for {transactTime} days, trying to reset limit order to {target_profit*100:.2f}%")
-        try: binance_position_set_limit_sell(target_profit, from_id, coin)
-        except: pass
-
-    return
 
 
 # Define cancel all of the open orders
@@ -2926,10 +2753,9 @@ def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
 def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     current_status = trading_bot_switch_status()
     if not current_status: return True
-
     if trading_bot_switch_off(): 
-        binance_position_reset_limit_sell(target_profit = 0.01, transactTime = 1, from_id = TG_BOT_OWNER_ID)
-        return send_msg(f"Reset all limit sell orders target profit to 1% for positions older than 1 day.\n\n{msg}", from_id)
+        binance_position_set_limit_sell(0.01, from_id)
+        return send_msg(f"Reset all limit sell orders target profit to 1%.\n\n{msg}", from_id)
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
 
 
@@ -3308,45 +3134,30 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
 
 # Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
 def binance_adjust_profit():
-    df_auto_position = get_df_from_position_table(None, 'binance_position_buy')
-    if not df_auto_position.empty: return 0
-    df_manual_position = get_df_from_position_table(None, 'binance_manually_buy')
-    if not df_manual_position.empty: return 0
-    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT sum(profit) FROM binance_position_sell')).fetchall())
-    df_profit.columns = ['profit']
-    profit = df_profit['profit'][0]
+    df_spot_position = read_position_table_account()
+    if df_spot_position.empty: fund_in_spot_position = 0
+    else: fund_in_spot_position = df_spot_position['usdt_value'].sum()
+    df_profit = read_position_table_account(1)
+    profit = df_profit['profit'].sum()
     spot_balance = get_coin_wallet_balance_with_locked()
     USDT_balance = int(spot_balance['USDT'])
-    amount_to_be_adjusted = USDT_balance - (INITIAL_FUND + int(profit))
-    if int(amount_to_be_adjusted) != 0:
-        adjust_dict = {
-            "symbol": "ADJUSTUSDT",
-            "orderId": 1234567890,
-            "orderListId": -1,
-            "clientOrderId": "AAAAAAAAAAAAAAAAAAAAAA",
-            "transactTime": datetime.now().timestamp() * 1000,
-            "price": amount_to_be_adjusted,
-            "origQty": "1",
-            "executedQty": "1",
-            "cummulativeQuoteQty": "1",
-            "status": "FILLED",
-            "timeInForce": "GTC",
-            "type": "LIMIT",
-            "side": "NONE",
-            "workingTime": datetime.now().timestamp() * 1000,
-            "selfTradePreventionMode": "EXPIRE_MAKER",
-            "update_id": 0,
-            "sell_cost_bnb": 0,
-            "sell_bnb_price": 0,
-            "total_bnb_cost_value": 0,
-            "profit": amount_to_be_adjusted,
-            }
-        # make dictionary to dataframe
-        df_adjust = pd.DataFrame(adjust_dict, index=[0])
-        with engine.connect() as connection: df_adjust.to_sql('binance_position_sell', connection, if_exists='append', index=False)
-        reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
-        send_msg(reply_string, TG_BOT_OWNER_ID)
-        send_email('Binance Adjust Profit', reply_string, GMAIL_ADDRESS_MAIN)
+    amount_to_be_adjusted = USDT_balance - (INITIAL_FUND - fund_in_spot_position + profit)
+    amount_to_be_adjusted = int(amount_to_be_adjusted)
+    if amount_to_be_adjusted > 300:
+        alert = f'amount_to_be_adjusted: {format_number(amount_to_be_adjusted)}'
+        data = binance_market_buy_quantity('BNB', 1)
+        if not data: return send_msg(f'{alert}\nfailed to market buy 1 BNB', TG_BOT_OWNER_ID)
+        if 'fills' in data: del data['fills']
+        if data_to_table(data, f'check_and_buy_BNB'): send_msg(f'{alert}\nDONE: Market buy 1 BNB', TG_BOT_OWNER_ID)
+        # current_timestamp = datetime.now().timestamp() * 1000
+        # current_year = datetime.now().year
+        # current_month = datetime.now().month
+        # current_day = datetime.now().day
+        # adjust_dict = {'coin': 'ADJUST', 'symbol': 'ADJUSTUSDT', 'account': 'spot', 'price_create': 0, 'amount': 0, 'usdt_value': 9999.96274, 'orderId_create': 0, 'time_create': current_timestamp, 'type_create': 'MARKET', 'is_closed': 1, 'is_manual': 0, 'target_profit': 0, 'price_close': 0, 'orderId_close': 0, 'time_close': current_timestamp, 'type_close': '', 'usdt_close': 0, 'profit': amount_to_be_adjusted, 'duration': 0, 'year_create': current_year, 'month_create': current_month, 'day_create': current_day, 'year_close': current_year, 'month_close': current_month, 'day_close': current_day, 'commission': 0, 'exchange': 'leowang'}
+        # data_to_table(adjust_dict, 'position_table')
+        # reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
+        # send_msg(reply_string, TG_BOT_OWNER_ID)
+        # send_email('Binance Adjust Profit', reply_string, GMAIL_ADDRESS_MAIN)
     return amount_to_be_adjusted
 
 
@@ -3374,17 +3185,25 @@ def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
     return 
 
 
-def mark_limit_order_as_canceled_by_orderId(orderId, status='CANCELED', table_name = 'binance_limit_sell_order'):
+def mark_limit_order_as_canceled_by_orderId(orderId):
     with engine.connect() as connection:
         try:
-            connection.execute(text(f"UPDATE {table_name} SET status = :status WHERE orderId = :orderId"), {'orderId': orderId, 'status': status})
+            connection.execute(text(f"UPDATE position_table SET orderId_close = 0 WHERE orderId_close = :orderId"), {'orderId': orderId})
             connection.commit()
-            return True
         except Exception as e:
             print(f"An error occurred: {e}")
             connection.rollback()
     return
 
+def switch_spot_to_funding(orderId_create):
+    with engine.connect() as connection:
+        try:
+            connection.execute(text(f"UPDATE position_table SET account = 'funding', orderId_close = 0 WHERE orderId_create = :orderId_create"), {'orderId_create': orderId_create})
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
 
 def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     reply_msg = do_market_buy(coin, CHECK_SIZE)
@@ -3392,7 +3211,6 @@ def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     return reply_msg
 
 
-# Define a function to call binance_limit_sell(coin, amount, price) to set limit sell order for all positions at target_profit, if target_profit is not given, use buy in price from binance_position_buy table.
 def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
@@ -3429,85 +3247,6 @@ def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWN
     return send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
 
 
-# Define a function to check orderid and update status
-def binance_limit_buy_order_status(symbol: str, orderId=None, table_name = 'binance_manually_buy'):
-    symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
-    coin = symbol.replace('USDT', '')
-    chat_id = TG_BOT_OWNER_ID if not trading_bot_switch_status() else None
-
-    if not orderId:
-        df = get_open_limit_orders(symbol, 'binance_limit_buy_order')
-        if df.empty: return 
-        orderId = df['orderId'].values[0]
-
-    data = check_order_status_by_orderId(coin, orderId)
-
-    if data:
-        # Check if the order is filled, if yes, do market sell
-        if data['status'] == 'FILLED':
-            '''{'symbol': 'RSRUSDT', 'orderId': 756116674, 'orderListId': -1, 'clientOrderId': 'YSA5RwKBxHCdcpJlXuaBlM', 'price': '0.00338500', 'origQty': '2954209.70000000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'stopPrice': '0.00000000', 'icebergQty': '0.00000000', 'time': 1703720957750, 'updateTime': 1703720957750, 'isWorking': True, 'workingTime': 1703720957750, 'origQuoteOrderQty': '0.00000000', 'selfTradePreventionMode': 'EXPIRE_MAKER'}
-            '''
-            data['coin'] = coin
-            data['price'] = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-            data['is_closed'] = 0
-
-            # get bnb price
-            df_bnb_price = get_token_price('BNB')
-            bnb_price = df_bnb_price if df_bnb_price else 300
-            data['buy_bnb_price'] = bnb_price
-
-            if 'fills' in data: 
-                df_fills = pd.DataFrame(data['fills'])
-                commission = df_fills['commission'].astype(float).sum()
-                del data['fills']
-            else: commission = float(data['cummulativeQuoteQty']) * 0.00075 / bnb_price
-            data['buy_cost_bnb'] = commission
-            # read the max update_id from binance_manually_buy
-            try:
-                with engine.connect() as connection: df_max_update_id = pd.DataFrame(connection.execute(text(f'SELECT max(update_id) FROM {table_name}')).fetchall())
-            except: df_max_update_id = pd.DataFrame()
-            update_id = df_max_update_id['max(update_id)'][0] + 1 if not df_max_update_id.empty else 1
-            data['update_id'] = update_id
-
-            data_to_table(data, table_name)
-
-            try: instert_position_table(data, account = 'spot')
-            except: send_msg(f"Failed to insert {coin} to position_table", chat_id)
-
-            # Mark the limit order as filled in binance_limit_sell_order table
-            set_limit_order_filled_by_orderId(orderId, 'binance_limit_buy_order')
-            
-            if chat_id: send_msg(f'''{coin} Limit Buy Order Filled\n\nBuy_Price: {format_number(data['price'])} usdt/{coin.lower()}''', chat_id)
-
-            try: binance_position_set_limit_sell(0.1, chat_id, coin, is_manual = 1)
-            except: send_msg(f"Error in setting limit order for {coin}", chat_id)
-
-            return True
-
-        if data['status'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: 
-            mark_limit_order_as_canceled_by_orderId(orderId, data['status'], 'binance_limit_buy_order')
-            try:
-                limit_order_data = data
-                origQty = float(limit_order_data.get('origQty', 0))
-                executedQty = float(limit_order_data.get('executedQty', 0))
-                usdt_cost = float(limit_order_data.get('cummulativeQuoteQty', 0))
-                commition_fee = usdt_cost * 0.0015
-                if executedQty > 0 and executedQty < origQty:
-                    limit_order_data['price'] = usdt_cost / executedQty
-                    limit_order_data['coin'] = limit_order_data['symbol'].replace('USDT', '')
-                    limit_order_data['filled_percentage'] = executedQty / origQty
-                    limit_order_data['is_closed'] = 0
-                    limit_order_data['sold_price'] = 0
-                    limit_order_data['sold_orderId'] = 0
-                    limit_order_data['sold_timestamp'] = 0
-                    limit_order_data['profit'] = 0
-                    limit_order_data['commition_fee'] = commition_fee
-                    data_to_table(limit_order_data, 'partially_filled_order')
-                    send_msg(f"Partially Filled Order has been canceled. \n\nCoin: {coin}\nPrice: {format_number(limit_order_data['price'])}\nFilled Percent: {format_number(limit_order_data['filled_percentage']*100)}%\nUSDT_cost: {format_number(usdt_cost)} usdt\nOrderId: {orderId}", TG_BOT_OWNER_ID)
-            except Exception as e: print(f"Failed to save partially filled order: {e}")
-    return
-
-
 # check orderId get data and insert to position_table
 def check_orderId_get_data_insert_position_table(coin, orderId, account = 'funding'):
     data = check_order_status_by_orderId(coin, orderId)
@@ -3532,55 +3271,31 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     return send_msg(f'''Funding account bought {coin} at {format_number(price)} usdt/{coin.lower()}''', from_id)
 
 
-# Transfer a given coin from main account to funding account, and close position in binance_position_buy table, and add position to binance_funding_positions table, if limit order in binance_limit_sell_order, cancel it first, then transfer the coin to funding account
 def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df = get_df_from_position_table(coin, 'binance_position_buy')
+    df = read_position_table_account(0, coin, 'spot')
     if df.empty: return send_msg(f'No {coin} position in main account', from_id)
-    ''' binance_position_buy
-        symbol    orderId  orderListId           clientOrderId   transactTime      price      origQty  executedQty cummulativeQuoteQty  status timeInForce    type side    workingTime selfTradePreventionMode  coin  buy_cost_bnb  buy_bnb_price  update_id  is_closed
-    0  KP3RUSDT  299940454           -1  0Bdmn2xGbxFqNzsCITmgLw  1704165866038  117.46095  85.13000000  85.13000000       9999.45070000  FILLED         GTC  MARKET  BUY  1704165866038            EXPIRE_MAKER  KP3R      0.023503          318.0         79          0'''
-    if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
-    update_id = int(df['update_id'].values[0])
-    # current_orders = get_open_orders_list()
-    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
-    df_openorders = df_openorders[df_openorders['update_id'] == update_id]
-    # Check if update_id is in df_openorders
-    if not df_openorders.empty:
-        cancel_orderId = int(df_openorders['orderId'].values[0])
-        binance_cancel_order_by_orderId(coin, cancel_orderId)
-        mark_limit_order_as_canceled_by_orderId(cancel_orderId)
-    new_data = {
-        'coin': coin,
-        'symbol': coin + 'USDT',
-        'price': df['price'].values[0],
-        'orderId': df['orderId'].values[0],
-        'clientOrderId': df['clientOrderId'].values[0],
-        'executedQty': df['executedQty'].values[0],
-        'cumulativeQuoteQty': df['cummulativeQuoteQty'].values[0],
-        'type': df['type'].values[0],
-        'side': df['side'].values[0],
-        'status': df['status'].values[0],
-        'timestamp': df['transactTime'].values[0],
-        'time_string': datetime.fromtimestamp(df['transactTime'].values[0] / 1000).strftime('%Y-%m-%d %H:%M:%S'),
-        'is_closed': 0,
-    }
-    if data_to_table(new_data, 'binance_funding_positions'): 
-        main_funding_transfer_with_check_and_send(coin, new_data['executedQty'], from_id)
-        close_position_status_by_order_id(int(new_data['orderId']))
-    return send_msg(f'''{coin} position has been switched to funding account successfully!''', from_id)
+    for index, row in df.iterrows():
+        amount = float(row['amount'])
+        orderId_create = int(row['orderId_create'])
+        orderId_close = int(row['orderId_close'])
+        if orderId_close: binance_cancel_order_by_orderId(coin, orderId_close)
+        if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
+        switch_spot_to_funding(orderId_create)
+        main_funding_transfer_with_check_and_send(coin, amount, from_id)
+        send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create} ''', from_id)
 
 
 def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df = get_df_from_position_table(coin, 'binance_funding_positions')
+    df = read_position_table_account(0, coin, 'funding')
     if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
     # sort df by price, ascending
-    df = df.sort_values(by='price', ascending=True)
+    df = df.sort_values(by='price_create', ascending=True)
     # Make a dict of price and orderId
-    price_orderId_dict = df.set_index('price')['orderId'].to_dict()
+    price_orderId_dict = df.set_index('price_create')['orderId_create'].to_dict()
     reply_string = '\n'.join([f"{v}: {format_number(k)} usdt/{coin.lower()}" for k, v in price_orderId_dict.items()])
     send_msg(reply_string, from_id)
     return price_orderId_dict

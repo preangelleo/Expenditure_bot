@@ -5,23 +5,6 @@ from_id = TG_BOT_OWNER_ID
 
 def handle_socket_message(msg):
     if msg['e'] == 'outboundAccountPosition':
-        # Handle account position update
-        print('Account position update:')
-        print(msg)
-        '''outboundAccountPosition
-        {
-        "e": "outboundAccountPosition", // 事件类型
-        "E": 1564034571105,             // 事件时间
-        "u": 1564034571073,             // 账户末次更新时间戳
-        "B": [                          // 余额
-            {
-            "a": "ETH",                 // 资产名称
-            "f": "10000.000000",        // 可用余额
-            "l": "0.000000"             // 冻结余额
-            }
-        ]
-        }'''
-        # Make a dataframe from the 'B' value in the message, save to sql and append the old one if exists
         df = pd.DataFrame(msg['B'])
         df['timestamp'] = msg['E']
         df['update_time'] = msg['u']
@@ -30,25 +13,8 @@ def handle_socket_message(msg):
         df['locked'] = df['l'].astype(float)
         df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
         with engine.connect() as connection: df.to_sql('binance_balance_history', connection, if_exists='append', index=False)
-        try:
-            bnb_df = df[df['asset'] == 'BNB']
-            if not bnb_df.empty:
-                if bnb_df['free'].values[0] < 2: check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID)
-        except Exception as e: print(f'check_and_buy_bnb() error:\n\n{e}\n\n')
-
 
     elif msg['e'] == 'balanceUpdate':
-        # Handle balance update
-        print('Balance update:')
-        '''balanceUpdate
-        {
-        "e": "balanceUpdate",         //Event Type
-        "E": 1573200697110,           //Event Time
-        "a": "ABC",                   //Asset
-        "d": "100.00000000",          //Balance Delta
-        "T": 1573200697068            //Clear Time
-        }'''
-        # Make a string from the message and send to the telegram from_id
         coin = msg['a']
         delta = msg['d']
         add_or_subtract = 'added' if float(delta) > 0 else 'subtracted'
@@ -57,7 +23,6 @@ def handle_socket_message(msg):
         send_msg(alert_msg, from_id)
 
     elif msg['e'] == 'executionReport':
-        # Handle execution report
         print('Execution report:')
         print(json.dumps(msg, indent=2, sort_keys=True))
 
@@ -137,19 +102,12 @@ def handle_socket_message(msg):
         "W": 1499405658657,            // Working Time; 订单被添加到 order book 的时间
         "V": "NONE"                    // SelfTradePreventionMode
         }'''
-        # Handle execution report
         
         symbol = msg['s']
         coin = symbol.replace('USDT', '')
-        clientOrderId = msg['C'] if msg['C'] else msg['c']
-        orderId = msg['i']
-        table_name = 'binance_limit_buy_order' if msg['S'] == 'BUY' else 'binance_limit_sell_order'
-        
-        if msg['X'] in ['CANCELED', 'CANCELLED']:
-            ''' {'e': 'executionReport', 'E': 1703029327337, 's': 'RUNEUSDT', 'c': 'web_4ef308e8a5034b259fd36acf1b18fdd6', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '1515.40000000', 'p': '6.66500000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': 'KkrTVdDuxAc5ggTIUErslC', 'x': 'CANCELED', 'X': 'CANCELED', 'r': 'NONE', 'i': 1269148511, 'l': '0.00000000', 'z': '0.00000000', 'L': '0.00000000', 'n': '0', 'N': None, 'T': 1703029327336, 't': -1, 'I': 2630955099, 'w': False, 'm': False, 'M': False, 'O': 1703019729294, 'Z': '0.00000000', 'Y': '0.00000000', 'Q': '0.00000000', 'W': 1703019729294, 'V': 'EXPIRE_MAKER'}'''
-            if msg['c'].startswith('web_'): mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
+        orderId = int(msg['i'])
 
-        elif msg['X'] in ['EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, msg['X'], table_name)
+        if msg['X'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId)
 
         elif msg['X'] == 'FILLED':
             # check direction is BUY or SELL
