@@ -135,6 +135,8 @@ def plot_performance_by_coin(engine):
     # Add a new column 'coin' by slicing the 'symbol' column
     df_merged['coin'] = df_merged['symbol'].str[:-4]
 
+    df_merged['total_profit'] = pd.to_numeric(df_merged['total_profit'], errors='coerce')
+
     # Filter to top 10 positive and top 5 negative profit coins
     top_positive = df_merged[df_merged['total_profit'] > 0].nlargest(5, 'total_profit')
     top_negative = df_merged[df_merged['total_profit'] < 0].nsmallest(5, 'total_profit')
