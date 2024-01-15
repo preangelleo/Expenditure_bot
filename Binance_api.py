@@ -1776,7 +1776,8 @@ def do_market_buy(coin: str, value):
     data = binance_market_buy(coin, value)
     if not data: return f'Failed to do market buy for coin: {coin}'
     instert_position_table(data, account = 'spot')
-    return f'''Bought {coin} at {format_number(data['price'])} usdt/{coin.lower()}'''
+    price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+    return f'''Bought {coin} at {format_number(price)} usdt/{coin.lower()}'''
 
 
 def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
