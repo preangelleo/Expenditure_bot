@@ -2122,7 +2122,7 @@ def weekly_rsi_over_high(symbol):
     if data_to_table(weekly_rsi_over_high_coin, 'weekly_rsi_over_high'): return weekly_rsi_over_high_coin['is_over_high']
     
 
-def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False, table_name = 'binance_position_buy'):
+def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False):
     df_balance = read_position_table_account(0, coin, 'spot')
     '''
        coin    symbol account  price_create      amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
@@ -2745,11 +2745,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = None, chat_id = from_id, crontab_profit_record = False, table_name = 'binance_position_buy')
+    return binance_auto_position_check(coin = None, chat_id = from_id, crontab_profit_record = False)
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = coin, chat_id = from_id, crontab_profit_record = False, table_name = 'binance_position_buy')
+    return binance_auto_position_check(coin = coin, chat_id = from_id, crontab_profit_record = False)
 
 
 '''小额资产转换 (USER_DATA)
