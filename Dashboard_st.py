@@ -174,6 +174,7 @@ def display_binance_position_sell(engine):
     df_merged['time_create'] = df_merged['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged['time_close'] = df_merged['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged = df_merged[['coin', 'profit', 'account', 'type_create', 'type_close', 'duration_min', 'time_create', 'time_close', 'price_create', 'price_close', 'orderId_create', 'orderId_close']]
+    df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     csv = df_merged.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_table.csv">Download CSV File</a>'
