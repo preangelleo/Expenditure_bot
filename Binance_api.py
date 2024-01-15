@@ -3401,25 +3401,17 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     symbol = coin + 'USDT'
-    df_auto_position = get_df_from_position_table(coin, 'binance_position_buy')
-    if not df_auto_position.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
-    df_manual_position = get_df_from_position_table(coin, 'binance_manually_buy')
-    if not df_manual_position.empty: return send_msg(f'Coin {coin} is in manual position, do not double buy', chat_id)
-    table_name = 'binance_limit_buy_order'
-    df_current_openorders = get_open_limit_orders(symbol, table_name)
-    if not df_current_openorders.empty: 
-        clientOrderId = df_current_openorders['clientOrderId'].values[0]
-        return send_msg(f"Coin {coin} has open limit buy order: '{clientOrderId}', do not double buy", chat_id)
+    df = read_position_table_account(0, coin, 'spot')
+    if not df.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
     amount = CHECK_SIZE / target_price
     polished_parameters = polish_parameters_for_limit_order(coin, amount, target_price)
     if not polished_parameters: return send_msg(f'Failed to polish parameters for limit buy order', chat_id)
     amount = polished_parameters['amount']
     price = polished_parameters['price']
     data = binance_limit_buy(coin, amount, price)
-    del data['fills']
-    clientOrderId = data['clientOrderId']
+    if not data: return send_msg(f'Failed to set limit buy order for {coin}', chat_id)
     orderId = data['orderId']
-    if data_to_table(data, table_name) and chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {orderId}", chat_id)
+    if chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {orderId}", chat_id)
     return
 
 
