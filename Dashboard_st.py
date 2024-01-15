@@ -180,6 +180,13 @@ def display_binance_position_sell(engine):
     href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_table.csv">Download CSV File</a>'
     st.markdown(href, unsafe_allow_html=True)
     with st.expander("Position BUY & SELL History", expanded=False):  st.table(df_merged)
+    # group by coin and make profit sum, show only the coin, profit columns
+    df_merged = df_merged.groupby(['coin']).sum()
+    df_merged = df_merged[['profit']]
+    df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
+    df_merged.reset_index(inplace=True)
+    df_merged['profit'] = df_merged['profit'].apply(lambda x: format_number(x))
+    with st.expander("Position BUY & SELL History grouped by coin", expanded=False):  st.table(df_merged)
     return
 
 
@@ -212,6 +219,14 @@ def display_funding_account_performance(engine):
             df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
             total_profit = df['profit'].sum()
             st.write(f"Total Profit: {format_number(total_profit)}")
+            df.sort_values(by=['profit'], ascending=False, inplace=True)
+            st.table(df)
+            # group by coin and make profit sum, show only the coin, profit columns
+            df = df.groupby(['coin']).sum()
+            df = df[['profit']]
+            df.sort_values(by=['profit'], ascending=False, inplace=True)
+            df.reset_index(inplace=True)
+            df['profit'] = df['profit'].apply(lambda x: format_number(x))
             st.table(df)
 
 
