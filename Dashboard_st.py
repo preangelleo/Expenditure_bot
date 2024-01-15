@@ -185,7 +185,7 @@ def display_binance_position_sell(engine):
 
 def display_open_position(engine):
     try:
-        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, type, account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
+        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
     except: df_buy = pd.DataFrame()
     if df_buy.empty: return
     df_buy['duration'] = int(time.time() * 1000) - df_buy['time_create']
@@ -201,12 +201,15 @@ def display_open_position(engine):
 
 def display_funding_account_performance(engine):
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE account = "funding" AND is_closed = 1')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, profit, price_create, price_close, orderId_create, orderId_close, time_create, time_close, duration FROM position_table WHERE account = "funding" AND is_closed = 1')).fetchall())
     except: pd.DataFrame()
 
     with st.expander("Funding Account Performance", expanded=False): 
         if df.empty: st.write("No funding account performance data.")
         else:
+            df['time_create'] = df['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+            df['time_close'] = df['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+            df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
             total_profit = df['profit'].sum()
             st.write(f"Total Profit: {format_number(total_profit)}")
             st.table(df)
