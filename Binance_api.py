@@ -87,10 +87,6 @@ def get_listed_assets_info():
     except Exception as e:
         print(e)
         return
-'''r = get_listed_assets_info()
-df = pd.DataFrame(r)
-df = df.T
-print(df)'''
 
 
 # 查询用户API Key权限 (USER_DATA), 权重(IP): 1
@@ -133,7 +129,6 @@ def get_exchange_info():
         print(e)
         time.sleep(0.1)
         return
-
 
 ''' SAND EXCHANGE INFO
       "symbol": "SANDUSDT",
@@ -298,13 +293,11 @@ def get_token_price_table(coin_column=True):
     if coin_column: df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     return df_ticker
 
-
 # use get_api_fuction() resutl convert to string send to chat_id
 def get_api_functions_str(chat_id=TG_BOT_OWNER_ID):
     data = get_api_functions()
     if data: return send_msg('\n'.join([f'{key}: {value}' for key, value in data.items()]), chat_id)
     else: return send_msg(f"You don't have a binance API key and secrets in database yet.", chat_id)
-
 
 # 账户API交易状态(USER_DATA), 获取 api 账户交易状态详情, 权重(IP): 1
 # GET /sapi/v1/account/apiTradingStatus (HMAC SHA256)
@@ -329,7 +322,6 @@ def get_api_status(from_id=TG_BOT_OWNER_ID):
         print(e)
         return
 '''{'data': {'isLocked': False, 'plannedRecoverTime': 0, 'triggerCondition': {'UFR': 300, 'IFER': 150, 'GCR': 150}, 'updateTime': 0}}'''
-
 
 # 获取所有币信息 (USER_DATA), 获取针对用户的所有(Binance支持充提操作的)币种信息。权重(IP): 10
 # GET /sapi/v1/capital/config/getall (HMAC SHA256)
@@ -396,7 +388,6 @@ def check_coin_network(coin, network):
 0     ETH  RSR      main              0.00000001       True           True            True                                       Ethereum (ERC20)               False  ^(0x)[0-9A-Fa-f]{40}$                              3531        7062  10000000000           6             64        False                     4  False  AE,BINANCE_BAHRAIN_BSC,KZ,FR,ES,PL,IT,SE,JP,NL...  https://etherscan.io/token/  0x320623b8e4ff03373931769a31fc52a4e78b5d70
 '''
 
-
 # 资金账户 (USER_DATA), 权重(IP): 1
 # POST /sapi/v1/asset/get-funding-asset (HMAC SHA256)
 # 目前仅支持查询以下业务资产：Binance Pay, Binance Card, Binance Gift Card, Stock Token
@@ -425,6 +416,135 @@ def get_funding_asset():
 1   NFT  8077335.411327      0      0           0            0
 '''
 
+'''
+查询每日资产快照 (USER_DATA)
+
+    响应
+
+{
+   "code":200, // 200表示返回正确，否则即为错误码
+   "msg":"", // 与错误码对应的报错信息
+   "snapshotVos":[
+      {
+         "data":{
+            "balances":[
+               {
+                  "asset":"BTC",
+                  "free":"0.09905021",
+                  "locked":"0.00000000"
+               },
+               {
+                  "asset":"USDT",
+                  "free":"1.89109409",
+                  "locked":"0.00000000"
+               }
+            ],
+            "totalAssetOfBtc":"0.09942700"
+         },
+         "type":"spot",
+         "updateTime":1576281599000
+      }
+   ]
+}
+
+    或
+
+{
+   "code":200, // 200表示返回正确，否则即为错误码
+   "msg":"", // 与错误码对应的报错信息
+   "snapshotVos":[
+      {
+         "data":{
+            "marginLevel":"2748.02909813",
+            "totalAssetOfBtc":"0.00274803",
+            "totalLiabilityOfBtc":"0.00000100",
+            "totalNetAssetOfBtc":"0.00274750",
+            "userAssets":[
+               {
+                  "asset":"XRP",
+                  "borrowed":"0.00000000",
+                  "free":"1.00000000",
+                  "interest":"0.00000000",
+                  "locked":"0.00000000",
+                  "netAsset":"1.00000000"
+               }
+            ]
+         },
+         "type":"margin",
+         "updateTime":1576281599000
+      }
+   ]
+}
+
+    或
+
+{
+   "code":200, // 200表示返回正确，否则即为错误码
+   "msg":"", // 与错误码对应的报错信息
+   "snapshotVos":[
+      {
+         "data":{
+            "assets":[
+               {
+                  "asset":"USDT",
+                  "marginBalance":"118.99782335", // 不会实时更新，可以忽略
+                  "walletBalance":"120.23811389"
+               }
+            ],
+            "position":[
+               {
+                  "entryPrice":"7130.41000000",
+                  "markPrice":"7257.66239673",
+                  "positionAmt":"0.01000000",
+                  "symbol":"BTCUSDT",
+                  "unRealizedProfit":"1.24029054" // 只显示开仓当时的未实现盈亏，不会实时更新，可以忽略
+               }
+            ]
+         },
+         "type":"futures",
+         "updateTime":1576281599000
+      }
+   ]
+}
+
+GET /sapi/v1/accountSnapshot
+
+权重(IP): 2400
+
+参数:
+名称 	类型 	是否必需 	描述
+type 	STRING 	YES 	"SPOT", "MARGIN", "FUTURES"
+startTime 	LONG 	NO 	
+endTime 	LONG 	NO 	
+limit 	INT 	NO 	min 7, max 30, default 7
+recvWindow 	LONG 	NO 	
+timestamp 	LONG 	YES 	
+
+    查询时间范围最大不得超过30天
+    仅支持查询最近 1 个月数据
+    若startTime和endTime没传，则默认返回最近7天数据
+'''
+
+# Define a function to check todays binance asset value with 查询每日资产快照 rest api
+def check_asset_snapshot():
+    PATH = '/sapi/v1/accountSnapshot'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'type': 'SPOT',
+        'limit': 1,
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    try:
+        r = requests.get(url, headers=BINANCE_HEADERS, params=params)
+        if r.status_code != 200: return
+        data = r.json()
+        return data
+    except Exception as e:
+        print(e)
+        return 
 
 # 定义 FUNDING_MAIN 资金钱包转向现货钱包功能
 def funding_main_transfer(coin:str, amount):
@@ -3321,29 +3441,46 @@ def grid_profit_check(grid_profit_target=1):
     except: return pd.DataFrame()
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
+    df_balance['asset_value'] = df_balance['lastPrice'] * df_balance['amount']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
     if grid_profit_target: df_balance = df_balance[df_balance['profit'] > grid_profit_target]
     df_balance = df_balance.loc[:, ['coin', 'profit', 'account', 'orderId_create', 'orderId_close']]
     return df_balance
 
 
-def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=1):
+def check_usdt_balance(from_id=None):
+    spot_balance = get_coin_wallet_balance_with_locked()
+    spot_USDT_balance = int(spot_balance['USDT'])
+    funding_balance = get_funding_asset()
+    funding_USDT_balance = int(funding_balance[funding_balance['asset'] == 'USDT']['free'].values[0])
+    total_usdt = spot_USDT_balance + funding_USDT_balance
+    reply_string = f"USDT Balance: \nSpot: {format_number(spot_USDT_balance)}\nFunding: {format_number(funding_USDT_balance)}\nTotal: {format_number(total_usdt)}"
+    if from_id: send_msg(reply_string, from_id)
+    return {'spot': spot_USDT_balance, 'funding': funding_USDT_balance, 'total': total_usdt}
+
+
+def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = grid_profit_check(grid_profit_target)
-    if df_balance.empty: return send_msg(f"No open positions", chat_id)
+    if df_balance.empty: return send_msg(f"No open positions", from_id)
     df_funding = df_balance[df_balance['account'] == 'funding']
     if not df_funding.empty:
         reply_list = ['FUNDING account:']
         for index, row in df_funding.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
-        send_msg(reply_string, chat_id)
-        send_msg(f"FUNDING Total profit: {format_number(df_funding['profit'].sum())} usdt", chat_id)
+        send_msg(f"{reply_string}\nTotal profit: {format_number(df_funding['profit'].sum())} usdt", from_id)
     df_spot = df_balance[df_balance['account'] == 'spot']
     if not df_spot.empty:
         reply_list = ['SPOT account:']
         for index, row in df_spot.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
-        send_msg(reply_string, chat_id)
-        send_msg(f"SPOT Total profit: {format_number(df_spot['profit'].sum())} usdt", chat_id)
+        send_msg(f"{reply_string}\nTotal profit: {format_number(df_spot['profit'].sum())} usdt", from_id)
+    asset_value = df_balance['asset_value'].sum()
+    data = check_usdt_balance()
+    spot_usdt = data.get('spot', 0)
+    funding_usdt = data.get('funding', 0)
+    total_usdt = data.get('total', 0)
+    total_value = asset_value + total_usdt
+    send_msg(f"Asset Value: {format_number(asset_value)} usdt\nSpot USDT: {format_number(spot_usdt)}\nFunding USDT: {format_number(funding_usdt)}\nTotal USDT: {format_number(total_usdt)}\nTotal Value: {format_number(total_value)} usdt\n\n/close_postive_positions or /close_all_positions", from_id)
     return 
 
 
@@ -3382,7 +3519,6 @@ def close_postive_positions(from_id, grid_profit_target=1):
             coin_with_highest_profit = coin_df['coin'].values[0]
             orderId_create = int(coin_df['orderId_create'].values[0])
             do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
-    send_msg(f"/close_postive_positions or /close_all_positions", from_id)
     return 
 
 
