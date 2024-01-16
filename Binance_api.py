@@ -2116,7 +2116,7 @@ def weekly_rsi_over_high(symbol):
     if data_to_table(weekly_rsi_over_high_coin, 'weekly_rsi_over_high'): return weekly_rsi_over_high_coin['is_over_high']
     
 
-def binance_auto_position_check(coin=None, chat_id=None, crontab_profit_record=False):
+def binance_spot_position_check(coin=None, chat_id=None, crontab_profit_record=False):
     df_balance = read_position_table_account(0, coin, 'spot')
     '''
        coin    symbol account  price_create      amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
@@ -2446,11 +2446,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = None, chat_id = from_id)
+    return binance_spot_position_check(coin = None, chat_id = from_id)
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = coin, chat_id = from_id)
+    return binance_spot_position_check(coin = coin, chat_id = from_id)
 
 
 '''小额资产转换 (USER_DATA)
@@ -2981,7 +2981,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         data_to_table(hot_coin_history, 'hot_coins_history')
         reply_string = f"{coin} | {format_number(price)}"
         broadcast_text(reply_string)
-    if len(final_hotcoins_dict) < 10:
+    if datetime.now().strftime("%H:%M") < '00:10' and len(final_hotcoins_dict) < 10:
         pick_head = 10 - len(final_hotcoins_dict)
         df = read_position_table_of_this_year()
         df = df.groupby('symbol')['price_close'].max().reset_index()
@@ -3019,15 +3019,6 @@ def binance_adjust_profit():
         if not data: return send_msg(f'{alert}\nfailed to market buy 1 BNB', TG_BOT_OWNER_ID)
         if 'fills' in data: del data['fills']
         if data_to_table(data, f'check_and_buy_BNB'): send_msg(f'{alert}\nDONE: Market buy 1 BNB', TG_BOT_OWNER_ID)
-        # current_timestamp = datetime.now().timestamp() * 1000
-        # current_year = datetime.now().year
-        # current_month = datetime.now().month
-        # current_day = datetime.now().day
-        # adjust_dict = {'coin': 'ADJUST', 'symbol': 'ADJUSTUSDT', 'account': 'spot', 'price_create': 0, 'amount': 0, 'usdt_value': 9999.96274, 'orderId_create': 0, 'time_create': current_timestamp, 'type_create': 'MARKET', 'is_closed': 1, 'is_manual': 0, 'target_profit': 0, 'price_close': 0, 'orderId_close': 0, 'time_close': current_timestamp, 'type_close': '', 'usdt_close': 0, 'profit': amount_to_be_adjusted, 'duration': 0, 'year_create': current_year, 'month_create': current_month, 'day_create': current_day, 'year_close': current_year, 'month_close': current_month, 'day_close': current_day, 'commission': 0, 'exchange': 'leowang'}
-        # data_to_table(adjust_dict, 'position_table')
-        # reply_string = f"Profit: {format_number(profit)}\nUSDT Balance: {format_number(USDT_balance)}\nAmount to be adjusted: {format_number(amount_to_be_adjusted)}\nNew Profit: {format_number(profit + amount_to_be_adjusted)}\n\nALL SET!"
-        # send_msg(reply_string, TG_BOT_OWNER_ID)
-        # send_email('Binance Adjust Profit', reply_string, GMAIL_ADDRESS_MAIN)
     return amount_to_be_adjusted
 
 
