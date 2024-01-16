@@ -3444,7 +3444,7 @@ def grid_profit_check(grid_profit_target=1):
     df_balance['asset_value'] = df_balance['lastPrice'] * df_balance['amount']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
     if grid_profit_target: df_balance = df_balance[df_balance['profit'] > grid_profit_target]
-    df_balance = df_balance.loc[:, ['coin', 'profit', 'account', 'orderId_create', 'orderId_close']]
+    df_balance = df_balance.loc[:, ['coin', 'profit', 'asset_value', 'account', 'orderId_create', 'orderId_close']]
     return df_balance
 
 
