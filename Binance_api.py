@@ -2096,7 +2096,7 @@ def analyze_data(df, interval):
     condition_5m = current_price > df['SMA_13'].iloc[-1]
     current_condition = condition_5m if interval == '5m' else condition_15m if interval == '15m' else condition_1h if interval == '1h' else condition_4h if interval == '4h' else condition_1d if interval == '1d' else False
     if general_condition == 1 and current_condition and df['RSI'].iloc[-1] > df['RSI'].iloc[-2] and df['RSI'].iloc[-1] < 89 and df['RSI'].iloc[-1] > df['RSI_SMA'].iloc[-1]: return {'interval': interval, 'long': True, 'short': False}
-    else: return {'interval': interval, 'target_profit': 0.01, 'long': False, 'short': False}
+    else: return {'interval': interval, 'long': False, 'short': False}
 
     
 def analyze_symbol(symbol: str, interval_list = ['5m', '15m', '1h', '4h']):
@@ -2171,7 +2171,6 @@ def analyze_symbol_prudently(symbol: str):
             if not result: continue
             if result['short']: good_to_short += 1
             elif result['long']: good_to_buy += 1
-            target_profit = max(target_profit, result['target_profit'])
             if good_to_buy >= 3: 
                 current_price = float(df['Close'].iloc[-1])
                 if current_price > 0:
