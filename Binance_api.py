@@ -2227,7 +2227,7 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID):
     return send_msg(reply_msg, chat_id)
 
 
-def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID, is_last_hour=False):
+def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID):
     try: 
         with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
     except: df_today = pd.DataFrame()
@@ -2253,33 +2253,20 @@ def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID, is_last
         send_msg(reply_msg, chat_id)
         send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
         return print(f"Today's profit has been taken: {today_realized_profit_dict['profit_sum']}")
-    df_balance = read_position_table_account() if not is_last_hour else read_position_table()
+    is_last_hour = True if datetime.now().strftime("%H") == '23' else False
+    df_balance = read_position_table() if is_last_hour else read_position_table_account()
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
     if df.empty: return print('Failed to fetch price info')
     df = df.drop(columns=['coin'])
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
-    ''' df_balance
-       coin    symbol account  price_create       amount   usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close       profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange  lastPrice
-    0  ATOM  ATOMUSDT    spot     12.269441      815.030  9999.962740      2594994242  1703573139555      MARKET          0          0            0.1          0.0     2660334050           0                      0 -1768.159740         0         2023            12          25           0            0          0   14.999944  binance  10.100000
-    1   APE   APEUSDT    spot      1.786000     5599.100  9999.992600      1563146551  1703736326606      MARKET          0          0            0.1          0.0     1582032805           0                      0 -2032.473300         0         2023            12          27           0            0          0   14.999989  binance   1.423000
-    2  COMP  COMPUSDT    spot     66.115741      151.249  9999.939750      1259040501  1703742928420      MARKET          0          0            0.1          0.0     1286232395           0                      0 -1333.372050         0         2023            12          27           0            0          0   14.999910  binance  57.300000
-    3  GALA  GALAUSDT    spot      0.033265   300613.000  9999.969160      2192893079  1703744426664      MARKET          0          0            0.1          0.0     2225174967           0                      0 -2199.061810         0         2023            12          27           0            0          0   14.999954  binance   0.025950
-    4   GRT   GRTUSDT    spot      0.223840    44674.000  9999.816200      1394304791  1704162623034      MARKET          0          0            0.1          0.0     1411409643           0                      0 -2615.204000         0         2024             1           1           0            0          0   14.999724  binance   0.165300
-    5  HBAR  HBARUSDT    spot      0.098600   101419.000  9999.913400       782193241  1704245781505      MARKET          0          0            0.1          0.0      790382917           0                      0 -2028.380000         0         2024             1           2           0            0          0   14.999870  binance   0.078600
-    6  ORDI  ORDIUSDT    spot     86.979837      114.960  9999.202010       511430308  1704276389162      MARKET          0          0            0.1          0.0      629662801           0                      0 -1408.471130         0         2024             1           3           0            0          0   14.998803  binance  74.728000
-    7  ARPA  ARPAUSDT    spot      0.073910   135299.700  9999.996120       786394949  1704511096530      MARKET          0          0            0.1          0.0      799006405           0                      0  -468.132255         0         2024             1           5           0            0          0   14.999994  binance   0.070450
-    8   RSR   RSRUSDT    spot      0.002584  3870523.100  9999.999875       767422734  1705267655350      MARKET          0          0            0.1          0.0      767443824           0                      0   214.310586         0         2024             1          14           0            0          0   15.000000  binance   0.002639
-    '''
     df_balance = df_balance.sort_values(by='profit', ascending=False)
     df_balance = df_balance[df_balance['profit'] > 100]
     if df_balance.empty: return print(f"No coin with profit > 100 usdt")
     profit_sum = df_balance['profit'].astype(float).sum()
-    if profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15 - today_realized_profit: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
+    if not is_last_hour and profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15 - today_realized_profit: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
     
-    # For the coins in df_balance, do market sell in order of profit from high to low untill profit_take reaches daily_profit_target, then break the loop. But before market sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
-    profit_take = today_realized_profit
     profit_coinlist = today_realized_profit_coinlist
     for i in range(df_balance.shape[0]):
         coin_df = df_balance.iloc[i:i+1]
@@ -2305,73 +2292,6 @@ def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID, is_last
     send_msg(reply_msg, chat_id)
     send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
     return 
-
-
-def daily_profit_take_last_check():
-    try: 
-        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
-    except: df_today = pd.DataFrame()
-    if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
-    today_realized_profit_dict = check_today_profit_sum()
-    today_realized_profit = today_realized_profit_dict['profit_sum']
-    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
-    new_data = {
-        'date': datetime.now().strftime('%Y-%m-%d'),
-        'profit': today_realized_profit,
-        'coinlist': '\n'.join(today_realized_profit_coinlist) if today_realized_profit_coinlist else 'None',
-        'update_timestamp': int(datetime.now().timestamp() * 1000)
-    }
-    data_to_table(new_data, 'daily_profit_take')
-    reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(today_realized_profit)} usdt"
-    send_email(reply_title, new_data['coinlist'], GMAIL_ADDRESS_MAIN)
-    return 
-
-
-def get_open_limit_orders(symbol = None, table_name = 'binance_limit_sell_order'):
-    df = pd.DataFrame()
-    if symbol:
-        try: 
-            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT orderId, clientOrderId FROM {table_name} WHERE symbol = :symbol AND status = "NEW" ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
-        except: pass
-    else:
-        try: 
-            with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE status = "NEW"')).fetchall())
-        except: pass
-    return df
-
-
-def set_limit_order_filled_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
-    with engine.connect() as connection:
-        try:
-            # Execute the query with the updated update_id
-            connection.execute(text(f"UPDATE {table_name} SET status = 'FILLED' WHERE orderId = :orderId"), {'orderId': orderId})
-            connection.commit()
-            return True
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return
-
-
-# Get binance_limit_sell_order df by orderId
-def get_df_by_orderId(orderId, table_name = 'binance_limit_sell_order'):
-    try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM {table_name} WHERE orderId = :orderId'), {'orderId': orderId}).fetchall())
-    except: df = pd.DataFrame()
-    return df
-
-
-# define a function to UPDATE binance_limit_sell_order SET all status to 'CANCELLED' if status is not 'FILLED'
-def binance_set_all_orders_to_cancelled(chat_id=TG_BOT_OWNER_ID):
-    with engine.connect() as connection:
-        try:
-            # Execute the query with the updated update_id
-            connection.execute(text("UPDATE binance_limit_sell_order SET status = 'CANCELLED' WHERE status != 'FILLED'"))
-            connection.commit()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return send_msg(f"All Non-Filled Orders have been set to Cancelled.", chat_id)
 
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
@@ -2481,37 +2401,15 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
 
 
 # Define a function to make a dict to dataframe and create or append to a given table name
-def data_to_table(data, table_name):
+def data_to_table(data, table_name, if_exists='append'):
     if type(data) != dict: return
     df = pd.DataFrame(data, index=[0])
     if df.empty: return
     try: 
-        with engine.connect() as connection: df.to_sql(table_name, connection, if_exists='append', index=False)
+        with engine.connect() as connection: df.to_sql(table_name, connection, if_exists=if_exists, index=False)
         return True
     except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
     return
-
-
-def add_cloumn_to_a_table(table_name = 'binance_limit_sell_order', new_colum = 'target_profit', default_value = 0.01):
-    # add a new column to binance_limit_sell_order table make default value 0.01
-    with engine.connect() as connection:
-        try:
-            # Execute the query with the updated update_id
-            connection.execute(text(f"ALTER TABLE {table_name} ADD {new_colum} FLOAT DEFAULT {default_value}"))
-            connection.commit()
-            return True
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return
-
-
-# Check if a given column in a given table, if not return False, if yes, return True
-def check_column_in_table(column, table):
-    with engine.connect() as connection:
-        df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {table}")).fetchall())
-        if column in df.columns: return True
-    return False
 
 
 # Define cancel all of the open orders

@@ -170,7 +170,6 @@ COMMANDS = [
     {"command": 'refill_stella_leo', 'description': 'Refill the given amount of USDT to stella account of Leo'},
     {"command": 'positions_coin_list', 'description': 'Get the positions coin list'},
     {"command": 'funding_position_price', 'description': 'Get the prices of positions of a given coin'},
-    {"command": 'close_order_id', 'description': 'Close a given order id for a partially filled order'},
 ]
 
 FUNCTIONS_TOOLS = [
@@ -600,7 +599,6 @@ BOT_COMMAND_DICT = {
     'gtt': 'get_top_turnover',
     'pcl': 'positions_coin_list',
     'fpp': 'funding_position_price',
-    'cid': 'close_order_id',
     }
 
 COINBASE_COIN_LIST = ['LQTY', 'ENS', 'MATIC', 'IMX', 'WCFG', 'LINK', 'XYO', 'ERN', 'SAND', 'PERP', 'JASMY', 'API3', 'SUPER', 'LRC', 'NEAR', 'BICO', 'RLY', 'BTC', 'CLV', 'TIME', 'FET', 'DDX', 'DOGE', 'METIS', 'UST', 'REQ', 'ENJ', 'MINA', 'FIS', 'QNT', 'ATA', 'SHIB', 'C98', 'MDT', 'STG', 'GAL', 'FARM', 'NEST', 'TRAC', 'ZEN', 'GMT', 'AIOZ', 'DREP', 'POND', 'POLY', 'TRU', 'BTRST', 'FOX', 'XLM', 'INDEX', 'DYP', 'VGX', 'CHZ', 'STX', 'HBAR', 'POWR', 'DOT', 'WLUNA', 'OP', 'SPELL', 'XCN', 'MCO2', 'RNDR', 'FORT', 'AVAX', 'GNO', 'ETH', 'FIDA', 'SHPING', 'DESO', 'PAX', 'MEDIA', 'MASK', 'HFT', 'HOPR', 'APT', 'POLS', 'GALA', 'ELA', 'ALCX', 'MATH', 'BADGER', 'KSM', 'BIT', 'KRL', 'BOBA', 'PRQ', 'AUCTION', 'WAMPL', 'ORN', 'DIA', 'XRP', 'UPI', 'NCT', 'CTX', 'SUKU', 'RAD', 'ARPA', 'ADA', 'IDEX', 'ACH', 'QSP', 'APE', 'FLOW', 'COVAL', 'AXS', 'ROSE', 'LCX', 'SOL', 'BOND', 'ICP', 'SYLO', 'CRO', 'AGLD', 'ATOM', 'ASM']
