@@ -167,7 +167,7 @@ def plot_performance_by_coin(engine):
 
 def display_binance_trading_history(engine):
     try:
-        with engine.connect() as connection: df_merged = pd.DataFrame(connection.execute(text('SELECT * FROM position_table WHERE is_closed = 1 ORDER BY time_create DESC')).fetchall())
+        with engine.connect() as connection: df_merged = pd.DataFrame(connection.execute(text('SELECT * FROM position_table WHERE is_closed = 1 AND account = "spot" ORDER BY time_create DESC')).fetchall())
     except: df_merged = pd.DataFrame()
     if df_merged.empty: return
     df_merged['duration_min'] = df_merged['duration'].apply(lambda x: int(x/1000/60))
@@ -180,7 +180,7 @@ def display_binance_trading_history(engine):
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_table.csv">Download CSV File</a>'
     st.markdown(href, unsafe_allow_html=True)
-    with st.expander("Position BUY & SELL History", expanded=False): 
+    with st.expander("Spot Account BUY & SELL History", expanded=False): 
         st.write(f"Total Profit: {format_number(total_profit)}")
         st.table(df_merged)
     # group by coin and make profit sum, show only the coin, profit columns
@@ -189,7 +189,7 @@ def display_binance_trading_history(engine):
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
     df_merged['profit'] = df_merged['profit'].apply(lambda x: format_number(x))
-    with st.expander("Position BUY & SELL History grouped by coin", expanded=False): st.table(df_merged)
+    with st.expander("Spot Account performance grouped by coin", expanded=False): st.table(df_merged)
     return
 
 
@@ -201,46 +201,44 @@ def display_open_position(engine):
     df_buy['duration'] = int(time.time() * 1000) - df_buy['time_create']
     df_buy['duration_hour'] = df_buy['duration'].apply(lambda x: int(x/1000/60/60))
     df_buy['time_create'] = df_buy['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
-    # drop 'duration' column
     df_buy.drop(['duration'], axis=1, inplace=True)
-    with st.expander("Open Positions", expanded=False): 
-        if df_buy.empty: st.write("No open positions currently.")
-        else: st.table(df_buy)
+    df_spot = df_buy[df_buy['account'] == 'spot']
+    df_funding = df_buy[df_buy['account'] == 'funding']
+    if not df_spot.empty: 
+        with st.expander("Spot Account Open Positions", expanded=False): st.table(df_spot)
+    if not df_funding.empty: 
+        with st.expander("Funding Account Open Positions", expanded=False): st.table(df_funding)
     return 
 
 
 def display_funding_account_performance(engine):
     try: 
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, profit, price_create, price_close, orderId_create, orderId_close, time_create, time_close, duration FROM position_table WHERE account = "funding" AND is_closed = 1')).fetchall())
-    except: pd.DataFrame()
-
-    with st.expander("Funding Account Performance", expanded=False): 
-        if df.empty: st.write("No funding account performance data.")
-        else:
-            df['time_create'] = df['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
-            df['time_close'] = df['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
-            df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
-            total_profit = df['profit'].sum()
+    except: df = pd.DataFrame()
+    if not df.empty:
+        df['time_create'] = df['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+        df['time_close'] = df['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
+        df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
+        total_profit = df['profit'].sum()
+        df.sort_values(by=['profit'], ascending=False, inplace=True)
+        df_group = df.groupby(['coin']).sum()
+        df_group = df_group[['profit']]
+        df_group.sort_values(by=['profit'], ascending=False, inplace=True)
+        df_group.reset_index(inplace=True)
+        df_group['profit'] = df_group['profit'].apply(lambda x: format_number(x))
+        with st.expander("Funding Account Performance", expanded=False): 
             st.write(f"Total Profit: {format_number(total_profit)}")
-            df.sort_values(by=['profit'], ascending=False, inplace=True)
             st.table(df)
-            # group by coin and make profit sum, show only the coin, profit columns
-            df = df.groupby(['coin']).sum()
-            df = df[['profit']]
-            df.sort_values(by=['profit'], ascending=False, inplace=True)
-            df.reset_index(inplace=True)
-            df['profit'] = df['profit'].apply(lambda x: format_number(x))
             st.write("Grouped by coin")
-            st.table(df)
+            st.table(df_group)
 
 
 def display_daily_profit_take(engine):
     try: 
         with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
     except: df_today = pd.DataFrame()
-    with st.expander("Daily Profit Take Record", expanded=False): 
-        if df_today.empty: st.write("No daily profit take record.")
-        else: 
+    if not df_today.empty:
+        with st.expander("Daily Profit Take Record", expanded=False): 
             total_profit_take_of_this_year = df_today[df_today['date'].apply(lambda x: x.split('-')[0] == str(datetime.now().year))]['profit'].sum()
             today_month = datetime.now().month
             today_month = f'0{today_month}' if today_month < 10 else today_month
@@ -249,7 +247,6 @@ def display_daily_profit_take(engine):
             df_today['profit'] = df_today['profit'].apply(lambda x: int(x))
             df_today['update_timestamp'] = df_today['update_timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%H:%M'))
             st.table(df_today)
-
 
 def main():
     display_header()
