@@ -165,7 +165,7 @@ def plot_performance_by_coin(engine):
     return 
 
 
-def display_binance_position_sell(engine):
+def display_binance_trading_history(engine):
     try:
         with engine.connect() as connection: df_merged = pd.DataFrame(connection.execute(text('SELECT * FROM position_table WHERE is_closed = 1 ORDER BY time_create DESC')).fetchall())
     except: df_merged = pd.DataFrame()
@@ -255,7 +255,7 @@ def main():
 
     display_open_position(engine)
 
-    display_binance_position_sell(engine)
+    display_binance_trading_history(engine)
 
     display_funding_account_performance(engine)
 

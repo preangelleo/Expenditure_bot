@@ -1664,15 +1664,15 @@ def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     return do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin)
 
 
-# get the latest sold coin from binance_position_sell
 def get_latest_sold_coin():
     try:
-        with engine.connect() as connection: df_latest_sold_coin = pd.DataFrame(connection.execute(text("SELECT * FROM binance_position_sell ORDER BY transactTime DESC LIMIT 1")).fetchall())
+        with engine.connect() as connection: df_latest_sold_coin = pd.DataFrame(connection.execute(text("SELECT * FROM position_table ORDER BY time_close DESC LIMIT 1")).fetchall())
         if df_latest_sold_coin.empty: return
     except: return
-    coin = df_latest_sold_coin['symbol'].values[0]
-    coin = coin.replace('USDT', '') if coin.endswith('USDT') else coin
-    return coin
+    coin = df_latest_sold_coin['coin'].values[0]
+    profit = df_latest_sold_coin['profit'].values[0]
+    reply_msg = f"Latest sold {coin} with profit: {format_number(profit)} usdt"
+    return reply_msg
 
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
@@ -2725,22 +2725,16 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
 
 # define a function to read the latest transactTime sell price for a given coin
 def read_latest_sell_price(coin, from_id):
-    
-    symbol = coin + 'USDT' if not coin.endswith('USDT') else coin
-
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM binance_position_sell WHERE symbol = :symbol ORDER BY transactTime DESC LIMIT 1'), {'symbol': symbol}).fetchall())
-    except: return send_msg(f'binance_position_sell table does not exist', from_id)
-
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE coin = :coin ORDER BY time_close DESC LIMIT 1'), {'coin': coin}).fetchall())
+    except: return send_msg(f'position_table table does not exist', from_id)
     if df.empty: return send_msg(f'No sell record for {coin}', from_id)
-
-    price = df['price'].values[0]
-    # price = float(price)
-
-    # get current price of coin
+    price = df['price_close'].values[0]
+    profit = df['profit'].values[0]
     current_price = get_token_price(coin)
-
-    send_msg(f"{coin}\n\nLast Sell Price: {format_number(price)}\nCurrent Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%", from_id)
+    send_msg(f"{coin}\nPrice_close: {format_number(price)}\nProfit: {format_number(profit)}\nCurrent_Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%", from_id)
     return price
 
 
@@ -3096,7 +3090,6 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     return final_hotcoins_dict
 
 
-# Define a function to check the sum of the profit of all coins in binance_position_sell table and compare with USDT balance of get_coin_wallet_balance_with_locked(), if the INITIAL_FUND + profit - USDT Balance = amount_to_be_adjusted, then creat a new row for the table to put the - amount_to_be_adjusted number to the table, make the new sum of profit = INITIAL_FUND + profit - amount_to_be_adjusted.
 def binance_adjust_profit():
     df_spot_position = read_position_table_account()
     if df_spot_position.empty: fund_in_spot_position = 0
@@ -3238,6 +3231,7 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create} ''', from_id)
     return 
 
+
 def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
@@ -3272,54 +3266,20 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def monthly_summary():
-    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, transactTime, profit FROM binance_position_sell')).fetchall())
-    ''' df_profit  binance_position_sell
-        symbol   transactTime      profit
-    0    FTTUSDT  1702224291468  789.421552
-    1   EGLDUSDT  1702267644918  237.486573
-    2    IMXUSDT  1702267667019   57.087613
-    3    SNXUSDT  1702267684943   56.354097
-    4    INJUSDT  1702308983629  -22.595406
-    ..       ...            ...         ...
-    65   BCHUSDT  1703913825876   86.187633
-    66  IOTAUSDT  1703987430064   84.908796
-    67  IOTAUSDT  1703987580499   86.174984
-    68   NMRUSDT  1704058829381   83.834451
-    69   INJUSDT  1704134604365  249.412075
-    '''
-    # Add string format column of transactTime
-    df_profit['time_string_month'] = df_profit['transactTime'].apply(lambda x: datetime.fromtimestamp(x / 1000).strftime('%Y-%m'))
-    # select only the rows in last month
     last_month = datetime.now().month - 1 if datetime.now().month != 1 else 12
     last_month_year = datetime.now().year - 1 if datetime.now().month == 1 else datetime.now().year
-    df_profit = df_profit[df_profit['time_string_month'] == f'{last_month_year}-{last_month}']
-    '''
-        symbol   transactTime      profit time_string_month
-    0    FTTUSDT  1702224291468  789.421552           2023-12
-    1   EGLDUSDT  1702267644918  237.486573           2023-12
-    2    IMXUSDT  1702267667019   57.087613           2023-12
-    3    SNXUSDT  1702267684943   56.354097           2023-12
-    4    INJUSDT  1702308983629  -22.595406           2023-12
-    ..       ...            ...         ...               ...
-    64  IOTAUSDT  1703819030583   85.958474           2023-12
-    65   BCHUSDT  1703913825876   86.187633           2023-12
-    66  IOTAUSDT  1703987430064   84.908796           2023-12
-    67  IOTAUSDT  1703987580499   86.174984           2023-12
-    68   NMRUSDT  1704058829381   83.834451           2023-12
-    '''
-    df_profit['coin'] = df_profit['symbol'].apply(lambda x: x[:-4])
+    with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT coin, symbol, time_close, profit FROM position_table WHERE is_closed = 1 AND month_close = :month AND year_close = :year'), {'month': last_month, 'year': last_month_year}).fetchall())
+    # Add string format column of transactTime
+    df_profit['time_string_month'] = df_profit['time_close'].apply(lambda x: datetime.fromtimestamp(x / 1000).strftime('%Y-%m'))
     trading_counts = df_profit.shape[0]
     total_profit = df_profit['profit'].astype(float).sum()
     total_profit_by_initialfund = total_profit / INITIAL_FUND * 100
     df_profit = df_profit.groupby('coin').sum(numeric_only=True).reset_index()
-    # best performance coin
     df_profit = df_profit.sort_values(by='profit', ascending=False).reset_index(drop=True)
     best_coin = df_profit['coin'][0]
     best_coin_profit = df_profit['profit'][0]
     worst_coin = df_profit['coin'][df_profit.shape[0] - 1]
     worst_coin_profit = df_profit['profit'][df_profit.shape[0] - 1]
-
-    # summary
     reply_sumary = f"Trading Counts: {trading_counts}\nTotal Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\n\nBest Coin: {best_coin} >> {format_number(best_coin_profit)}\nWorst Coin: {worst_coin} >> {format_number(worst_coin_profit)}"
     send_msg(f"Trading Bot Performance Summary of {last_month_year}-{last_month}:\n\n{reply_sumary}", TG_BOT_OWNER_ID)
     send_email(f'Trading Bot Performance Summary of {last_month_year}-{last_month}', reply_sumary, GMAIL_ADDRESS_MAIN)
