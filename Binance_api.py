@@ -1675,13 +1675,6 @@ def get_latest_sold_coin():
     return reply_msg
 
 
-def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
-    if not confirm or confirm.upper() not in ['ALL', 'CONFIRM', 'YES']: return send_msg(f'You need to type ALL or CONFIRM or YES to confirm close all positions.', from_id)
-    df_balance = read_position_table()
-    if df_balance.empty: return send_msg(f'No open position for close', from_id)
-    for i in range(df_balance.shape[0]): do_market_sell_by_orderId_create(int(df_balance.iloc[i]['orderId_create']), from_id, df_balance.iloc[i:i+1], df_balance.iloc[i]['coin'])
-
-
 # 定义一个Market buy 交易功能 Input: coin, value
 def binance_market_buy(coin, value):
     coin = coin.upper()
@@ -3321,20 +3314,20 @@ def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLU
     return 
 
 
-def grid_profit_check(grid_profit_target=15):
+def grid_profit_check(grid_profit_target=1):
     df_balance = read_position_table()
     if df_balance.empty: return pd.DataFrame()
     try: df = get_token_price_table(coin_column=False)
     except: return pd.DataFrame()
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
-    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
     if grid_profit_target: df_balance = df_balance[df_balance['profit'] > grid_profit_target]
     df_balance = df_balance.loc[:, ['coin', 'profit', 'account', 'orderId_create', 'orderId_close']]
     return df_balance
 
 
-def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=100):
+def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = grid_profit_check(grid_profit_target)
     if df_balance.empty: return send_msg(f"No open positions", chat_id)
     df_funding = df_balance[df_balance['account'] == 'funding']
@@ -3365,8 +3358,14 @@ def click_to_close(orderId_create, from_id=TG_BOT_OWNER_ID):
     return do_market_sell_by_orderId_create(orderId_create, from_id)
 
 
-# Define a function to sell all of the profit position
-def close_postive_positions(from_id, grid_profit_target=16):
+def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
+    if not confirm or confirm.upper() not in ['ALL', 'CONFIRM', 'YES']: return send_msg(f'You need to type ALL or CONFIRM or YES to confirm close all positions.', from_id)
+    df_balance = read_position_table()
+    if df_balance.empty: return send_msg(f'No open position for close', from_id)
+    for i in range(df_balance.shape[0]): do_market_sell_by_orderId_create(int(df_balance.iloc[i]['orderId_create']), from_id, df_balance.iloc[i:i+1], df_balance.iloc[i]['coin'])
+
+
+def close_postive_positions(from_id, grid_profit_target=1):
     df_balance = grid_profit_check(grid_profit_target)
     if df_balance.empty: return send_msg(f"No open positions", from_id)
     df_funding = df_balance[df_balance['account'] == 'funding']
@@ -3383,6 +3382,7 @@ def close_postive_positions(from_id, grid_profit_target=16):
             coin_with_highest_profit = coin_df['coin'].values[0]
             orderId_create = int(coin_df['orderId_create'].values[0])
             do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    send_msg(f"/close_postive_positions or /close_all_positions", from_id)
     return 
 
 
