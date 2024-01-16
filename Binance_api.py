@@ -3480,7 +3480,7 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     funding_usdt = data.get('funding', 0)
     total_usdt = data.get('total', 0)
     total_value = asset_value + total_usdt
-    send_msg(f"Asset Value: {format_number(asset_value)} usdt\nSpot USDT: {format_number(spot_usdt)}\nFunding USDT: {format_number(funding_usdt)}\nTotal USDT: {format_number(total_usdt)}\nTotal Value: {format_number(total_value)} usdt\n\n/close_postive_positions or /close_all_positions", from_id)
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\n\n/close_postive_positions or /close_all_positions", from_id)
     return 
 
 
