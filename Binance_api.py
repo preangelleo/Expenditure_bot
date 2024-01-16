@@ -3022,7 +3022,6 @@ def binance_adjust_profit():
     return amount_to_be_adjusted
 
 
-# define a function to set a limit order for a coin in position
 def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
     coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
     try: target_profit = float(target_profit)
@@ -3241,7 +3240,7 @@ def get_current_positions_from_all_tables(from_id = TG_BOT_OWNER_ID):
     return coin_in_positions
 
 
-def grid_profit_take(grid_profit_target=1000, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, chat_id=TG_BOT_OWNER_ID):
+def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, chat_id=TG_BOT_OWNER_ID):
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
     today_hot_coinlist = list(today_hot_coin_dict.keys())
