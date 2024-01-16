@@ -175,18 +175,21 @@ def display_binance_trading_history(engine):
     df_merged['time_close'] = df_merged['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged = df_merged[['coin', 'profit', 'account', 'type_create', 'type_close', 'duration_min', 'time_create', 'time_close', 'price_create', 'price_close', 'orderId_create', 'orderId_close']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
+    total_profit = df_merged['profit'].sum()
     csv = df_merged.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_table.csv">Download CSV File</a>'
     st.markdown(href, unsafe_allow_html=True)
-    with st.expander("Position BUY & SELL History", expanded=False):  st.table(df_merged)
+    with st.expander("Position BUY & SELL History", expanded=False): 
+        st.write(f"Total Profit: {format_number(total_profit)}")
+        st.table(df_merged)
     # group by coin and make profit sum, show only the coin, profit columns
     df_merged = df_merged.groupby(['coin']).sum()
     df_merged = df_merged[['profit']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
     df_merged['profit'] = df_merged['profit'].apply(lambda x: format_number(x))
-    with st.expander("Position BUY & SELL History grouped by coin", expanded=False):  st.table(df_merged)
+    with st.expander("Position BUY & SELL History grouped by coin", expanded=False): st.table(df_merged)
     return
 
 
