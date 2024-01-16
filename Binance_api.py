@@ -1387,6 +1387,19 @@ def binance_limit_buy(coin, amount, price):
         return
     
 
+def get_avg_price(coin):
+    coin = coin.upper()
+    PATH = '/api/v3/avgPrice'
+    params = {'symbol': coin + 'USDT'}
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.get(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        return data
+    else: return
+'''{'mins': 5, 'price': '0.02581267', 'closeTime': 1705445177106}'''
+
+
 # Define a function to cancel an order
 def binance_cancel_order(coin: str, clientOrderId):
     coin = coin.upper()
@@ -2731,11 +2744,13 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
 
 
 # define a function to check all of the coin sold today, if don't sell, how much profit missed or locked
-def calculate_missed_profit(from_id=None, buy_back_target_profit=0.03):
+def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, MIN(price_create) AS min_price_create FROM position_table WHERE is_closed = 1 GROUP BY coin')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, MAX(price_close) AS max_price_close FROM position_table WHERE is_closed = 1 GROUP BY coin')).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return 
+    with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 0 GROUP BY coin')).fetchall())
+    df = df[~df['coin'].isin(df_position['coin'])]
     try:
         with engine.connect() as connection: df_ignore = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
     except: df_ignore = pd.DataFrame()
@@ -2744,8 +2759,8 @@ def calculate_missed_profit(from_id=None, buy_back_target_profit=0.03):
     latest_price_df = latest_price_df.drop(columns=['symbol'])
     df = pd.merge(df, latest_price_df, how='left', on='coin')
     if df.empty: return
-    df['price_diff'] = df['lastPrice'] - df['min_price_create']
-    df['price_diff_percentage'] = df['price_diff'] / df['min_price_create']
+    df['price_diff'] = df['lastPrice'] - df['max_price_close']
+    df['price_diff_percentage'] = df['price_diff'] / df['max_price_close']
     df['diff_profit'] = CHECK_SIZE * (df['price_diff_percentage'])
     total_profit_missed = df['diff_profit'].sum()
     reply_msg = f"Sorry, you missed: {format_number(total_profit_missed)} usdt profit\n\n" if total_profit_missed > 0 else f"Great you locked: {format_number(abs(total_profit_missed))} usdt profit.\n\n"
@@ -2762,7 +2777,7 @@ def calculate_missed_profit(from_id=None, buy_back_target_profit=0.03):
     for i in range(df_locked.shape[0]):
         coin = df_locked.iloc[i]['coin']
         diff_profit = df_locked.iloc[i]['diff_profit']
-        previous_price = df_locked.iloc[i]['min_price_create']
+        previous_price = df_locked.iloc[i]['max_price_close']
         current_price = df_locked.iloc[i]['lastPrice']
         target_profit = df_locked.iloc[i]['price_diff_percentage']
         target_profit = abs(target_profit) - 0.1
@@ -2774,13 +2789,36 @@ def calculate_missed_profit(from_id=None, buy_back_target_profit=0.03):
     for i in range(df_missed.shape[0]):
         coin = df_missed.iloc[i]['coin']
         diff_profit = df_missed.iloc[i]['diff_profit']
-        previous_price = df_missed.iloc[i]['min_price_create']
+        previous_price = df_missed.iloc[i]['max_price_close']
         current_price = df_missed.iloc[i]['lastPrice']
         msg = f"{coin} {format_number(previous_price)} >> {format_number(current_price)} | missed {format_number(diff_profit)}"
         reply_list_missed.append(msg)
     reply_msg_missed = '\n'.join(reply_list_missed)
     if from_id: send_msg(f"Coins with missed profit:\n{reply_msg_missed}", from_id)
     return coins_could_buy_back
+
+
+def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, price_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}'")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return 
+    current_price = get_avg_price(coin)
+    if not current_price: return
+    current_price = float(current_price['price'])
+    max_price_close = df['price_close'].max()
+    max_price_diff = max_price_close - current_price
+    max_price_diff_percentage = max_price_diff / max_price_close
+    max_diff_profit = CHECK_SIZE * max_price_diff_percentage
+    if max_diff_profit < 0: reply_msg = f"{coin} Profit missed: {format_number(abs(max_diff_profit))} usdt"
+    if max_diff_profit > 0: reply_msg = f"{coin} Profit locked: {format_number(max_diff_profit)} usdt"
+    if max_diff_profit == 0: reply_msg = f"{coin} price is the same as the max price close: {format_number(max_price_close)}"
+    with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text(f"SELECT coin, account FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
+    if not df_position.empty: reply_msg += f"\n\n{coin} in {df_position['account'].values[0]} position"
+    else: reply_msg += f"\n\n{coin} not in any position"
+    if from_id: send_msg(reply_msg, from_id)
+    return 
 
 
 def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
