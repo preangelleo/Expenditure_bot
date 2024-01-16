@@ -1538,6 +1538,17 @@ def read_position_table(is_close = 0, coin = None):
     return df_position
 
 
+def read_position_table_of_this_year(is_close = 1, coin = None):
+    with engine.connect() as conn: 
+        if not coin: 
+            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT coin, symbol, price_close FROM position_table WHERE is_closed = {is_close} AND year_create = {datetime.now().year}")).fetchall())
+            except: df_position = pd.DataFrame()
+        else:
+            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT coin, symbol, price_close FROM position_table WHERE is_closed = {is_close} AND coin = '{coin}' AND year_create = {datetime.now().year}")).fetchall())
+            except: df_position = pd.DataFrame()
+    return df_position
+
+
 def read_position_table_account(is_close = 0, coin = None, account = 'spot'):
     with engine.connect() as conn: 
         if not coin: 
@@ -2892,8 +2903,8 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    # If 'UP' or 'DOWN' in symbol, ignore it
     df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
+    df_grid = df_ticker[['symbol', 'lastPrice']].copy()
     with engine.connect() as connection: df_ticker.to_sql('previous_ticker', connection, if_exists='replace', index=False)
     if not previous_ticker.empty:
         df_merge = pd.merge(df_ticker, previous_ticker, on='symbol', how='left')
@@ -2970,6 +2981,25 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         data_to_table(hot_coin_history, 'hot_coins_history')
         reply_string = f"{coin} | {format_number(price)}"
         broadcast_text(reply_string)
+    if len(final_hotcoins_dict) < 10:
+        pick_head = 10 - len(final_hotcoins_dict)
+        df = read_position_table_of_this_year()
+        df = df.groupby('symbol')['price_close'].max().reset_index()
+        df_merge = pd.merge(df, df_grid, on='symbol', how='left')
+        df_merge['price_diff'] = df_merge['lastPrice'] - df_merge['price_close']
+        df_merge['price_diff_percentage'] = df_merge['price_diff'] / df_merge['price_close']
+        df_merge = df_merge[df_merge['price_diff_percentage'] < -0.1]
+        df_merge['coin'] = df_merge['symbol'].str[:-4]
+        df_token_info = df_token_info.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
+        df_token_info_coins = df_token_info[['coin']]
+        df_merge = df_merge[df_merge['coin'].isin(df_token_info_coins['coin'])]
+        df_merge = df_merge[~df_merge['coin'].isin(final_hotcoins_dict.keys())]
+        df_merge = df_merge.copy()
+        df_merge['target_profit'] = df_merge['price_diff_percentage'].abs()
+        df_merge = df_merge.sort_values(by='target_profit', ascending=False)
+        df_merge = df_merge.head(pick_head)
+        df_merge = df_merge.set_index('coin')['target_profit'].to_dict()
+        final_hotcoins_dict = {**final_hotcoins_dict, **df_merge}
     return final_hotcoins_dict
 
 
@@ -3224,7 +3254,7 @@ def grid_profit_take(grid_profit_target=1000, trading_volume_limit = TRADING_VOL
     today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
     today_hot_coinlist = list(today_hot_coin_dict.keys())
-    df_balance = read_position_table_account(0, None, 'spot')
+    df_balance = read_position_table_account()
     remain_position_length = POSITIONS_LIMIT - df_balance.shape[0]
     position_list = df_balance['coin'].tolist()
     original_remain_position_length = remain_position_length
