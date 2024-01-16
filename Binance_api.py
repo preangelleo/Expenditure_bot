@@ -3343,12 +3343,14 @@ def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=100):
         for index, row in df_funding.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
         send_msg(reply_string, chat_id)
+        send_msg(f"FUNDING Total profit: {format_number(df_funding['profit'].sum())} usdt", chat_id)
     df_spot = df_balance[df_balance['account'] == 'spot']
     if not df_spot.empty:
         reply_list = ['SPOT account:']
         for index, row in df_spot.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
         send_msg(reply_string, chat_id)
+        send_msg(f"SPOT Total profit: {format_number(df_spot['profit'].sum())} usdt", chat_id)
     return 
 
 
