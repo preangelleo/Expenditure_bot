@@ -121,10 +121,9 @@ def tradingview_webhook_handler(data):
     message = data.get('message', 'WEBHOOK')
 
     if condition in ['ON', 'OFF']: 
-        trading_bot_status = trading_bot_switch_status()
 
-        if not trading_bot_status and condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        elif trading_bot_status and condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
+        elif condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 

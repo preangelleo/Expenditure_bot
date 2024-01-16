@@ -51,6 +51,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'positions_coin_list': get_current_positions_from_all_tables,
     'binance_pay_record': binance_pay_record,
     'calculate_missed_profit': calculate_missed_profit,
+    'grid_profit_check': grid_profit_check_for_user,
     }
 
 
@@ -69,6 +70,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'funding_market_sell': {'function': binance_funding_sell, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_sell RSR'},
     'funding_position_price': {'function': funding_position_price, 'description': 'You need to input a coin symbol after this command, for example: /funding_position_price RSR'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
+    'click_to_close': {'function': click_to_close, 'description': 'You need to input a coin symbol after this command, for example: /click_to_close 123456789 or /close_123456789'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_coin_ignore, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
     'remove_white_list': {'function': remove_coin_white, 'description': 'You need to input a coin symbol after this command, for example: /remove_white_list BTC'},
@@ -290,6 +292,8 @@ def handel_telegram_message_from_webhook(message):
                 send_msg(f"You've got approved to use this bot by @{TELEGRAM_OWNER_USERNAME}, how can I help you?", user_from_id)
                 return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, /{user_from_id} is approved to use this bot.", from_id)
             else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{user_from_id} to use this bot.", from_id)
+
+        if first_word.startswith('close_'): return click_to_close(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

@@ -289,29 +289,15 @@ Got response from binance_exchange_info table.
 '''
 
 # 获取币安全部交易对最新价格
-def get_token_price_table():
-    # Get ticker data
+def get_token_price_table(coin_column=True):
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'lastPrice']]
-    # pick up the symbol endswith 'USDT'
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
     df_ticker = df_ticker.reset_index(drop=True)
-    # 增加一列, coin, coin = symbol[:-4]
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    if coin_column: df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     return df_ticker
-'''
-        symbol    lastPrice   coin
-0      BTCUSDT  43405.08000    BTC
-1      ETHUSDT   2375.71000    ETH
-2      BNBUSDT    235.80000    BNB
-3      BCCUSDT      0.00000    BCC
-4      NEOUSDT     12.13000    NEO
-..         ...          ...    ...
-467    VICUSDT      1.00200    VIC
-468   BLURUSDT      0.49800   BLUR
-469  VANRYUSDT      0.06315  VANRY
-470   AEURUSDT      2.88920   AEUR
-471    JTOUSDT      3.00780    JTO'''
+
 
 # use get_api_fuction() resutl convert to string send to chat_id
 def get_api_functions_str(chat_id=TG_BOT_OWNER_ID):
@@ -1528,11 +1514,6 @@ def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
     return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
 
 
-# Define a function to sell all of the profit position
-def close_postive_positions(from_id=TG_BOT_OWNER_ID):
-    return send_msg('Just use /set_target_profit to set the target profit to 0: "/set_target_profit 00.1" or "stp 0.01". This is equal to close all positive positions, calling market sell to close positions that are with 0.01 profit. Or use /limit_sell_order to set limit orders for all positions: "/set_limit_sell 0.01" or "sls 0", waiting for the price to reach the buy in price to sell.\n\nRemember to use /cancel_all_orders first then others.', from_id)
-
-
 def read_position_table(is_close = 0, coin = None):
     with engine.connect() as conn: 
         if not coin: 
@@ -1606,7 +1587,7 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
     with engine.connect() as conn: 
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
         conn.commit()
-    send_msg(f"{data['coin']} Position closed with profit: {format_number(profit)} usdt", from_id)
+    send_msg(f"{data['coin']} Position closed with profit: {format_number(profit)} usdt\n/profit_taken_today", from_id)
     return profit
 
 
@@ -1656,6 +1637,7 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
         orderId_create = int(orderId_create)
         coin_df = read_position_table_by_orderId_create(orderId_create)
         if coin_df.empty: return send_msg(f'No open position with orderId_create: {orderId_create}', from_id)
+        coin = coin_df['coin'].values[0]
     coin = coin.upper() if coin else coin_df['coin'].values[0]
     row = coin_df.iloc[0]
     amount = float(row['amount'])
@@ -2606,6 +2588,7 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     current_status = trading_bot_switch_status()
     if not current_status: return True
     if trading_bot_switch_off(): 
+        close_postive_positions(from_id)
         binance_position_set_limit_sell(0.01, from_id)
         return send_msg(f"Reset all limit sell orders target profit to 1%.\n\n{msg}", from_id)
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
@@ -3334,6 +3317,65 @@ def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLU
             remain_position_length -= 1
             original_remain_position_length -= 1
         except: continue
+    return 
+
+
+def grid_profit_check(grid_profit_target=15):
+    df_balance = read_position_table()
+    if df_balance.empty: return pd.DataFrame()
+    try: df = get_token_price_table(coin_column=False)
+    except: return pd.DataFrame()
+    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
+    df_balance = df_balance.sort_values(by='profit', ascending=False)
+    df_balance = df_balance[df_balance['profit'] > grid_profit_target]
+    df_balance = df_balance.loc[:, ['coin', 'profit', 'account', 'orderId_create', 'orderId_close']]
+    return df_balance
+
+
+def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=100):
+    df_balance = grid_profit_check(grid_profit_target)
+    if df_balance.empty: return send_msg(f"No open positions", chat_id)
+    df_funding = df_balance[df_balance['account'] == 'funding']
+    if not df_funding.empty:
+        reply_list = ['FUNDING account:']
+        for index, row in df_funding.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
+        reply_string = '\n'.join(reply_list)
+        send_msg(reply_string, chat_id)
+    df_spot = df_balance[df_balance['account'] == 'spot']
+    if not df_spot.empty:
+        reply_list = ['SPOT account:']
+        for index, row in df_spot.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
+        reply_string = '\n'.join(reply_list)
+        send_msg(reply_string, chat_id)
+    return 
+
+
+def click_to_close(orderId_create, from_id=TG_BOT_OWNER_ID):
+    try: orderId_create = int(orderId_create)
+    except: return send_msg(f'orderId_create: {orderId_create} is not a number', from_id)
+    if orderId_create == 123456789: return send_msg(f'Yes, now you know how to close a position by orderId_create, just replace the 123456789 with a valid orderId', from_id)
+    return do_market_sell_by_orderId_create(orderId_create, from_id)
+
+
+# Define a function to sell all of the profit position
+def close_postive_positions(from_id, grid_profit_target=16):
+    df_balance = grid_profit_check(grid_profit_target)
+    if df_balance.empty: return send_msg(f"No open positions", from_id)
+    df_funding = df_balance[df_balance['account'] == 'funding']
+    if not df_funding.empty:
+        for i in range(df_funding.shape[0]):
+            coin_df = df_funding[i:i+1]
+            coin_with_highest_profit = coin_df['coin'].values[0]
+            orderId_create = int(coin_df['orderId_create'].values[0])
+            do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    df_spot = df_balance[df_balance['account'] == 'spot']
+    if not df_spot.empty:
+        for i in range(df_spot.shape[0]):
+            coin_df = df_spot[i:i+1]
+            coin_with_highest_profit = coin_df['coin'].values[0]
+            orderId_create = int(coin_df['orderId_create'].values[0])
+            do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
     return 
 
 
