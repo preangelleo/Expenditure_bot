@@ -12,7 +12,16 @@ def handle_socket_message(msg):
         df['free'] = df['f'].astype(float)
         df['locked'] = df['l'].astype(float)
         df = df[['asset', 'free', 'locked', 'timestamp', 'update_time']]
-        with engine.connect() as connection: df.to_sql('binance_balance_history', connection, if_exists='append', index=False)
+        with engine.connect() as connection: df.to_sql('binance_balance_history', connection, if_exists='replace', index=False)
+        bnb_df = df[df['asset'] == 'BNB']
+        if not bnb_df.empty:
+            bnb_balance = bnb_df['free'].values[0]
+            if bnb_balance < 1:
+                data = binance_market_buy_quantity('BNB', 1)
+                usdt_cost = data.get('cummulativeQuoteQty', 0)
+                usdt_cost = get_token_price('BNB') if not usdt_cost else float(usdt_cost)
+                check_transfer_and_sell_ong(usdt_cost, from_id)
+
 
     elif msg['e'] == 'balanceUpdate':
         coin = msg['a']

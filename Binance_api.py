@@ -1059,6 +1059,24 @@ def refill_stella_leo(usdt_amount, from_id=TG_BOT_OWNER_ID):
     return binance_pay_usdt(usdt_amount, os.getenv('STELLA_LEO_ADDRESS'), from_id)
 
 
+def check_transfer_and_sell_ong(usdt_amount: float, from_id=TG_BOT_OWNER_ID):
+    ong_price = get_token_price('ONG')
+    if ong_price == 0: return send_msg(f'Can not get ONG price.', from_id)
+    ong_amount = usdt_amount / ong_price
+    polish_parameters = polish_parameters_for_limit_order('ONG', ong_amount, ong_price, from_id)
+    if not polish_parameters: return send_msg(f'Failed to polish parameters for ONG market sell', from_id)
+    ong_amount = polish_parameters['amount']
+    ong_balance = get_coin_wallet_balance('ONG')
+    if ong_balance < ong_amount:
+        amount_need_to_transfer = ong_amount - ong_balance
+        if not funding_main_transfer_with_check_and_send('ONG', amount_need_to_transfer, from_id): return
+    data = binance_market_sell('ONG', ong_amount)
+    if not data: return send_msg(f'Failed to market sell ONG for USDT.', from_id)
+    if 'fills' in data: del data['fills']
+    data_to_table(data, 'binance_ong_sell_history')
+    return True
+
+
 # Define binance_pay_usdt, user input a usdt amount and a target address; then market sell coin ONG for this target usdt amount, and send the USDT to the target address with TRX network only, usdt input must less than 1000 usd.
 def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWNER_ID):
     try: usdt_amount = float(usdt_amount)
@@ -1084,52 +1102,40 @@ def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWN
         data_to_table(data, 'binance_pay_records')
         return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
-    # Get ONG price
-    ong_price = get_token_price('ONG')
-    if ong_price == 0: return send_msg(f'Can not get ONG price.', from_id)
+    if check_transfer_and_sell_ong(usdt_amount, from_id):
+        data = {
+            'coin': 'USDT',
+            'amount': usdt_amount,
+            'network': 'TRX',
+            'to_address': target_address,
+            'from_id': from_id,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M')
+        }
+        data_to_table(data, 'binance_pay_records')
+        return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
 
-    # Calculate ONG amount
-    ong_amount = usdt_amount / ong_price
-
-    polish_parameters = polish_parameters_for_limit_order('ONG', ong_amount, ong_price, from_id)
-    if not polish_parameters: return send_msg(f'Failed to polish parameters for ONG market sell', from_id)
-
-    ong_amount = polish_parameters['amount']
-
-    # Get ONG balance
-    ong_balance = get_coin_wallet_balance('ONG')
-    if ong_balance < ong_amount:
-        amount_need_to_transfer = ong_amount - ong_balance
-        if not funding_main_transfer_with_check_and_send('ONG', amount_need_to_transfer, chat_id=from_id): return
-
-    # Market sell ONG for USDT
-    data = binance_market_sell('ONG', ong_amount)
-    if not data: return send_msg(f'Failed to market sell ONG for USDT.', from_id)
-    del data['fills']
-    data_to_table(data, 'binance_ong_sell_history')
-
-    data = {
-        'coin': 'USDT',
-        'amount': usdt_amount,
-        'network': 'TRX',
-        'to_address': target_address,
-        'from_id': from_id,
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M')
-    }
-    data_to_table(data, 'binance_pay_records')
-
-    return binance_send_coin(usdt_amount, 'TRX', 'USDT', target_address, from_id)
-
-
-'''获取充值地址 (支持多网络) (USER_DATA)
-GET /sapi/v1/capital/deposit/address (HMAC SHA256)
-参数:
-名称	类型	是否必需	描述
-coin	STRING	YES	
-network	STRING	NO	
-recvWindow	LONG	NO	
-timestamp	LONG	YES
+# df = get_df_from_given_tablename('binance_pay_records')
 '''
+   coin  amount network                          to_address     from_id        created_at
+0  USDT  1000.0     TRX  TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72  2118900665  2024-01-13 08:56
+'''
+
+def binance_pay_record(from_id=TG_BOT_OWNER_ID):
+    with engine.connect() as connection: 
+        try: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM binance_pay_records")).fetchall())
+        except: df = pd.DataFrame()
+    if df.empty: return send_msg(f'No binance_pay_records table.', from_id)
+    # select amount sum of total records
+    total_amount = df['amount'].sum()
+    # select amount sum of this year
+    this_year_amount = df[df['created_at'].str.startswith(datetime.now().strftime('%Y'))]['amount'].sum()
+    # select amount sum of this month
+    this_month_amount = df[df['created_at'].str.startswith(datetime.now().strftime('%Y-%m'))]['amount'].sum()
+    reply_msg = f"Total payout: {format_number(total_amount)}\nThis year: {format_number(this_year_amount)}\nThis month: {format_number(this_month_amount)}"
+    send_msg(reply_msg, from_id)
+    return reply_msg
+
+
 # 定义一个功能，获取给定 coin 给定 network 的充值地址
 def binance_get_coin_deposit_address(coin, network):
     PATH = '/sapi/v1/capital/deposit/address'

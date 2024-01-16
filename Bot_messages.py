@@ -49,6 +49,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_api_status': get_api_status,
     'profit_taken_today': profit_taken_today,
     'positions_coin_list': get_current_positions_from_all_tables,
+    'binance_pay_record': binance_pay_record,
     }
 
 
