@@ -221,8 +221,8 @@ def binance_pay_record():
     this_year_amount = df[df['created_at'].str.startswith(datetime.now().strftime('%Y'))]['amount'].sum()
     # select amount sum of this month
     this_month_amount = df[df['created_at'].str.startswith(datetime.now().strftime('%Y-%m'))]['amount'].sum()
-    msg = f"Total payout: {format_number(total_amount)}\nThis year: {format_number(this_year_amount)}\nThis month: {format_number(this_month_amount)}"
-    st.write(msg)
+    msg = f"Total payout: {format_number(total_amount)} | This year: {format_number(this_year_amount)} | This month: {format_number(this_month_amount)}"
+    return msg
 
 
 def display_funding_account_performance():
@@ -241,11 +241,10 @@ def display_funding_account_performance():
         df_group.reset_index(inplace=True)
         df_group['profit'] = df_group['profit'].apply(lambda x: format_number(x))
         with st.expander("Funding Account Performance", expanded=False): 
-            st.write(f"Total Profit: {format_number(total_profit)}")
+            st.write(f"Total Profit: {format_number(total_profit)} | {binance_pay_record()}")
             st.table(df)
             st.write("Grouped by coin")
             st.table(df_group)
-        with st.expander("Binance Pay USDT record", expanded=False): binance_pay_record()
 
 
 def display_daily_profit_take():
