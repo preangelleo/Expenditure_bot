@@ -3329,7 +3329,7 @@ def grid_profit_check(grid_profit_target=15):
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_balance = df_balance[df_balance['profit'] > grid_profit_target]
+    if grid_profit_target: df_balance = df_balance[df_balance['profit'] > grid_profit_target]
     df_balance = df_balance.loc[:, ['coin', 'profit', 'account', 'orderId_create', 'orderId_close']]
     return df_balance
 
@@ -3350,6 +3350,10 @@ def grid_profit_check_for_user(chat_id=TG_BOT_OWNER_ID, grid_profit_target=100):
         reply_string = '\n'.join(reply_list)
         send_msg(reply_string, chat_id)
     return 
+
+
+def position_check_for_user(from_id=TG_BOT_OWNER_ID):
+    return grid_profit_check_for_user(from_id, grid_profit_target=0)
 
 
 def click_to_close(orderId_create, from_id=TG_BOT_OWNER_ID):
