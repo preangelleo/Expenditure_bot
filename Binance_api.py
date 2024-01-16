@@ -2571,33 +2571,6 @@ def binance_market_buy_quantity(coin, quantity):
         print(r.reason)
         return None
     
-
-# Check if bnb balance is less than 1, if yes, buy 1 bnb
-def check_and_buy_bnb(coin = 'BNB', check_limit = 1, chat_id=TG_BOT_OWNER_ID):
-    time.sleep(1)
-    coin = coin.upper()
-
-    try: check_limit = float(check_limit)
-    except: return send_msg(f'check_limit: {check_limit} is not a number', chat_id)
-
-    bnb_data = get_coin_wallet_balance_with_locked()
-    if not bnb_data: return send_msg(f'Failed to get coin wallet balance with locked', chat_id)
-
-    # check if bnb balance is less than check_limit
-    bnb_balance = bnb_data.get(coin, 0)
-    if bnb_balance >= check_limit: return
-
-    # print(f'bnb_balance: {bnb_balance} is less than check_limit: {check_limit}, trying to buy {check_limit} {coin}')
-    data = binance_market_buy_quantity(coin, check_limit)
-    if not data: return send_msg(f'Failed to market buy: {check_limit} {coin}', chat_id)
-    
-    # delete fills from data
-    del data['fills']
-
-    if data_to_table(data, f'check_and_buy_{coin}'): send_msg(f'DONE: Market buy {check_limit} {coin}', chat_id)
-
-    return
-
     
 # define a function to switch on the trading bot and send a message to the user
 def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
@@ -2621,19 +2594,23 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
 
 
-# define a function to read the latest transactTime sell price for a given coin
-def read_latest_sell_price(coin, from_id):
+def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE coin = :coin ORDER BY time_close DESC LIMIT 1'), {'coin': coin}).fetchall())
-    except: return send_msg(f'position_table table does not exist', from_id)
-    if df.empty: return send_msg(f'No sell record for {coin}', from_id)
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_close, profit FROM position_table WHERE coin = :coin ORDER BY time_close DESC LIMIT 1'), {'coin': coin}).fetchall())
+    except: return 
+    if df.empty: return 
     price = df['price_close'].values[0]
     profit = df['profit'].values[0]
     current_price = get_token_price(coin)
-    send_msg(f"{coin}\nPrice_close: {format_number(price)}\nProfit: {format_number(profit)}\nCurrent_Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%", from_id)
-    return price
+    reply_msg = f"{coin}\nPrice_close: {format_number(price)}\nProfit: {format_number(profit)}\nCurrent_Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%"
+    if from_id: send_msg(reply_msg, from_id)
+    return 
+
+
+def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
+    if get_token_info(coin, from_id): return read_latest_sell_price(coin, from_id)
 
 
 # Define a function to read hot_coin_history table and get today's hot coin list
@@ -3225,12 +3202,12 @@ def rsi_bottom_coins():
     return final_bottom_list
 
 
-def get_current_positions_from_all_tables(from_id = None):
+def get_current_positions_from_all_tables(from_id = TG_BOT_OWNER_ID):
     df = read_position_table(0, None)
     if df.empty: 
         if from_id: send_msg(f"No positions", from_id)
         return []
-    coin_in_positions = df['coin'].values.tolist()
+    coin_in_positions = list(set(df['coin'].values.tolist()))
     if from_id: send_msg(f"Current Positions: \n{', '.join(coin_in_positions)}", from_id)
     return coin_in_positions
 

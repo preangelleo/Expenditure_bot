@@ -55,7 +55,7 @@ NONE_PARAMETER_COMMAND_LIST = {
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': set_coin_ignore, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'add_white_list': {'function': set_coin_white, 'description': 'You need to input a coin symbol after this command, for example: /add_white_list BTC'},
-    'get_coin_info': {'function': get_token_info, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
+    'get_coin_info': {'function': get_token_info_for_user, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
     'refill_stella_danli': {'function': refill_stella_danli, 'description': 'You need to input a usdt amount after this command, for example: /refill_stella_danli 1000'},
     'refill_stella_leo': {'function': refill_stella_leo, 'description': 'You need to input a usdt amount after this command, for example: /refill_stella_leo 1000'},
