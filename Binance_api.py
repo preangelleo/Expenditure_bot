@@ -1481,7 +1481,7 @@ timestamp	LONG	YES
 '''
 
 # Define a function to get open orders list for all coin and make it a dataframe
-def get_open_orders_list(from_id=None, side = 'SELL', output_format = 'dict'):
+def get_open_orders_list(from_id=None, side = 'SELL'):
     PATH = '/api/v3/openOrders'
     timestamp = int(time.time() * 1000)
     params = {'timestamp': timestamp}
@@ -1496,49 +1496,30 @@ def get_open_orders_list(from_id=None, side = 'SELL', output_format = 'dict'):
         # Select only the SELL orders
         df = df[df['side']==side]
         if df.empty: return {}
-        if output_format.lower() == 'df': return df
-        # select only the coin and orderId, make a dict {symbol: orderId}
-        if from_id:
-            # Make a column of coin, symbol[:-4]
-            df['coin'] = df['symbol'].apply(lambda x: x[:-4])  
-            df_orderId = df.loc[:, ['coin', 'orderId']]
-            df_orderId_dict = df_orderId.set_index('coin').to_dict()['orderId']
-            df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_orderId_dict.items()])
-            send_msg(f"Open {side} orders:\n\n{df_dict_string}", from_id)
-        # select only the coin and clientOrderId, make a dict {symbol: clientOrderId}
-        df = df.loc[:, ['symbol', 'clientOrderId']]
-        df_dict = df.set_index('symbol').to_dict()['clientOrderId']
-        return df_dict
+        df['coin'] = df['symbol'].apply(lambda x: x[:-4])  
+        df_orderId = df.loc[:, ['coin', 'orderId']]
+        df_orderId_dict = df_orderId.set_index('coin').to_dict()['orderId']
+        df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_orderId_dict.items()])
+        if from_id: send_msg(f"Open {side} orders:\n\n{df_dict_string}", from_id)
+        return df_orderId_dict
     else: 
         print(r.json())
         return {}
 
+
 def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
-    df_openorders = get_open_limit_orders(None, 'binance_limit_sell_order')
-    if df_openorders.empty: return send_msg('No open limit sell orders.', from_id)
-    # Select columns: coin, target_profit, price, manual_order, orderId, update_id, transactTime
-    df_openorders = df_openorders.loc[:, ['coin', 'target_profit', 'price', 'manual_order', 'orderId', 'update_id', 'transactTime']]
-    ''' df_openorders
-    coin  target_profit        price  manual_order     orderId  update_id   transactTime
-    0  GALA           0.01   0.03360000           0.0  2194428361         60  1703800216397
-    1  COMP           0.15  76.03000000           1.0  1264191411         59  1704084079897
-    2  ATOM           0.20  14.72300000           1.0  2614183942         50  1704084120988
-    3   APE           0.40   2.50000000           1.0  1567072325         58  1704093018339
-    4   GRT           0.01   0.22610000           0.0  1397133202         78  1704304654077
-    5  HBAR           0.01   0.09960000           0.0   783188222         84  1704330207320
-    6   LSK           0.01   1.77800000           0.0   320284512         85  1704330209484
-    7  ORDI           0.01  87.85000000           0.0   519807222         88  1704330211612
-    8  ARPA           0.30   0.09608000           0.0   789104110         95  1704606659419'''
+    df = read_position_table_account()
+    if df.empty: return send_msg('No open limit orders.', from_id)
+    df = df[df['orderId_close']!=0]
+    df = df.loc[:, ['coin', 'orderId_close', 'target_profit']]
     reply_msg_list = []
-    for index, row in df_openorders.iterrows():
+    for index, row in df.iterrows():
         coin = row['coin']
         target_profit = row['target_profit']
-        price = row['price']
-        manual_order = 'M' if row['manual_order'] == 1 else 'A'
-        reply_msg = f"{coin}: {int(target_profit*100)}% | {manual_order} | {format_number(price)}"
+        reply_msg = f"{coin}: {int(target_profit*100)}%"
         reply_msg_list.append(reply_msg)
     reply_msg = '\n'.join(reply_msg_list)
-    return send_msg(reply_msg, from_id)
+    return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
 
 
 # Define a function to sell all of the profit position
@@ -2241,7 +2222,7 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID):
     if today_realized_profit_dict['profit_sum'] == 0: return send_msg('No profit taken yet today', chat_id)
     today_realized_profit = today_realized_profit_dict['profit_sum']
     today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
-    reply_title = f"Today's Realized Profit: {format_number(today_realized_profit)} usdt"
+    reply_title = f"Today's Realized Profit: {format_number(today_realized_profit)}"
     reply_msg = f"{reply_title}\n\n" + '\n'.join(today_realized_profit_coinlist)
     return send_msg(reply_msg, chat_id)
 
@@ -2537,15 +2518,9 @@ def check_column_in_table(column, table):
 def binance_cancel_all_orders(chat_id=None):
     current_orders = get_open_orders_list()
     if not current_orders: return send_msg(f'No open orders', chat_id)
-
-    for symbol, clientOrderId in current_orders.items():
-        coin = symbol.replace('USDT', '')
-        cancel_confirm = binance_cancel_order(coin, clientOrderId)
-
-        # UPDATE binance_limit_sell_order SET status = 'CANCELED' WHERE clientOrderId = clientOrderId
-        mark_limit_order_as_canceled(clientOrderId, status=cancel_confirm['status'])
-        if chat_id: send_msg(f"Canceled order for: {coin} with clientOrderId: {clientOrderId}", chat_id)
-
+    for coin, orderId in current_orders.items():
+        if binance_cancel_order_by_orderId(coin, int(orderId)): mark_limit_order_as_canceled_by_orderId(orderId)
+        if chat_id: send_msg(f"Canceled order for: {coin} with orderId: {orderId}", chat_id)
     return 
 
 
@@ -2553,7 +2528,6 @@ def binance_cancel_all_orders(chat_id=None):
 def update_net_profit_daily_record(date, net_profit):
     with engine.connect() as connection:
         try:
-            # Execute the query with the updated update_id
             connection.execute(text("UPDATE net_profit_daily_record SET NetProfit = :NetProfit WHERE Date = :Date"), {'Date': date, 'NetProfit': net_profit})
             connection.commit()
         except Exception as e:
@@ -2563,11 +2537,11 @@ def update_net_profit_daily_record(date, net_profit):
 
 
 def bot_call_binance_position_check(from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = None, chat_id = from_id, crontab_profit_record = False)
+    return binance_auto_position_check(coin = None, chat_id = from_id)
 
 
 def bot_call_binance_position_check_coin(coin, from_id=TG_BOT_OWNER_ID):
-    return binance_auto_position_check(coin = coin, chat_id = from_id, crontab_profit_record = False)
+    return binance_auto_position_check(coin = coin, chat_id = from_id)
 
 
 '''小额资产转换 (USER_DATA)
@@ -3162,23 +3136,10 @@ def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_
     return
 
 
-# Mark a limit order as canceled in binance_limit_sell_order table
-def mark_limit_order_as_canceled(clientOrderId, status='CANCELED'):
-    with engine.connect() as connection:
-        try:
-            connection.execute(text("UPDATE binance_limit_sell_order SET status = :status WHERE clientOrderId = :clientOrderId"), {'clientOrderId': clientOrderId, 'status': status})
-            connection.commit()
-            return True
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return 
-
-
 def mark_limit_order_as_canceled_by_orderId(orderId):
     with engine.connect() as connection:
         try:
-            connection.execute(text(f"UPDATE position_table SET orderId_close = 0 WHERE orderId_close = :orderId"), {'orderId': orderId})
+            connection.execute(text(f"UPDATE position_table SET orderId_close = 0, target_profit = 0, is_manual = 0 WHERE orderId_close = :orderId"), {'orderId': orderId})
             connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -3275,7 +3236,7 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         switch_spot_to_funding(orderId_create)
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
         send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create} ''', from_id)
-
+    return 
 
 def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
