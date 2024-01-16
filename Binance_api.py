@@ -3452,8 +3452,8 @@ def check_usdt_balance(from_id=None):
     spot_balance = get_coin_wallet_balance_with_locked()
     spot_USDT_balance = int(spot_balance['USDT'])
     funding_balance = get_funding_asset()
-    funding_USDT_balance = int(funding_balance[funding_balance['asset'] == 'USDT']['free'].values[0])
-    total_usdt = spot_USDT_balance + funding_USDT_balance
+    funding_USDT_balance = float(funding_balance[funding_balance['asset'] == 'USDT']['free'].values[0])
+    total_usdt = spot_USDT_balance + int(funding_USDT_balance)
     reply_string = f"USDT Balance: \nSpot: {format_number(spot_USDT_balance)}\nFunding: {format_number(funding_USDT_balance)}\nTotal: {format_number(total_usdt)}"
     if from_id: send_msg(reply_string, from_id)
     return {'spot': spot_USDT_balance, 'funding': funding_USDT_balance, 'total': total_usdt}
