@@ -2634,6 +2634,45 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
     return 
 
 
+# define a function to check all of the coin sold today, if don't sell, how much profit missed or locked
+def calculate_missed_profit(from_id=TG_BOT_OWNER_ID):
+    try: 
+        with engine.connect() as connection: df_daily_profit_take = pd.DataFrame(connection.execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
+    except: df_daily_profit_take = pd.DataFrame()
+    if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
+    else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
+    update_timestamp = int(update_timestamp)
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, price_close, profit, time_close FROM position_table WHERE time_close > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return 
+    latest_price_df = get_token_price_table()
+    latest_price_df = latest_price_df.drop(columns=['symbol'])
+    df = pd.merge(df, latest_price_df, how='left', on='coin')
+    if df.empty: return
+    df['price_diff'] = df['lastPrice'] - df['price_close']
+    df['price_diff_percentage'] = df['price_diff'] / df['price_close'] * 100
+    df['diff_profit'] = CHECK_SIZE * (df['price_diff_percentage'] / 100)
+    df = df.groupby('coin').sum().reset_index()[['coin', 'profit', 'diff_profit']]
+    df = df.sort_values(by='diff_profit').reset_index(drop=True)
+    total_profit_missed = df['diff_profit'].sum()
+    reply_msg = f"Sorry, you missed: {format_number(total_profit_missed)} usdt profit\n\n" if total_profit_missed > 0 else f"Great you locked: {format_number(abs(total_profit_missed))} usdt profit.\n\n"
+    send_msg(reply_msg, from_id)
+    reply_list_locked = []
+    reply_list_missed = []
+    for i in range(df.shape[0]):
+        coin = df.iloc[i]['coin']
+        diff_profit = df.iloc[i]['diff_profit']
+        msg = f"{coin}: missed {format_number(diff_profit)}" if diff_profit > 0 else f"{coin}: locked {format_number(abs(diff_profit))}"
+        if diff_profit > 0: reply_list_missed.append(msg)
+        else: reply_list_locked.append(msg)
+    reply_msg_locked = '\n'.join(reply_list_locked)
+    send_msg(f"Coins with loced profit:\n{reply_msg_locked}", from_id)
+    reply_msg_missed = '\n'.join(reply_list_missed)
+    send_msg(f"Coins with missed profit:\n{reply_msg_missed}", from_id)
+    return 
+
+
 def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
     if get_token_info(coin, from_id): return read_latest_sell_price(coin, from_id)
 

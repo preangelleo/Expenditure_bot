@@ -50,6 +50,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'profit_taken_today': profit_taken_today,
     'positions_coin_list': get_current_positions_from_all_tables,
     'binance_pay_record': binance_pay_record,
+    'calculate_missed_profit': calculate_missed_profit,
     }
 
 
