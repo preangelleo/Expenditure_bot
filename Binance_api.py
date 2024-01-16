@@ -2598,13 +2598,21 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_close, profit FROM position_table WHERE coin = :coin ORDER BY time_close DESC LIMIT 1'), {'coin': coin}).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_close, profit, time_close FROM position_table WHERE coin = :coin AND is_closed = 1 ORDER BY time_close DESC LIMIT 1'), {'coin': coin}).fetchall())
     except: return 
     if df.empty: return 
     price = df['price_close'].values[0]
     profit = df['profit'].values[0]
+    time_close = int(df['time_close'].values[0])
+    time_close_string = datetime.fromtimestamp(time_close / 1000).strftime('%Y-%m-%d %H:%M')
     current_price = get_token_price(coin)
-    reply_msg = f"{coin}\nPrice_close: {format_number(price)}\nProfit: {format_number(profit)}\nCurrent_Price: {format_number(current_price)}\nPrice % Diff: {(current_price - price) / price * 100:.2f}%"
+    price_diff = current_price - price
+    price_diff_percentage = price_diff / price * 100
+    diff_profit = CHECK_SIZE * (price_diff_percentage / 100)
+    reply_msg = f"{coin}\nPrice_close: {format_number(price)}\nProfit_gain: {format_number(profit)}\nCurrent_Price: {format_number(current_price)}\nPrice % Diff: {price_diff_percentage:.2f}%"
+    append_msg = f"\nLocked_profit: {format_number(abs(diff_profit))}" if price_diff < 0 else f"\nMissed_profit: {format_number(diff_profit)}"
+    reply_msg += append_msg
+    reply_msg += f"\nTime_close: {time_close_string}"
     if from_id: send_msg(reply_msg, from_id)
     return 
 
