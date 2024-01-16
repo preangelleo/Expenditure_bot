@@ -2732,42 +2732,56 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
 
 
 # define a function to check all of the coin sold today, if don't sell, how much profit missed or locked
-def calculate_missed_profit(from_id=TG_BOT_OWNER_ID):
-    try: 
-        with engine.connect() as connection: df_daily_profit_take = pd.DataFrame(connection.execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
-    except: df_daily_profit_take = pd.DataFrame()
-    if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
-    else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
-    update_timestamp = int(update_timestamp)
+def calculate_missed_profit(from_id=None, buy_back_target_profit=0.03):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, price_close, profit, time_close FROM position_table WHERE time_close > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, MIN(price_create) AS min_price_create FROM position_table WHERE is_closed = 1 GROUP BY coin')).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return 
+    try:
+        with engine.connect() as connection: df_ignore = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
+    except: df_ignore = pd.DataFrame()
+    df = df[~df['coin'].isin(df_ignore['coin'])]
     latest_price_df = get_token_price_table()
     latest_price_df = latest_price_df.drop(columns=['symbol'])
     df = pd.merge(df, latest_price_df, how='left', on='coin')
     if df.empty: return
-    df['price_diff'] = df['lastPrice'] - df['price_close']
-    df['price_diff_percentage'] = df['price_diff'] / df['price_close'] * 100
-    df['diff_profit'] = CHECK_SIZE * (df['price_diff_percentage'] / 100)
-    df = df.groupby('coin').sum().reset_index()[['coin', 'profit', 'diff_profit']]
-    df = df.sort_values(by='diff_profit').reset_index(drop=True)
+    df['price_diff'] = df['lastPrice'] - df['min_price_create']
+    df['price_diff_percentage'] = df['price_diff'] / df['min_price_create']
+    df['diff_profit'] = CHECK_SIZE * (df['price_diff_percentage'])
     total_profit_missed = df['diff_profit'].sum()
     reply_msg = f"Sorry, you missed: {format_number(total_profit_missed)} usdt profit\n\n" if total_profit_missed > 0 else f"Great you locked: {format_number(abs(total_profit_missed))} usdt profit.\n\n"
-    send_msg(reply_msg, from_id)
+    if from_id: send_msg(reply_msg, from_id)
+    df = df.sort_values(by='diff_profit').reset_index(drop=True)
+    df_locked = df.iloc[:10]
+    df_locked = df_locked[df_locked['diff_profit'] < 0]
+    df = df.sort_values(by='diff_profit', ascending=False).reset_index(drop=True)
+    df_missed = df.iloc[:10]
+    df_missed = df_missed[df_missed['diff_profit'] > 0]
     reply_list_locked = []
     reply_list_missed = []
-    for i in range(df.shape[0]):
-        coin = df.iloc[i]['coin']
-        diff_profit = df.iloc[i]['diff_profit']
-        msg = f"{coin}: missed {format_number(diff_profit)}" if diff_profit > 0 else f"{coin}: locked {format_number(abs(diff_profit))}"
-        if diff_profit > 0: reply_list_missed.append(msg)
-        else: reply_list_locked.append(msg)
+    coins_could_buy_back = {}
+    for i in range(df_locked.shape[0]):
+        coin = df_locked.iloc[i]['coin']
+        diff_profit = df_locked.iloc[i]['diff_profit']
+        previous_price = df_locked.iloc[i]['min_price_create']
+        current_price = df_locked.iloc[i]['lastPrice']
+        target_profit = df_locked.iloc[i]['price_diff_percentage']
+        target_profit = abs(target_profit) - 0.1
+        if target_profit > buy_back_target_profit: coins_could_buy_back[coin] = round(abs(target_profit), 2)
+        msg = f"{coin} {format_number(previous_price)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
+        reply_list_locked.append(msg)
     reply_msg_locked = '\n'.join(reply_list_locked)
-    send_msg(f"Coins with loced profit:\n{reply_msg_locked}", from_id)
+    if from_id: send_msg(f"Coins with loced profit:\n{reply_msg_locked}", from_id)
+    for i in range(df_missed.shape[0]):
+        coin = df_missed.iloc[i]['coin']
+        diff_profit = df_missed.iloc[i]['diff_profit']
+        previous_price = df_missed.iloc[i]['min_price_create']
+        current_price = df_missed.iloc[i]['lastPrice']
+        msg = f"{coin} {format_number(previous_price)} >> {format_number(current_price)} | missed {format_number(diff_profit)}"
+        reply_list_missed.append(msg)
     reply_msg_missed = '\n'.join(reply_list_missed)
-    send_msg(f"Coins with missed profit:\n{reply_msg_missed}", from_id)
-    return 
+    if from_id: send_msg(f"Coins with missed profit:\n{reply_msg_missed}", from_id)
+    return coins_could_buy_back
 
 
 def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -3123,25 +3137,7 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
         data_to_table(hot_coin_history, 'hot_coins_history')
         reply_string = f"{coin} | {format_number(price)}"
         broadcast_text(reply_string)
-    if datetime.now().strftime("%H:%M") < '00:10' and len(final_hotcoins_dict) < 10:
-        pick_head = 10 - len(final_hotcoins_dict)
-        df = read_position_table_of_this_year()
-        df = df.groupby('symbol')['price_close'].max().reset_index()
-        df_merge = pd.merge(df, df_grid, on='symbol', how='left')
-        df_merge['price_diff'] = df_merge['lastPrice'] - df_merge['price_close']
-        df_merge['price_diff_percentage'] = df_merge['price_diff'] / df_merge['price_close']
-        df_merge = df_merge[df_merge['price_diff_percentage'] < -0.1]
-        df_merge['coin'] = df_merge['symbol'].str[:-4]
-        df_token_info = df_token_info.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
-        df_token_info_coins = df_token_info[['coin']]
-        df_merge = df_merge[df_merge['coin'].isin(df_token_info_coins['coin'])]
-        df_merge = df_merge[~df_merge['coin'].isin(final_hotcoins_dict.keys())]
-        df_merge = df_merge.copy()
-        df_merge['target_profit'] = df_merge['price_diff_percentage'].abs()
-        df_merge = df_merge.sort_values(by='target_profit', ascending=False)
-        df_merge = df_merge.head(pick_head)
-        df_merge = df_merge.set_index('coin')['target_profit'].to_dict()
-        final_hotcoins_dict = {**final_hotcoins_dict, **df_merge}
+    if datetime.now().strftime("%H:%M") < '00:10': final_hotcoins_dict = {**final_hotcoins_dict, **calculate_missed_profit()}
     return final_hotcoins_dict
 
 
