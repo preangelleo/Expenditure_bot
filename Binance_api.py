@@ -2801,7 +2801,7 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
     price_diff_percentage = price_diff / last_price_close
     diff_profit = CHECK_SIZE * price_diff_percentage
     if diff_profit < 0: reply_msg = f"{coin} {format_number(last_price_close)} >> {format_number(current_price)} | missed {format_number(abs(diff_profit))}"
-    if diff_profit > 0: reply_msg = f"{coin} {format_number(last_price_close)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
+    if diff_profit > 0: reply_msg = f"/buy_{coin} {format_number(last_price_close)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
     if diff_profit == 0: reply_msg = f"{coin} {format_number(current_price)} hasn't changed"
     with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text(f"SELECT coin, account FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
     if not df_position.empty: reply_msg += f"\n\n{coin} in {df_position['account'].values[0]} position"
