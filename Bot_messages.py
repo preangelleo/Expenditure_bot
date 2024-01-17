@@ -91,7 +91,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'coin_deposit_address': {'function': get_coin_deposit_address, 'description': 'You need to input a coin symbol and network name after this command, for example: /coin_deposit_address USDT TRX'},
     'get_expenditure_info': {'function': get_total_spend_of_given_year_and_month, 'description': 'You need to input a year and a month after this command, for example: /get_expenditure_info 2023 12'},
     'calculate_irr': {'function': calculate_irr, 'description': 'You need to input a year and a month after this command, for example, calulate a 7 folds return in 10 years: /calculate_irr 7 10'},
-    'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000'},
+    'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000\n/ccv_RSR_146652243'},
     'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
     'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
     'manually_limit_sell': {'function': manually_limit_sell, 'description': 'You need to input a coin symbol, a target profit (not price) after this command, for example: /manually_limit_sell BONK 0.1'},
@@ -295,8 +295,8 @@ def handel_telegram_message_from_webhook(message):
             else: return send_msg(f"Dear @{TELEGRAM_OWNER_USERNAME}, failed to approve /{user_from_id} to use this bot.", from_id)
 
         if first_word.startswith('close_'): return click_to_close(first_word.split('_')[-1], from_id)
-
         if first_word.startswith('buy_'): return click_to_create(first_word.split('_')[-1], from_id)
+        if first_word.startswith('ccv_'): return calculate_coin_valuation(first_word.split('_')[1], first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

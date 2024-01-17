@@ -287,10 +287,12 @@ def get_token_price_info(coin: str):
 
 
 # Calculate the valuation of a give coin for a given amount
-def calculate_coin_valuation(coin: str, amount: float, from_id=TG_BOT_OWNER_ID):
+def calculate_coin_valuation(coin, amount = 146652243, from_id=TG_BOT_OWNER_ID):
+    try: amount = float(amount)
+    except: return send_msg(f"Amount has to be a number, your input is {amount}", from_id)
     current_price = get_token_price_info(coin.upper())
     if not current_price: return 0
-    valuation = current_price * float(amount)
+    valuation = current_price * amount
     if from_id: send_msg(f"{amount} {coin.upper()} = {format_number(valuation)} usd", from_id)
     return valuation
 
