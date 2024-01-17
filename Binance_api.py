@@ -3482,7 +3482,7 @@ def check_usdt_balance(from_id=None):
 
 def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = grid_profit_check(grid_profit_target)
-    if df_balance.empty: return send_msg(f"No open positions", from_id)
+    if df_balance.empty: return send_msg(f"No open positions with profit.", from_id)
     df_funding = df_balance[df_balance['account'] == 'funding']
     if not df_funding.empty:
         reply_list = ['FUNDING account:']
