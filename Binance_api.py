@@ -2816,7 +2816,7 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
     if max_diff_profit == 0: reply_msg = f"{coin} price is the same as the max price close: {format_number(max_price_close)}"
     with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text(f"SELECT coin, account FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
     if not df_position.empty: reply_msg += f"\n\n{coin} in {df_position['account'].values[0]} position"
-    else: reply_msg += f"\n\n{coin} not in any position"
+    else: reply_msg += f"\n{coin} not in any position"
     if from_id: send_msg(reply_msg, from_id)
     return 
 
