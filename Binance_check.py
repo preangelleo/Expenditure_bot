@@ -14,7 +14,7 @@ if __name__ == '__main__':
     try: profit_take_per_6_min(1000, chat_id)
     except: pass
 
-    try: binance_today_top_coin(chat_id)
+    try: binance_today_top_coin(1000, chat_id)
     except: pass
 
     try: read_emails()
