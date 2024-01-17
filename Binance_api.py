@@ -3077,22 +3077,25 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
 
 
 def binance_today_top_coin():
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    today_date = str(today_date)
+    today_date = today_date.replace('-', '_')
+    df_today_top_coin = get_df_from_given_tablename(f'top_coin_{today_date}')
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
     df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
     df_ticker = df_ticker[df_ticker['priceChangePercent'] > 0]
-    if df_ticker.empty: return {}
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
-    if df_ticker.empty: return {}
     with engine.connect() as connection: df_in_position = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 0')).fetchall())
     df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
-    if df_ticker.empty: return {}
+    if not df_today_top_coin.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today_top_coin['coin'])]
     df_ticker = df_ticker.head(3)
+    with engine.connect() as connection: df_ticker.to_sql(f'top_coin_{today_date}', connection, if_exists='append', index=False)
     df_ticker['target_profit'] = 0.1
     top_coin_dict = df_ticker.set_index('coin')['target_profit'].to_dict()
     return top_coin_dict
@@ -3423,7 +3426,7 @@ def get_current_positions_from_all_tables(from_id = TG_BOT_OWNER_ID):
 
 
 def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, chat_id=TG_BOT_OWNER_ID):
-    if '20:00' < datetime.now().strftime("%H:%M") < '20:10' or '00:00' < datetime.now().strftime("%H:%M") < '00:10' or '04:00' < datetime.now().strftime("%H:%M") < '04:10' or '08:00' < datetime.now().strftime("%H:%M") < '08:10' or '12:00' < datetime.now().strftime("%H:%M") < '12:10' or '16:00' < datetime.now().strftime("%H:%M") < '16:10': today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
+    if '20:00' < datetime.now().strftime("%H:%M") < '20:10' or '00:00' < datetime.now().strftime("%H:%M") < '00:10' or '04:00' < datetime.now().strftime("%H:%M") < '04:10' or '08:00' < datetime.now().strftime("%H:%M") < '08:10' or '12:00' < datetime.now().strftime("%H:%M") < '12:10' or '16:00' < datetime.now().strftime("%H:%M") < '16:10': today_hot_coin_dict = binance_today_top_coin()
     else: today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
     if datetime.now().strftime("%H:%M") < '00:10': today_hot_coin_dict = {**today_hot_coin_dict, **calculate_missed_profit()}
