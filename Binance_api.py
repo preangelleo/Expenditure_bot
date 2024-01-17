@@ -3041,6 +3041,14 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     send_msg(reply_string, from_id)
     return turnover_ratio_dict
 
+def count_positions(from_id=TG_BOT_OWNER_ID):
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
+    if df.empty: return send_msg("No positions in spot account or funding account", from_id)
+    df_spot = df[df['account'] == 'spot']
+    df_funding = df[df['account'] == 'funding']
+    reply_msg = f"Total positions in spot account: {df_spot.shape[0]}\nTotal positions in funding account: {df_funding.shape[0]}"
+    if from_id: send_msg(reply_msg, from_id)
+    return
 
 def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: 

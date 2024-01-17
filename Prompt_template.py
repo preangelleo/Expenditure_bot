@@ -175,6 +175,7 @@ COMMANDS = [
     {"command": 'click_to_close', 'description': 'Click to close the position of a given orderId /close_123456789'},
     {"command": 'click_to_buy', 'description': 'Click to market buy a given coin /buy_BTC'},
     {"command": 'position_check_all', 'description': 'Check all positions with orderId_create'},
+    {"command": 'count_positions', 'description': 'Count the number of positions in Spot and Funding account'},
 ]
 
 FUNCTIONS_TOOLS = [
@@ -610,6 +611,10 @@ BOT_COMMAND_DICT = {
     'ctb': 'click_to_buy',
     'pca': 'position_check_all',
     'cpu': 'position_check_all',
+    'count': 'count_positions',
+    'spot': 'count_positions',
+    'funding': 'count_positions',
+    'cp': 'count_positions',
     }
 
 COINBASE_COIN_LIST = ['LQTY', 'ENS', 'MATIC', 'IMX', 'WCFG', 'LINK', 'XYO', 'ERN', 'SAND', 'PERP', 'JASMY', 'API3', 'SUPER', 'LRC', 'NEAR', 'BICO', 'RLY', 'BTC', 'CLV', 'TIME', 'FET', 'DDX', 'DOGE', 'METIS', 'UST', 'REQ', 'ENJ', 'MINA', 'FIS', 'QNT', 'ATA', 'SHIB', 'C98', 'MDT', 'STG', 'GAL', 'FARM', 'NEST', 'TRAC', 'ZEN', 'GMT', 'AIOZ', 'DREP', 'POND', 'POLY', 'TRU', 'BTRST', 'FOX', 'XLM', 'INDEX', 'DYP', 'VGX', 'CHZ', 'STX', 'HBAR', 'POWR', 'DOT', 'WLUNA', 'OP', 'SPELL', 'XCN', 'MCO2', 'RNDR', 'FORT', 'AVAX', 'GNO', 'ETH', 'FIDA', 'SHPING', 'DESO', 'PAX', 'MEDIA', 'MASK', 'HFT', 'HOPR', 'APT', 'POLS', 'GALA', 'ELA', 'ALCX', 'MATH', 'BADGER', 'KSM', 'BIT', 'KRL', 'BOBA', 'PRQ', 'AUCTION', 'WAMPL', 'ORN', 'DIA', 'XRP', 'UPI', 'NCT', 'CTX', 'SUKU', 'RAD', 'ARPA', 'ADA', 'IDEX', 'ACH', 'QSP', 'APE', 'FLOW', 'COVAL', 'AXS', 'ROSE', 'LCX', 'SOL', 'BOND', 'ICP', 'SYLO', 'CRO', 'AGLD', 'ATOM', 'ASM']

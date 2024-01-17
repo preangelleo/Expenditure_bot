@@ -52,6 +52,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'calculate_missed_profit': calculate_missed_profit,
     'grid_profit_check': grid_profit_check_for_user,
     'position_check_all': position_check_for_user,
+    'count_positions': count_positions,
     }
 
 
