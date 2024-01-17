@@ -248,21 +248,26 @@ def display_funding_account_performance():
 
 
 def display_daily_profit_take():
-    try: 
-        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take')).fetchall()) 
-    except: df_today = pd.DataFrame()
-    if not df_today.empty:
-        with st.expander("Daily Profit Take Record", expanded=False): 
-            total_profit_take_of_this_year = df_today[df_today['date'].apply(lambda x: x.split('-')[0] == str(datetime.now().year))]['profit'].sum()
-            today_month = datetime.now().month
-            today_month = f'0{today_month}' if today_month < 10 else today_month
-            total_profit_take_of_this_month = df_today[df_today['date'].apply(lambda x: x.split('-')[1] == str(today_month))]['profit'].sum()
-            st.write(f"Total Profit Take of This Year: {format_number(total_profit_take_of_this_year)} | Total Profit Take of This Month: {format_number(total_profit_take_of_this_month)}")
-            df_today['profit'] = df_today['profit'].apply(lambda x: int(x))
-            df_today['update_timestamp'] = df_today['update_timestamp'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%H:%M'))
-            st.table(df_today)
+    try:
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 1')).fetchall())
+    except: df_profit = pd.DataFrame()
+    if df_profit.empty: return
+    df_profit['date'] = pd.to_datetime(df_profit['time_close'], unit='ms').dt.date
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        # profit of each month
+        df_daily_profit = df_profit.groupby(['year_close', 'month_close', 'day_close'])['profit'].sum().reset_index()
+        with st.expander("Daily Profit", expanded=False): st.table(df_daily_profit)
+    with col2:
+        # profit of each month, group by year_close, month_close
+        df_monthly_profit = df_profit.groupby(['year_close', 'month_close'])['profit'].sum().reset_index()
+        with st.expander("Monthly Profit", expanded=False): st.table(df_monthly_profit)
+    with col3:
+        # profit of each year
+        df_yearly_profit = df_profit.groupby(['year_close'])['profit'].sum().reset_index()
+        with st.expander("Yearly Profit", expanded=False): st.table(df_yearly_profit)
 
-
+        
 def main():
     display_header()
     

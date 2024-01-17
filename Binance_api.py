@@ -2313,26 +2313,19 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
 
 def check_today_profit_sum():
-    try: 
-        with engine.connect() as connection: df_daily_profit_take = pd.DataFrame(connection.execute(text('SELECT update_timestamp FROM daily_profit_take ORDER BY update_timestamp DESC LIMIT 1')).fetchall())
-    except: df_daily_profit_take = pd.DataFrame()
-    if not df_daily_profit_take.empty: update_timestamp = df_daily_profit_take['update_timestamp'].values[0]
-    else: update_timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000
-    update_timestamp = int(update_timestamp)
     try:
-        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT symbol, profit FROM position_table WHERE time_close > :update_timestamp'), {'update_timestamp': update_timestamp}).fetchall())
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day}')).fetchall())
     except: df_profit = pd.DataFrame()
     reply_dict = {
         'profit_sum': 0,
         'profit_coinlist': []
     }
     if df_profit.empty: return reply_dict
-    df_profit = df_profit.groupby('symbol').sum().reset_index()
-    df_profit['profit'] = df_profit['profit'].astype(float)
+    df_profit = df_profit.groupby('coin').sum().reset_index()
     profit_coinlist = []
-    for symbol in df_profit['symbol']:
-        df_profit_coin = df_profit[df_profit['symbol'] == symbol]
-        profit_coinlist.append(f"{symbol[:-4]}: {format_number(df_profit_coin['profit'].sum())} usdt")
+    for coin in df_profit['coin']:
+        df_profit_coin = df_profit[df_profit['coin'] == coin]
+        profit_coinlist.append(f"{coin}: {format_number(df_profit_coin['profit'].sum())} usdt")
     profit_sum = df_profit['profit'].sum()
     reply_dict = {
         'profit_sum': profit_sum,
@@ -2341,44 +2334,24 @@ def check_today_profit_sum():
     return reply_dict
 
 
-# Define a funcition to check today's profit manually from telegram and return with the profit sum and coinlist
-def profit_taken_today(chat_id=TG_BOT_OWNER_ID):
-    today_realized_profit_dict = check_today_profit_sum()
-    if today_realized_profit_dict['profit_sum'] == 0: return send_msg('No profit taken yet today', chat_id)
-    today_realized_profit = today_realized_profit_dict['profit_sum']
-    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
-    reply_title = f"Today's Realized Profit: {format_number(today_realized_profit)}"
-    reply_msg = f"{reply_title}\n\n" + '\n'.join(today_realized_profit_coinlist)
-    return send_msg(reply_msg, chat_id)
-
-
-def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID):
-    try: 
-        with engine.connect() as connection: df_today = pd.DataFrame(connection.execute(text('SELECT * FROM daily_profit_take WHERE date = :date'), {'date': datetime.now().strftime('%Y-%m-%d')}).fetchall())
-    except: df_today = pd.DataFrame()
-    if not df_today.empty: return print(f"Today's profit has been taken: {df_today['profit'].values[0]}")
-    today_realized_profit_dict = check_today_profit_sum()
-    today_realized_profit = today_realized_profit_dict['profit_sum']
-    today_realized_profit_coinlist = today_realized_profit_dict['profit_coinlist']
-    if today_realized_profit >= daily_profit_target: 
-        # For the coins in df_balance, do market sell in order of profit from high to low untill profit_take reaches daily_profit_target, then break the loop. But before market sell, check if there is open limit sell order for the coin, if yes, cancel the limit sell order first.
-        profit_take = today_realized_profit
-        profit_coinlist = today_realized_profit_coinlist
+def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
+    try:
+        reply_dict = check_today_profit_sum()
+        profit_take = reply_dict['profit_sum']
+        if profit_take == 0: return send_msg('No profit has been taken today', chat_id)
+        profit_coinlist = reply_dict['profit_coinlist']
         profit_coinlist_string = '\n'.join(profit_coinlist)
-        new_data = {
-            'date': datetime.now().strftime('%Y-%m-%d'),
-            'profit': profit_take,
-            'coinlist': profit_coinlist_string,
-            'update_timestamp': int(datetime.now().timestamp() * 1000)
-        }
-        data_to_table(new_data, 'daily_profit_take')
         reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
         reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
-        send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
         send_msg(reply_msg, chat_id)
+        if not report: return
+        send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
         send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
-        return print(f"Today's profit has been taken: {today_realized_profit_dict['profit_sum']}")
-    is_last_hour = True if datetime.now().strftime("%H") == '23' else False
+    except Exception as e: return send_email(f"ERRO: profit_taken_today()", e, GMAIL_ADDRESS_MAIN)
+
+
+def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
+    is_last_hour = True if '23:50' < datetime.now().strftime("%H:%M") < '23:59' else False
     df_balance = read_position_table() if is_last_hour else read_position_table_account()
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
@@ -2390,9 +2363,9 @@ def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_balance = df_balance[df_balance['profit'] > 100]
     if df_balance.empty: return print(f"No coin with profit > 100 usdt")
     profit_sum = df_balance['profit'].astype(float).sum()
-    if not is_last_hour and profit_sum < daily_profit_target + int(df_balance.shape[0]) * 15 - today_realized_profit: return print(f"Profit sum {profit_sum} < daily_profit_target {daily_profit_target} + trading fees")
-    
-    profit_coinlist = today_realized_profit_coinlist
+    if profit_sum < profit_take_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
+    profit_take = 0
+    profit_coinlist = []
     for i in range(df_balance.shape[0]):
         coin_df = df_balance.iloc[i:i+1]
         coin = df_balance.iloc[i]['coin']
@@ -2400,23 +2373,8 @@ def daily_profit_take(daily_profit_target=1000, chat_id=TG_BOT_OWNER_ID):
         coin_profit = do_market_sell_by_orderId_create(orderId_create, chat_id, coin_df, coin)
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
-        if profit_take >= daily_profit_target: break
-
-    profit_coinlist_string = '\n'.join(profit_coinlist)
-    
-    new_data = {
-        'date': datetime.now().strftime('%Y-%m-%d'),
-        'profit': profit_take,
-        'coinlist': profit_coinlist_string,
-        'update_timestamp': int(datetime.now().timestamp() * 1000)
-    }
-    data_to_table(new_data, 'daily_profit_take')
-    reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
-    reply_msg = f"{reply_title}\n\n{profit_coinlist_string}"
-    send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
-    send_msg(reply_msg, chat_id)
-    send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
-    return 
+        if profit_take >= profit_take_target: break
+    return print(f"Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
@@ -3429,7 +3387,6 @@ def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLU
     if '20:00' < datetime.now().strftime("%H:%M") < '20:10' or '00:00' < datetime.now().strftime("%H:%M") < '00:10' or '04:00' < datetime.now().strftime("%H:%M") < '04:10' or '08:00' < datetime.now().strftime("%H:%M") < '08:10' or '12:00' < datetime.now().strftime("%H:%M") < '12:10' or '16:00' < datetime.now().strftime("%H:%M") < '16:10': today_hot_coin_dict = binance_today_top_coin()
     else: today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
-    if datetime.now().strftime("%H:%M") < '00:10': today_hot_coin_dict = {**today_hot_coin_dict, **calculate_missed_profit()}
     today_hot_coinlist = list(today_hot_coin_dict.keys())
     df_balance = read_position_table_account()
     remain_position_length = POSITIONS_LIMIT - df_balance.shape[0]

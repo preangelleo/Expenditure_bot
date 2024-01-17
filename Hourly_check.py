@@ -1,4 +1,4 @@
-from Binance_api import *
+from datetime import datetime
 
 if __name__ == '__main__':
     # Crontab job, run once a hour
@@ -7,5 +7,5 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'\n{datetime.now().strftime("%Y-%m-%d %H:%M")} Hourly_check.py is running ...')
 
-    try: daily_profit_take()
-    except Exception as e: print(f'daily_profit_take() error:\n\n{e}\n\n')
+    # try: daily_profit_take()
+    # except Exception as e: print(f'daily_profit_take() error:\n\n{e}\n\n')
