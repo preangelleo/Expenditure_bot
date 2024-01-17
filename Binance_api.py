@@ -3070,9 +3070,8 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     df_merge = df_merge.sort_values(by='turnover_ratio', ascending=False)
     df_merge = df_merge.head(int(head))
     if df_merge.empty: return {}
-    # Make a dict with key as coin and value as turnover_ratio
     turnover_ratio_dict = df_merge.set_index('coin')['turnover_ratio'].to_dict()
-    reply_string = '\n'.join([f"{k}: {format_number(v)}" for k, v in turnover_ratio_dict.items()])
+    reply_string = '\n'.join([f"/buy_{k}: {format_number(v)}" for k, v in turnover_ratio_dict.items()])
     send_msg(reply_string, from_id)
     return turnover_ratio_dict
 

@@ -68,19 +68,15 @@ from Binance_api import *
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
-    coin = symbol[:-4] if symbol.endswith('USDT') else symbol
-    get_token_info(coin, from_id)
-    calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID)
+    symbol = symbol.upper()
+    if not symbol.endswith('USDT'): symbol = symbol + 'USDT'
+    coin = symbol[:-4]
+    calculate_missed_profit_for_coin(coin, from_id)
     long_or_short = analyze_symbol_prudently(symbol)
-    '''{'long': True, 'short': False}'''
     long = long_or_short['long']
-    short = long_or_short['short']
-    if long: 
-        if weekly_rsi_over_high(symbol): return send_msg(f"{symbol.upper()}'s trend is good, but the weekly RSI is higher than 89, please be careful.", from_id)
-        turnover_ratio_eth = get_turnover_ratio_from_coinmarketcap(coin='ETH')
-        token_info = get_token_market_cap_and_ratio(symbol, turnover_ratio_eth)
+    if long and not weekly_rsi_over_high(symbol):
+        token_info = get_token_market_cap_and_ratio(coin)
         if token_info:
-            '''{'market_cap': 153456101, 'fully_diluted_market_cap': 303272927, 'circulation_ratio': 0.51, 'turnover_ratio': 0.07}'''
             fully_diluted_market_cap = token_info['fully_diluted_market_cap']
             circulating_ratio = token_info['circulation_ratio']
             turnover_ratio = token_info['turnover_ratio']
@@ -90,47 +86,9 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
             URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
             reply_string = f"[{symbol}]({URL}) | Rank {coin_rank} | {format_number(current_price)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}\nFully_Diluted_Market_Cap: {format_number(fully_diluted_market_cap)}"
             send_msg_markdown(reply_string, from_id)
-            return send_msg(f"{symbol.upper()} is good to buy now.", from_id)
-        else: return send_msg(f"{symbol.upper()} is not good to buy because of one of below reasons:\n\n1. The coin is not listed in CoinMarketCap.\n2. The coin's market cap is less than {format_number(MARKET_CAP_DOWN_LIMIT)} or more than {format_number(FULLLY_DILUTED_MARKET_CAP_UP_LIMIT)}.\n3. The coin's turnover ratio is less than ETH's {format_number(turnover_ratio_eth)}.\n4. The coin's circulation ratio is less than {int(CIRCULATION_RATIO*100)}%.", from_id)
-    elif short and weekly_rsi_over_high(symbol): return send_msg(f"{symbol.upper()} is good to short now.", from_id)
-    return send_msg(f"{symbol.upper()} is not good to long or short now. Wait for the next chance. Be patient please 😘", from_id)
-
-
-def is_coin_recently_listed(symbol: str, days=7):
-    try: days = int(days)
-    except: days = 7
-
-    # Binance API endpoint for K-line data
-    url = "https://api.binance.com/api/v3/klines"
-
-    # if symbol is not endsweith 'USDT', add 'USDT' to the end, if symbol is endsweith USDT, do nothing
-    if not symbol.endswith('USDT'): symbol = symbol + 'USDT'
-
-    # Calculate timestamps for 7 days ago and now
-    end_time = int(time.time() * 1000)  # Current time in milliseconds
-    start_time = end_time - 24 * 60 * 60 * 1000 * days  # 7 days ago
-
-    # Parameters for the API request
-    params = {
-        'symbol': symbol,
-        'interval': '1d',  # Daily intervals
-        'startTime': start_time,
-        'endTime': end_time,
-        'limit': days
-    }
-
-    # Send the request
-    response = requests.get(url, params=params)
-    
-    # Check if the response is successful
-    if response.status_code == 200:
-        data = response.json()
-        if len(data) < days: 
-            print(f'{symbol[:-4]} is recently listed in less than {days} days.')
-            return True
-        else: return False
-
-    return True
+            return send_msg(f"/buy_{coin} is good to buy now.", from_id)
+    get_token_info(coin, from_id)
+    return send_msg(f"{coin} is not good to long or short now. \nWait for the next chance. \nBe patient please 😘", from_id)
 
 
 def only_check_hot_coins(from_id = None):

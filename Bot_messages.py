@@ -32,7 +32,6 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_white_list': get_white_list,
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
     'get_last_msg': get_latest_message_from_telegram_messages_table,
-    'hot_coins_check': only_check_hot_coins,
     'funding_main_transfer': funding_main_transfer_all_usdt,
     'get_wallet_balance': get_coin_wallet_balance_all_str,
     'binance_position_check': bot_call_binance_position_check,
