@@ -3423,7 +3423,7 @@ def get_current_positions_from_all_tables(from_id = TG_BOT_OWNER_ID):
 
 
 def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, chat_id=TG_BOT_OWNER_ID):
-    if '20:00' < datetime.now().strftime("%H:%M") < '20:10': today_hot_coin_dict = binance_today_top_coin()
+    if '20:00' < datetime.now().strftime("%H:%M") < '20:10' or '00:00' < datetime.now().strftime("%H:%M") < '00:10' or '04:00' < datetime.now().strftime("%H:%M") < '04:10' or '08:00' < datetime.now().strftime("%H:%M") < '08:10' or '12:00' < datetime.now().strftime("%H:%M") < '12:10' or '16:00' < datetime.now().strftime("%H:%M") < '16:10': today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     else: today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
     if not today_hot_coin_dict: return 
     if datetime.now().strftime("%H:%M") < '00:10': today_hot_coin_dict = {**today_hot_coin_dict, **calculate_missed_profit()}
