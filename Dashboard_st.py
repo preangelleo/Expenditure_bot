@@ -267,6 +267,25 @@ def display_daily_profit_take():
         with st.expander("Yearly Profit", expanded=False): st.table(df_yearly_profit)
 
         
+def display_ignore_list():
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
+        if not df.empty: 
+            with st.expander("Ignore List", expanded=False): st.table(df)
+    except: pass
+
+def display_white_list():
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_white = 1')).fetchall())
+        if not df.empty: 
+            with st.expander("White List", expanded=False): st.table(df)
+    except: pass
+
+def display_both_list():
+    col1, col2 = st.columns(2)
+    with col1: display_ignore_list()
+    with col2: display_white_list()
+
 def main():
     display_header()
     
@@ -279,6 +298,8 @@ def main():
     display_funding_account_performance()
 
     display_daily_profit_take()
+
+    display_both_list()
     
 
 if __name__ == "__main__":

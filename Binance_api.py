@@ -2856,8 +2856,6 @@ def get_token_total_supply(coin):
     try: token_info = get_token_info_from_coinmarketcap(coin)
     except: return 
     if not token_info: return
-    # ignore_coin_list = get_ignore_list()
-    # white_list = get_white_list()
     data = {
         'coin': coin,
         'symbol': token_info['symbol']+ 'USDT',
@@ -2913,7 +2911,7 @@ def remove_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
 
 def get_ignore_list(from_id=TG_BOT_OWNER_ID):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE is_ignore = 1')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
         if not df.empty:
             ignore_coin_list = df['coin'].values.tolist()
             if from_id: send_msg(f"Current ignore list: \n\n{', '.join(ignore_coin_list)}", from_id)
@@ -2959,7 +2957,7 @@ def remove_coin_white(coin, from_id=TG_BOT_OWNER_ID):
 
 def get_white_list(from_id=TG_BOT_OWNER_ID):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE is_white = 1')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_white = 1')).fetchall())
         if not df.empty: 
             white_list = df['coin'].values.tolist()
             if from_id: send_msg(f"Current white list: \n\n{', '.join(white_list)}", from_id)
