@@ -2770,11 +2770,7 @@ def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03
     df = df.sort_values(by='diff_profit').reset_index(drop=True)
     df_locked = df.iloc[:10]
     df_locked = df_locked[df_locked['diff_profit'] < 0]
-    df = df.sort_values(by='diff_profit', ascending=False).reset_index(drop=True)
-    df_missed = df.iloc[:10]
-    df_missed = df_missed[df_missed['diff_profit'] > 0]
     reply_list_locked = []
-    reply_list_missed = []
     coins_could_buy_back = {}
     for i in range(df_locked.shape[0]):
         coin = df_locked.iloc[i]['coin']
@@ -2784,19 +2780,10 @@ def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03
         target_profit = df_locked.iloc[i]['price_diff_percentage']
         target_profit = abs(target_profit) - 0.1
         if target_profit > buy_back_target_profit: coins_could_buy_back[coin] = round(abs(target_profit), 2)
-        msg = f"{coin} {format_number(previous_price)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
+        msg = f"/buy_{coin} {format_number(previous_price)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
         reply_list_locked.append(msg)
     reply_msg_locked = '\n'.join(reply_list_locked)
     if from_id: send_msg(f"Coins with locked profit:\n{reply_msg_locked}", from_id)
-    for i in range(df_missed.shape[0]):
-        coin = df_missed.iloc[i]['coin']
-        diff_profit = df_missed.iloc[i]['diff_profit']
-        previous_price = df_missed.iloc[i]['price_close']
-        current_price = df_missed.iloc[i]['lastPrice']
-        msg = f"{coin} {format_number(previous_price)} >> {format_number(current_price)} | missed {format_number(diff_profit)}"
-        reply_list_missed.append(msg)
-    reply_msg_missed = '\n'.join(reply_list_missed)
-    if from_id: send_msg(f"Coins with missed profit:\n{reply_msg_missed}", from_id)
     return coins_could_buy_back
 
 
