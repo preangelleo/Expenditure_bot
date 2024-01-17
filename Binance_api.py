@@ -3045,8 +3045,10 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
     if df.empty: return send_msg("No positions in spot account or funding account", from_id)
     df_spot = df[df['account'] == 'spot']
+    spot_coinlist = df_spot['coin'].values.tolist() if not df_spot.empty else []
     df_funding = df[df['account'] == 'funding']
-    reply_msg = f"Total positions in spot account: {df_spot.shape[0]}\nTotal positions in funding account: {df_funding.shape[0]}"
+    funding_coinlist = df_funding['coin'].values.tolist() if not df_funding.empty else []
+    reply_msg = f"Positions in spot: {df_spot.shape[0]}\n{', '.join(set(spot_coinlist))}\n\nPositions in funding: {df_funding.shape[0]}\n{', '.join(set(funding_coinlist))}"
     if from_id: send_msg(reply_msg, from_id)
     return
 
@@ -3055,7 +3057,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
-        df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
+        df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
         if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
