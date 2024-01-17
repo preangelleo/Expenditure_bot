@@ -3063,7 +3063,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
     df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
-    df_ticker = df_ticker[df_ticker['priceChangePercent'] > 0]
+    df_ticker = df_ticker[df_ticker['priceChangePercent'] > 3]
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
