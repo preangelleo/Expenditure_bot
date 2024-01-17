@@ -2311,15 +2311,19 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
     return 
 
+def today_profit_sum():
+    try:
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
+    except: df_profit = pd.DataFrame()
+    return df_profit
+
 
 def check_today_profit_sum():
-    try:
-        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day}')).fetchall())
-    except: df_profit = pd.DataFrame()
     reply_dict = {
         'profit_sum': 0,
         'profit_coinlist': []
     }
+    df_profit = today_profit_sum()
     if df_profit.empty: return reply_dict
     df_profit = df_profit.groupby('coin').sum().reset_index()
     profit_coinlist = []
@@ -2360,10 +2364,14 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_balance = df_balance[df_balance['profit'] > 100]
-    if df_balance.empty: return print(f"No coin with profit > 100 usdt")
+    df_balance = df_balance[df_balance['profit'] > 50]
+    if df_balance.empty: return print(f"No coin with profit > 50 usdt")
     profit_sum = df_balance['profit'].astype(float).sum()
+    df_today_profit = today_profit_sum()
+    current_profit_sum = df_today_profit['profit'].sum() if not df_today_profit.empty else 0
+    profit_take_target -= current_profit_sum
     if profit_sum < profit_take_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
+    print(f"Profit sum: {profit_sum} is greater than profit_take_target: {profit_take_target}, let's take them.")
     profit_take = 0
     profit_coinlist = []
     for i in range(df_balance.shape[0]):
@@ -2374,7 +2382,7 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
-    return print(f"Profit Take: {profit_take} usdt {profit_coinlist}")
+    return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
@@ -3039,7 +3047,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
-        df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day}')).fetchall())
+        df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
         if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
