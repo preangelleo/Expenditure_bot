@@ -2459,8 +2459,10 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
             if is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
             else: continue
         price = price_create * (1 + float(target_profit))
-        polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
-        price = polished_parameters['price']
+        try:
+            polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
+            price = polished_parameters['price']
+        except Exception as e: print(f"An error occurred while calling polish_parameters_for_limit_order(): \nCoin: {coin}\nAmount: {amount}\nPrice: {price}\n\n{e}\n\n")
         need_to_adjust = False
         data = {}
         try: data = binance_limit_sell(coin, amount, price)
@@ -3036,9 +3038,9 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
-        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return
+        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day}')).fetchall())
-        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return
+        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
@@ -3050,14 +3052,14 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
-    if df_ticker.empty: return
+    if df_ticker.empty: return print("No top coin to buy")
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
     if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
-    if df_ticker.empty: return
+    if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     coin = df_ticker.iloc[0]['coin']
     do_market_buy_one_unit(coin, chat_id)
     binance_position_set_limit_sell(read_target_profit_default(), chat_id, coin)
-    return
+    return print(f"Bought {coin} successfully")
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
