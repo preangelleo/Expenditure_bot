@@ -68,6 +68,9 @@ from Binance_api import *
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
+    coin = symbol[:-4] if symbol.endswith('USDT') else symbol
+    get_token_info(coin, from_id)
+    calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID)
     long_or_short = analyze_symbol_prudently(symbol)
     '''{'long': True, 'short': False}'''
     long = long_or_short['long']
