@@ -3034,11 +3034,14 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     return turnover_ratio_dict
 
 
-def binance_today_top_coin():
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    today_date = str(today_date)
-    today_date = today_date.replace('-', '_')
-    df_today_top_coin = get_df_from_given_tablename(f'top_coin_{today_date}')
+def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
+    with engine.connect() as connection: 
+        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
+        # chose account = 'spot'
+        df_in_spot = df_in_position[df_in_position['account'] == 'spot']
+        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return
+        df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
+        df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
@@ -3046,17 +3049,16 @@ def binance_today_top_coin():
     df_ticker = df_ticker[df_ticker['priceChangePercent'] > 0]
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
-    with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
-    with engine.connect() as connection: df_in_position = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 0')).fetchall())
-    df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
-    if not df_today_top_coin.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today_top_coin['coin'])]
-    df_ticker = df_ticker.head(3)
-    with engine.connect() as connection: df_ticker.to_sql(f'top_coin_{today_date}', connection, if_exists='append', index=False)
-    df_ticker['target_profit'] = 0.1
-    top_coin_dict = df_ticker.set_index('coin')['target_profit'].to_dict()
-    return top_coin_dict
+    if df_ticker.empty: return
+    if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
+    if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
+    if df_ticker.empty: return
+    coin = df_ticker.iloc[0]['coin']
+    do_market_buy_one_unit(coin, chat_id)
+    binance_position_set_limit_sell(read_target_profit_default(), chat_id, coin)
+    return
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
@@ -3381,59 +3383,6 @@ def get_current_positions_from_all_tables(from_id = TG_BOT_OWNER_ID):
     coin_in_positions = list(set(df['coin'].values.tolist()))
     if from_id: send_msg(f"Current Positions: \n{', '.join(coin_in_positions)}", from_id)
     return coin_in_positions
-
-
-def grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False, chat_id=TG_BOT_OWNER_ID):
-    if '20:00' < datetime.now().strftime("%H:%M") < '20:10' or '00:00' < datetime.now().strftime("%H:%M") < '00:10' or '04:00' < datetime.now().strftime("%H:%M") < '04:10' or '08:00' < datetime.now().strftime("%H:%M") < '08:10' or '12:00' < datetime.now().strftime("%H:%M") < '12:10' or '16:00' < datetime.now().strftime("%H:%M") < '16:10': today_hot_coin_dict = binance_today_top_coin()
-    else: today_hot_coin_dict = binance_today_hot_coin(trading_volume_limit, tradingbot_status)
-    if not today_hot_coin_dict: return 
-    today_hot_coinlist = list(today_hot_coin_dict.keys())
-    df_balance = read_position_table_account()
-    remain_position_length = POSITIONS_LIMIT - df_balance.shape[0]
-    position_list = df_balance['coin'].tolist()
-    original_remain_position_length = remain_position_length
-    try: df = get_token_price_table()
-    except: df = pd.DataFrame()
-    if df.empty: return print('Failed to fetch price info')
-    df = df.drop(columns=['coin'])
-    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
-    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
-    df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_balance = df_balance[df_balance['profit'] > grid_profit_target]
-    if df_balance.empty:
-        if not original_remain_position_length: return
-        profit_coinlist = []
-        mutual_coinlist = []
-        lost_coinlist = position_list
-    else:
-        remain_position_length += df_balance.shape[0]
-        profit_coinlist = df_balance['coin'].tolist()
-        lost_coinlist = [coin for coin in position_list if coin not in profit_coinlist]
-        mutual_coinlist = [coin for coin in profit_coinlist if coin in today_hot_coinlist]
-    remain_position_length -= len(mutual_coinlist)
-    good_to_sell_balance_df = df_balance[~df_balance['coin'].isin(mutual_coinlist)]
-    df_funding_balance = read_position_table_account(0, None, 'funding')
-    in_funding_positions = df_funding_balance['coin'].values.tolist()
-    coins_should_ignore = in_funding_positions + mutual_coinlist + lost_coinlist
-    i = 0
-    for coin in today_hot_coinlist: 
-        if remain_position_length <= 0: break
-        if coin in set(coins_should_ignore): continue
-        target_profit = today_hot_coin_dict[coin]
-        if not target_profit or target_profit < 0.03: continue
-        if original_remain_position_length <= 0 and good_to_sell_balance_df.shape[0] > i: 
-            coin_df = good_to_sell_balance_df[i:i+1]
-            coin_with_highest_profit = coin_df['coin'].values[0]
-            orderId_create = int(coin_df['orderId_create'].values[0])
-            do_market_sell_by_orderId_create(orderId_create, chat_id, coin_df, coin_with_highest_profit)
-            i += 1
-        try:
-            do_market_buy_one_unit(coin, chat_id)
-            binance_position_set_limit_sell(target_profit, chat_id, coin)
-            remain_position_length -= 1
-            original_remain_position_length -= 1
-        except: continue
-    return 
 
 
 def grid_profit_check(grid_profit_target=1):

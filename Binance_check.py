@@ -9,14 +9,12 @@ if __name__ == '__main__':
     print(f'\n{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
     current_bot_status = False
+    chat_id=TG_BOT_OWNER_ID
 
-    try: current_bot_status = trading_bot_switch_status()
+    try: profit_take_per_6_min(1000, chat_id)
     except: pass
 
-    try: profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID)
-    except: pass
-
-    try: grid_profit_take(grid_profit_target=100, trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = current_bot_status, chat_id=TG_BOT_OWNER_ID)
+    try: binance_today_top_coin(chat_id)
     except: pass
 
     try: read_emails()
