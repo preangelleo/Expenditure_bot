@@ -173,7 +173,8 @@ COMMANDS = [
     {"command": 'binance_pay_record', 'description': 'Get the binance pay record'},
     {"command": 'calculate_missed_profit', 'description': 'Calculate the missed profit of today'},
     {"command": 'grid_profit_check', 'description': 'Check current unrealized grid profit'},
-    {"command": 'click_to_close', 'description': 'Click to close the position of a given orderId'},
+    {"command": 'click_to_close', 'description': 'Click to close the position of a given orderId /close_123456789'},
+    {"command": 'click_to_buy', 'description': 'Click to market buy a given coin /buy_BTC'},
     {"command": 'position_check_all', 'description': 'Check all positions with orderId_create'},
 ]
 
@@ -609,6 +610,7 @@ BOT_COMMAND_DICT = {
     'gpc': 'grid_profit_check',
     'gpu': 'grid_profit_check',
     'ctc': 'click_to_close',
+    'ctb': 'click_to_buy',
     'pca': 'position_check_all',
     'cpu': 'position_check_all',
     }
