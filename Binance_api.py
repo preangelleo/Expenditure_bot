@@ -3032,12 +3032,13 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     return turnover_ratio_dict
 
 
-def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
+def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
-        # chose account = 'spot'
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return
+        df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day}')).fetchall())
+        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
