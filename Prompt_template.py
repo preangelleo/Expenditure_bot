@@ -134,6 +134,7 @@ COMMANDS = [
     {'command': 'binance_market_buy', 'description': 'Do market buy of a given coin in Binance'},
     {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
     {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
+    {"command": "cancel_orderId_close", "description": "Cancel the limit sell order with orderId_close"},
     {'command': 'switch_on_bot', 'description': 'Switch on the trading bot (start to buy hot coins))'},
     {'command': 'switch_off_bot', 'description': 'Switch off the trading bot (sell only)'},
     {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
@@ -615,6 +616,7 @@ BOT_COMMAND_DICT = {
     'spot': 'count_positions',
     'funding': 'count_positions',
     'cp': 'count_positions',
+    'coc': 'cancel_orderId_close',
     }
 
 COINBASE_COIN_LIST = ['LQTY', 'ENS', 'MATIC', 'IMX', 'WCFG', 'LINK', 'XYO', 'ERN', 'SAND', 'PERP', 'JASMY', 'API3', 'SUPER', 'LRC', 'NEAR', 'BICO', 'RLY', 'BTC', 'CLV', 'TIME', 'FET', 'DDX', 'DOGE', 'METIS', 'UST', 'REQ', 'ENJ', 'MINA', 'FIS', 'QNT', 'ATA', 'SHIB', 'C98', 'MDT', 'STG', 'GAL', 'FARM', 'NEST', 'TRAC', 'ZEN', 'GMT', 'AIOZ', 'DREP', 'POND', 'POLY', 'TRU', 'BTRST', 'FOX', 'XLM', 'INDEX', 'DYP', 'VGX', 'CHZ', 'STX', 'HBAR', 'POWR', 'DOT', 'WLUNA', 'OP', 'SPELL', 'XCN', 'MCO2', 'RNDR', 'FORT', 'AVAX', 'GNO', 'ETH', 'FIDA', 'SHPING', 'DESO', 'PAX', 'MEDIA', 'MASK', 'HFT', 'HOPR', 'APT', 'POLS', 'GALA', 'ELA', 'ALCX', 'MATH', 'BADGER', 'KSM', 'BIT', 'KRL', 'BOBA', 'PRQ', 'AUCTION', 'WAMPL', 'ORN', 'DIA', 'XRP', 'UPI', 'NCT', 'CTX', 'SUKU', 'RAD', 'ARPA', 'ADA', 'IDEX', 'ACH', 'QSP', 'APE', 'FLOW', 'COVAL', 'AXS', 'ROSE', 'LCX', 'SOL', 'BOND', 'ICP', 'SYLO', 'CRO', 'AGLD', 'ATOM', 'ASM']

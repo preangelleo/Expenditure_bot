@@ -1721,7 +1721,7 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
         conn.commit()
     reply_msg = f"{data['coin']} Position closed with profit: {format_number(profit)} usdt"
-    send_msg(f"{reply_msg}\n/profit_taken_today", from_id)
+    send_msg(f"{reply_msg}\n/as_{data['coin']}\n/profit_taken_today", from_id)
     return profit
 
 
@@ -2453,6 +2453,24 @@ def update_position_table_amount(amount: float, orderId_create: int):
     return
 
 
+def cancel_orderId_close(orderId_close, from_id=TG_BOT_OWNER_ID):
+    try: orderId_close = int(orderId_close)
+    except: return send_msg(f'orderId_close: {orderId_close} is not an integer', from_id)
+    with engine.connect() as connection:
+        try:
+            df = pd.DataFrame(connection.execute(text(f'SELECT coin, orderId_create FROM position_table WHERE orderId_close = {orderId_close}')).fetchall())
+            if df.empty: return send_msg(f'No orderId_close: {orderId_close} found in table', from_id)
+            coin = int(df['coin'].values[0])
+            data = binance_cancel_order_by_orderId(coin, orderId_close)
+            if not data: return send_msg(f'Failed to cancel orderId_close: {orderId_close}', from_id)
+            mark_limit_order_as_canceled_by_orderId(orderId_close)
+            return send_msg(f"Limit Sell Order canceled for: {coin} with orderId_close: {orderId_close}", from_id)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return 
+
+
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
     df_balance = read_position_table_account(0, coin, 'spot')
     if df_balance.empty: return
@@ -2467,7 +2485,9 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if_manual = int(df_balance.iloc[i]['is_manual'])
         if current_target_profit == target_profit: continue
         if orderId_close: 
-            if not if_manual or is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
+            if not if_manual or is_manual: 
+                binance_cancel_order_by_orderId(coin, orderId_close)
+                mark_limit_order_as_canceled_by_orderId(orderId_close)
             else: continue
         price = price_create * (1 + float(target_profit))
         try:
@@ -2491,8 +2511,8 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if not data: continue
         if need_to_adjust: update_position_table_amount(amount, orderId_create)
         orderId_close = int(data['orderId'])
-        update_limit_orderId_in_position_table(orderId_create, int(data['orderId']), target_profit, is_manual)
-        send_msg(f"Limit Sell Order Set:\nCoin: {coin}\nAmount: {format_number(amount)}\nPrice: {format_number(price)}\nTarget_profit: {target_profit*100:.2f}%\nOrderId: {orderId_close}", chat_id)
+        update_limit_orderId_in_position_table(orderId_create, orderId_close, target_profit, is_manual)
+        send_msg(f"Limit Sell Order Set:\nCoin: {coin}\nAmount: {format_number(amount)}\nPrice: {format_number(price)}\nTarget_profit: {target_profit*100:.2f}%\n/cancel_{orderId_close}", chat_id)
     return
 
 
@@ -3212,7 +3232,7 @@ def mark_limit_order_as_canceled_by_orderId(orderId):
 def switch_spot_to_funding(orderId_create):
     with engine.connect() as connection:
         try:
-            connection.execute(text(f"UPDATE position_table SET account = 'funding', orderId_close = 0 WHERE orderId_create = :orderId_create"), {'orderId_create': orderId_create})
+            connection.execute(text(f"UPDATE position_table SET account = 'funding', orderId_close = 0, is_manual =0, target_profit = 0 WHERE orderId_create = :orderId_create"), {'orderId_create': orderId_create})
             connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")

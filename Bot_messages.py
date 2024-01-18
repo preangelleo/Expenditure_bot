@@ -72,6 +72,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'funding_position_price': {'function': funding_position_price, 'description': 'You need to input a coin symbol after this command, for example: /funding_position_price RSR'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'click_to_close': {'function': click_to_close, 'description': 'You need to input the orderId_create after this command, for example: /click_to_close 123456789\n/close_123456789'},
+    'cancel_orderId_close': {'function': cancel_orderId_close, 'description': 'You need to input the orderId_close after this command, for example: /cancel_orderId_close 123456789'},
     'click_to_buy': {'function': click_to_create, 'description': 'You need to input a coin symbol after this command, for example: /click_to_buy BTC\n/buy_BTC'},
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_coin_ignore, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
@@ -299,6 +300,8 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('buy_'): return click_to_create(first_word.split('_')[-1], from_id)
         if first_word.startswith('ccv_'): return calculate_coin_valuation(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('as_'): return analyze_symbol_for_user(first_word.split('_')[-1], from_id)
+        if first_word.startswith('swp_'): return switch_position_from_main_to_funding(first_word.split('_')[-1], from_id)
+        if first_word.startswith('cancel_'): return cancel_orderId_close(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word
