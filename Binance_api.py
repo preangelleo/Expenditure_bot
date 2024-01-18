@@ -585,6 +585,7 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
                 tranId = funding_main_transfer(coin, amount)
                 if tranId: 
                     send_msg(f'Successfully transfered {format_number(amount)} {coin} from funding account to spot account.', chat_id)
+                    time.sleep(0.5)
                     return tranId
             else: 
                 send_msg(f"Failed to transfer {format_number(amount)} {coin} from funding account to spot account, because the balance of {coin} in funding account is: {format_number(balance)}", chat_id)
@@ -1428,7 +1429,6 @@ def binance_cancel_order(coin: str, clientOrderId):
 def binance_cancel_order_by_orderId(coin: str, orderId):
     coin = coin.upper()
     symbol = coin if coin.endswith('USDT') else coin + 'USDT'
-
     PATH = '/api/v3/order'
     timestamp = int(time.time() * 1000)
     params = {
@@ -1442,9 +1442,6 @@ def binance_cancel_order_by_orderId(coin: str, orderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        orderId_close = data.get('orderId')
-        mark_limit_order_as_canceled_by_orderId(orderId_close)
-        time.sleep(0.5)
         return data
     else: 
         print(r.json())
@@ -1608,7 +1605,7 @@ timestamp	LONG	YES
 '''
 
 # Define a function to get open orders list for all coin and make it a dataframe
-def get_open_orders_list(from_id=None, side = 'SELL'):
+def get_open_orders_list(from_id=None):
     PATH = '/api/v3/openOrders'
     timestamp = int(time.time() * 1000)
     params = {'timestamp': timestamp}
@@ -1620,15 +1617,17 @@ def get_open_orders_list(from_id=None, side = 'SELL'):
         data = r.json()
         df = pd.DataFrame(data)
         if df.empty: return {}
-        # Select only the SELL orders
-        df = df[df['side']==side]
-        if df.empty: return {}
         df['coin'] = df['symbol'].apply(lambda x: x[:-4])  
-        df_orderId = df.loc[:, ['coin', 'orderId']]
-        df_orderId_dict = df_orderId.set_index('coin').to_dict()['orderId']
-        df_dict_string = '\n'.join([f"{k}: {v}" for k, v in df_orderId_dict.items()])
-        if from_id: send_msg(f"Open {side} orders:\n\n{df_dict_string}", from_id)
-        return df_orderId_dict
+        df_orderId = df.loc[:, ['coin', 'side', 'orderId']]
+        if from_id: 
+            # create a new column with value: f'coin | side | /cancel_{orderId}'
+            df_orderId['cancel'] = df_orderId.apply(lambda x: f"{x['side']} order | /cancel_{x['coin']}_{x['orderId']}", axis=1)
+            df_dict_string = df_orderId['cancel'].to_list()
+            df_dict_string = '\n'.join(df_dict_string)
+            send_msg(f"Open orders:\n\n{df_dict_string}", from_id)
+        # make a dict of coin and orderId
+        df_dict = df_orderId.set_index('coin')['orderId'].to_dict()
+        return df_dict
     else: 
         print(r.json())
         return {}
@@ -2208,8 +2207,9 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             target_profit = (nearest_resistance_level - current_price) / current_price
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
             if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
-            else: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
-    return
+            else: 
+                if target_profit > 0.03: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
+    return {'target_profit': 0.01, 'resistant_price': 0, 'support_price': 0, 'deviation_percentage': 0}
 
 
 def weekly_rsi_over_high(symbol):
@@ -2482,21 +2482,12 @@ def update_position_table_amount(amount: float, orderId_create: int):
     return
 
 
-def cancel_orderId_close(orderId_close, from_id=TG_BOT_OWNER_ID):
+def cancel_orderId(coin, orderId_close, from_id=TG_BOT_OWNER_ID):
     try: orderId_close = int(orderId_close)
-    except: return send_msg(f'orderId_close: {orderId_close} is not an integer', from_id)
-    with engine.connect() as connection:
-        try:
-            df = pd.DataFrame(connection.execute(text(f'SELECT coin, orderId_create FROM position_table WHERE orderId_close = {orderId_close}')).fetchall())
-            if df.empty: return send_msg(f'No orderId_close: {orderId_close} found in table', from_id)
-            coin = int(df['coin'].values[0])
-            data = binance_cancel_order_by_orderId(coin, orderId_close)
-            if not data: return send_msg(f'Failed to cancel orderId_close: {orderId_close}', from_id)
-            return send_msg(f"Limit Sell Order canceled for: {coin} with orderId_close: {orderId_close}", from_id)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            connection.rollback()
-    return 
+    except: return send_msg(f'Input orderId_close: {orderId_close} is not an integer', from_id)
+    data = binance_cancel_order_by_orderId(coin, orderId_close)
+    if not data: return send_msg(f'Failed to cancel orderId_close: {orderId_close}', from_id)
+    return send_msg(f"{coin} {data['side']} orderId {orderId_close} canceled successfully", from_id)
 
 
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
@@ -2515,6 +2506,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if orderId_close: 
             if not if_manual or is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
             else: continue
+            time.sleep(0.5)
         price = price_create * (1 + float(target_profit))
         try:
             polished_parameters = polish_parameters_for_limit_order(coin, amount, price, chat_id)
@@ -2558,8 +2550,7 @@ def data_to_table(data, table_name, if_exists='append'):
 def binance_cancel_all_orders(chat_id=None):
     current_orders = get_open_orders_list()
     if not current_orders: return send_msg(f'No open orders', chat_id)
-    for coin, orderId in current_orders.items():
-        if binance_cancel_order_by_orderId(coin, int(orderId)): send_msg(f"Canceled order for: {coin} with orderId: {orderId}", chat_id)
+    for coin, orderId in current_orders.items(): binance_cancel_order_by_orderId(coin, int(orderId))
     return 
 
 
@@ -3127,9 +3118,10 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     resistance_dict = get_resistant_price(coin)
     target_profit = min(resistance_dict.get('target_profit', 0), profit_take_target / CHECK_SIZE)
     if target_profit < 0.03: return print(f"Target profit too low: {target_profit}")
-    do_market_buy_one_unit(coin, chat_id)
-    target_profit = round(target_profit, 2)
-    binance_position_set_limit_sell(target_profit, chat_id, coin)
+    if df_in_spot.shape[0] == 0: 
+        do_market_buy_one_unit(coin, chat_id)
+        binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
+    else: bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
     return print(f"Bought {coin} successfully")
 
 
@@ -3283,7 +3275,6 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     except: return send_msg(f'Target price: {target_price} is not a number', chat_id)
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    symbol = coin + 'USDT'
     df = read_position_table_account(0, coin, 'spot')
     if not df.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
     amount = CHECK_SIZE / target_price
@@ -3298,6 +3289,18 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     return
 
 
+def bot_limit_buy(coin, target_price, from_id=TG_BOT_OWNER_ID):
+    amount = CHECK_SIZE / target_price
+    polished_parameters = polish_parameters_for_limit_order(coin, amount, target_price)
+    if not polished_parameters: return
+    amount = polished_parameters['amount']
+    price = polished_parameters['price']
+    data = binance_limit_buy(coin, amount, price)
+    if not data: return
+    orderId = data['orderId']
+    return send_msg(f"Bot_Limit_Buy {coin} ordered at {format_number(price)}\n/ignore_{coin}\n/cancel_{coin}_{orderId}", from_id)
+
+
 def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWNER_ID):
     if not orderId_create: return send_msg(f'orderId_create is not given', chat_id)
     symbol = symbol.upper() if symbol.upper().endswith('USDT') else symbol.upper() + 'USDT'
@@ -3308,7 +3311,12 @@ def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWN
     if not data: return send_msg(f'Failed to get order status by orderId: {orderId_create}', chat_id)
     instert_position_table(data, account = 'spot')
     price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-    return send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
+    send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
+    resistant_price_dict = get_resistant_price(coin)
+    target_profit = resistant_price_dict.get('target_profit', 0)
+    resistant_price = resistant_price_dict.get('resistant_price', 0)
+    if target_profit and resistant_price: binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
+    return 
 
 
 # check orderId get data and insert to position_table
@@ -3345,7 +3353,9 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         amount = float(row['amount'])
         orderId_create = int(row['orderId_create'])
         orderId_close = int(row['orderId_close'])
-        if orderId_close: binance_cancel_order_by_orderId(coin, orderId_close)
+        if orderId_close: 
+            binance_cancel_order_by_orderId(coin, orderId_close)
+            time.sleep(0.5)
         if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
         switch_spot_to_funding(orderId_create)
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
