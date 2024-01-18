@@ -70,6 +70,8 @@ ONE_PARAMETER_COMMAND_LIST = {
     'funding_market_buy': {'function': binance_funding_buy_and_hold, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_buy RSR'},
     'funding_market_sell': {'function': binance_funding_sell, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_sell RSR'},
     'funding_position_price': {'function': funding_position_price, 'description': 'You need to input a coin symbol after this command, for example: /funding_position_price RSR'},
+    'limit_buy': {'function': user_limit_buy_at_support_price, 'description': 'You need to input a coin after this command, for example: \n/limit_buy RSR\n/limit_buy_RSR'},
+    'limit_sell': {'function': set_limit_sell_to_resistant_price, 'description': 'You need to input a coin after this command, for example: \n/limit_sell BONK\n/limit_sell_RSR'},
     'close_all_positions': {'function': close_all_positions, 'description': 'You need to input CONFIRM after this command, for example: /close_all_positions CONFIRM'},
     'click_to_close': {'function': click_to_close, 'description': 'You need to input the orderId_create after this command, for example: /click_to_close 123456789\n/close_123456789'},
     'click_to_buy': {'function': click_to_create, 'description': 'You need to input a coin symbol after this command, for example: /click_to_buy BTC\n/buy_BTC'},
@@ -94,8 +96,6 @@ TWO_PARAMETER_COMMAND_LIST = {
     'calculate_coin_valuation': {'function': calculate_coin_valuation, 'description': 'You need to input a coin symbol and a quantity after this command, for example: /calculate_coin_valuation RSR 100000000\n/ccv_RSR_146652243'},
     'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
     'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
-    'manually_limit_sell': {'function': manually_limit_sell, 'description': 'You need to input a coin symbol, a target profit (not price) after this command, for example: /manually_limit_sell BONK 0.1'},
-    'manually_limit_buy': {'function': manually_limit_buy_order, 'description': 'You need to input a coin symbol, a target profit after this command, for example: /manually_limit_buy RSR 0.0033'},
     'cancel_order_id': {'function': cancel_orderId, 'description': 'You need to input the orderId_close after this command, for example: \n/cancel_order_id RSR 123456789\n/cancel_RSR_123456789'},
     }
 
@@ -303,6 +303,8 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('cancel_'): return cancel_orderId(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('ignore_'): return set_coin_ignore(first_word.split('_')[-1], from_id)
         if first_word.startswith('white_'): return set_coin_white(first_word.split('_')[-1], from_id)
+        if first_word.startswith('limit_sell'): return set_limit_sell_to_resistant_price(first_word.split('_')[-1], from_id)
+        if first_word.startswith('limit_buy'): return user_limit_buy_at_support_price(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

@@ -3286,16 +3286,6 @@ def binance_adjust_profit():
     return amount_to_be_adjusted
 
 
-def manually_limit_sell(coin: str, target_profit: float, from_id = TG_BOT_OWNER_ID):
-    coin = coin.upper() if not coin.endswith('USDT') else coin[:-4]
-    try: target_profit = float(target_profit)
-    except: return send_msg(f"Target profit must be a number, 0.01 means 1%", from_id)
-    if target_profit < 0: return send_msg(f"Target profit must be a positive float number", from_id)
-    try: binance_position_set_limit_sell(target_profit, from_id, coin, is_manual = 1)
-    except: return send_msg(f"Error in setting limit order for {coin}", from_id)
-    return
-
-
 def mark_limit_order_as_canceled_by_orderId(orderId):
     with engine.connect() as connection:
         try:
@@ -3317,12 +3307,12 @@ def switch_spot_to_funding(orderId_create):
     return
 
 
-def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
+def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
-    if not target_price: return send_msg(f'Target price is not given', chat_id)
-    try: target_price = float(target_price)
-    except: return send_msg(f'Target price: {target_price} is not a number', chat_id)
+    target_price_dict = get_resistant_price(coin)
+    target_price = target_price_dict.get('support_price', 0)
+    if not target_price: return send_msg(f'Failed to get target price for {coin}', chat_id)
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     df = read_position_table_account(0, coin, 'spot')
@@ -3335,7 +3325,7 @@ def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     data = binance_limit_buy(coin, amount, price)
     if not data: return send_msg(f'Failed to set limit buy order for {coin}', chat_id)
     orderId = data['orderId']
-    if chat_id: send_msg(f"{coin} Limit Buy Order >> {price} >> {orderId}", chat_id)
+    if chat_id: send_msg(f"{coin} Limit Buy Order at {price} /cancel_{coin}_{orderId}", chat_id)
     return
 
 
