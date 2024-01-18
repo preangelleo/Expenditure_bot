@@ -125,21 +125,7 @@ COMMANDS = [
     {"command": "manually_limit_sell", "description": "Manually place a limit order in Binance and keep holding until it is filled"},
     {"command": "manually_limit_buy", "description": "Manually place a limit order for a coin at a given price"},
     {"command": "get_api_status", "description": "Get the status of the Binance API"},
-    {"command": "get_top_turnover", "description": "Get the top 10 turnover coins in Binance"},
-    {"command": "switch_position", "description": "Switch the position of a given coin from main to funding"},
-    {"command": "funding_market_buy", "description": "Funding account market buy a given coin and hold in funding account"},
-    {"command": "funding_market_sell", "description": "Funding account market sell a given coin and calculate the profit"},
-    {"command": "profit_taken_today", "description": "Calculate the sum of profit taken today"},
-    {"command": "positions_coin_list", "description": "Get the positions coin list"},
-    {"command": "funding_position_price", "description": "Get the prices of positions of a given coin"},
-    {"command": "binance_pay_record", "description": "Get the binance pay record"},
-    {"command": "calculate_missed_profit", "description": "Calculate the missed profit of today"},
-    {"command": "grid_profit_check", "description": "Check current unrealized grid profit"},
-    {"command": "click_to_close", "description": "Click to close the position of a given orderId /close_123456789"},
-    {"command": "click_to_buy", "description": "Click to market buy a given coin /buy_BTC"},
-    {"command": "position_check_all", "description": "Check all positions with orderId_create"},
-    {"command": "count_positions", "description": "Count the number of positions in Spot and Funding account"},
-    {"command": "cancel_orderId", "description": "Cancel the limit order with coin and orderId"},
+
 ]
 
 
