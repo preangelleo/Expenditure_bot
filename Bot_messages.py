@@ -298,6 +298,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('close_'): return click_to_close(first_word.split('_')[-1], from_id)
         if first_word.startswith('buy_'): return click_to_create(first_word.split('_')[-1], from_id)
         if first_word.startswith('ccv_'): return calculate_coin_valuation(first_word.split('_')[1], first_word.split('_')[-1], from_id)
+        if first_word.startswith('as_'): return analyze_symbol_for_user(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

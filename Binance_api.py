@@ -1717,11 +1717,11 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
     month_close = datetime.fromtimestamp(time_close/1000).month
     day_close = datetime.fromtimestamp(time_close/1000).day
     duration = time_close - data['time_create']
-    # update position_table where orderId_create = data['orderId_create'] and set is_closed = 1, time_close = time_close, price_close = price_close, orderId_close = data['orderId'], usdt_close = usdt_close, profit = profit, duration = duration, target_profit = target_profit
     with engine.connect() as conn: 
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
         conn.commit()
-    send_msg(f"{data['coin']} Position closed with profit: {format_number(profit)} usdt\n/profit_taken_today", from_id)
+    reply_msg = f"{data['coin']} Position closed with profit: {format_number(profit)} usdt"
+    send_msg(f"{reply_msg}\n/profit_taken_today", from_id)
     return profit
 
 
@@ -2364,7 +2364,9 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_balance = df_balance[df_balance['profit'] > 50]
+    df_loss = df_balance[df_balance['profit'] < 50]
+    for i in range(df_loss.shape[0]): binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
+    df_balance = df_balance[df_balance['profit'] >= 50]
     if df_balance.empty: return print(f"No coin with profit > 50 usdt")
     profit_sum = df_balance['profit'].astype(float).sum()
     df_today_profit = today_profit_sum()
@@ -2462,9 +2464,10 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         orderId_create = int(df_balance.iloc[i]['orderId_create'])
         orderId_close = int(df_balance.iloc[i]['orderId_close'])
         current_target_profit = float(df_balance.iloc[i]['target_profit'])
+        if_manual = int(df_balance.iloc[i]['is_manual'])
         if current_target_profit == target_profit: continue
         if orderId_close: 
-            if is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
+            if not if_manual or is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
             else: continue
         price = price_create * (1 + float(target_profit))
         try:
@@ -3498,6 +3501,7 @@ def click_to_create(coin, from_id=TG_BOT_OWNER_ID):
     if coin == 'BTC': return send_msg(f'Yes, now you know how to create a position by coin, just replace the BTC with a valid coin', from_id)
     reply_msg = do_market_buy(coin, CHECK_SIZE)
     if reply_msg: return send_msg(reply_msg, from_id)
+
 
 
 if __name__ == '__main__':
