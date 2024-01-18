@@ -105,9 +105,18 @@ CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mo
 
 COMMANDS = [
     {"command": "start", "description": "Get started"},
+    {"command": "help", "description": "Get help information"},
     {"command": "set_bot_menu", "description": "Set the bot's menu"},
+    {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
+    {"command": "open_orders_list", "description": "Get the open orders list in Binance"},
+    {"command": "cancel_all_orders", "description": "Cancel all orders in Binance"},
+    {"command": "get_ignore_list", "description": "Get the ignore list"},
+    {"command": "add_ignore_coin", "description": "Add a coin to the ignore list"},
+    {"command": "get_coin_info", "description": "Get the information of a given coin symbol"},
     {"command": "refill_stella_danli", "description": "Refill the given amount of USDT to stella account of Danli"},
     {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
+    {"command": "calculate_coin_valuation", "description": "Calculate the valuation of a given coin for a given amount"},
+    {"command": "analyze_symbol", "description": "Analyze if current time is positive to buy a given coin"},
 ]
 
 
