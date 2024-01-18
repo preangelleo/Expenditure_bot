@@ -1038,7 +1038,7 @@ def binance_withdraw(amount, network, coin, address):
 
 # difine a binance_send_coin function for bot to call
 def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=TG_BOT_OWNER_ID):
-    time.sleep(1)
+    time.sleep(0.5)
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {amount}', from_id)
@@ -1324,7 +1324,7 @@ def binance_market_sell(coin: str, amount):
 
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        time.sleep(0.5)
         return data
     else: 
         print(r.reason)
@@ -1351,7 +1351,7 @@ def binance_limit_sell(coin, amount, price):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        time.sleep(0.5)
         return data
     else: 
         print(r.json())
@@ -1380,7 +1380,7 @@ def binance_limit_buy(coin, amount, price):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        time.sleep(0.5)
         return data
     else: 
         print(r.json())
@@ -1418,7 +1418,7 @@ def binance_cancel_order(coin: str, clientOrderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        time.sleep(0.5)
         return data
     else: 
         print(r.json())
@@ -1442,7 +1442,9 @@ def binance_cancel_order_by_orderId(coin: str, orderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        orderId_close = data.get('orderId')
+        mark_limit_order_as_canceled_by_orderId(orderId_close)
+        time.sleep(0.5)
         return data
     else: 
         print(r.json())
@@ -1826,7 +1828,7 @@ def binance_market_buy(coin, value):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(1)
+        time.sleep(0.5)
         return data
     else: 
         print(r.reason)
@@ -2117,7 +2119,7 @@ def analyze_symbol(symbol: str, interval_list = ['5m', '15m', '1h', '4h']):
     good_to_buy, target_profit = 0, 0
     interval_list_length = len(interval_list)
     for interval in interval_list:
-        time.sleep(1)
+        time.sleep(0.5)
         df = get_kline_data(symbol, interval)
         if not df.empty: 
             result = analyze_data(df, interval)
@@ -2177,7 +2179,7 @@ def analyze_symbol_prudently(symbol: str):
     good_to_buy, good_to_short, target_profit = 0, 0, 0
     for interval in ['5m', '15m', '1h', '4h']:
         if interval in ['4h']: print(f"Symbol: {symbol}, Interval: {interval}")
-        time.sleep(1)
+        time.sleep(0.5)
         df = get_kline_data(symbol, interval)
         if not df.empty: 
             result = analyze_data(df, interval)
@@ -2463,7 +2465,6 @@ def cancel_orderId_close(orderId_close, from_id=TG_BOT_OWNER_ID):
             coin = int(df['coin'].values[0])
             data = binance_cancel_order_by_orderId(coin, orderId_close)
             if not data: return send_msg(f'Failed to cancel orderId_close: {orderId_close}', from_id)
-            mark_limit_order_as_canceled_by_orderId(orderId_close)
             return send_msg(f"Limit Sell Order canceled for: {coin} with orderId_close: {orderId_close}", from_id)
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -2485,9 +2486,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if_manual = int(df_balance.iloc[i]['is_manual'])
         if current_target_profit == target_profit: continue
         if orderId_close: 
-            if not if_manual or is_manual: 
-                binance_cancel_order_by_orderId(coin, orderId_close)
-                mark_limit_order_as_canceled_by_orderId(orderId_close)
+            if not if_manual or is_manual: binance_cancel_order_by_orderId(coin, orderId_close)
             else: continue
         price = price_create * (1 + float(target_profit))
         try:
@@ -2533,8 +2532,7 @@ def binance_cancel_all_orders(chat_id=None):
     current_orders = get_open_orders_list()
     if not current_orders: return send_msg(f'No open orders', chat_id)
     for coin, orderId in current_orders.items():
-        if binance_cancel_order_by_orderId(coin, int(orderId)): mark_limit_order_as_canceled_by_orderId(orderId)
-        if chat_id: send_msg(f"Canceled order for: {coin} with orderId: {orderId}", chat_id)
+        if binance_cancel_order_by_orderId(coin, int(orderId)): send_msg(f"Canceled order for: {coin} with orderId: {orderId}", chat_id)
     return 
 
 
@@ -3037,10 +3035,10 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
             data = pd.DataFrame([data])  # Convert data to DataFrame
             if data.empty: CMC_NO_DATA.append(coin)
             else: df_token_info = pd.concat([df_token_info, data], ignore_index=True)
-            time.sleep(1)
+            time.sleep(0.5)
     except: 
         for index, row in df_ticker.iterrows():
-            time.sleep(1)
+            time.sleep(0.5)
             coin = row['coin']
             get_token_total_supply(coin)
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
@@ -3139,12 +3137,12 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
             data = pd.DataFrame([data])  # Convert data to DataFrame
             if data.empty: CMC_NO_DATA.append(coin)
             else: df_token_info = pd.concat([df_token_info, data], ignore_index=True)
-            time.sleep(1)
+            time.sleep(0.5)
     except: 
         for index, row in df_ticker.iterrows():
             coin = row['coin']
             get_token_total_supply(coin)
-            time.sleep(1)
+            time.sleep(0.5)
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_merge = pd.merge(df_ticker, df_token_info, on='coin', how='left')
     df_merge = df_merge.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
