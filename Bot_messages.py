@@ -51,6 +51,8 @@ NONE_PARAMETER_COMMAND_LIST = {
     'grid_profit_check': grid_profit_check_for_user,
     'position_check_all': position_check_for_user,
     'count_positions': count_positions,
+    'cancel_all_buy': cancel_all_buy_orders,
+    'cancel_all_sell': cancel_all_sell_orders,
     }
 
 

@@ -1647,6 +1647,18 @@ def cancel_all_buy_orders(from_id=None):
             else: send_msg(f"Failed to cancel {coin} limit buy order: \n/cancel_{coin}_{orderId}", from_id)
     return
 
+def cancel_all_sell_orders(from_id=None):
+    df_dict = get_open_orders_list(from_id, 'SELL')
+    if not df_dict: 
+        if from_id: send_msg('No open sell orders.', from_id)
+        return
+    for coin, orderId in df_dict.items():
+        data = binance_cancel_order_by_orderId(coin, orderId)
+        if from_id: 
+            if data: send_msg(f"{coin} limit sell order: {orderId} canceled.", from_id)
+            else: send_msg(f"Failed to cancel {coin} limit sell order: \n/cancel_{coin}_{orderId}", from_id)
+    return
+
 # def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
 #     df = read_position_table_account()
 #     if df.empty: return send_msg('No open limit orders.', from_id)
@@ -2562,9 +2574,9 @@ def data_to_table(data, table_name, if_exists='append'):
 
 
 # Define cancel all of the open orders
-def binance_cancel_all_orders(chat_id=None):
-    current_orders = get_open_orders_list()
-    if not current_orders: return send_msg(f'No open orders', chat_id)
+def binance_cancel_all_orders(from_id=None, side = 'NONE'):
+    current_orders = get_open_orders_list(from_id, side)
+    if not current_orders: return send_msg(f'No open orders', from_id)
     for coin, orderId in current_orders.items(): binance_cancel_order_by_orderId(coin, int(orderId))
     return 
 
