@@ -95,7 +95,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
     'manually_limit_sell': {'function': manually_limit_sell, 'description': 'You need to input a coin symbol, a target profit (not price) after this command, for example: /manually_limit_sell BONK 0.1'},
     'manually_limit_buy': {'function': manually_limit_buy_order, 'description': 'You need to input a coin symbol, a target profit after this command, for example: /manually_limit_buy RSR 0.0033'},
-    'cancel_orderId': {'function': cancel_orderId, 'description': 'You need to input the orderId_close after this command, for example: \n/cancel_orderId RSR 123456789\n/cancel_RSR_123456789'},
+    'cancel_order_id': {'function': cancel_orderId, 'description': 'You need to input the orderId_close after this command, for example: \n/cancel_order_id RSR 123456789\n/cancel_RSR_123456789'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
