@@ -1916,8 +1916,13 @@ def do_market_buy(coin: str, value):
 
 
 def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
     reply_msg = do_market_buy(coin, CHECK_SIZE)
     if reply_msg: send_msg(reply_msg, from_id)
+    resistant_price_dict = get_resistant_price(coin)
+    target_profit = resistant_price_dict.get('target_profit', 0)
+    resistant_price = resistant_price_dict.get('resistant_price', 0)
+    if target_profit and resistant_price: binance_position_set_limit_sell(round(target_profit, 2), from_id, coin)
     return reply_msg
 
 
