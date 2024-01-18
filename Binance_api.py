@@ -2358,7 +2358,7 @@ def check_today_profit_sum():
     profit_coinlist = []
     for coin in df_profit['coin']:
         df_profit_coin = df_profit[df_profit['coin'] == coin]
-        profit_coinlist.append(f"{coin}: {format_number(df_profit_coin['profit'].sum())} usdt")
+        profit_coinlist.append(f"/as_{coin}: {format_number(df_profit_coin['profit'].sum())} usdt")
     profit_sum = df_profit['profit'].sum()
     reply_dict = {
         'profit_sum': profit_sum,
@@ -2845,8 +2845,7 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
-    if get_token_info(coin, from_id): return read_latest_sell_price(coin, from_id)
-
+    if get_token_info(coin, from_id): return calculate_missed_profit_for_coin(coin, from_id)
 
 # Define a function to read hot_coin_history table and get today's hot coin list
 def get_hot_coin_list_of_today():

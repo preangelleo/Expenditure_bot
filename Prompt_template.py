@@ -105,6 +105,8 @@ CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mo
 
 COMMANDS = [
     {"command": "start", "description": "Get started"},
+    {"command": "refill_stella_danli", "description": "Refill 1000 USDT to stella account of Danli"},
+    {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
     {"command": "help", "description": "Get help information"},
     {"command": "set_bot_menu", "description": "Set the bot's menu"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
@@ -120,8 +122,6 @@ COMMANDS = [
     {"command": "get_wallet_balance", "description": "Get the balance of all coins in the wallet"},
     {"command": "binance_market_sell", "description": "Do market sell of a given coin in Binance"},
     {"command": "binance_market_buy", "description": "Do market buy of a given coin in Binance"},
-    {"command": "refill_stella_danli", "description": "Refill the given amount of USDT to stella account of Danli"},
-    {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
     {"command": "calculate_coin_valuation", "description": "Calculate the valuation of a given coin for a given amount"},
     {"command": "analyze_symbol", "description": "Analyze if current time is positive to buy a given coin"},
     {"command": "confirm_token", "description": "Confirm the token for a previous task to be executed"},
@@ -157,7 +157,6 @@ COMMANDS = [
     {"command": "save_trivial_record", "description": "Save some information into the table 'trivial_records'"},
     {"command": "summarize_the_url", "description": "Summarize the content of a given url"},
     {"command": "read_positions_limit", "description": "Read current position limit setting of the trading bot"},
-    {"command": "latest_sell_price", "description": "Get the latest sold price of a given coin"},
     {"command": "insert_otp", "description": "Insert a otp passcode_key for a app_name into the table"},
     {"command": "transfer_between_accounts", "description": "Transfer between accounts: MAIN_UMFUTURE, FUNDING_MAIN, etc."},
     {"command": "get_top_turnover", "description": "Get the top 10 turnover coins in Binance"},
@@ -576,7 +575,6 @@ BOT_COMMAND_DICT = {
     'ccv': 'calculate_coin_valuation',
     'value': 'calculate_coin_valuation',
     'hcu': 'hot_coin_update',
-    'lsp': 'latest_sell_price',
     'otp': 'get_otp',
     'gotp': 'get_otp',
     'iotp': 'insert_otp',
