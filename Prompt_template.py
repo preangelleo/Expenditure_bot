@@ -115,7 +115,7 @@ COMMANDS = [
     {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
     {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
     {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
-    {"command": "get_white_list", "description": "Get the white list"},
+    {'command': 'get_white_list", "description": "Get the white list'},
     {'command': 'add_white_list', 'description': 'Add a coin to the white list'},
     {'command': 'remove_white_list', 'description': 'Remove a coin from the white list'},
     {'command': 'get_coin_info', 'description': 'Get the information of a given coin symbol'},
@@ -134,7 +134,6 @@ COMMANDS = [
     {'command': 'binance_market_buy', 'description': 'Do market buy of a given coin in Binance'},
     {'command': 'coin_deposit_address', 'description': 'Get the deposit address of a given coin and network in Binance'},
     {'command': 'close_all_positions', 'description': 'Close all positions in Binance'},
-    {"command": "cancel_orderId", "description": "Cancel the limit order with coin and orderId"},
     {'command': 'switch_on_bot', 'description': 'Switch on the trading bot (start to buy hot coins))'},
     {'command': 'switch_off_bot', 'description': 'Switch off the trading bot (sell only)'},
     {'command': 'read_bot_status', 'description': 'Read the status of the trading bot'},
@@ -177,6 +176,7 @@ COMMANDS = [
     {"command": 'click_to_buy', 'description': 'Click to market buy a given coin /buy_BTC'},
     {"command": 'position_check_all', 'description': 'Check all positions with orderId_create'},
     {"command": 'count_positions', 'description': 'Count the number of positions in Spot and Funding account'},
+    {"command": "cancel_orderId", "description": "Cancel the limit order with coin and orderId"},
 ]
 
 FUNCTIONS_TOOLS = [

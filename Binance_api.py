@@ -1633,20 +1633,20 @@ def get_open_orders_list(from_id=None):
         return {}
 
 
-def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
-    df = read_position_table_account()
-    if df.empty: return send_msg('No open limit orders.', from_id)
-    df = df[df['orderId_close']!=0]
-    df = df.loc[:, ['coin', 'orderId_create', 'target_profit']]
-    reply_msg_list = []
-    for index, row in df.iterrows():
-        coin = row['coin']
-        orderId_create = row['orderId_create']
-        target_profit = row['target_profit']
-        reply_msg = f"{coin}: {int(target_profit*100)}% /close_{orderId_create}"
-        reply_msg_list.append(reply_msg)
-    reply_msg = '\n'.join(reply_msg_list)
-    return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
+# def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
+#     df = read_position_table_account()
+#     if df.empty: return send_msg('No open limit orders.', from_id)
+#     df = df[df['orderId_close']!=0]
+#     df = df.loc[:, ['coin', 'orderId_create', 'target_profit']]
+#     reply_msg_list = []
+#     for index, row in df.iterrows():
+#         coin = row['coin']
+#         orderId_create = row['orderId_create']
+#         target_profit = row['target_profit']
+#         reply_msg = f"{coin}: {int(target_profit*100)}% /close_{orderId_create}"
+#         reply_msg_list.append(reply_msg)
+#     reply_msg = '\n'.join(reply_msg_list)
+#     return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
 
 
 def read_position_table(is_close = 0, coin = None):
