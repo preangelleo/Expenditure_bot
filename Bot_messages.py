@@ -14,8 +14,6 @@ TELEGRAM_BOT_WEBHOOK_TOKEN = os.getenv('TELEGRAM_BOT_WEBHOOK_TOKEN')
 TELEGRAM_BASE_URL = f'https://api.telegram.org/bot{TOKEN}/'
 RESET_TELEGRAM_TOKEN = os.getenv('RESET_TELEGRAM_TOKEN')
 
-# All handlers should be attached to the Router (or Dispatcher)
-# dp = Dispatcher()
 
 # Function to set the bot commands
 def set_commands(from_id=TG_BOT_OWNER_ID):

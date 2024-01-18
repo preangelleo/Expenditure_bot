@@ -115,7 +115,7 @@ COMMANDS = [
     {'command': 'get_ignore_list', 'description': 'Get the ignore list'},
     {'command': 'add_ignore_coin', 'description': 'Add a coin to the ignore list'},
     {'command': 'remove_ignore_coin', 'description': 'Remove a coin from the ignore list'},
-    {'command': 'get_white_list", "description": "Get the white list'},
+    {'command': 'get_white_list', 'description': 'Get the white list'},
     {'command': 'add_white_list', 'description': 'Add a coin to the white list'},
     {'command': 'remove_white_list', 'description': 'Remove a coin from the white list'},
     {'command': 'get_coin_info', 'description': 'Get the information of a given coin symbol'},

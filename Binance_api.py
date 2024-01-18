@@ -1605,7 +1605,7 @@ timestamp	LONG	YES
 '''
 
 # Define a function to get open orders list for all coin and make it a dataframe
-def get_open_orders_list(from_id=None):
+def get_open_orders_list(from_id=None, side = 'NONE'):
     PATH = '/api/v3/openOrders'
     timestamp = int(time.time() * 1000)
     params = {'timestamp': timestamp}
@@ -1626,12 +1626,26 @@ def get_open_orders_list(from_id=None):
             df_dict_string = '\n'.join(df_dict_string)
             send_msg(f"Open orders:\n\n{df_dict_string}", from_id)
         # make a dict of coin and orderId
+        df_orderId = df_orderId[df_orderId['side']==side] if side == 'BUY' or side == 'SELL' else df_orderId
         df_dict = df_orderId.set_index('coin')['orderId'].to_dict()
-        return df_dict
+        return df_dict if df_dict else {}
     else: 
         print(r.json())
         return {}
 
+
+# cancel all BUY orders
+def cancel_all_buy_orders(from_id=None):
+    df_dict = get_open_orders_list(from_id, 'BUY')
+    if not df_dict: 
+        if from_id: send_msg('No open buy orders.', from_id)
+        return
+    for coin, orderId in df_dict.items():
+        data = binance_cancel_order_by_orderId(coin, orderId)
+        if from_id: 
+            if data: send_msg(f"{coin} limit buy order: {orderId} canceled.", from_id)
+            else: send_msg(f"Failed to cancel {coin} limit buy order: \n/cancel_{coin}_{orderId}", from_id)
+    return
 
 # def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
 #     df = read_position_table_account()
@@ -2413,6 +2427,7 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
+    if is_last_hour: cancel_all_buy_orders()
     return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
@@ -3121,7 +3136,10 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     if df_in_spot.shape[0] == 0: 
         do_market_buy_one_unit(coin, chat_id)
         binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
-    else: bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
+    else: 
+        orderlist_dict = get_open_orders_list(from_id=None, side = 'BUY')
+        if len(orderlist_dict) + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
+        bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
     return print(f"Bought {coin} successfully")
 
 
