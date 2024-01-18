@@ -2260,7 +2260,7 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
             if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
             else: 
-                if target_profit > 0.03: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
+                if target_profit > 0.01: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
     return {'target_profit': 0.01, 'resistant_price': 0, 'support_price': 0, 'deviation_percentage': 0}
 
 
