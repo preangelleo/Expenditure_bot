@@ -125,6 +125,7 @@ COMMANDS = [
     {"command": "manually_limit_sell", "description": "Manually place a limit order in Binance and keep holding until it is filled"},
     {"command": "manually_limit_buy", "description": "Manually place a limit order for a coin at a given price"},
     {"command": "get_api_status", "description": "Get the status of the Binance API"},
+    {"command": "cancel_orderId", "description": "Cancel the limit order with coin and orderId"},
 
 ]
 
