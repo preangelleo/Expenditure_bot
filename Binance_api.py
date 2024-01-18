@@ -1925,10 +1925,8 @@ def bot_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
 def set_limit_sell_to_resistant_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     resistant_price_dict = get_resistant_price(coin)
-    target_profit = resistant_price_dict.get('target_profit', 0)
-    resistant_price = resistant_price_dict.get('resistant_price', 0)
-    if target_profit and resistant_price: binance_position_set_limit_sell(round(target_profit, 2), from_id, coin)
-    return
+    if not resistant_price_dict: return
+    return binance_position_set_limit_sell(round(resistant_price_dict.get('target_profit', 0.01), 2), from_id, coin)
 
 
 def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -2259,9 +2257,10 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             target_profit = (nearest_resistance_level - current_price) / current_price
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
             if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
-            else: 
-                if target_profit > 0.01: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
-    return {'target_profit': 0.01, 'resistant_price': 0, 'support_price': 0, 'deviation_percentage': 0}
+            target_profit = max(target_profit, 0.01)
+            nearest_resistance_level = max(nearest_resistance_level, current_price * 1.01)
+            nearest_support_level = min(nearest_support_level, current_price * 0.97)
+            return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
 
 
 def weekly_rsi_over_high(symbol):
@@ -2536,11 +2535,12 @@ def update_position_table_amount(amount: float, orderId_create: int):
 
 
 def cancel_orderId(coin, orderId_close, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
     try: orderId_close = int(orderId_close)
     except: return send_msg(f'Input orderId_close: {orderId_close} is not an integer', from_id)
     data = binance_cancel_order_by_orderId(coin, orderId_close)
     if not data: return send_msg(f'Failed to cancel orderId_close: {orderId_close}', from_id)
-    return send_msg(f"{coin} {data['side']} orderId {orderId_close} canceled successfully", from_id)
+    return send_msg(f"{coin} {data['type']} {data['side']} orderId {orderId_close} canceled successfully\n/limit_buy_{coin}", from_id)
 
 
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
@@ -3168,8 +3168,9 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     coin = df_ticker.iloc[0]['coin']
     resistance_dict = get_resistant_price(coin)
-    target_profit = min(resistance_dict.get('target_profit', 0), profit_take_target / CHECK_SIZE)
-    if target_profit < 0.03: return print(f"Target profit too low: {target_profit}")
+    if not resistance_dict: return print(f"Failed to get resistance price for {coin}")
+    target_profit = min(resistance_dict.get('target_profit', 0.01), profit_take_target / CHECK_SIZE)
+    if target_profit < 0.01: return print(f"Target profit too low: {target_profit}")
     if df_in_spot.shape[0] == 0: 
         bot_market_buy_one_unit(coin, chat_id)
         binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
@@ -3310,13 +3311,14 @@ def switch_spot_to_funding(orderId_create):
 def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
-    target_price_dict = get_resistant_price(coin)
-    target_price = target_price_dict.get('support_price', 0)
-    if not target_price: return send_msg(f'Failed to get target price for {coin}', chat_id)
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     df = read_position_table_account(0, coin, 'spot')
     if not df.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
+    target_price_dict = get_resistant_price(coin)
+    if not target_price_dict: return send_msg(f'Failed to get target price for {coin}', chat_id)
+    target_price = float(target_price_dict.get('support_price', 0))
+    if not target_price: return send_msg(f'Failed to get target price for {coin}', chat_id)
     amount = CHECK_SIZE / target_price
     polished_parameters = polish_parameters_for_limit_order(coin, amount, target_price)
     if not polished_parameters: return send_msg(f'Failed to polish parameters for limit buy order', chat_id)
@@ -3325,7 +3327,7 @@ def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     data = binance_limit_buy(coin, amount, price)
     if not data: return send_msg(f'Failed to set limit buy order for {coin}', chat_id)
     orderId = data['orderId']
-    if chat_id: send_msg(f"{coin} Limit Buy Order at {price} /cancel_{coin}_{orderId}", chat_id)
+    if chat_id: send_msg(f"{coin} Limit Buy Order at {price} \n/cancel_{coin}_{orderId}", chat_id)
     return
 
 
