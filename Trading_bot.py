@@ -72,23 +72,10 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     if not symbol.endswith('USDT'): symbol = symbol + 'USDT'
     coin = symbol[:-4]
     calculate_missed_profit_for_coin(coin, from_id)
-    long_or_short = analyze_symbol_prudently(symbol)
-    long = long_or_short['long']
-    if long and not weekly_rsi_over_high(symbol):
-        token_info = get_token_market_cap_and_ratio(coin)
-        if token_info:
-            fully_diluted_market_cap = token_info['fully_diluted_market_cap']
-            circulating_ratio = token_info['circulation_ratio']
-            turnover_ratio = token_info['turnover_ratio']
-            token_slug = token_info['token_slug']
-            current_price = token_info['current_price']
-            coin_rank = token_info['coin_rank']
-            URL = f'https://coinmarketcap.com/currencies/{token_slug}/'
-            reply_string = f"[{symbol}]({URL}) | Rank {coin_rank} | {format_number(current_price)} | {round(circulating_ratio, 2)} | {round(turnover_ratio, 2)}\nFully_Diluted_Market_Cap: {format_number(fully_diluted_market_cap)}"
-            send_msg_markdown(reply_string, from_id)
-            return send_msg(f"/buy_{coin} is good to buy now.", from_id)
+    data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
+    if data_dict: send_msg('\n'.join([f"{key}: {value}" for key, value in data_dict.items()]), from_id)
     get_token_info(coin, from_id)
-    return send_msg(f"{coin} is not good to long or short now. \nWait for the next chance. \nBe patient please 😘", from_id)
+    return
 
 
 def only_check_hot_coins(from_id = None):
@@ -101,7 +88,7 @@ def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
     data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
     data_to_table(data, 'webhook_signature')
     symbol = message.split(' ')[-1]
-    data_dict = get_resistant_price(symbol, interval = '4h')
+    data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
     if not data_dict: return send_msg(token, from_id)
     data_dict['token'] = token
     data_dict['message'] = message

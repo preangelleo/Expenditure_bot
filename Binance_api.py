@@ -2198,7 +2198,7 @@ def analyze_symbol_prudently(symbol: str):
     return {'long': False, 'short': False, 'target_profit': 0.01}
 
 
-def get_resistant_price(symbol: str, interval = '4h'):
+def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     df = get_kline_data(symbol, interval)
     if not df.empty: 
@@ -2207,7 +2207,8 @@ def get_resistant_price(symbol: str, interval = '4h'):
             nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
             target_profit = (nearest_resistance_level - current_price) / current_price
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
-            return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
+            if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
+            else: return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
     return
 
 
@@ -3099,7 +3100,8 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(reply_msg, from_id)
     return
 
-def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
+
+def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, trading_bot_status = trading_bot_switch_status()):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
@@ -3116,14 +3118,18 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
-    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
+    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0') if trading_bot_status else df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_ticker.empty: return print("No top coin to buy")
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
     if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     coin = df_ticker.iloc[0]['coin']
+    resistance_dict = get_resistant_price(coin)
+    target_profit = min(resistance_dict.get('target_profit', 0), profit_take_target / CHECK_SIZE)
+    if target_profit < 0.03: return print(f"Target profit too low: {target_profit}")
     do_market_buy_one_unit(coin, chat_id)
-    binance_position_set_limit_sell(read_target_profit_default(), chat_id, coin)
+    target_profit = round(target_profit, 2)
+    binance_position_set_limit_sell(target_profit, chat_id, coin)
     return print(f"Bought {coin} successfully")
 
 
