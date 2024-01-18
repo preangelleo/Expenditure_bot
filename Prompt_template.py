@@ -104,7 +104,10 @@ NOT_OWNER_ALERT = "Sorry, This bot is only for the owner.\n\nLEOWANG.net"
 CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mortgage', 'Entertainment', 'Healthcare', 'Clothing', 'Education', 'Travel', 'Personal Care', 'Home Maintenance', 'Gifts Donations', 'Savings Investments', 'Electronics', 'Kids', 'Pets', 'Fitness', 'Insurance', 'Others']
 
 COMMANDS = [
-    {"command": "start", "description": "Get started"}
+    {"command": "start", "description": "Get started"},
+    {"command": "set_bot_menu", "description": "Set the bot's menu"},
+    {"command": "refill_stella_danli", "description": "Refill the given amount of USDT to stella account of Danli"},
+    {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
 ]
 
 
