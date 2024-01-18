@@ -2254,6 +2254,8 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
         current_price = float(df['Close'].iloc[-1])
         if current_price > 0:
             nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
+            nearest_resistance_level = nearest_resistance_level * 0.99
+            nearest_support_level = nearest_support_level * 1.01
             target_profit = (nearest_resistance_level - current_price) / current_price
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
             if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
