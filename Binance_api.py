@@ -1915,15 +1915,34 @@ def do_market_buy(coin: str, value):
     return f'''Market bought {coin} at {format_number(price)} usdt/{coin.lower()}\n/close_{data['orderId']}'''
 
 
-def do_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
+def bot_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     reply_msg = do_market_buy(coin, CHECK_SIZE)
     if reply_msg: send_msg(reply_msg, from_id)
+    return reply_msg
+
+
+def set_limit_sell_to_resistant_price(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
     resistant_price_dict = get_resistant_price(coin)
     target_profit = resistant_price_dict.get('target_profit', 0)
     resistant_price = resistant_price_dict.get('resistant_price', 0)
     if target_profit and resistant_price: binance_position_set_limit_sell(round(target_profit, 2), from_id, coin)
+    return
+
+
+def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    reply_msg = do_market_buy(coin, CHECK_SIZE)
+    if reply_msg: send_msg(reply_msg, from_id)
+    set_limit_sell_to_resistant_price(coin, from_id)
     return reply_msg
+
+
+def click_to_create(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    if coin == 'BTC': return send_msg(f'Yes, now you know how to create a position by coin, just replace the BTC with a valid coin', from_id)
+    return manually_market_buy_one_unit(coin, from_id)
 
 
 def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
@@ -3150,7 +3169,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     target_profit = min(resistance_dict.get('target_profit', 0), profit_take_target / CHECK_SIZE)
     if target_profit < 0.03: return print(f"Target profit too low: {target_profit}")
     if df_in_spot.shape[0] == 0: 
-        do_market_buy_one_unit(coin, chat_id)
+        bot_market_buy_one_unit(coin, chat_id)
         binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
     else: 
         orderlist_dict = get_open_orders_list(from_id=None, side = 'BUY')
@@ -3295,11 +3314,6 @@ def switch_spot_to_funding(orderId_create):
             connection.rollback()
     return
 
-def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
-    reply_msg = do_market_buy(coin, CHECK_SIZE)
-    if reply_msg: send_msg(reply_msg, from_id)
-    return reply_msg
-
 
 def manually_limit_buy_order(coin, target_price, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
@@ -3346,11 +3360,7 @@ def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWN
     instert_position_table(data, account = 'spot')
     price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
     send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
-    resistant_price_dict = get_resistant_price(coin)
-    target_profit = resistant_price_dict.get('target_profit', 0)
-    resistant_price = resistant_price_dict.get('resistant_price', 0)
-    if target_profit and resistant_price: binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
-    return 
+    return set_limit_sell_to_resistant_price(coin, chat_id)
 
 
 # check orderId get data and insert to position_table
@@ -3367,10 +3377,10 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     tranId = funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
     if not tranId: return
+    time.sleep(0.5)
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
-    time.sleep(1)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
@@ -3591,12 +3601,6 @@ def close_postive_positions(from_id, grid_profit_target=1):
             do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
     return 
 
-
-def click_to_create(coin, from_id=TG_BOT_OWNER_ID):
-    coin = coin.upper()
-    if coin == 'BTC': return send_msg(f'Yes, now you know how to create a position by coin, just replace the BTC with a valid coin', from_id)
-    reply_msg = do_market_buy(coin, CHECK_SIZE)
-    if reply_msg: return send_msg(reply_msg, from_id)
 
 
 
