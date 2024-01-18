@@ -2359,20 +2359,46 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
 def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     is_last_hour = True if '23:50' < datetime.now().strftime("%H:%M") < '23:59' else False
     df_balance = read_position_table() if is_last_hour else read_position_table_account()
+    ''' df_balance
+        coin    symbol  account  price_create       amount    usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
+    0   ATOM  ATOMUSDT  funding     12.269441      815.030   9999.962740      2594994242  1703573139555      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2023            12          25           0            0          0   14.999944  binance
+    1    APE   APEUSDT  funding      1.786000     5599.100   9999.992600      1563146551  1703736326606      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999989  binance
+    2   COMP  COMPUSDT  funding     66.115741      151.249   9999.939750      1259040501  1703742928420      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999910  binance
+    3   GALA  GALAUSDT  funding      0.033265   300613.000   9999.969160      2192893079  1703744426664      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2023            12          27           0            0          0   14.999954  binance
+    4    GRT   GRTUSDT  funding      0.223840    44674.000   9999.816200      1394304791  1704162623034      MARKET          0          0           0.10          0.0              0           0                      0       0         0         2024             1           1           0            0          0   14.999724  binance
+    5   KP3R  KP3RUSDT  funding    117.460950       85.130   9999.450700       299940454  1704165866038      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           1           0            0          0   14.999176  binance
+    6   HBAR  HBARUSDT  funding      0.098600   101419.000   9999.913400       782193241  1704245781505      MARKET          0          0           0.10          0.0              0           0                      0       0         0         2024             1           2           0            0          0   14.999870  binance
+    7    LSK   LSKUSDT  funding      1.760200     5681.100   9999.870100       319643205  1704258746011      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           2           0            0          0   14.999805  binance
+    8   ORDI  ORDIUSDT  funding     86.979837      114.960   9999.202010       511430308  1704276389162      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           3           0            0          0   14.998803  binance
+    9    SXP   SXPUSDT  funding      0.424939    23532.700  10000.000000       995372619  1704266588907      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           2           0            0          0   15.000000  binance
+    10   RSR   RSRUSDT  funding      0.002858  3499080.200  10000.000000       760199231  1704300264763      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           3           0            0          0   15.000000  binance
+    11   GMT   GMTUSDT  funding      0.392643    25468.300  10000.000000      1930395840  1704674472620      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1           7           0            0          0   15.000000  binance
+    12   RSR   RSRUSDT  funding      0.002774  3604327.000  10000.000000       765488694  1705009913712      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          11           0            0          0   15.000000  binance
+    13   RSR   RSRUSDT  funding      0.002781  3595201.100  10000.000000       765488987  1705009938371      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          11           0            0          0   15.000000  binance
+    14   RSR   RSRUSDT  funding      0.002785  3590589.900  10000.000000       765489275  1705009953684      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          11           0            0          0   15.000000  binance
+    15   RSR   RSRUSDT  funding      0.002790  3583656.000  10000.000000       765489566  1705009969186      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          11           0            0          0   15.000000  binance
+    16   OGN   OGNUSDT  funding      0.169533    58985.000   9999.901800       794330941  1705463798407      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          16           0            0          0   14.999853  binance
+    17  IOTA  IOTAUSDT  funding      0.247958    40329.000   9999.886100       912140876  1705463994649      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          16           0            0          0   14.999829  binance
+    18   RSR   RSRUSDT  funding      0.002634  3796194.000   9999.999759       768486639  1705465197022      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          16           0            0          0   15.000000  binance
+    19  CELR  CELRUSDT  funding      0.019730   506847.600   9999.998735       785042743  1705493179813      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          17           0            0          0   14.999998  binance
+    20   RSR   RSRUSDT  funding      0.002550  3921966.800   9999.999770       768814329  1705531335522      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          17           0            0          0   15.000000  binance
+    21  RARE  RAREUSDT     spot      0.111690    89533.100   9999.995270       135875615  1705565171651      MARKET          0          1           0.01          0.0      135876733           0                      0       0         0         2024             1          18           0            0          0   14.999993  binance
+    22   RSR   RSRUSDT  funding      0.002493  4012030.400   9999.999900       769036652  1705579652926      MARKET          0          0           0.00          0.0              0           0                      0       0         0         2024             1          18           0            0          0   15.000000  binance'''
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
     if df.empty: return print('Failed to fetch price info')
     df = df.drop(columns=['coin'])
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
-    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount']
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_loss = df_balance[df_balance['profit'] < 50]
-    for i in range(df_loss.shape[0]): binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
-    df_balance = df_balance[df_balance['profit'] >= 50]
-    if df_balance.empty: return print(f"No coin with profit > 50 usdt")
+    df_today_profit_take = today_profit_sum()
+    current_profit_sum = df_today_profit_take['profit'].sum() if not df_today_profit_take.empty else 0
+    if current_profit_sum >= profit_take_target: 
+        df_loss = df_balance[df_balance['profit'] < 0 and df_balance['account'] == 'spot']
+        for i in range(df_loss.shape[0]): binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
+    df_balance = df_balance[df_balance['profit'] >= 0]
+    if df_balance.empty: return print(f"No coin with profit > 0")
     profit_sum = df_balance['profit'].astype(float).sum()
-    df_today_profit = today_profit_sum()
-    current_profit_sum = df_today_profit['profit'].sum() if not df_today_profit.empty else 0
     profit_take_target -= current_profit_sum
     if profit_sum < profit_take_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
     print(f"Profit sum: {profit_sum} is greater than profit_take_target: {profit_take_target}, let's take them.")
@@ -3296,6 +3322,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
+    time.sleep(1)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
@@ -3346,6 +3373,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     amount = float(row['amount'])
     transId = funding_main_transfer_with_check_and_send(coin, amount, from_id)
     if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
+    time.sleep(0.5)
     data = binance_market_sell(coin, amount)
     if not data: send_msg(f'Failed to do market sell for {coin}', from_id)
     profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data)
