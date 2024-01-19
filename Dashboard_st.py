@@ -195,7 +195,7 @@ def display_binance_trading_history():
 
 def display_open_position():
     try:
-        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
+        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, amount, account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
     except: df_buy = pd.DataFrame()
     if df_buy.empty: return
     df_buy['duration'] = int(time.time() * 1000) - df_buy['time_create']
