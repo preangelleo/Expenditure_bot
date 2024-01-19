@@ -301,6 +301,8 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('ccv_'): return calculate_coin_valuation(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('as_'): return analyze_symbol_for_user(first_word.split('_')[-1], from_id)
         if first_word.startswith('swp_'): return switch_position_from_main_to_funding(first_word.split('_')[-1], from_id)
+        if first_word.startswith('mtf_'): return switch_position_from_main_to_funding(first_word.split('_')[-1], from_id)
+        if first_word.startswith('ftm_'): return switch_position_from_funding_to_main(first_word.split('_')[-1], from_id)
         if first_word.startswith('cancel_'): return cancel_orderId(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('ignore_'): return set_coin_ignore(first_word.split('_')[-1], from_id)
         if first_word.startswith('white_'): return set_coin_white(first_word.split('_')[-1], from_id)

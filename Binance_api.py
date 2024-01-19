@@ -1914,7 +1914,7 @@ def do_market_buy(coin: str, value):
     if not data: return f'Failed to do market buy for coin: {coin}'
     instert_position_table(data, account = 'spot')
     price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-    return f'''Market bought {coin} at {format_number(price)} usdt/{coin.lower()}\n/close_{data['orderId']}'''
+    return f'''Market bought {coin} at {format_number(price)} usdt/{coin.lower()}\n/as_{{coin}} | /close_{data['orderId']}'''
 
 
 def bot_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
@@ -3190,9 +3190,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     if avg_price: 
         current_value = float(total_coin_in_position) * float(avg_price['price'])
         reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
-    reply_msg += f"\n\n/as_{coin} | /buy_{coin}"
-    if not df_spot.empty: reply_msg += f" | /limit_sell_{coin} | /swp_{coin}"
-    reply_msg += f"\n/funding_buy_{coin} | /funding_sell_{coin}"
+    reply_msg += f"\n\n/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}"
     if from_id: send_msg(reply_msg, from_id)
     return
 
@@ -3363,6 +3361,15 @@ def switch_spot_to_funding(orderId_create):
             connection.rollback()
     return
 
+def switch_funding_to_spot(orderId_create):
+    with engine.connect() as connection:
+        try:
+            connection.execute(text(f"UPDATE position_table SET account = 'spot' WHERE orderId_create = :orderId_create"), {'orderId_create': orderId_create})
+            connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            connection.rollback()
+    return
 
 def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
@@ -3456,6 +3463,21 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
         send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create} ''', from_id)
     return 
+
+
+def switch_position_from_funding_to_main(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    coin = coin if not coin.endswith('USDT') else coin[:-4]
+    df = read_position_table_account(0, coin, 'funding')
+    if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
+    for index, row in df.iterrows():
+        amount = float(row['amount'])
+        orderId_create = int(row['orderId_create'])
+        if not funding_main_transfer_with_check_and_send(coin, amount, from_id): return send_msg(f'{coin} in funding account is not sufficient', from_id)
+        switch_funding_to_spot(orderId_create)
+        main_funding_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
+        send_msg(f'''{coin} has been switched to main account!\norderId_create | {orderId_create} ''', from_id)
+    return
 
 
 def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
