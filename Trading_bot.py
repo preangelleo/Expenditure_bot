@@ -67,6 +67,8 @@ from Binance_api import *
 - Coin Eligibility: For each eligible coin, the strategy checks if it is already in an open position. If not, it fetches price information from CoinMarketCap and send to trader.
 - Trading: If the coin meets all criteria, a market buy order is placed with a size defined by CHECK_SIZE.
 '''
+
+
 def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     symbol = symbol.upper()
     if not symbol.endswith('USDT'): symbol = symbol + 'USDT'
@@ -75,7 +77,7 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
     if data_dict: send_msg('\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()]), from_id)
     get_token_info(coin, from_id)
-    return
+    return send_msg(generate_bottom_msg(coin), from_id)
 
 
 def only_check_hot_coins(from_id = None):

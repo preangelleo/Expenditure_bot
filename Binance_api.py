@@ -50,6 +50,8 @@ def network_name_change(str_name: str):
     str_name = 'ETH' if str_name.startswith("ERC") else 'TRX' if str_name.startswith("TRC") else 'BSC' if str_name.startswith("BEP") else str_name
     return str_name
 
+def generate_bottom_msg(coin):
+    return f"/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}"
 
 def server_time_diff():
     PATH = '/api/v1/time'
@@ -3195,7 +3197,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     if avg_price: 
         current_value = float(total_coin_in_position) * float(avg_price['price'])
         reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
-    reply_msg += f"\n\n/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}"
+    reply_msg += f"\n\n{generate_bottom_msg(coin)}"
     if from_id: send_msg(reply_msg, from_id)
     return
 
