@@ -3190,6 +3190,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     if avg_price: 
         current_value = float(total_coin_in_position) * float(avg_price['price'])
         reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
+    reply_msg += f"\n\n/as_{coin} | /buy_{coin} | /sell_{coin} | /swp_{coin}"
     if from_id: send_msg(reply_msg, from_id)
     return
 

@@ -67,7 +67,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'binance_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
     'binance_market_buy': {'function': manually_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
     'switch_position': {'function': switch_position_from_main_to_funding, 'description': 'You need to input a coin symbol after this command, for example: /switch_position KP3R'},
-    'count_positions_amounts': {'function': count_positions_amounts, 'description': 'You need to input a coin symbol after this command, for example: /count_positions_amounts RSR'},
+    'count_positions_amounts': {'function': count_positions_amounts, 'description': 'You need to input a coin symbol after this command, for example: \n/count_positions_amounts RSR\n/position_RSR'},
     'funding_market_buy': {'function': binance_funding_buy_and_hold, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_buy RSR'},
     'funding_market_sell': {'function': binance_funding_sell, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_sell RSR'},
     'funding_position_price': {'function': funding_position_price, 'description': 'You need to input a coin symbol after this command, for example: /funding_position_price RSR'},
