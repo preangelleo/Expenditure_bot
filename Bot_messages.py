@@ -312,7 +312,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('limit_buy'): return user_limit_buy_at_support_price(first_word.split('_')[-1], from_id)
         if first_word.startswith('position_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
         if first_word.startswith('cpa_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
-        if first_word.startswith('funding_buy_'): return binance_funding_buy_and_hold(-first_word.split('_')[-1], from_id)
+        if first_word.startswith('funding_buy_'): return binance_funding_buy_and_hold(first_word.split('_')[-1], from_id)
         if first_word.startswith('funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
