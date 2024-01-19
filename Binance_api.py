@@ -3168,6 +3168,32 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     return
 
 
+def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, account, amount FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
+    if df.empty: return send_msg(f"No {coin} positions in spot account or funding account", from_id)
+    total_coin_in_position = df['amount'].sum()
+    position_total_counts = df.shape[0]
+    df_spot = df[df['account'] == 'spot']
+    if not df_spot.empty: 
+        total_coin_in_spot = df_spot['amount'].sum()
+        position_spot_counts = df_spot.shape[0]
+    else: 
+        total_coin_in_spot, position_spot_counts = 0, 0
+    df_funding = df[df['account'] == 'funding']
+    if not df_funding.empty: 
+        total_coin_in_funding = df_funding['amount'].sum()
+        position_funding_counts = df_funding.shape[0]
+    else: total_coin_in_funding, position_funding_counts = 0, 0
+    reply_msg = f"RSR positions:\n\nTotal ({position_total_counts}): {format_number(total_coin_in_position)}\nSpot ({position_spot_counts}): {format_number(total_coin_in_spot)}\nFunding ({position_funding_counts}): {format_number(total_coin_in_funding)}"
+    avg_price = get_avg_price(coin)
+    if avg_price: 
+        current_value = float(total_coin_in_position) * float(avg_price['price'])
+        reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
+    if from_id: send_msg(reply_msg, from_id)
+    return
+
+
 def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, trading_bot_status = trading_bot_switch_status()):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())

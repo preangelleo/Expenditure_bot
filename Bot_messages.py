@@ -67,6 +67,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'binance_market_sell': {'function': do_market_sell, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_sell FTT'},
     'binance_market_buy': {'function': manually_market_buy_one_unit, 'description': 'You need to input a coin symbol after this command, for example: /binance_market_buy CAKE'},
     'switch_position': {'function': switch_position_from_main_to_funding, 'description': 'You need to input a coin symbol after this command, for example: /switch_position KP3R'},
+    'count_positions_amounts': {'function': count_positions_amounts, 'description': 'You need to input a coin symbol after this command, for example: /count_positions_amounts RSR'},
     'funding_market_buy': {'function': binance_funding_buy_and_hold, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_buy RSR'},
     'funding_market_sell': {'function': binance_funding_sell, 'description': 'You need to input a coin symbol after this command, for example: /funding_market_sell RSR'},
     'funding_position_price': {'function': funding_position_price, 'description': 'You need to input a coin symbol after this command, for example: /funding_position_price RSR'},
@@ -305,6 +306,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('white_'): return set_coin_white(first_word.split('_')[-1], from_id)
         if first_word.startswith('limit_sell'): return set_limit_sell_to_resistant_price(first_word.split('_')[-1], from_id)
         if first_word.startswith('limit_buy'): return user_limit_buy_at_support_price(first_word.split('_')[-1], from_id)
+        if first_word.startswith('position_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word
