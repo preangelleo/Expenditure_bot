@@ -305,10 +305,13 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('ftm_'): return switch_position_from_funding_to_main(first_word.split('_')[-1], from_id)
         if first_word.startswith('cancel_'): return cancel_orderId(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('ignore_'): return set_coin_ignore(first_word.split('_')[-1], from_id)
+        if first_word.startswith('remove_ignore_'): return remove_coin_ignore(first_word.split('_')[-1], from_id)
         if first_word.startswith('white_'): return set_coin_white(first_word.split('_')[-1], from_id)
+        if first_word.startswith('remove_white_'): return remove_coin_white(first_word.split('_')[-1], from_id)
         if first_word.startswith('limit_sell'): return set_limit_sell_to_resistant_price(first_word.split('_')[-1], from_id)
         if first_word.startswith('limit_buy'): return user_limit_buy_at_support_price(first_word.split('_')[-1], from_id)
         if first_word.startswith('position_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
+        if first_word.startswith('cpa_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
         if first_word.startswith('funding_buy_'): return binance_funding_buy_and_hold(-first_word.split('_')[-1], from_id)
         if first_word.startswith('funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id)
     

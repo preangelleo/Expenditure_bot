@@ -3009,7 +3009,7 @@ def set_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
             # Execute the query with the updated update_id
             connection.execute(text("UPDATE token_supply_info SET is_ignore = 1 WHERE coin = :coin"), {'coin': coin})
             connection.commit()
-            if from_id: send_msg(f"Successfully added {coin} to ignore list", from_id)
+            if from_id: send_msg(f"Successfully added {coin} to ignore list\n/gil | /remove_ignore_{coin}", from_id)
         except Exception as e:
             if from_id: send_msg(f"Failed to add {coin} to ignore list", from_id)
             print(f"An error occurred: {e}")
@@ -3026,7 +3026,7 @@ def remove_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
             # Execute the query with the updated update_id
             connection.execute(text("UPDATE token_supply_info SET is_ignore = 0 WHERE coin = :coin"), {'coin': coin})
             connection.commit()
-            if from_id: send_msg(f"Successfully removed {coin} from ignore list", from_id)
+            if from_id: send_msg(f"Successfully removed {coin} from ignore list\n/gil | /ignore_{coin}", from_id)
         except Exception as e:
             if from_id: send_msg(f"Failed to remove {coin} from ignore list", from_id)
             print(f"An error occurred: {e}")
@@ -3042,7 +3042,7 @@ def get_ignore_list(from_id=TG_BOT_OWNER_ID):
             if from_id: send_msg(f"Current ignore list: \n\n{', '.join(ignore_coin_list)}", from_id)
             return ignore_coin_list
     except: df = pd.DataFrame()
-    if df.empty: send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC", from_id)
+    if df.empty: send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC | /ignore_BTC", from_id)
     return []
 
 
@@ -3055,7 +3055,7 @@ def set_coin_white(coin, from_id=TG_BOT_OWNER_ID):
             # Execute the query with the updated update_id
             connection.execute(text("UPDATE token_supply_info SET is_white = 1 WHERE coin = :coin"), {'coin': coin})
             connection.commit()
-            if from_id: send_msg(f"Successfully added {coin} to white list", from_id)
+            if from_id: send_msg(f"Successfully added {coin} to white list\n/gwl | /remove_white_{coin}", from_id)
         except Exception as e:
             if from_id: send_msg(f"Failed to add {coin} to white list", from_id)
             print(f"An error occurred: {e}")
@@ -3072,7 +3072,7 @@ def remove_coin_white(coin, from_id=TG_BOT_OWNER_ID):
             # Execute the query with the updated update_id
             connection.execute(text("UPDATE token_supply_info SET is_white = 0 WHERE coin = :coin"), {'coin': coin})
             connection.commit()
-            if from_id: send_msg(f"Successfully removed {coin} from white list", from_id)
+            if from_id: send_msg(f"Successfully removed {coin} from white list\n/gwl | /white_{coin}", from_id)
         except Exception as e:
             if from_id: send_msg(f"Failed to remove {coin} from white list", from_id)
             print(f"An error occurred: {e}")
@@ -3088,7 +3088,7 @@ def get_white_list(from_id=TG_BOT_OWNER_ID):
             if from_id: send_msg(f"Current white list: \n\n{', '.join(white_list)}", from_id)
             return white_list
     except: df = pd.DataFrame()
-    if df.empty: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list BTC", from_id)
+    if df.empty: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list RSR | /white_RSR", from_id)
     return []
 
 
