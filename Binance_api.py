@@ -3199,16 +3199,19 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
-        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
+        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached limit of {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
         if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
-        df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 1 AND day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
+        df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
     df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
-    df_ticker = df_ticker[df_ticker['priceChangePercent'] > 3]
+    df_ticker = df_ticker[df_ticker['priceChangePercent'] > 5]
+    if df_ticker.shape[0] < 10: return print("Not enough coins raise, not a good trend, keep watching")
+    df_ticker = df_ticker[df_ticker['priceChangePercent'] < 20]
+    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
