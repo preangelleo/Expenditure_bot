@@ -1628,8 +1628,7 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
             send_msg(f"Open orders:\n\n{df_dict_string}", from_id)
         # make a dict of coin and orderId
         df_orderId = df_orderId[df_orderId['side']==side] if side == 'BUY' or side == 'SELL' else df_orderId
-        df_dict = df_orderId.set_index('coin')['orderId'].to_dict()
-        return df_dict if df_dict else {}
+        return df_orderId
     else: 
         print(r.json())
         return {}
@@ -1637,11 +1636,13 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
 
 # cancel all BUY orders
 def cancel_all_buy_orders(from_id=None):
-    df_dict = get_open_orders_list(from_id, 'BUY')
-    if not df_dict: 
+    df_orderId = get_open_orders_list(from_id, 'BUY')
+    if df_orderId.empty: 
         if from_id: send_msg('No open buy orders.', from_id)
         return
-    for coin, orderId in df_dict.items():
+    for index, row in df_orderId.iterrows():
+        coin = row['coin']
+        orderId = row['orderId']
         data = binance_cancel_order_by_orderId(coin, orderId)
         if from_id: 
             if data: send_msg(f"{coin} limit buy order: {orderId} canceled.", from_id)
@@ -1650,11 +1651,13 @@ def cancel_all_buy_orders(from_id=None):
 
 
 def cancel_all_sell_orders(from_id=None):
-    df_dict = get_open_orders_list(from_id, 'SELL')
-    if not df_dict: 
+    df_orderId = get_open_orders_list(from_id, 'SELL')
+    if df_orderId.empty: 
         if from_id: send_msg('No open sell orders.', from_id)
         return
-    for coin, orderId in df_dict.items():
+    for index, row in df_orderId.iterrows():
+        coin = row['coin']
+        orderId = row['orderId']
         data = binance_cancel_order_by_orderId(coin, orderId)
         if from_id: 
             if data: send_msg(f"{coin} limit sell order: {orderId} canceled.", from_id)
@@ -2625,9 +2628,11 @@ def data_to_table(data, table_name, if_exists='append'):
 
 # Define cancel all of the open orders
 def binance_cancel_all_orders(from_id=None, side = 'NONE'):
-    current_orders = get_open_orders_list(from_id, side)
-    if not current_orders: return send_msg(f'No open orders', from_id)
-    for coin, orderId in current_orders.items(): binance_cancel_order_by_orderId(coin, int(orderId))
+    df_orderId = get_open_orders_list(from_id, side)
+    if df_orderId.empty: return send_msg(f'No open orders', from_id)
+    for index, row in df_orderId.iterrows(): 
+        binance_cancel_order_by_orderId(row['coin'], row['orderId'])
+        send_msg(f"{row['coin']} orderId {row['orderId']} canceled successfully", from_id)
     return 
 
 
@@ -3229,8 +3234,9 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
         bot_market_buy_one_unit(coin, chat_id)
         binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
     else: 
-        orderlist_dict = get_open_orders_list(from_id=None, side = 'BUY')
-        if len(orderlist_dict) + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
+        df_orderId = get_open_orders_list(None, 'BUY')
+        if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
+        if not df_orderId.empty and coin in df_orderId['coin'].values.tolist(): return print(f"{coin} already in open orders list")
         bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
     return print(f"Bought {coin} successfully")
 
