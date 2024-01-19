@@ -51,7 +51,7 @@ def network_name_change(str_name: str):
     return str_name
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}"
+    return f"/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp"
 
 def server_time_diff():
     PATH = '/api/v1/time'
@@ -2872,7 +2872,7 @@ def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03
         target_profit = df_locked.iloc[i]['price_diff_percentage']
         target_profit = abs(target_profit) - 0.1
         if target_profit > buy_back_target_profit and len(coins_could_buy_back) < 3: coins_could_buy_back[coin] = round(abs(target_profit), 2)
-        msg = f"/buy_{coin} {format_number(previous_price)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
+        msg = f"/as_{coin} {format_number(previous_price)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
         reply_list_locked.append(msg)
     if from_id: send_msg('\n'.join(reply_list_locked), from_id)
     return coins_could_buy_back
@@ -3407,7 +3407,7 @@ def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     data = binance_limit_buy(coin, amount, price)
     if not data: return send_msg(f'Failed to set limit buy order for {coin}', chat_id)
     orderId = data['orderId']
-    if chat_id: send_msg(f"{coin} Limit Buy Order at {price} \n/cancel_{coin}_{orderId}", chat_id)
+    if chat_id: send_msg(f"{coin} Limit Buy Order at {price} \n/cancel_{coin}_{orderId}\n{generate_bottom_msg(coin)}", chat_id)
     return
 
 
@@ -3420,7 +3420,7 @@ def bot_limit_buy(coin, target_price, from_id=TG_BOT_OWNER_ID):
     data = binance_limit_buy(coin, amount, price)
     if not data: return
     orderId = data['orderId']
-    return send_msg(f"Bot_Limit_Buy {coin} ordered at {format_number(price)}\n/ignore_{coin}\n/cancel_{coin}_{orderId}", from_id)
+    return send_msg(f"Bot_Limit_Buy {coin} ordered at {format_number(price)}\n/ignore_{coin}\n/cancel_{coin}_{orderId}\n{generate_bottom_msg(coin)}", from_id)
 
 
 def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWNER_ID):
@@ -3433,7 +3433,7 @@ def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWN
     if not data: return send_msg(f'Failed to get order status by orderId: {orderId_create}', chat_id)
     instert_position_table(data, account = 'spot')
     price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
-    send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}", chat_id)
+    send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}\n{generate_bottom_msg(coin)}", chat_id)
     return set_limit_sell_to_resistant_price(coin, chat_id)
 
 
@@ -3460,7 +3460,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
     instert_position_table(data, account = 'funding')
-    return send_msg(f'''Funding account bought {coin} at {format_number(price)} usdt/{coin.lower()}''', from_id)
+    return send_msg(f'''Funding account bought {coin} at {format_number(price)} usdt/{coin.lower()}\n\n{generate_bottom_msg(coin)}''', from_id)
 
 
 def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
@@ -3478,7 +3478,7 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
         switch_spot_to_funding(orderId_create)
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
-        send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create} ''', from_id)
+        send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create}\n\n{generate_bottom_msg(coin)}''', from_id)
     return 
 
 
@@ -3493,7 +3493,7 @@ def switch_position_from_funding_to_main(coin, from_id=TG_BOT_OWNER_ID):
         if not funding_main_transfer_with_check_and_send(coin, amount, from_id): return send_msg(f'{coin} in funding account is not sufficient', from_id)
         switch_funding_to_spot(orderId_create)
         main_funding_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
-        send_msg(f'''{coin} has been switched to main account!\norderId_create | {orderId_create} ''', from_id)
+        send_msg(f'''{coin} has been switched to main account!\norderId_create | {orderId_create}\n\n{generate_bottom_msg(coin)}''', from_id)
     return
 
 
@@ -3507,7 +3507,7 @@ def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
     # Make a dict of price and orderId
     price_orderId_dict = df.set_index('price_create')['orderId_create'].to_dict()
     reply_string = '\n'.join([f"{v}: {format_number(k)} usdt/{coin.lower()}" for k, v in price_orderId_dict.items()])
-    send_msg(reply_string, from_id)
+    send_msg(f"{reply_string}\n\n{generate_bottom_msg(coin)}", from_id)
     return price_orderId_dict
 
 
