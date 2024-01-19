@@ -3192,6 +3192,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
         reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
     reply_msg += f"\n\n/as_{coin} | /buy_{coin}"
     if not df_spot.empty: reply_msg += f" | /limit_sell_{coin} | /swp_{coin}"
+    reply_msg += f"\n/funding_buy_{coin} | /funding_sell_{coin}"
     if from_id: send_msg(reply_msg, from_id)
     return
 
