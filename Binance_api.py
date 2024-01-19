@@ -1932,7 +1932,7 @@ def bot_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
 def set_limit_sell_to_resistant_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     resistant_price_dict = get_resistant_price(coin)
-    if not resistant_price_dict: return
+    if not resistant_price_dict: resistant_price_dict = {'target_profit': 0.1}
     return binance_position_set_limit_sell(round(resistant_price_dict.get('target_profit', 0.01), 2), from_id, coin)
 
 
@@ -3163,6 +3163,7 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     send_msg(reply_string, from_id)
     return turnover_ratio_dict
 
+
 def count_positions(from_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
     if df.empty: return send_msg("No positions in spot account or funding account", from_id)
@@ -3173,6 +3174,14 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     reply_msg = f"Positions in spot: {df_spot.shape[0]}\n{', '.join(set(spot_coinlist))}\n\nPositions in funding: {df_funding.shape[0]}\n{', '.join(set(funding_coinlist))}"
     if from_id: send_msg(reply_msg, from_id)
     return
+
+
+def check_positions_counts():
+    df_orderId = get_open_orders_list(None, 'BUY')
+    counts = df_orderId.shape[0]
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT count(*) FROM position_table WHERE is_closed = 0 AND account = "spot"')).fetchall())
+    if not df.empty: counts += df.iloc[0].values[0]
+    return counts
 
 
 def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
@@ -3204,9 +3213,11 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
 
 def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, trading_bot_status = trading_bot_switch_status()):
     with engine.connect() as connection: 
-        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
+        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
-        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached limit of {POSITIONS_LIMIT}")
+        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached the limit of {POSITIONS_LIMIT}")
+        df_orderId = get_open_orders_list(None, 'BUY')
+        if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
         if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
@@ -3227,19 +3238,17 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
     if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
+    df_ticker = df_ticker[~df_ticker['coin'].isin(df_orderId['coin'])] if not df_orderId.empty else df_ticker
+    if df_ticker.empty: return print("No top coin to buy after ignoring coins in limit buy orders")
     coin = df_ticker.iloc[0]['coin']
     resistance_dict = get_resistant_price(coin)
     if not resistance_dict: return print(f"Failed to get resistance price for {coin}")
     target_profit = min(resistance_dict.get('target_profit', 0.01), profit_take_target / CHECK_SIZE)
     if target_profit < 0.01: return print(f"Target profit too low: {target_profit}")
-    if df_in_spot.shape[0] == 0: 
+    if df_in_spot.shape[0] < 1: 
         bot_market_buy_one_unit(coin, chat_id)
         binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
-    else: 
-        df_orderId = get_open_orders_list(None, 'BUY')
-        if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions limit reached: {df_in_spot.shape[0]}")
-        if not df_orderId.empty and coin in df_orderId['coin'].values.tolist(): return print(f"{coin} already in open orders list")
-        bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
+    else: bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
     return print(f"Bought {coin} successfully")
 
 
