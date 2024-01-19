@@ -1442,6 +1442,7 @@ def binance_cancel_order_by_orderId(coin: str, orderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
+        time.sleep(0.5)
         return data
     else: 
         print(r.json())
