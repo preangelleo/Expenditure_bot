@@ -51,7 +51,7 @@ def network_name_change(str_name: str):
     return str_name
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp"
+    return f"/as_{coin} | /buy_{coin} | /mtf_{coin} | /ftm_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 
 def server_time_diff():
     PATH = '/api/v1/time'
@@ -2894,9 +2894,19 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
     if diff_profit < 0: reply_msg = f"{coin} {format_number(last_price_close)} >> {format_number(current_price)} | missed {format_number(abs(diff_profit))}"
     if diff_profit > 0: reply_msg = f"/buy_{coin} {format_number(last_price_close)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
     if diff_profit == 0: reply_msg = f"{coin} {format_number(current_price)} hasn't changed"
-    with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text(f"SELECT coin, account FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
-    if not df_position.empty: reply_msg += f"\n\n{coin} in {df_position['account'].values[0]} position"
-    else: reply_msg += f"\n{coin} not in any position"
+    with engine.connect() as connection: 
+        df_history = pd.DataFrame(connection.execute(text(f"SELECT coin, account, profit, is_closed FROM position_table WHERE coin = '{coin}'")).fetchall())
+        if not df_history.empty:
+            df_current_position = df_history[df_history['is_closed'] == 0]
+            if not df_current_position.empty:
+                df_funding_position = df_current_position[df_current_position['account'] == 'funding']
+                if not df_funding_position.empty: reply_msg += f"\n{coin} in funding position: {df_funding_position.shape[0]}"
+                df_spot_position = df_current_position[df_current_position['account'] == 'spot']
+                if not df_spot_position.empty: reply_msg += f"\n{coin} in spot position: {df_spot_position.shape[0]}"
+            traded_times = df_history.shape[0]
+            history_profit = df_history['profit'].sum()
+            reply_msg += f"\nTraded {traded_times} times"
+            reply_msg += f"\nGained {format_number(history_profit)} usdt"
     if from_id: send_msg(reply_msg, from_id)
     return 
 
@@ -3201,7 +3211,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
         total_coin_in_funding = df_funding['amount'].sum()
         position_funding_counts = df_funding.shape[0]
     else: total_coin_in_funding, position_funding_counts = 0, 0
-    reply_msg = f"RSR positions:\n\nTotal ({position_total_counts}): {format_number(total_coin_in_position)}\nSpot ({position_spot_counts}): {format_number(total_coin_in_spot)}\nFunding ({position_funding_counts}): {format_number(total_coin_in_funding)}"
+    reply_msg = f"{coin} positions:\n\nTotal ({position_total_counts}): {format_number(total_coin_in_position)}\nSpot ({position_spot_counts}): {format_number(total_coin_in_spot)}\nFunding ({position_funding_counts}): {format_number(total_coin_in_funding)}"
     avg_price = get_avg_price(coin)
     if avg_price: 
         current_value = float(total_coin_in_position) * float(avg_price['price'])
