@@ -1647,6 +1647,7 @@ def cancel_all_buy_orders(from_id=None):
             else: send_msg(f"Failed to cancel {coin} limit buy order: \n/cancel_{coin}_{orderId}", from_id)
     return
 
+
 def cancel_all_sell_orders(from_id=None):
     df_dict = get_open_orders_list(from_id, 'SELL')
     if not df_dict: 
@@ -2372,6 +2373,26 @@ def today_profit_sum():
     return df_profit
 
 
+def monthly_profit_sum():
+    try:
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
+    except: df_profit = pd.DataFrame()
+    return df_profit
+
+
+# Define a function to set positon limit to 5 if the monthly profit is over 30000
+def reset_position_limit(monthly_profit_target = 30_000, upper_limit = 10, lower_limit = 5, from_id = TG_BOT_OWNER_ID):
+    monthly_profit_realized_df = monthly_profit_sum()
+    if monthly_profit_realized_df.empty: monthly_profit = 0
+    else: monthly_profit = monthly_profit_realized_df['profit'].astype(float).sum()
+    current_position_limit = get_position_limit()
+    if monthly_profit_target > monthly_profit and current_position_limit != upper_limit: 
+        if set_position_limit_default(upper_limit): send_msg(f"Monthly gained profit {format_number(monthly_profit)} is lower than {format_number(monthly_profit_target)}, POSITION_LIMIT has been set to {upper_limit}", from_id)
+    elif monthly_profit_target < monthly_profit and current_position_limit != lower_limit: 
+        if set_position_limit_default(lower_limit): send_msg(f"Monthly gained profit {format_number(monthly_profit)} is higher than {format_number(monthly_profit_target)}, POSITION_LIMIT has been set to {lower_limit}", from_id)
+    return
+
+
 def check_today_profit_sum():
     reply_dict = {
         'profit_sum': 0,
@@ -2464,7 +2485,9 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
-    if is_last_hour: cancel_all_buy_orders()
+    if is_last_hour: 
+        cancel_all_buy_orders()
+        reset_position_limit(30_000, 10, 5, chat_id)
     return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
@@ -3375,6 +3398,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
+    time.sleep(0.5)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
