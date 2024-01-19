@@ -1620,15 +1620,24 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
         data = r.json()
         df = pd.DataFrame(data)
         if df.empty: return {}
-        df['coin'] = df['symbol'].apply(lambda x: x[:-4])  
+        df.loc[:, 'coin'] = df['symbol'].apply(lambda x: x[:-4])  
         df_orderId = df.loc[:, ['coin', 'side', 'orderId']]
         if from_id: 
-            # create a new column with value: f'coin | side | /cancel_{orderId}'
-            df_orderId['cancel'] = df_orderId.apply(lambda x: f"{x['side']} order | /cancel_{x['coin']}_{x['orderId']}", axis=1)
-            df_dict_string = df_orderId['cancel'].to_list()
-            df_dict_string = '\n'.join(df_dict_string)
-            send_msg(f"Open orders:\n\n{df_dict_string}", from_id)
-        # make a dict of coin and orderId
+            # sort by side
+            df_orderId = df_orderId.sort_values(by=['side'])
+            # buy orders
+            df_orderId_buy = df_orderId[df_orderId['side'] == 'BUY'].copy()
+            if not df_orderId_buy.empty:
+                df_orderId_buy.loc[:, 'cancel'] = df_orderId_buy.apply(lambda x: f"/as_{x['coin']} | /cancel_{x['coin']}_{x['orderId']}", axis=1)
+                df_dict_string_buy = df_orderId_buy['cancel'].to_list()
+                df_dict_string_buy = '\n'.join(df_dict_string_buy)
+                send_msg(f"Open BUY orders:\n\n{df_dict_string_buy}", from_id)
+            df_orderId_sell = df_orderId[df_orderId['side'] == 'SELL'].copy()
+            if not df_orderId_sell.empty:
+                df_orderId_sell.loc[:, 'cancel'] = df_orderId_sell.apply(lambda x: f"/as_{x['coin']} | /cancel_{x['coin']}_{x['orderId']}", axis=1)
+                df_dict_string_sell = df_orderId_sell['cancel'].to_list()
+                df_dict_string_sell = '\n'.join(df_dict_string_sell)
+                send_msg(f"Open SELL orders:\n\n{df_dict_string_sell}", from_id)
         df_orderId = df_orderId[df_orderId['side']==side] if side == 'BUY' or side == 'SELL' else df_orderId
         return df_orderId
     else: 
