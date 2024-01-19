@@ -170,6 +170,7 @@ def display_binance_trading_history():
         with engine.connect() as connection: df_merged = pd.DataFrame(connection.execute(text('SELECT * FROM position_table WHERE is_closed = 1 AND account = "spot" ORDER BY time_create DESC')).fetchall())
     except: df_merged = pd.DataFrame()
     if df_merged.empty: return
+    df_merged['profit'] = pd.to_numeric(df_merged['profit'], errors='coerce').fillna(0)
     df_merged['duration_min'] = df_merged['duration'].apply(lambda x: int(x/1000/60))
     df_merged['time_create'] = df_merged['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged['time_close'] = df_merged['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
@@ -184,7 +185,7 @@ def display_binance_trading_history():
         st.write(f"Total Profit: {format_number(total_profit)}")
         st.table(df_merged)
     # group by coin and make profit sum, show only the coin, profit columns
-    df_merged = df_merged.groupby(['coin']).sum()
+    df_merged = df_merged.groupby(['coin']).sum(numeric_only=True).astype(float)
     df_merged = df_merged[['profit']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
@@ -195,7 +196,7 @@ def display_binance_trading_history():
 
 def display_open_position():
     try:
-        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, amount, account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
+        with engine.connect() as connection: df_buy = pd.DataFrame(connection.execute(text('SELECT coin, amount,account, orderId_create, time_create, price_create, orderId_close FROM position_table WHERE is_closed = 0 ORDER BY time_create DESC')).fetchall())
     except: df_buy = pd.DataFrame()
     if df_buy.empty: return
     df_buy['duration'] = int(time.time() * 1000) - df_buy['time_create']
@@ -233,9 +234,10 @@ def display_funding_account_performance():
         df['time_create'] = df['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
         df['time_close'] = df['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
         df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
+        df['profit'] = pd.to_numeric(df['profit'], errors='coerce').fillna(0)
         total_profit = df['profit'].sum()
         df.sort_values(by=['profit'], ascending=False, inplace=True)
-        df_group = df.groupby(['coin']).sum()
+        df_group = df.groupby(['coin']).sum(numeric_only=True).astype(float)
         df_group = df_group[['profit']]
         df_group.sort_values(by=['profit'], ascending=False, inplace=True)
         df_group.reset_index(inplace=True)
@@ -252,18 +254,19 @@ def display_daily_profit_take():
         with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 1')).fetchall())
     except: df_profit = pd.DataFrame()
     if df_profit.empty: return
+    df_profit['profit'] = pd.to_numeric(df_profit['profit'], errors='coerce').fillna(0)
     col1, col2, col3 = st.columns(3)
     with col1:
-        df_daily_profit = df_profit.groupby(['year_close', 'month_close', 'day_close'])['profit'].sum().reset_index()
+        df_daily_profit = df_profit.groupby(['year_close', 'month_close', 'day_close'])['profit'].sum(numeric_only=True).reset_index().astype(float)
         df_daily_profit = df_daily_profit[df_daily_profit['year_close'] == datetime.now().year]
         df_daily_profit['date'] = df_daily_profit['year_close'].astype(str) + '-' + df_daily_profit['month_close'].astype(str) + '-' + df_daily_profit['day_close'].astype(str)
         with st.expander("Daily Profit", expanded=False): st.table(df_daily_profit)
     with col2:
-        df_monthly_profit = df_profit.groupby(['year_close', 'month_close'])['profit'].sum().reset_index()
+        df_monthly_profit = df_profit.groupby(['year_close', 'month_close'])['profit'].sum(numeric_only=True).reset_index().astype(float)
         df_monthly_profit['date'] = df_monthly_profit['year_close'].astype(str) + '-' + df_monthly_profit['month_close'].astype(str)
         with st.expander("Monthly Profit", expanded=False): st.table(df_monthly_profit)
     with col3:
-        df_yearly_profit = df_profit.groupby(['year_close'])['profit'].sum().reset_index()
+        df_yearly_profit = df_profit.groupby(['year_close'])['profit'].sum(numeric_only=True).reset_index().astype(float)
         with st.expander("Yearly Profit", expanded=False): st.table(df_yearly_profit)
 
         
@@ -285,6 +288,7 @@ def display_both_list():
     col1, col2 = st.columns(2)
     with col1: display_ignore_list()
     with col2: display_white_list()
+
 
 def main():
     display_header()
