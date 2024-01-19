@@ -2607,7 +2607,7 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
         if need_to_adjust: update_position_table_amount(amount, orderId_create)
         orderId_close = int(data['orderId'])
         update_limit_orderId_in_position_table(orderId_create, orderId_close, target_profit, is_manual)
-        send_msg(f"Limit Sell Order Set:\nCoin: {coin}\nAmount: {format_number(amount)}\nPrice: {format_number(price)}\nTarget_profit: {target_profit*100:.2f}%\n/cancel_{orderId_close}", chat_id)
+        send_msg(f"Limit Sell Order Set:\nCoin: {coin}\nAmount: {format_number(amount)}\nPrice: {format_number(price)}\nTarget_profit: {target_profit*100:.2f}%\n/cancel_{coin}_{orderId_close}", chat_id)
     return
 
 
