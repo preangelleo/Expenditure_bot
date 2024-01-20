@@ -2500,9 +2500,7 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
-    if is_last_hour: 
-        cancel_all_buy_orders()
-        reset_position_limit(30_000, 10, 5, chat_id)
+    if is_last_hour: reset_position_limit(30_000, 10, 5, chat_id)
     return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
