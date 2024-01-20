@@ -3547,6 +3547,7 @@ def switch_position_from_funding_to_main(coin, from_id=TG_BOT_OWNER_ID):
         switch_funding_to_spot(orderId_create)
         main_funding_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
         send_msg(f'''{coin} has been switched to main account!\norderId_create | {orderId_create}\n\n{generate_bottom_msg(coin)}''', from_id)
+        set_limit_sell_to_resistant_price(coin, from_id)
     return
 
 
