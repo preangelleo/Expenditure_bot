@@ -1758,7 +1758,7 @@ def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
     token = hash_md5(message)
     data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
     data_to_table(data, 'webhook_signature')
-    symbol = message.split(' ')[-1]
+    symbol = message.split(' ')[-1].upper()
     data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
     if not data_dict: return send_msg(token, from_id)
     data_dict['token'] = token
