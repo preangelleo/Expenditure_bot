@@ -190,7 +190,7 @@ def display_binance_trading_history():
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
     df_merged['profit'] = df_merged['profit'].apply(lambda x: format_number(x))
-    with st.expander("Spot Account performance grouped by coin", expanded=False): st.table(df_merged)
+    with st.expander("Spot Account Performance Grouped by Coin", expanded=False): st.table(df_merged)
     return
 
 
@@ -236,17 +236,17 @@ def display_funding_account_performance():
         df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
         df['profit'] = pd.to_numeric(df['profit'], errors='coerce').fillna(0)
         total_profit = df['profit'].sum()
-        df.sort_values(by=['profit'], ascending=False, inplace=True)
+        df.sort_values(by=['time_close'], ascending=False, inplace=True)
+        df_latest = df.head(10).copy()
+        df_latest['profit'] = df_latest['profit'].apply(lambda x: format_number(x))
         df_group = df.groupby(['coin']).sum(numeric_only=True).astype(float)
         df_group = df_group[['profit']]
         df_group.sort_values(by=['profit'], ascending=False, inplace=True)
         df_group.reset_index(inplace=True)
         df_group['profit'] = df_group['profit'].apply(lambda x: format_number(x))
-        with st.expander("Funding Account Performance", expanded=False): 
-            st.write(f"Total Profit: {format_number(total_profit)} | {binance_pay_record()}")
-            st.table(df)
-            st.write("Grouped by coin")
-            st.table(df_group)
+        st.write(f"Funding Account Total Profit: {format_number(total_profit)} | Binance Pay: {binance_pay_record()} | Table shows last 10 records")
+        with st.expander("Funding Account Performance", expanded=False): st.table(df_latest)
+        with st.expander("Funding Account Performance Grouped by coin", expanded=False): st.table(df_group.head(10))
 
 
 def display_daily_profit_take():
