@@ -1792,10 +1792,10 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
     target_profit = profit / data['usdt_value']
     target_profit = round(target_profit, 2)
     price_close = usdt_close / data['amount']
-    time_close = int(data['transactTime']) if 'transactTime' in data else int(data['time']) if 'time' in data else int[data['timestamp']] if 'timestamp' in data else int(data['updateTime']) if 'updateTime' in data else int(data['workingTime']) if 'workingTime' in data else int(time.time() * 1000)
-    year_close = datetime.fromtimestamp(time_close/1000).year
-    month_close = datetime.fromtimestamp(time_close/1000).month
-    day_close = datetime.fromtimestamp(time_close/1000).day
+    time_close = int(datetime.now().timestamp() * 1000)
+    year_close = datetime.now().year
+    month_close = datetime.now().month
+    day_close = datetime.now().day
     duration = time_close - data['time_create']
     with engine.connect() as conn: 
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
