@@ -2511,10 +2511,15 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
     df_today_profit_take = today_profit_sum()
     current_profit_sum = df_today_profit_take['profit'].sum() if not df_today_profit_take.empty else 0
     if current_profit_sum >= profit_take_target: 
-        df_loss = df_balance[df_balance['profit'] < 0 and df_balance['account'] == 'spot']
+        df_loss = df_balance[(df_balance['profit'] < 0) & (df_balance['account'] == 'spot')].copy()
         for i in range(df_loss.shape[0]): binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
     df_balance = df_balance[df_balance['profit'] >= 0]
+    '''
+       coin  symbol account  price_create  amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close     profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange  lastPrice
+    6   AI  AIUSDT    spot       1.10188  9075.0   9999.5587        85181820  1705732901109      MARKET          0          0           0.03          0.0       86673290           0                      0  66.133462         0         2024             1          19           0            0          0   14.999338  binance    1.11082'''
     if df_balance.empty: return print(f"No coin with profit > 0")
+    # chose only the day_close, month_close, year_close, is not today
+    df_balance = df_balance[(df_balance['day_close'] != datetime.now().day) | (df_balance['month_close'] != datetime.now().month) | (df_balance['year_close'] != datetime.now().year)]
     profit_sum = df_balance['profit'].astype(float).sum()
     profit_take_target -= current_profit_sum
     if profit_sum < profit_take_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
