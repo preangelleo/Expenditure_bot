@@ -3239,13 +3239,12 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
+    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'quoteVolume']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
     df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
     df_ticker = df_ticker[df_ticker['priceChangePercent'] > 5]
     if df_ticker.shape[0] < 10: return print("Not enough coins raise, not a good trend, keep watching")
-    df_ticker = df_ticker[df_ticker['priceChangePercent'] < 20]
-    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
+    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['quoteVolume'] > 10_000_000)]
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
@@ -3256,15 +3255,23 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     df_ticker = df_ticker[~df_ticker['coin'].isin(df_orderId['coin'])] if not df_orderId.empty else df_ticker
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in limit buy orders")
-    coin = df_ticker.iloc[0]['coin']
-    resistance_dict = get_resistant_price(coin)
-    if not resistance_dict: return print(f"Failed to get resistance price for {coin}")
-    target_profit = min(resistance_dict.get('target_profit', 0.01), profit_take_target / CHECK_SIZE)
-    if target_profit < 0.01: return print(f"Target profit too low: {target_profit}")
-    if df_in_spot.shape[0] < 1: 
-        bot_market_buy_one_unit(coin, chat_id)
-        binance_position_set_limit_sell(round(target_profit, 2), chat_id, coin)
-    else: bot_limit_buy(coin, resistance_dict.get('support_price', 0), chat_id)
+    # df_ticker = df_ticker.head(10)
+    default_target_profit = read_target_profit_default()
+    highest_target_profit = 0
+    coin_with_high_target_profit = ''
+    for i in range(df_ticker.shape[0]):
+        coin = df_ticker.iloc[i]['coin']
+        resistance_dict = get_resistant_price(coin)
+        if not resistance_dict: continue
+        target_profit = resistance_dict.get('target_profit', 0.01)
+        if target_profit <= default_target_profit: continue
+        if target_profit > highest_target_profit: 
+            highest_target_profit = target_profit
+            coin_with_high_target_profit = coin
+    if not coin_with_high_target_profit: return print("No top coin to buy after checking resistance price")
+    print(f"Buying {coin_with_high_target_profit} with target profit: {highest_target_profit}")
+    bot_market_buy_one_unit(coin, chat_id)
+    binance_position_set_limit_sell(highest_target_profit, chat_id, coin_with_high_target_profit)
     return print(f"Bought {coin} successfully")
 
 
