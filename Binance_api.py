@@ -3268,7 +3268,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
             coin_with_high_target_profit = coin
     if not coin_with_high_target_profit: return print("No top coin to buy after checking resistance price")
     print(f"Buying {coin_with_high_target_profit} with target profit: {highest_target_profit}")
-    bot_market_buy_one_unit(coin, chat_id)
+    bot_market_buy_one_unit(coin_with_high_target_profit, chat_id)
     binance_position_set_limit_sell(highest_target_profit, chat_id, coin_with_high_target_profit)
     return print(f"Bought {coin} successfully")
 
