@@ -2304,7 +2304,7 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             target_profit = max(target_profit, 0.01)
             nearest_resistance_level = max(nearest_resistance_level, current_price * 1.01)
             nearest_support_level = min(nearest_support_level, current_price * 0.97)
-            if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
+            if for_webhook: return {'target_profit': f"{format_number(target_profit * 100)}%", 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
             return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
 
 

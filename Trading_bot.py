@@ -75,7 +75,7 @@ def analyze_symbol_for_user(symbol: str, from_id=TG_BOT_OWNER_ID):
     coin = symbol[:-4]
     calculate_missed_profit_for_coin(coin, from_id)
     data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
-    if data_dict: send_msg('\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()]), from_id)
+    if data_dict: send_msg('\n'.join([f"{key}: {value}" for key, value in data_dict.items()]), from_id)
     get_token_info(coin, from_id)
     return send_msg(generate_bottom_msg(coin), from_id)
 
