@@ -175,22 +175,22 @@ def display_binance_trading_history():
     df_merged['time_create'] = df_merged['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged['time_close'] = df_merged['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
     df_merged = df_merged[['coin', 'profit', 'account', 'type_create', 'type_close', 'duration_min', 'time_create', 'time_close', 'price_create', 'price_close', 'orderId_create', 'orderId_close']]
-    df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
+    df_merged.sort_values(by=['time_close'], ascending=False, inplace=True)
+    df_lastest = df_merged.head(20).copy()
+    df_lastest['profit'] = df_lastest['profit'].apply(lambda x: format_number(x))
     total_profit = df_merged['profit'].sum()
     csv = df_merged.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="binance_position_table.csv">Download CSV File</a>'
     st.markdown(href, unsafe_allow_html=True)
-    with st.expander("Spot Account BUY & SELL History", expanded=False): 
-        st.write(f"Total Profit: {format_number(total_profit)}")
-        st.table(df_merged)
-    # group by coin and make profit sum, show only the coin, profit columns
+    st.write(f"Spot Account Total Profit: {format_number(total_profit)}")
+    with st.expander("Spot Account BUY & SELL Latest 20 Trades", expanded=False): st.table(df_lastest)
     df_merged = df_merged.groupby(['coin']).sum(numeric_only=True).astype(float)
     df_merged = df_merged[['profit']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
     df_merged['profit'] = df_merged['profit'].apply(lambda x: format_number(x))
-    with st.expander("Spot Account Performance Grouped by Coin", expanded=False): st.table(df_merged)
+    with st.expander("Spot Account Performance Grouped by Coin Top 10", expanded=False): st.table(df_merged.head(10))
     return
 
 
