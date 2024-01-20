@@ -25,9 +25,7 @@ SHORT_COINS_LIST = []
 def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
     target_profit = float(target_profit) if target_profit else 0.001
     if target_profit > 0 and target_profit < 1:
-        if set_target_profit_default(target_profit): 
-            send_msg(f"Set target profit: {target_profit*100}%", chat_id)
-            return read_target_profit_default(from_id=chat_id)
+        if set_target_profit_default(target_profit): return send_msg(f"Set target profit: {target_profit*100}%", chat_id)
     else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
 
 
@@ -2531,7 +2529,9 @@ def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
-    if is_last_hour: reset_position_limit(30_000, 10, 5, chat_id)
+    # 判断此刻的时间是不是一个月的第一天的前 10 分钟
+    is_first_hour_day_month = True if '00:00' < datetime.now().strftime("%H:%M") < '00:10' and datetime.now().day == 1 else False
+    if is_last_hour or is_first_hour_day_month: reset_position_limit(30_000, 10, 5, chat_id)
     return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
