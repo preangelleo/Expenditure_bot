@@ -1619,13 +1619,11 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
     if r.status_code == 200:
         data = r.json()
         df = pd.DataFrame(data)
-        if df.empty: return {}
+        if df.empty: return pd.DataFrame()
         df.loc[:, 'coin'] = df['symbol'].apply(lambda x: x[:-4])  
         df_orderId = df.loc[:, ['coin', 'side', 'orderId']]
         if from_id: 
-            # sort by side
             df_orderId = df_orderId.sort_values(by=['side'])
-            # buy orders
             df_orderId_buy = df_orderId[df_orderId['side'] == 'BUY'].copy()
             if not df_orderId_buy.empty:
                 df_orderId_buy.loc[:, 'cancel'] = df_orderId_buy.apply(lambda x: f"/as_{x['coin']} | /cancel_{x['coin']}_{x['orderId']}", axis=1)
@@ -1640,9 +1638,8 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
                 send_msg(f"Open SELL orders:\n\n{df_dict_string_sell}", from_id)
         df_orderId = df_orderId[df_orderId['side']==side] if side == 'BUY' or side == 'SELL' else df_orderId
         return df_orderId
-    else: 
-        print(r.json())
-        return {}
+    else: print(r.json())
+    return pd.DataFrame()
 
 
 # cancel all BUY orders
@@ -1915,15 +1912,8 @@ def do_market_buy(coin: str, value):
     coin = coin.upper()
     reply_msg = ''
     # check USDT balance see if it is bigger than value
-    df_usdt_balance = get_user_asset()
-    df_usdt_balance = df_usdt_balance[df_usdt_balance['asset']=='USDT']
-    if df_usdt_balance.empty: 
-        reply_msg = 'No balance for coin: USDT'
-        return reply_msg
-    balance = float(df_usdt_balance['free'].values[0])
-    if balance < value: 
-        reply_msg = f'USDT Balance {balance} is not sufficient for value: {value}'
-        return reply_msg
+    counts = check_positions_counts()
+    if counts >= POSITIONS_LIMIT: return f'Current spot positions + limit buy orders counts ({counts}) is full.'
     data = binance_market_buy(coin, value)
     if not data: return f'Failed to do market buy for coin: {coin}'
     instert_position_table(data, account = 'spot')
@@ -3194,12 +3184,17 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(reply_msg, from_id)
     return
 
+def positions_counts():
+    with engine.connect() as connection: 
+        try: df = pd.DataFrame(connection.execute(text('SELECT count(*) FROM position_table WHERE is_closed = 0 AND account = "spot"')).fetchall())
+        except: df = pd.DataFrame()
+    counts = df.iloc[0].values[0] if not df.empty else 0
+    return counts
 
 def check_positions_counts():
     df_orderId = get_open_orders_list(None, 'BUY')
     counts = df_orderId.shape[0]
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT count(*) FROM position_table WHERE is_closed = 0 AND account = "spot"')).fetchall())
-    if not df.empty: counts += df.iloc[0].values[0]
+    counts += positions_counts()
     return counts
 
 
@@ -3410,6 +3405,7 @@ def switch_funding_to_spot(orderId_create):
 def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
+    if check_positions_counts() >= POSITIONS_LIMIT: return
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     df = read_position_table_account(0, coin, 'spot')
