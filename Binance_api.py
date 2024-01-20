@@ -3264,7 +3264,8 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
         df_orderId = get_open_orders_list(None, 'BUY')
         if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
-        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: return print(f"Profit target reached: {df_profit['profit'].sum()}")
+        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: default_target_profit = 0.21
+        else: default_target_profit = 0.13
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
@@ -3284,8 +3285,6 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     df_ticker = df_ticker[~df_ticker['coin'].isin(df_orderId['coin'])] if not df_orderId.empty else df_ticker
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in limit buy orders")
-    # df_ticker = df_ticker.head(10)
-    default_target_profit = read_target_profit_default()
     highest_target_profit = 0
     coin_with_high_target_profit = ''
     for i in range(df_ticker.shape[0]):
