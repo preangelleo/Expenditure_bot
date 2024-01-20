@@ -1642,19 +1642,29 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
     return pd.DataFrame()
 
 
+# Define cancel all of the open orders
+def binance_cancel_all_orders(from_id=None, side = 'NONE'):
+    df_orderId = get_open_orders_list(from_id, side)
+    if df_orderId.empty: return send_msg(f'No open orders', from_id)
+    for index, row in df_orderId.iterrows(): 
+        data = binance_cancel_order_by_orderId(row['coin'], row['orderId'])
+        if from_id: 
+            if data: send_msg(f"/as_{row['coin']} limit order canceled successfully", from_id)
+            else: send_msg(f"Failed to cancel /as_{row['coin']} limit order: \n/cancel_{row['coin']}_{row['orderId']}", from_id)
+    return 
+
+
 # cancel all BUY orders
 def cancel_all_buy_orders(from_id=None):
     df_orderId = get_open_orders_list(from_id, 'BUY')
-    if df_orderId.empty: 
-        if from_id: send_msg('No open buy orders.', from_id)
-        return
+    if df_orderId.empty: return send_msg('No open buy orders.', from_id)
     for index, row in df_orderId.iterrows():
         coin = row['coin']
         orderId = row['orderId']
         data = binance_cancel_order_by_orderId(coin, orderId)
         if from_id: 
-            if data: send_msg(f"{coin} limit buy order: {orderId} canceled.", from_id)
-            else: send_msg(f"Failed to cancel {coin} limit buy order: \n/cancel_{coin}_{orderId}", from_id)
+            if data: send_msg(f"/as_{coin} limit buy canceled.", from_id)
+            else: send_msg(f"Failed to cancel /as_{coin} limit buy order: \n/cancel_{coin}_{orderId}", from_id)
     return
 
 
@@ -1668,8 +1678,8 @@ def cancel_all_sell_orders(from_id=None):
         orderId = row['orderId']
         data = binance_cancel_order_by_orderId(coin, orderId)
         if from_id: 
-            if data: send_msg(f"{coin} limit sell order: {orderId} canceled.", from_id)
-            else: send_msg(f"Failed to cancel {coin} limit sell order: \n/cancel_{coin}_{orderId}", from_id)
+            if data: send_msg(f"/as_{coin} limit sell canceled.", from_id)
+            else: send_msg(f"Failed to cancel /as_{coin} limit sell order: \n/cancel_{coin}_{orderId}", from_id)
     return
 
 # def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
@@ -2627,16 +2637,6 @@ def data_to_table(data, table_name, if_exists='append'):
     return
 
 
-# Define cancel all of the open orders
-def binance_cancel_all_orders(from_id=None, side = 'NONE'):
-    df_orderId = get_open_orders_list(from_id, side)
-    if df_orderId.empty: return send_msg(f'No open orders', from_id)
-    for index, row in df_orderId.iterrows(): 
-        binance_cancel_order_by_orderId(row['coin'], row['orderId'])
-        send_msg(f"{row['coin']} orderId {row['orderId']} canceled successfully", from_id)
-    return 
-
-
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
 def update_net_profit_daily_record(date, net_profit):
     with engine.connect() as connection:
@@ -3184,12 +3184,14 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(reply_msg, from_id)
     return
 
+
 def positions_counts():
     with engine.connect() as connection: 
         try: df = pd.DataFrame(connection.execute(text('SELECT count(*) FROM position_table WHERE is_closed = 0 AND account = "spot"')).fetchall())
         except: df = pd.DataFrame()
     counts = df.iloc[0].values[0] if not df.empty else 0
     return counts
+
 
 def check_positions_counts():
     df_orderId = get_open_orders_list(None, 'BUY')
