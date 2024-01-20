@@ -2419,16 +2419,16 @@ def today_profit_sum():
 
 def monthly_profit_sum():
     try:
-        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
+        with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f"SELECT profit FROM position_table WHERE is_closed = 1 AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}")).fetchall())
     except: df_profit = pd.DataFrame()
     return df_profit
 
 
 # Define a function to set positon limit to 5 if the monthly profit is over 30000
 def reset_position_limit(monthly_profit_target = 30_000, upper_limit = 10, lower_limit = 5, from_id = TG_BOT_OWNER_ID):
-    monthly_profit_realized_df = monthly_profit_sum()
-    if monthly_profit_realized_df.empty: monthly_profit = 0
-    else: monthly_profit = monthly_profit_realized_df['profit'].astype(float).sum()
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT SUM(profit) FROM position_table WHERE is_closed = 1 AND account = 'spot' AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}")).fetchall())
+    df = df.fillna(0)
+    monthly_profit = df.iloc[0].astype(float).values[0]
     current_position_limit = get_position_limit()
     if monthly_profit_target > monthly_profit and current_position_limit != upper_limit: 
         if set_position_limit_default(upper_limit): send_msg(f"Monthly gained profit {format_number(monthly_profit)} is lower than {format_number(monthly_profit_target)}, POSITION_LIMIT has been set to {upper_limit}", from_id)
