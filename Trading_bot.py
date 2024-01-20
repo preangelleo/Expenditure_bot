@@ -85,24 +85,10 @@ def only_check_hot_coins(from_id = None):
     return binance_today_hot_coin(TRADING_VOLUME_LIMIT, tradingbot_status)
 
 
-def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
-    token = hash_md5(message)
-    data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
-    data_to_table(data, 'webhook_signature')
-    symbol = message.split(' ')[-1]
-    data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
-    if not data_dict: return send_msg(token, from_id)
-    data_dict['token'] = token
-    data_dict['message'] = message
-    '''{'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}'''
-    reply_string = '\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()])
-    return send_msg(reply_string, from_id)
-
-
 def validate_webhook_signature(token):
     message = None
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT message FROM webhook_signature WHERE token = '{token}' AND is_used = 0")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT message FROM webhook_signature WHERE token = '{token}' LIMIT 1")).fetchall())
         if not df.empty: message = df['message'].values[0]
     except: pass
     return message

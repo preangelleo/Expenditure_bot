@@ -6,7 +6,7 @@ from Bot_messages import *
 def handel_webhook_push_from_trading_view(token):
     message = validate_webhook_signature(token)
     if not message: return
-    if not set_webhook_signature_used(token): return
+    # if not set_webhook_signature_used(token): return
 
     # If sender's chat_id is not TG_BOT_OWNER_ID, then ignore the message
     from_id = TG_BOT_OWNER_ID

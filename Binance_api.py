@@ -1754,6 +1754,36 @@ def update_limit_orderId_in_position_table(orderId_create, orderId_close, target
     return
 
 
+def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
+    token = hash_md5(message)
+    data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
+    data_to_table(data, 'webhook_signature')
+    symbol = message.split(' ')[-1]
+    data_dict = get_resistant_price(symbol, interval = '4h', for_webhook = True)
+    if not data_dict: return send_msg(token, from_id)
+    data_dict['token'] = token
+    data_dict['message'] = message
+    '''{'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}'''
+    reply_string = '\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()])
+    webhook_json = f'''Webhook Triger Json:\n\n"condition": "ALERT", "message": "{symbol} approaching suport price {data_dict['support_price']}, suggesting market buy", "token": "{TRADINGVIEW_WEBHOOK_TOKEN}", "signature": "{token}"\n\n{reply_string}'''
+    return send_msg(webhook_json, from_id)
+
+
+def get_webhook_signature_coin(coin, from_id=TG_BOT_OWNER_ID):
+    message = f"fmb {coin}"
+    token = hash_md5(message)
+    data = {'token': token, 'is_used': 0, 'created_day': datetime.now().strftime("%Y-%m-%d"), 'created_time': datetime.now().strftime("%H:%M:%S"), 'message': message}
+    data_to_table(data, 'webhook_signature')
+    data_dict = get_resistant_price(coin, interval = '4h', for_webhook = True)
+    if not data_dict: return
+    support_price = data_dict['support_price']
+    data_dict['token'] = token
+    data_dict['message'] = message
+    reply_string = '\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()])
+    reply_msg = f'''Webhook FMB Triger Json:\n\n"condition": "ALERT", "message": "{coin} approaching support price {support_price}, suggesting market buy", "token": "{TRADINGVIEW_WEBHOOK_TOKEN}", "signature": "{token}"\n\n{reply_string}'''
+    return send_msg(reply_msg, from_id)
+
+
 def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
     if not data or type(data) is not dict: return send_msg('No data to update.', from_id)
     usdt_close = float(data['cummulativeQuoteQty']) if 'cummulativeQuoteQty' in data else float(data['cumulativeQuoteQty']) if 'cumulativeQuoteQty' in data else 0
@@ -1771,7 +1801,8 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
         conn.commit()
     reply_msg = f"{data['coin']} Position closed with profit: {format_number(profit)} usdt"
-    send_msg(f"{reply_msg}\n/as_{data['coin']}\n/profit_taken_today", from_id)
+    send_msg(f"{reply_msg}\n/as_{data['coin']} | /profit_taken_today", from_id)
+    get_webhook_signature_coin({data['coin']}, from_id)
     return profit
 
 
@@ -2272,10 +2303,10 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             nearest_support_level = nearest_support_level * 1.01
             target_profit = (nearest_resistance_level - current_price) / current_price
             deviation_percentage = (current_price - nearest_support_level) / nearest_support_level
-            if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
             target_profit = max(target_profit, 0.01)
             nearest_resistance_level = max(nearest_resistance_level, current_price * 1.01)
             nearest_support_level = min(nearest_support_level, current_price * 0.97)
+            if for_webhook: return {'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
             return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
 
 
