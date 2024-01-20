@@ -3687,13 +3687,13 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_funding = df_balance[df_balance['account'] == 'funding']
     if not df_funding.empty:
         reply_list = ['FUNDING account:']
-        for index, row in df_funding.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
+        for index, row in df_funding.iterrows(): reply_list.append(f"/ftm_{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
         send_msg(f"{reply_string}\nTotal profit: {format_number(df_funding['profit'].sum())} usdt", from_id)
     df_spot = df_balance[df_balance['account'] == 'spot']
     if not df_spot.empty:
         reply_list = ['SPOT account:']
-        for index, row in df_spot.iterrows(): reply_list.append(f"{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
+        for index, row in df_spot.iterrows(): reply_list.append(f"/mtf_{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
         send_msg(f"{reply_string}\nTotal profit: {format_number(df_spot['profit'].sum())} usdt", from_id)
     if grid_profit_target: return
