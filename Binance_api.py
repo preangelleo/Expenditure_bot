@@ -866,7 +866,7 @@ def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=24):
     if r.status_code == 200:
         data = r.json()
         df = pd.DataFrame(data)
-        if df.empty: return
+        if df.empty: return send_msg(f'No deposit history in the past {hours} hours.', chat_id)
         for i in range(df.shape[0]):
             status_explanation = 'pending' if df['status'].values[i] == 0 else 'credited but cannot withdraw' if df['status'].values[i] == 6 else 'Wrong Deposit' if df['status'].values[i] == 7 else 'Waiting User confirm' if df['status'].values[i] == 8 else 'success' if df['status'].values[i] == 1 else 'unknown'
             df_dict = df.iloc[i].to_dict()
