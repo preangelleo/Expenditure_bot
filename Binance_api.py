@@ -1761,7 +1761,6 @@ def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
     if not data_dict: return send_msg(token, from_id)
     data_dict['token'] = token
     data_dict['message'] = message
-    '''{'target_profit': format_number(target_profit), 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}'''
     reply_string = '\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()])
     webhook_json = f'''Webhook Triger Json:\n\n"condition": "ALERT", "message": "{symbol} approaching suport price {data_dict['support_price']}, suggesting market buy", "token": "{TRADINGVIEW_WEBHOOK_TOKEN}", "signature": "{token}"\n\n{reply_string}'''
     return send_msg(webhook_json, from_id)
@@ -2294,8 +2293,6 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     df = get_kline_data(symbol, interval)
     if not df.empty: 
-        result = analyze_data(df, interval)
-        if not result or not result.get('long', False): return {'target_profit': 0, 'resistant_price': 0, 'support_price': 0, 'deviation_percentage': 0}
         current_price = float(df['Close'].iloc[-1])
         if current_price > 0:
             nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
@@ -2306,8 +2303,10 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             target_profit = max(target_profit, 0.01)
             nearest_resistance_level = max(nearest_resistance_level, current_price * 1.01)
             nearest_support_level = min(nearest_support_level, current_price * 0.97)
-            if for_webhook: return {'target_profit': f"{format_number(target_profit * 100)}%", 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%"}
-            return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage}
+            result = analyze_data(df, interval)
+            long = 1 if result.get('long', False) else 0
+            if for_webhook: return {'target_profit': f"{format_number(target_profit * 100)}%", 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%, 'long': {long}"}
+            return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage, 'long': long}
 
 
 def weekly_rsi_over_high(symbol):
@@ -3272,7 +3271,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     for i in range(df_ticker.shape[0]):
         coin = df_ticker.iloc[i]['coin']
         resistance_dict = get_resistant_price(coin)
-        if not resistance_dict: continue
+        if not resistance_dict or not resistance_dict.get('long', 0): continue
         target_profit = resistance_dict.get('target_profit', 0.01)
         if target_profit <= default_target_profit: continue
         if target_profit > highest_target_profit: 
