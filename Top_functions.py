@@ -134,6 +134,14 @@ def read_target_profit_default(from_id=None):
     if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
     return target_profit
 
+
+def reset_initial_funding_amount(initial_funding_fund = 100000, from_id = TG_BOT_OWNER_ID):
+    try: int(initial_funding_fund)
+    except: return send_msg(f"Initial funding fund has to be an integer, your input is {initial_funding_fund}", from_id)
+    if set_initial_funding_fund(initial_funding_fund): return send_msg(f"Initial funding fund has been set to {initial_funding_fund} usd!", from_id)
+    return send_msg("Failed to set initial funding fund! Make sure your input format is like: /set_initial_funding_fund 100000", from_id)
+
+
 def format_number(num):
     if not num:
         return 0
@@ -207,6 +215,11 @@ def markdown_token_address(token_address):
 def markdown_tokentnxs(address):
     markdown_token = f'[{address[:6]}...{address[-7:]}]({ETHERSCAN_TOKEN_URL_PREFIX}{address}#tokentxns)'
     return markdown_token
+
+def get_initial_funding_amount(from_id = TG_BOT_OWNER_ID):
+    initial_funding_fund = read_initial_funding_fund()
+    if from_id: send_msg(f"Current initial funding fund: {format_number(initial_funding_fund)} usd", from_id)
+    return initial_funding_fund
 
 def send_email(subject, message, to_addr):
 

@@ -165,6 +165,8 @@ COMMANDS = [
     {"command": "profit_taken_today", "description": "Calculate the sum of profit taken today"},
     {"command": "positions_coin_list", "description": "Get the positions coin list"},
     {"command": "funding_position_price", "description": "Get the prices of positions of a given coin"},
+    {"command": "reset_initial_funding", "description": "Reset the initial funding to a new amount"},
+    {"command": "get_initial_funding", "description": "Get the initial funding amount value"},
     {"command": "binance_pay_record", "description": "Get the binance pay record"},
     {"command": "calculate_missed_profit", "description": "Calculate the missed profit of today"},
     {"command": "grid_profit_check", "description": "Check current unrealized grid profit"},
@@ -622,6 +624,8 @@ BOT_COMMAND_DICT = {
     'cas': 'cancel_all_sell',
     'cpa': 'count_positions_amounts',
     'dc': 'deposit_check',
+    'rif': 'reset_initial_funding',
+    'gif': 'get_initial_funding',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

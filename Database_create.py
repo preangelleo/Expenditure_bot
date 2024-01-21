@@ -145,6 +145,32 @@ def set_trading_parameters_default():
     return True
 
 
+def set_initial_funding_fund(initial_funding_fund = 10_0000):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # change initial_funding_fund in trading_parameters table to given value
+    cursor.execute(f"UPDATE trading_parameters SET initial_funding_fund = {initial_funding_fund}")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"initial_funding_fund = {initial_funding_fund} inserted successfully!")
+    return True
+
+def read_initial_funding_fund():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Read the latest record from table 'initial_funding_fund', return the initial_funding_fund
+    cursor.execute("SELECT initial_funding_fund FROM trading_parameters ORDER BY ID DESC LIMIT 1")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return result[0][0]
+
 # insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
 def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05))):
     # Create a new session
