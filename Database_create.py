@@ -87,13 +87,71 @@ def create_target_profit_table():
     return True
 
 
+# create a funciton to drop current trading_parameters table
+def drop_trading_parameters_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Drop table
+    cursor.execute(f"DROP TABLE IF EXISTS trading_parameters")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"Table 'trading_parameters' dropped successfully!")
+    return True
+
+
+def create_trading_parameters_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'trading_parameters'
+    cursor.execute("CREATE TABLE IF NOT EXISTS trading_parameters (ID INTEGER PRIMARY KEY AUTO_INCREMENT, trading_bot_status TINYINT, initial_fund_spot INTEGER, initial_funding_fund INTEGER, check_size INTEGER, position_limit_spot INTEGER, target_profit_usdt INTEGER, target_profit_percentage FLOAT, daily_target_profit INTEGER, daily_new_positions_limit INTEGER, bot_starting_date DATE, trading_volume_limit INTEGER, fully_diluted_market_cap_up_limit BIGINT, market_cap_down_limit BIGINT, circulation_ratio FLOAT)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'trading_parameters' created successfully!")
+    return True
+
+
+# Create a function to initialize the trading parameters table
+def set_trading_parameters_default():
+    drop_trading_parameters_table()
+    create_trading_parameters_table()
+    TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
+    INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
+    CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+    POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
+    FULLLY_DILUTED_MARKET_CAP_UP_LIMIT=int(os.getenv('FULLLY_DILUTED_MARKET_CAP_UP_LIMIT', 50_000_000_000))
+    MARKET_CAP_DOWN_LIMIT=int(os.getenv('MARKET_CAP_DOWN_LIMIT', 50_000_000))
+    CIRCULATION_RATIO=float(os.getenv('CIRCULATION_RATIO', 0.3))
+    TARGET_PROFIT_PERCENTAGE = float(os.getenv('TARGET_PROFIT', 0.05))
+    TARGET_PROFIT_USDT = int(TARGET_PROFIT_PERCENTAGE * CHECK_SIZE)
+    DAILY_TARGET_PROFIT = 1000
+    DAILY_NEW_POSITIONS_LIMIT = 2
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Insert trading parameters into table 'trading_parameters'
+    cursor.execute(f"INSERT INTO trading_parameters (trading_bot_status, initial_fund_spot, initial_funding_fund, check_size, position_limit_spot, target_profit_usdt, target_profit_percentage, daily_target_profit, daily_new_positions_limit, bot_starting_date, trading_volume_limit, fully_diluted_market_cap_up_limit, market_cap_down_limit, circulation_ratio) VALUES (1, {INITIAL_FUND}, {INITIAL_FUND}, {CHECK_SIZE}, {POSITIONS_LIMIT}, {TARGET_PROFIT_USDT}, {TARGET_PROFIT_PERCENTAGE}, {DAILY_TARGET_PROFIT}, {DAILY_NEW_POSITIONS_LIMIT}, CURDATE(), {TRADING_VOLUME_LIMIT}, {FULLLY_DILUTED_MARKET_CAP_UP_LIMIT}, {MARKET_CAP_DOWN_LIMIT}, {CIRCULATION_RATIO})")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"Trading parameters inserted successfully!")
+    return True
+
+
 # insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
 def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05))):
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
-    cursor.execute(f"INSERT INTO target_profit (Date, TargetProfit) VALUES (CURDATE(), {target_profit})")
+    # change target_profit_percentage in trading_parameters table to given value
+    cursor.execute(f"UPDATE trading_parameters SET target_profit_percentage = {target_profit}")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -101,48 +159,17 @@ def set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0
     print(f"TARGET_PROFIT = {target_profit} inserted successfully!")
     return True
 
-# Creat a table 'position_limit' to set the position limit, integer
-def create_position_limit_table():
-    # Create a new session
+
+def set_position_limit_default(position_limit=10):
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Create a new table 'position_limit'
-    cursor.execute("CREATE TABLE IF NOT EXISTS position_limit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, PositionLimit INTEGER)")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print("Table 'position_limit' created successfully!")
-    return True
-
-'''
-INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
-CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
-POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
-'''
-# insert POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE) into table 'position_limit'
-def set_position_limit_default(position_limit=None):
-    if position_limit is None: 
-        try:
-            INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
-            CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
-            position_limit = int(INITIAL_FUND / CHECK_SIZE)
-        except: return False
-    else:
-        try: position_limit = int(float(position_limit))
-        except: return False
-
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Insert POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE) into table 'position_limit'
-    cursor.execute(f"INSERT INTO position_limit (Date, PositionLimit) VALUES (CURDATE(), {position_limit})")
-    # Commit the session
+    cursor.execute(f"UPDATE trading_parameters SET position_limit_spot = {position_limit}")
     conn.commit()
     cursor.close()
     conn.close()
     print(f"POSITIONS_LIMIT = {position_limit} inserted successfully!")
     return True
+
 
 # read the latest record from table 'position_limit', return the PositionLimit
 def get_position_limit():
@@ -150,27 +177,13 @@ def get_position_limit():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Read the latest record from table 'position_limit', return the PositionLimit
-    cursor.execute("SELECT PositionLimit FROM position_limit ORDER BY ID DESC LIMIT 1")
+    cursor.execute("SELECT position_limit_spot FROM trading_parameters ORDER BY ID DESC LIMIT 1")
     result = cursor.fetchall()
     # Commit the session
     conn.commit()
     cursor.close()
     conn.close()
     return result[0][0]
-
-# Create a table "trading_bot_switch" to record the trading bot switch status
-def create_trading_bot_switch_table():
-    # Create a new session
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Create a new table 'trading_bot_switch', with ID (key), Date, SwitchStatus (boolean)
-    cursor.execute("CREATE TABLE IF NOT EXISTS trading_bot_switch (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, SwitchStatus BOOLEAN)")
-    # Commit the session
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print("Table 'trading_bot_switch' created successfully!")
-    return True
 
 
 # Insert a new record into table "trading_bot_switch", make SwitchStatus = True
@@ -179,7 +192,7 @@ def trading_bot_switch_on():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Insert a new record into table "trading_bot_switch", make SwitchStatus = True
-    cursor.execute("INSERT INTO trading_bot_switch (Date, SwitchStatus) VALUES (CURDATE(), True)")
+    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 1")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -193,7 +206,7 @@ def trading_bot_switch_off():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Insert a new record into table "trading_bot_switch", make SwitchStatus = False
-    cursor.execute("INSERT INTO trading_bot_switch (Date, SwitchStatus) VALUES (CURDATE(), False)")
+    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 0")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -207,7 +220,7 @@ def trading_bot_switch_status():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Read the latest record from table "trading_bot_switch", return the SwitchStatus
-    cursor.execute("SELECT SwitchStatus FROM trading_bot_switch ORDER BY ID DESC LIMIT 1")
+    cursor.execute("SELECT trading_bot_status FROM trading_parameters ORDER BY ID DESC LIMIT 1")
     result = cursor.fetchall()
     # Commit the session
     conn.commit()
@@ -546,45 +559,20 @@ if __name__ == '__main__':
     # Initial Step 2: Create user_expenditures_record tables
     create_expenditure_record_table()
 
-    # Initial Step 3: Create OTP tables
+    # # Initial Step 3: Create OTP tables
     create_one_time_passcode_table()
 
-    # Initial Step 4: Create position_limit tables
-    create_position_limit_table()
-
-    # Initial Step 5: Create net_profit_daily_record tables
+    # Initial Step 4: Create net_profit_daily_record tables
     create_net_profit_daily_record_table()
 
-    # Initial Step 6: Create trading_bot_switch tables
-    create_trading_bot_switch_table()
+    # Initial Step 5: Create trading_parameters tables
+    set_trading_parameters_default()
 
-    # Initial Step 7: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
-    create_target_profit_table()
-
-    # Initial Step 8: Insert TARGET_PROFIT = float(os.getenv('TARGET_PROFIT', 0.05)) into table 'target_profit'
-    set_target_profit_default(target_profit = float(os.getenv('TARGET_PROFIT', 0.05)))
-
-    # Initial Step 9: Insert a new record into table "position_limit", make PositionLimit = int(INITIAL_FUND / CHECK_SIZE)
-    set_position_limit_default()
-
-    # Initial Step 10: Insert a new record into table "trading_bot_switch", make SwitchStatus = True
-    trading_bot_switch_on()
-
-    # Initial Step 11: Create trivial_records tables
+    # Initial Step 6: Create trivial_records tables
     create_trivial_records_table()
 
-    # Initial Step 12: Create white_list tables
-    create_white_list_table()
-
-    # Initial Step 13: Create white_list_users tables
+    # Initial Step 7: Create white_list_users tables
     create_white_list_users_table()
-
-    
-    trading_bot_status = trading_bot_switch_status()
-    if not trading_bot_status: print("Trading bot is OFF!")
-    else: print("Trading bot is ACTIVE!")
-
-    # save_table_structures()
 
     print("All tables created successfully!")
 

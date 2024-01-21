@@ -121,6 +121,19 @@ BINANCE_HEADERS = {
     "Content-Type": "application/json"
     }
 
+# read trading parameters from table 'trading_parameters' and return a dict
+def read_trading_parameters():
+    with engine.connect() as connection: df_trading_parameters = pd.DataFrame(connection.execute(text("SELECT * FROM trading_parameters ORDER BY ID DESC LIMIT 1")).fetchall())
+    if not df_trading_parameters.empty: return df_trading_parameters.to_dict(orient='records')[0]
+    return {}
+
+# from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
+def read_target_profit_default(from_id=None):
+    with engine.connect() as connection: df_target_profit = pd.DataFrame(connection.execute(text("SELECT target_profit_percentage FROM trading_parameters ORDER BY ID DESC LIMIT 1")).fetchall())
+    target_profit = float(df_target_profit['target_profit_percentage'].values[0]) if not df_target_profit.empty else 0.05
+    if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
+    return target_profit
+
 def format_number(num):
     if not num:
         return 0
@@ -620,7 +633,7 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 
 
 # define a function to switch on the trading bot and send a message to the user
-def switch_on_bot(from_id):
+def  switch_on_bot(from_id):
     if trading_bot_switch_on(): 
         target_profit = float(os.getenv('TARGET_PROFIT', 0.05))
         set_target_profit_default(target_profit)
@@ -636,12 +649,14 @@ def switch_off_bot(from_id):
 # define a function to read the trading bot switch status from the database
 def read_trading_bot_status(from_id=TG_BOT_OWNER_ID):
     status = trading_bot_switch_status()
-    if status: return send_msg("Trading bot is ON!", from_id)
+    if status: return send_msg("Trading bot is ON! (Ignorelist active)", from_id)
     return send_msg("Trading bot is OFF (Whitelist only)!", from_id)
 
 
 # Set position_limit from bot import and send a message to the user
 def set_position_limit_by_user(position_limit, from_id):
+    try: position_limit = int(position_limit)
+    except: return send_msg(f"Position limit has to be an integer, your input is {position_limit}", from_id)
     if set_position_limit_default(position_limit): return send_msg(f"Position limit has been set to {get_position_limit()}!", from_id)
     return send_msg("Failed to set position limit! Make sure your input format is like: /set_position_limit 5", from_id)
 
@@ -1222,7 +1237,9 @@ def coinbase_market_buy_order(product_id, funds = '10000'):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    # Example Usage
-    order = coinbase_market_buy_order('DOT-USDT', '10000')
-    print(order)
-        
+    # set_trading_parameters_default()
+    # set_target_profit_default(0.13)
+    # print(read_trading_parameters())
+    trading_bot_switch_off()
+    r = trading_bot_switch_status()
+    print(r)

@@ -1,29 +1,33 @@
 from Top_functions import *
 from Generate_token import *
 
-TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
-INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
-CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
-
-positions_limit = get_position_limit()
-POSITIONS_LIMIT = positions_limit if positions_limit else int(INITIAL_FUND / CHECK_SIZE)
-
 CMC_NO_DATA = ['EUR', 'BEAMX']
 
-# from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
-def read_target_profit_default(from_id=None):
-    with engine.connect() as connection: df_target_profit = pd.DataFrame(connection.execute(text("SELECT * FROM target_profit ORDER BY ID DESC LIMIT 1")).fetchall())
-    target_profit = float(df_target_profit['TargetProfit'].values[0])
-    if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
-    return target_profit
+'''
+parameters_dict = {'ID': 2, 'trading_bot_status': 1, 'initial_fund_spot': 100000, 'initial_funding_fund': 100000, 'check_size': 10000, 'position_limit_spot': 10, 'target_profit_usdt': 300, 'target_profit_percentage': 0.03, 'daily_target_profit': 1000, 'daily_new_positions_limit': 2, 'bot_starting_date': datetime.date(2024, 1, 21), 'trading_volume_limit': 20000000, 'fully_diluted_market_cap_up_limit': 5000000000, 'market_cap_down_limit': 30000000, 'circulation_ratio': 0.3}
+'''
+parameters_dict = read_trading_parameters()
 
-target_profit = read_target_profit_default()
-TARGET_PROFIT = target_profit if target_profit else float(os.getenv('TARGET_PROFIT', 0.05))
+TRADING_VOLUME_LIMIT = parameters_dict.get('trading_volume_limit', 50_000_000)
+INITIAL_FUND = parameters_dict.get('initial_fund_spot', 100_000)
+CHECK_SIZE = parameters_dict.get('check_size', 10_000)
+POSITIONS_LIMIT = parameters_dict.get('position_limit_spot', 10)
+TARGET_PROFIT_PERCENTAGE = parameters_dict.get('target_profit_percentage', 0.03)
+TARGET_PROFIT_USDT = parameters_dict.get('target_profit_usdt', 300)
+FULLLY_DILUTED_MARKET_CAP_UP_LIMIT = parameters_dict.get('fully_diluted_market_cap_up_limit', 5_000_000_000)
+MARKET_CAP_DOWN_LIMIT = parameters_dict.get('market_cap_down_limit', 30_000_000)
+CIRCULATION_RATIO = parameters_dict.get('circulation_ratio', 0.3)
+DAILY_TARGET_PROFIT = parameters_dict.get('daily_target_profit', 1000)
+DAILY_NEW_POSITIONS_LIMIT = parameters_dict.get('daily_new_positions_limit', 2)
+TRADING_BOT_STATUS = parameters_dict.get('trading_bot_status', 0)
+INITIAL_FUNDING_FUND = parameters_dict.get('initial_funding_fund', 100_000)
+BOT_STARTING_DATE = parameters_dict.get('bot_starting_date')
+TARGET_PROFIT = TARGET_PROFIT_PERCENTAGE
 
 SHORT_COINS_LIST = []
 
 def set_new_target_profit(target_profit, chat_id=TG_BOT_OWNER_ID):
-    target_profit = float(target_profit) if target_profit else 0.001
+    target_profit = float(target_profit) if target_profit else 0.01
     if target_profit > 0 and target_profit < 1:
         if set_target_profit_default(target_profit): return send_msg(f"Set target profit: {target_profit*100}%", chat_id)
     else: return send_msg(f"Target profit: {target_profit*100}% is not valid, it should be between 0 and 1. For example: 0.05 means 5%.", chat_id)
@@ -2474,7 +2478,8 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
     except Exception as e: return send_email(f"ERRO: profit_taken_today()", e, GMAIL_ADDRESS_MAIN)
 
 
-def profit_take_per_6_min(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID):
+def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
+    profit_take_target=DAILY_TARGET_PROFIT
     df_balance = read_position_table_account()
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
@@ -2593,7 +2598,7 @@ def cancel_orderId(coin, orderId_close, from_id=TG_BOT_OWNER_ID):
 def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID, coin=None, is_manual = 0):
     df_balance = read_position_table_account(0, coin, 'spot')
     if df_balance.empty: return
-    target_profit = read_target_profit_default() if not target_profit else float(target_profit)
+    target_profit = TARGET_PROFIT_PERCENTAGE if not target_profit else float(target_profit)
     for i in range(df_balance.shape[0]):
         coin = df_balance.iloc[i]['coin']
         amount = float(df_balance.iloc[i]['amount'])
@@ -3236,16 +3241,17 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     return
 
 
-def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, trading_bot_status = trading_bot_switch_status()):
+def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount, day_create, month_create, year_create FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_position_today = df_in_position[(df_in_position['day_create'] == datetime.now().day) & (df_in_position['month_create'] == datetime.now().month) & (df_in_position['year_create'] == datetime.now().year)] if not df_in_position.empty else pd.DataFrame()
+        if df_in_position_today.shape[0] >= DAILY_NEW_POSITIONS_LIMIT: return print(f"Today's new positions counts ({df_in_position_today.shape[0]}) reached the limit of {DAILY_NEW_POSITIONS_LIMIT}")
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached the limit of {POSITIONS_LIMIT}")
         df_orderId = get_open_orders_list(None, 'BUY')
         if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
-        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target and df_in_position_today.empty: default_target_profit = 0.21
+        if not df_profit.empty and df_profit['profit'].sum() >= DAILY_TARGET_PROFIT and df_in_position_today.empty: default_target_profit = 0.21
         else: default_target_profit = 0.13
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
@@ -3259,7 +3265,7 @@ def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, tra
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
-    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0') if trading_bot_status else df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
+    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0') if TRADING_BOT_STATUS else df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_ticker.empty: return print("No top coin to buy")
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
     if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
@@ -3733,3 +3739,8 @@ def close_postive_positions(from_id, grid_profit_target=1):
 
 if __name__ == '__main__':
     print('Binance_api.py is running')
+    parameters_dict = read_trading_parameters()
+    print(f"Parameters: {parameters_dict}")
+    print(TARGET_PROFIT)
+    target_profit = read_target_profit_default()
+    print(f"Target Profit: {target_profit}")

@@ -8,16 +8,13 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'\n{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
-    current_bot_status = False
-    chat_id=TG_BOT_OWNER_ID
-
-    try: profit_take_per_6_min(1000, chat_id)
+    try: profit_take_per_6_min()
     except: pass
 
-    try: binance_today_top_coin(1000, chat_id)
+    try: binance_today_top_coin()
     except: pass
 
     try: read_emails()
     except: pass
 
-    if '23:50' < datetime.now().strftime("%H:%M") < '23:59':  profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = True)
+    if '23:50' < datetime.now().strftime("%H:%M") < '23:59':  profit_taken_today(TG_BOT_OWNER_ID, report = True)
