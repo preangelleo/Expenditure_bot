@@ -2294,6 +2294,8 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     df = get_kline_data(symbol, interval)
     if not df.empty: 
+        result = analyze_data(df, interval)
+        if not result or not result.get('long', False): return {'target_profit': 0, 'resistant_price': 0, 'support_price': 0, 'deviation_percentage': 0}
         current_price = float(df['Close'].iloc[-1])
         if current_price > 0:
             nearest_resistance_level, nearest_support_level = get_resistance_support_levels(df, current_price)
@@ -3237,13 +3239,14 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
 
 def binance_today_top_coin(profit_take_target=1000, chat_id=TG_BOT_OWNER_ID, trading_bot_status = trading_bot_switch_status()):
     with engine.connect() as connection: 
-        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount FROM position_table WHERE is_closed = 0')).fetchall())
+        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount, day_create, month_create, year_create FROM position_table WHERE is_closed = 0')).fetchall())
+        df_in_position_today = df_in_position[(df_in_position['day_create'] == datetime.now().day) & (df_in_position['month_create'] == datetime.now().month) & (df_in_position['year_create'] == datetime.now().year)] if not df_in_position.empty else pd.DataFrame()
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached the limit of {POSITIONS_LIMIT}")
         df_orderId = get_open_orders_list(None, 'BUY')
         if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
-        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target: default_target_profit = 0.21
+        if not df_profit.empty and df_profit['profit'].sum() >= profit_take_target and df_in_position_today.empty: default_target_profit = 0.21
         else: default_target_profit = 0.13
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
