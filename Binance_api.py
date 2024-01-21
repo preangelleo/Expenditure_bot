@@ -1627,13 +1627,13 @@ def get_open_orders_list(from_id=None, side = 'NONE'):
                 df_orderId_buy.loc[:, 'cancel'] = df_orderId_buy.apply(lambda x: f"/as_{x['coin']} | /cancel_{x['coin']}_{x['orderId']}", axis=1)
                 df_dict_string_buy = df_orderId_buy['cancel'].to_list()
                 df_dict_string_buy = '\n'.join(df_dict_string_buy)
-                send_msg(f"Open BUY orders:\n\n{df_dict_string_buy}", from_id)
+                send_msg(f"Open BUY orders ({df_orderId_buy.shape[0]}):\n\n{df_dict_string_buy}", from_id)
             df_orderId_sell = df_orderId[df_orderId['side'] == 'SELL'].copy()
             if not df_orderId_sell.empty:
                 df_orderId_sell.loc[:, 'cancel'] = df_orderId_sell.apply(lambda x: f"/as_{x['coin']} | /cancel_{x['coin']}_{x['orderId']}", axis=1)
                 df_dict_string_sell = df_orderId_sell['cancel'].to_list()
                 df_dict_string_sell = '\n'.join(df_dict_string_sell)
-                send_msg(f"Open SELL orders:\n\n{df_dict_string_sell}", from_id)
+                send_msg(f"Open SELL orders ({df_orderId_sell.shape[0]}):\n\n{df_dict_string_sell}", from_id)
         df_orderId = df_orderId[df_orderId['side']==side] if side == 'BUY' or side == 'SELL' else df_orderId
         return df_orderId
     else: print(r.json())
@@ -3682,7 +3682,7 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     funding_usdt = data.get('funding', 0)
     total_usdt = data.get('total', 0)
     total_value = asset_value + total_usdt
-    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\n\n/close_postive_positions\n/close_all_positions", from_id)
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\n\n/close_postive_positions\n/close_all_positions\n/open_orders_list", from_id)
     return 
 
 
