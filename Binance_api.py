@@ -3064,7 +3064,7 @@ def get_ignore_list(from_id=TG_BOT_OWNER_ID):
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
         if not df.empty:
             ignore_coin_list = df['coin'].values.tolist()
-            if from_id: send_msg(f"Current ignore list: \n\n{', '.join(ignore_coin_list)}", from_id)
+            if from_id: send_msg(f"Current ignore list ({len(ignore_coin_list)}): \n\n{', '.join(ignore_coin_list)}", from_id)
             return ignore_coin_list
     except: df = pd.DataFrame()
     if df.empty: send_msg("Your ignore list is empty! Use below command to add any coin into ignore list.\n\n/add_ignore_coin BTC | /ignore_BTC", from_id)
@@ -3110,7 +3110,7 @@ def get_white_list(from_id=TG_BOT_OWNER_ID):
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_white = 1')).fetchall())
         if not df.empty: 
             white_list = df['coin'].values.tolist()
-            if from_id: send_msg(f"Current white list: \n\n{', '.join(white_list)}", from_id)
+            if from_id: send_msg(f"Current white list ({len(white_list)}): \n\n{', '.join(white_list)}", from_id)
             return white_list
     except: df = pd.DataFrame()
     if df.empty: send_msg("Your white list is empty! Use below command to add any coin into white list.\n\n/add_white_list RSR | /white_RSR", from_id)
