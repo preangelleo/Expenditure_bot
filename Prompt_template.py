@@ -108,6 +108,7 @@ COMMANDS = [
     {"command": "help", "description": "Get help information"},
     {"command": "set_bot_menu", "description": "Set the bot's menu"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
+    {"command": "deposit_check", "description": "Check the deposit history of the latest 24 hour"},
     {"command": "open_orders_list", "description": "Get the open orders list in Binance"},
     {"command": "cancel_all_orders", "description": "Cancel all orders in Binance"},
     {"command": "get_ignore_list", "description": "Get the ignore list"},
@@ -620,6 +621,7 @@ BOT_COMMAND_DICT = {
     'cab': 'cancel_all_buy',
     'cas': 'cancel_all_sell',
     'cpa': 'count_positions_amounts',
+    'dc': 'deposit_check',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

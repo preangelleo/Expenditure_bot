@@ -53,6 +53,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'count_positions': count_positions,
     'cancel_all_buy': cancel_all_buy_orders,
     'cancel_all_sell': cancel_all_sell_orders,
+    'deposit_check': get_deposit_history_by_hours,
     }
 
 
@@ -314,6 +315,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('cpa_'): return count_positions_amounts(first_word.split('_')[-1], from_id)
         if first_word.startswith('funding_buy_'): return binance_funding_buy_and_hold(first_word.split('_')[-1], from_id)
         if first_word.startswith('funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id)
+        if first_word.startswith('dc_'): return get_deposit_history_by_hours(from_id, first_word.split('_')[-1])
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

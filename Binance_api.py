@@ -848,8 +848,9 @@ def get_token_price(coin: str, from_id=None):
 
 
 # 获取给定 hours 小时内的充值记录并发送给 chat_id
-def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=1):
-    hours = float(hours)
+def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=24):
+    try: hours = float(hours)
+    except: return send_msg(f'Wrong hours: {hours}, please input a number.', chat_id)
     PATH = '/sapi/v1/capital/deposit/hisrec'
     timestamp = int(time.time() * 1000)
     params = {
@@ -861,29 +862,21 @@ def get_deposit_history_by_hours(chat_id=TG_BOT_OWNER_ID, hours=1):
     query_string = urlencode(params)
     params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
     url = urljoin(BINANCE_BASE_URL, PATH)
-
     r = requests.get(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
         df = pd.DataFrame(data)
-        if not df.empty:
-            df = df.loc[:, ['coin', 'amount', 'address', 'txId', 'insertTime', 'status']]
-            df = df.rename(columns={'coin': 'Coin_Name', 'amount': 'Coin_Amount', 'address': 'From_Address', 'txId': 'Hash_ID', 'insertTime': ' UTC_Time', 'status': 'Status'})
-            for i in range(df.shape[0]):
-                '''status (0:pending,6: credited but cannot withdraw,7=Wrong Deposit,8=Waiting User confirm,1:success)'''
-                df.loc[i, 'Status'] = 'pending' if df.loc[i, 'Status'] == 0 else 'success' if df.loc[i, 'Status'] == 1 else 'credited but cannot withdraw' if df.loc[i, 'Status'] == 6 else 'Wrong Deposit' if df.loc[i, 'Status'] == 7 else 'Waiting User confirm' if df.loc[i, 'Status'] == 8 else 'unknown'
-                df.loc[i, ' UTC_Time'] = datetime.fromtimestamp(df.loc[i, ' UTC_Time']/1000).strftime('%Y-%m-%d %H:%M:%S')
-
-                # convert df.loc[i] to dict
-                df_dict = df.loc[i].to_dict()
-
-                # Convert dict to str
-                df_str = '\n'.join([f"{k}: {v}" for k, v in df_dict.items()])
-                
-                send_msg(df_str, chat_id)
-
-            return True
-
+        if df.empty: return
+        for i in range(df.shape[0]):
+            status_explanation = 'pending' if df['status'].values[i] == 0 else 'credited but cannot withdraw' if df['status'].values[i] == 6 else 'Wrong Deposit' if df['status'].values[i] == 7 else 'Waiting User confirm' if df['status'].values[i] == 8 else 'success' if df['status'].values[i] == 1 else 'unknown'
+            df_dict = df.iloc[i].to_dict()
+            df_dict['status'] = status_explanation
+            df_dict['amount'] = format_number(df_dict['amount'])
+            df_dict['insertTime'] = datetime.fromtimestamp(df_dict['insertTime']/1000).strftime('%Y-%m-%d %H:%M:%S')
+            df_dict['txId'] = markdown_tokentnxs(df_dict['txId'])
+            df_dict['address'] = markdown_token_address(df_dict['address'])
+            reply_msg = '\n'.join([f"{key}: {value}" for key, value in df_dict.items() if value and value != ''])
+            send_msg_markdown(reply_msg, chat_id)
     return 
 
 
@@ -3251,7 +3244,7 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
         df_orderId = get_open_orders_list(None, 'BUY')
         if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
-        if not df_profit.empty and df_profit['profit'].sum() >= DAILY_TARGET_PROFIT and df_in_position_today.empty: default_target_profit = 0.21
+        if (not df_profit.empty and df_profit['profit'].sum() >= DAILY_TARGET_PROFIT) and df_in_position_today.empty: default_target_profit = 0.21
         else: default_target_profit = 0.13
         df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
