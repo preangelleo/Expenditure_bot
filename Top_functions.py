@@ -1220,7 +1220,6 @@ def coinbase_market_buy_order(product_id, funds = '10000'):
     else: return response.json()  # Contains the error message
 
 
-
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
     # Example Usage
