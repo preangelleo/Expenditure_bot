@@ -3294,7 +3294,7 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    if current_price > price_create * (1 - down_step): return
+    if current_price > price_create * (1 - down_step): return print(f"{coin} current price: {current_price} > price_create_min: {price_create} * (1 - down_step: {down_step})")
     return binance_funding_buy_and_hold(coin, from_id)
 
 
