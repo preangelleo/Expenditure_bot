@@ -145,6 +145,33 @@ def set_trading_parameters_default():
     return True
 
 
+def set_daily_new_positions_limit(daily_new_positions_limit = 2):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # change daily_new_positions_limit in trading_parameters table to given value
+    cursor.execute(f"UPDATE trading_parameters SET daily_new_positions_limit = {daily_new_positions_limit}")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"daily_new_positions_limit = {daily_new_positions_limit} inserted successfully!")
+    return True
+
+
+def read_daily_new_positions_limit():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Read the latest record from table 'daily_new_positions_limit', return the daily_new_positions_limit
+    cursor.execute("SELECT daily_new_positions_limit FROM trading_parameters ORDER BY ID DESC LIMIT 1")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return result[0][0]
+
 def set_initial_funding_fund(initial_funding_fund = 10_0000):
     # Create a new session
     conn = get_db_connection()

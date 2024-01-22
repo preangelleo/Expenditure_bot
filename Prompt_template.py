@@ -148,6 +148,8 @@ COMMANDS = [
     {"command": "set_position_limit", "description": "Set the position limit of the trading bot"},
     {"command": "read_target_profit", "description": "Read current target profit setting of the trading bot"},
     {"command": "set_limit_sell", "description": "Set limit sell order for a target profit percentage"},
+    {"command": "set_daily_new", "description": "Set daily new positions limit to a new number"},
+    {"command": "read_daily_new", "description": "Read current daily new positions limit number"},
     {"command": "get_fibonacci_sequence", "description": "Get the fibonacci sequence of a given number"},
     {"command": "calculate_irr", "description": "Calculate the IRR of a given return folds and years of investment"},
     {"command": "gemini", "description": "Calling Gemini API of Google to generate the answer"},
@@ -626,6 +628,8 @@ BOT_COMMAND_DICT = {
     'dc': 'deposit_check',
     'rif': 'reset_initial_funding',
     'gif': 'get_initial_funding',
+    'sdn': 'set_daily_new',
+    'rdn': 'read_daily_new',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

@@ -142,6 +142,16 @@ def reset_initial_funding_amount(initial_funding_fund = 100000, from_id = TG_BOT
     return send_msg("Failed to set initial funding fund! Make sure your input format is like: /set_initial_funding_fund 100000", from_id)
 
 
+def reset_daily_new_positions_limit(daily_new_positions_limit = 2, from_id = TG_BOT_OWNER_ID):
+    try: daily_new_positions_limit = int(daily_new_positions_limit)
+    except: return send_msg(f"Daily new positions limit has to be an integer, your input is {daily_new_positions_limit}", from_id)
+    return set_daily_new_positions_limit(daily_new_positions_limit)
+
+
+def get_daily_new_positions_limit(from_id = TG_BOT_OWNER_ID):
+    return send_msg(f"Current daily new positions limit: {read_daily_new_positions_limit()}", from_id)
+
+
 def format_number(num):
     if not num:
         return 0
