@@ -3283,6 +3283,21 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     return print(f"Bought {coin} successfully")
 
 
+def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 146652243, down_step = 0.1, from_id=TG_BOT_OWNER_ID):
+    total_amount, total_cost, price_create = 0, 0, 0
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, account, amount, price_create, usdt_value FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
+    if not df.empty: 
+        total_amount = df['amount'].sum()
+        total_cost = df['usdt_value'].sum()
+        price_create = df['price_create'].min()
+    if total_amount >= amount_target: return send_msg(f"RSR amount in funding account: {format_number(total_amount)} >= amount_target: {format_number(amount_target)}, \ntotal_position: {df.shape[0]}\nprice_min: {format_number(price_create)}\ntotal_usdt_cost: {format_number(total_cost)}\n/ccv_{coin}_{int(total_amount)}", from_id)
+    current_price = get_avg_price(coin)
+    if not current_price: return
+    current_price = float(current_price['price'])
+    if current_price > price_create * (1 - down_step): return
+    return binance_funding_buy_and_hold(coin, from_id)
+
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
     global CMC_NO_DATA
     with engine.connect() as connection:
