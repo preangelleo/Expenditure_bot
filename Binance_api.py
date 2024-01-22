@@ -2802,11 +2802,7 @@ def binance_market_buy_quantity(coin, quantity):
 def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     current_status = trading_bot_switch_status()
     if current_status: return True
-
-    if trading_bot_switch_on(): 
-        target_profit = float(os.getenv('TARGET_PROFIT', 0.03))
-        set_target_profit_default(target_profit)
-        return send_msg(f"Reset target profit to {target_profit*100:.2f}%\n\n{msg}", from_id)
+    if trading_bot_switch_on(): return send_msg(f"Succeed to switch on the bot! \n\n{msg}", from_id)
     return send_msg(f"Failed to switch on the bot! \n\n{msg}", from_id)
 
 
@@ -2816,8 +2812,8 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
     if not current_status: return True
     if trading_bot_switch_off(): 
         close_postive_positions(from_id)
-        binance_position_set_limit_sell(0.01, from_id)
-        return send_msg(f"Reset all limit sell orders target profit to 1%.\n\n{msg}", from_id)
+        binance_position_set_limit_sell(0.01, from_id, None, is_manual = 1)
+        return send_msg(f"Succeed to switch off the bot!\n\n{msg}", from_id)
     return send_msg(f"Failed to switch off the bot!\n\n{msg}", from_id)
 
 

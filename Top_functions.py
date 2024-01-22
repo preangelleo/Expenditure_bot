@@ -657,10 +657,7 @@ def get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant(ye
 
 # define a function to switch on the trading bot and send a message to the user
 def  switch_on_bot(from_id):
-    if trading_bot_switch_on(): 
-        target_profit = float(os.getenv('TARGET_PROFIT', 0.05))
-        set_target_profit_default(target_profit)
-        return send_msg(f"Trading bot has been switched ON! \nTarget profit also set back to: {target_profit * 100:.2f}%\nCommand to reset target profit:\n\n/set_target_profit 0.07", from_id)
+    if trading_bot_switch_on(): return send_msg(f"Trading bot has been switched ON!", from_id)
     return send_msg("Failed to switch on trading bot!", from_id)
 
 # define a function to switch off the trading bot and send a message to the user

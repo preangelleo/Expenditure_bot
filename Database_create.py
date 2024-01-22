@@ -244,8 +244,8 @@ def trading_bot_switch_on():
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Insert a new record into table "trading_bot_switch", make SwitchStatus = True
-    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 1")
+    # When switch trading bot on, update target_profit_percentage to 0.13, and daily_target_profit to 2000, and daily_new_positions_limit to 4， target_profit_usdt to 1300， trading_bot_status to 1
+    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 1, target_profit_percentage = 0.13, daily_target_profit = 2000, daily_new_positions_limit = 4, target_profit_usdt = 1300")
     # Commit the session
     conn.commit()
     cursor.close()
@@ -258,8 +258,8 @@ def trading_bot_switch_off():
     # Create a new session
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Insert a new record into table "trading_bot_switch", make SwitchStatus = False
-    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 0")
+    # When switch trading bot off, update daily_target_profit to 1000, and daily_new_positions_limit to 2, trading_bot_status to 0
+    cursor.execute("UPDATE trading_parameters SET trading_bot_status = 0, daily_target_profit = 1000, daily_new_positions_limit = 2")
     # Commit the session
     conn.commit()
     cursor.close()
