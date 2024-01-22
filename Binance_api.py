@@ -2480,33 +2480,37 @@ def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
     df = df.drop(columns=['coin'])
     df_balance = pd.merge(df_balance, df, on='symbol', how='left')
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
+    df_balance['duration'] = (int(time.time() * 1000) - df_balance['time_create']) / 1000 / 60 / 60
     df_balance = df_balance.sort_values(by='profit', ascending=False)
+    df_duration = df_balance[df_balance['duration'] >= 24].copy()
+    for i in range(df_duration.shape[0]): 
+        current_target_profit = df_duration.iloc[i]['target_profit']
+        if current_target_profit == 0.01 and not df_duration.iloc[i]['is_manual']: continue
+        binance_position_set_limit_sell(0.01, chat_id, df_duration.iloc[i]['coin'], is_manual = 1)
+    df_profit = df_balance[df_balance['profit'] > 1].copy()
+    if df_profit.empty: return print(f"No coin with profit > 0")
     df_today_profit_take = today_profit_sum()
     current_profit_sum = df_today_profit_take['profit'].sum() if not df_today_profit_take.empty else 0
-    if current_profit_sum >= profit_take_target: 
-        df_loss = df_balance[(df_balance['profit'] < 0) & (df_balance['account'] == 'spot')].copy()
-        for i in range(df_loss.shape[0]): binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
-    df_balance = df_balance[df_balance['profit'] >= 0]
-    ''' df_balance
-       coin  symbol account  price_create  amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close     profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange  lastPrice
-    6   AI  AIUSDT    spot       1.10188  9075.0   9999.5587        85181820  1705732901109      MARKET          0          0           0.03          0.0       86673290           0                      0  66.133462         0         2024             1          19           0            0          0   14.999338  binance    1.11082'''
-    if df_balance.empty: return print(f"No coin with profit > 0")
-    # chose only the day_close, month_close, year_close, is not today
-    df_balance = df_balance[(df_balance['day_close'] != datetime.now().day) | (df_balance['month_close'] != datetime.now().month) | (df_balance['year_close'] != datetime.now().year)]
-    profit_sum = df_balance['profit'].astype(float).sum()
+    profit_sum = df_profit['profit'].astype(float).sum()
     profit_take_target -= current_profit_sum
-    if profit_sum < profit_take_target + int(df_balance.shape[0]) * 15: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
+    if profit_sum < profit_take_target: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
     print(f"Profit sum: {profit_sum} is greater than profit_take_target: {profit_take_target}, let's take them.")
     profit_take = 0
     profit_coinlist = []
-    for i in range(df_balance.shape[0]):
-        coin_df = df_balance.iloc[i:i+1]
-        coin = df_balance.iloc[i]['coin']
-        orderId_create = df_balance.iloc[i]['orderId_create']
+    for i in range(df_profit.shape[0]):
+        coin_df = df_profit.iloc[i:i+1]
+        coin = df_profit.iloc[i]['coin']
+        orderId_create = df_profit.iloc[i]['orderId_create']
         coin_profit = do_market_sell_by_orderId_create(orderId_create, chat_id, coin_df, coin)
         profit_take += coin_profit
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
+    if profit_take >= profit_take_target:
+        df_loss = df_balance[(df_balance['profit'] <= 1) & (df_balance['duration'] < 24)].copy()
+        for i in range(df_loss.shape[0]): 
+            current_target_profit = df_loss.iloc[i]['target_profit']
+            if current_target_profit == 0.01 and not df_loss.iloc[i]['is_manual']: continue
+            binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
     is_last_hour = True if '23:50' < datetime.now().strftime("%H:%M") < '23:59' else False
     is_first_hour_day_month = True if '00:00' < datetime.now().strftime("%H:%M") < '00:10' and datetime.now().day == 1 else False
     if is_last_hour or is_first_hour_day_month: reset_position_limit(30_000, 10, 5, chat_id)
