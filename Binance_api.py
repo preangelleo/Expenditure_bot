@@ -3238,7 +3238,10 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     with engine.connect() as connection: 
         df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount, day_create, month_create, year_create FROM position_table WHERE is_closed = 0')).fetchall())
         df_in_position_today = df_in_position[(df_in_position['day_create'] == datetime.now().day) & (df_in_position['month_create'] == datetime.now().month) & (df_in_position['year_create'] == datetime.now().year)] if not df_in_position.empty else pd.DataFrame()
-        if df_in_position_today.shape[0] >= DAILY_NEW_POSITIONS_LIMIT: return print(f"Today's new positions counts ({df_in_position_today.shape[0]}) reached the limit of {DAILY_NEW_POSITIONS_LIMIT}")
+        if df_in_position_today.shape[0] >= DAILY_NEW_POSITIONS_LIMIT: 
+            # get the new position counts in spot
+            df_in_position_today_spot = df_in_position_today[df_in_position_today['account'] == 'spot']
+            if df_in_position_today_spot.shape[0] >= DAILY_NEW_POSITIONS_LIMIT: return print(f"Today's new positions counts in spot account ({df_in_position_today_spot.shape[0]}) reached the limit of {DAILY_NEW_POSITIONS_LIMIT}")
         df_in_spot = df_in_position[df_in_position['account'] == 'spot']
         if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached the limit of {POSITIONS_LIMIT}")
         df_orderId = get_open_orders_list(None, 'BUY')
