@@ -1796,7 +1796,8 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID):
         conn.commit()
     reply_msg = f"{data['coin']} Position closed with profit: {format_number(profit)} usdt"
     send_msg(f"{reply_msg}\n/as_{data['coin']} | /profit_taken_today", from_id)
-    get_webhook_signature_coin(data['coin'], from_id)
+    try: get_webhook_signature_coin(data['coin'], from_id)
+    except: pass
     return profit
 
 
@@ -3581,8 +3582,8 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     data = binance_market_sell(coin, amount)
     if not data: send_msg(f'Failed to do market sell for {coin}', from_id)
     profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data)
-    if profit: main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
-    return
+    main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
+    return profit
 
 
 def monthly_summary():
