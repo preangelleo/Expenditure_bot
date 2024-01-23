@@ -3744,7 +3744,7 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = df_balance.sort_values(by='profit', ascending=True).reset_index(drop=True)
     coin_with_highest_lost = df_balance['coin'][0]
     coin_with_highest_lost_profit = format_number(df_balance['profit'][0])
-    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nHighest Loss: /as_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/close_postive_positions\n/close_all_positions\n/open_orders_list\n/calculate_missed_profit", from_id)
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/close_postive_positions\n/close_all_positions\n/open_orders_list\n/calculate_missed_profit", from_id)
     return 
 
 
