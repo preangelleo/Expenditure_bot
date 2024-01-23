@@ -3262,6 +3262,15 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(reply_msg, from_id)
     return
 
+# from position_table table get a given coin's higest close price
+def get_highest_close_price(coin):
+    coin = coin.upper()
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, price_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}'")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return 0
+    highest_close_price = df['price_close'].max()
+    return float(highest_close_price)
 
 def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     position_created_today_spot = 0
@@ -3281,7 +3290,6 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
         if position_created_today_spot: default_target_profit += TARGET_PROFIT_PERCENTAGE / 2
         df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
         if (not df_profit.empty and df_profit['profit'].sum() >= DAILY_TARGET_PROFIT): default_target_profit += TARGET_PROFIT_PERCENTAGE / 2
-        df_today = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE day_close = :day AND month_close = :month AND year_close = :year'), {'day': datetime.now().day, 'month': datetime.now().month, 'year': datetime.now().year}).fetchall())
         df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'quoteVolume']]
@@ -3296,7 +3304,6 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_ticker.empty: return print("No top coin to buy")
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
-    if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
     df_ticker = df_ticker[~df_ticker['coin'].isin(df_orderId['coin'])] if not df_orderId.empty else df_ticker
     if df_ticker.empty: return print("No top coin to buy after ignoring coins in limit buy orders")
@@ -3304,6 +3311,9 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     coin_with_high_target_profit = ''
     for i in range(df_ticker.shape[0]):
         coin = df_ticker.iloc[i]['coin']
+        current_price = df_ticker.iloc[i]['lastPrice']
+        highest_close = get_highest_close_price(coin)
+        if highest_close and current_price > highest_close * 0.9: continue
         resistance_dict = get_resistant_price(coin)
         if not resistance_dict or not resistance_dict.get('long', 0): continue
         target_profit = resistance_dict.get('target_profit', 0.01)
