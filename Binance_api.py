@@ -53,7 +53,7 @@ def network_name_change(str_name: str):
     return str_name
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
+    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 
 def server_time_diff():
     PATH = '/api/v1/time'
@@ -1761,6 +1761,18 @@ def get_webhook_signature(message: str, from_id=TG_BOT_OWNER_ID):
     reply_string = '\n'.join([f"{key}: {format_number(value)}" for key, value in data_dict.items()])
     webhook_json = f'''Webhook Triger Json:\n\n"condition": "ALERT", "message": "{symbol} approaching suport price {data_dict['support_price']}, suggesting market buy", "token": "{TRADINGVIEW_WEBHOOK_TOKEN}", "signature": "{token}"\n\n{reply_string}'''
     return send_msg(webhook_json, from_id)
+
+
+def tradingview_fmb_webhook_command(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    message = f"funding_market_buy {coin}"
+    return get_webhook_signature(message, from_id)
+
+
+def tradingview_fms_webhook_command(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    message = f"funding_market_sell {coin}"
+    return get_webhook_signature(message, from_id)
 
 
 def get_webhook_signature_coin(coin, from_id=TG_BOT_OWNER_ID):
