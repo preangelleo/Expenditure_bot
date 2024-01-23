@@ -53,7 +53,7 @@ def network_name_change(str_name: str):
     return str_name
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /buy_{coin} | /mtf_{coin}\n/limit_sell_{coin} | /limit_buy_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
+    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 
 def server_time_diff():
     PATH = '/api/v1/time'
