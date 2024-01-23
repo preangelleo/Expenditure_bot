@@ -3210,26 +3210,33 @@ def check_positions_counts():
 
 def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, account, amount FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, account, amount, usdt_value FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
     if df.empty: return send_msg(f"No {coin} positions in spot account or funding account", from_id)
     total_coin_in_position = df['amount'].sum()
     position_total_counts = df.shape[0]
     df_spot = df[df['account'] == 'spot']
     if not df_spot.empty: 
         total_coin_in_spot = df_spot['amount'].sum()
+        total_cost_in_spot = df_spot['usdt_value'].sum()
         position_spot_counts = df_spot.shape[0]
     else: 
-        total_coin_in_spot, position_spot_counts = 0, 0
+        total_coin_in_spot, position_spot_counts, total_cost_in_spot = 0, 0, 0
     df_funding = df[df['account'] == 'funding']
     if not df_funding.empty: 
         total_coin_in_funding = df_funding['amount'].sum()
+        total_cost_in_funding = df_funding['usdt_value'].sum()
         position_funding_counts = df_funding.shape[0]
-    else: total_coin_in_funding, position_funding_counts = 0, 0
+    else: total_coin_in_funding, position_funding_counts, total_cost_in_funding = 0, 0, 0
     reply_msg = f"{coin} positions:\n\nTotal ({position_total_counts}): {format_number(total_coin_in_position)}\nSpot ({position_spot_counts}): {format_number(total_coin_in_spot)}\nFunding ({position_funding_counts}): {format_number(total_coin_in_funding)}"
+    total_cost_usdt = total_cost_in_spot + total_cost_in_funding
+    position_avg_price = total_cost_usdt / total_coin_in_position if total_coin_in_position else 0
+    if total_cost_usdt and position_avg_price: reply_msg += f"\n\nTotal Cost: {format_number(total_cost_usdt)}\nAvg Price: {format_number(position_avg_price)}"
     avg_price = get_avg_price(coin)
     if avg_price: 
         current_value = float(total_coin_in_position) * float(avg_price['price'])
-        reply_msg += f"\nAvg Price: {format_number(avg_price['price'])}\nCurrent Value: {format_number(current_value)}"
+        profit_or_lost = current_value - total_cost_usdt
+        percentage_up_or_down = round(profit_or_lost / total_cost_usdt * 100, 2)
+        reply_msg += f"\n\nCurrent Value: {format_number(current_value)}\nCurrent Price: {format_number(avg_price['price'])}\n\nProfit/Lost: {format_number(profit_or_lost)}\nUp/Down: {percentage_up_or_down}%"
     reply_msg += f"\n\n{generate_bottom_msg(coin)}"
     if from_id: send_msg(reply_msg, from_id)
     return
