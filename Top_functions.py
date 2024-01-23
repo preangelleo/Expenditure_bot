@@ -1257,9 +1257,4 @@ def coinbase_market_buy_order(product_id, funds = '10000'):
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    # set_trading_parameters_default()
-    # set_target_profit_default(0.13)
-    # print(read_trading_parameters())
-    trading_bot_switch_off()
-    r = trading_bot_switch_status()
-    print(r)
+    reset_bot_starting_date(bot_starting_date = '2023-12-10')

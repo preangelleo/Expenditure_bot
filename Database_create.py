@@ -159,6 +159,22 @@ def set_daily_new_positions_limit(daily_new_positions_limit = 2):
     return True
 
 
+def reset_bot_starting_date(bot_starting_date = '2023-12-12'):
+    # convert bot_starting_date to date format
+    bot_starting_date = datetime.strptime(bot_starting_date, '%Y-%m-%d').date()
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # change bot_starting_date in trading_parameters table to given value
+    cursor.execute(f"UPDATE trading_parameters SET bot_starting_date = '{bot_starting_date}'")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(f"bot_starting_date = {bot_starting_date} inserted successfully!")
+    return True
+
+
 def read_daily_new_positions_limit():
     # Create a new session
     conn = get_db_connection()
