@@ -3293,7 +3293,7 @@ def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
     df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
-    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0') if TRADING_BOT_STATUS else df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
+    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
     if df_ticker.empty: return print("No top coin to buy")
     if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
     if not df_today.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_today['coin'])]
