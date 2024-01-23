@@ -27,8 +27,7 @@ def handle_socket_message(msg):
         coin = msg['a']
         delta = msg['d']
         add_or_subtract = 'added' if float(delta) > 0 else 'subtracted'
-        time_of_update = datetime.fromtimestamp(msg['E']/1000).strftime("%Y-%m-%d %H:%M")
-        alert_msg = f"MAIN (spot): {add_or_subtract} {format_number(delta)} {coin} \n{time_of_update}"
+        alert_msg = f"MAIN (spot): {add_or_subtract} {format_number(delta)} {coin}"
         send_msg(alert_msg, from_id)
 
     elif msg['e'] == 'executionReport':
