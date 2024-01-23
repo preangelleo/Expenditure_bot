@@ -587,8 +587,7 @@ def funding_main_transfer(coin:str, amount):
 def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try: amount = float(amount)
-    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', chat_id)
-
+    except: return send_msg(f'ERROR: Wrong amount: {amount}, please input a number.', chat_id)
     df = get_funding_asset()
     if not df.empty:
         df = df[df['asset'] == coin]
@@ -597,7 +596,7 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
             if balance >= amount: 
                 tranId = funding_main_transfer(coin, amount)
                 if tranId: 
-                    send_msg(f'Successfully transfered {format_number(amount)} {coin} from funding account to spot account.', chat_id)
+                    send_msg(f'FUNDING >> MAIN: {format_number(amount)} {coin}', chat_id)
                     time.sleep(0.5)
                     return tranId
             else: 
@@ -707,7 +706,7 @@ def main_funding_transfer(coin, amount):
 def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     try: amount = float(amount)
-    except: return send_msg(f'转账失败，您输入的转账数量: {amount} 不是数字。', from_id)
+    except: return send_msg(f'ERROR: Wrong amount: {amount}, please input a number.', from_id)
 
     df = get_user_asset()
     if not df.empty:
@@ -716,7 +715,7 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = main_funding_transfer(coin, amount)
-                if tranId: return send_msg(f"Successfully transfered {format_number(amount)} {coin} from spot account to funding account.", from_id)
+                if tranId: return send_msg(f"MAIN >> FUNDING: {format_number(amount)} {coin}", from_id)
             else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
