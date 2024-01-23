@@ -107,6 +107,7 @@ COMMANDS = [
     {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
     {"command": "help", "description": "Get help information"},
     {"command": "set_bot_menu", "description": "Set the bot's menu"},
+    {"command": "get_trading_parameters", "description": "Get the bot's trading parameters"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
     {"command": "deposit_check", "description": "Check the deposit history of the latest 24 hour"},
     {"command": "open_orders_list", "description": "Get the open orders list in Binance"},
@@ -630,6 +631,8 @@ BOT_COMMAND_DICT = {
     'gif': 'get_initial_funding',
     'sdn': 'set_daily_new',
     'rdn': 'read_daily_new',
+    'gtp': 'get_trading_parameters',
+    'tpu': 'get_trading_parameters',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

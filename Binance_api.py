@@ -55,6 +55,15 @@ def network_name_change(str_name: str):
 def generate_bottom_msg(coin):
     return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 
+
+def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
+    parameters_dict = read_trading_parameters()
+    # make a dict of parameters
+    parameters_dict = {key: value for key, value in parameters_dict.items() if key not in ['ID']}
+    reply_string = '\n'.join([f"{key}: {value}" for key, value in parameters_dict.items()])
+    return send_msg(reply_string, from_id)
+
+
 def server_time_diff():
     PATH = '/api/v1/time'
     params = None
