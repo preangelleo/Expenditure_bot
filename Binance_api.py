@@ -2462,10 +2462,10 @@ def check_today_profit_sum():
     df_profit = today_profit_sum()
     if df_profit.empty: return reply_dict
     df_profit = df_profit.groupby('coin').sum().reset_index()
+    # sort by profit
+    df_profit = df_profit.sort_values(by='profit', ascending=False)
     profit_coinlist = []
-    for coin in df_profit['coin']:
-        df_profit_coin = df_profit[df_profit['coin'] == coin]
-        profit_coinlist.append(f"/as_{coin}: {format_number(df_profit_coin['profit'].sum())} usdt")
+    for index, row in df_profit.iterrows(): profit_coinlist.append(f"/as_{row['coin']}: {format_number(row['profit'])}")
     profit_sum = df_profit['profit'].sum()
     reply_dict = {
         'profit_sum': profit_sum,
