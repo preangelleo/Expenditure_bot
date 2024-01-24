@@ -323,6 +323,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('dc_'): return get_deposit_history_by_hours(from_id, first_word.split('_')[-1])
         if first_word.startswith('tvb_'): return tradingview_fmb_webhook_command(first_word.split('_')[-1], from_id)
         if first_word.startswith('tvs_'): return tradingview_fms_webhook_command(first_word.split('_')[-1], from_id)
+        if first_word.startswith('repair_funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id, is_repair = True)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

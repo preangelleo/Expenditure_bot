@@ -3540,11 +3540,11 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     tranId = funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
     if not tranId: return
-    time.sleep(0.5)
+    time.sleep(1)
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
-    time.sleep(0.5)
+    time.sleep(1)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
@@ -3602,7 +3602,7 @@ def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
 
 
 # Define a function to reverse the process of binance_funding_buy_and_hold
-def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
+def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID, is_repair = False):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     df = read_position_table_account(0, coin, 'funding')
@@ -3611,11 +3611,12 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID):
     row = df.iloc[0]
     orderId_create = int(row['orderId_create'])
     amount = float(row['amount'])
-    transId = funding_main_transfer_with_check_and_send(coin, amount, from_id)
-    if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
-    time.sleep(0.5)
+    if not is_repair: 
+        transId = funding_main_transfer_with_check_and_send(coin, amount, from_id)
+        if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
+        time.sleep(1)
     data = binance_market_sell(coin, amount)
-    if not data: send_msg(f'Failed to do market sell for {coin}', from_id)
+    if not data: return send_msg(f'Failed to do market sell for {coin}\n/repair_funding_sell_{coin}', from_id)
     profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data)
     main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
     return profit
