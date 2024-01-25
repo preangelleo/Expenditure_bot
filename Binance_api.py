@@ -2821,16 +2821,12 @@ def binance_market_buy_quantity(coin, quantity):
     
 # define a function to switch on the trading bot and send a message to the user
 def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
-    current_status = trading_bot_switch_status()
-    if current_status: return True
     if trading_bot_switch_on(): return send_msg(f"Succeed to switch on the bot! \n\n{msg}", from_id)
     return send_msg(f"Failed to switch on the bot! \n\n{msg}", from_id)
 
 
 # define a function to switch off the trading bot and send a message to the user
 def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
-    current_status = trading_bot_switch_status()
-    if not current_status: return True
     if trading_bot_switch_off(): 
         close_postive_positions(from_id)
         binance_position_set_limit_sell(0.01, from_id, None, is_manual = 1)
