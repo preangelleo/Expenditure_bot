@@ -3343,6 +3343,7 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
 
 
 def coin_create_position(coin, message, from_id, is_cheaper = True):
+    if not trading_bot_switch_status(): return
     coin = coin.upper()
     if is_cheaper:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create FROM position_table WHERE coin = "{coin}"')).fetchall())
