@@ -3349,7 +3349,7 @@ def webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID):
 def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positive = True):
     head_count = 0
     coin = coin.upper()
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
     if df.empty: return
     df = df.sort_values(by='price_create', ascending=True)
     current_price = get_avg_price(coin)
@@ -3359,7 +3359,7 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     if is_positive:
         df = df[df['profit'] > 15]
         if df.empty: return
-    head_count = 1 if interval == '15' else 2 if interval == '60' else 4 if interval == '240' else 8 if interval == 'D' else 16 if interval == 'W' else 32 if interval == 'M' else head_count
+    head_count = 1 if interval == '15' else 2 if interval == '60' else 4 if interval == '240' else 6 if interval == 'D' else 8 if interval == 'W' else 10 if interval == 'M' else head_count
     if not head_count: return
     df = df.head(head_count) if head_count < df.shape[0] else df
     for i in range(df.shape[0]):
@@ -3372,20 +3372,18 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
 
 
 def coin_create_position(coin, message, from_id, is_cheaper = True):
-    if not trading_bot_switch_status(): return
+    price_create_target = 0
     coin = coin.upper()
     if is_cheaper:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
         if df.empty: return
-        # check if there's a position with is_closed = 0
         df_position = df[df['is_closed'] == 0]
-        if not df_position.empty: return print(f"There's a position with is_closed = 0 for {coin}, no need to create a new position")
-        history_avg_price = df['price_create'].mean()
-        history_avg_price = float(history_avg_price)
+        if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
+        else: price_create_target = float(df['price_close'].max()) * 0.8
         current_price = get_avg_price(coin)
         if not current_price: return print(f"Failed to get current price for {coin}")
         current_price = float(current_price['price'])
-        if current_price > history_avg_price: return print(f"{coin} current price: {current_price} > history_avg_price: {history_avg_price}")
+        if current_price > price_create_target: return print(f"{coin} current price: {current_price} > price_create_target: {price_create_target}")
     send_msg(message, from_id)
     return binance_funding_buy_and_hold(coin, from_id)
 
@@ -3399,7 +3397,7 @@ def coin_close_position(coin, message, from_id, is_positive = True):
     current_price = float(current_price['price'])
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
     if is_positive:
-        df = df[df['profit'] > 0]
+        df = df[df['profit'] > 15]
         if df.empty: return
     send_msg(message, from_id)
     for i in range(df.shape[0]):
