@@ -3346,7 +3346,7 @@ def coin_create_position(coin, message, from_id, is_cheaper = True):
     if not trading_bot_switch_status(): return
     coin = coin.upper()
     if is_cheaper:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create FROM position_table WHERE coin = "{coin}"')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
         if df.empty: return
         # check if there's a position with is_closed = 0
         df_position = df[df['is_closed'] == 0]
