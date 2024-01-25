@@ -3342,6 +3342,42 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     return binance_funding_buy_and_hold(coin, from_id)
 
 
+def webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID):
+    price_close = 0
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_close FROM position_table WHERE is_closed = 1 AND coin = "{coin}" ORDER BY time_close DESC LIMIT 1')).fetchall())
+    if not df.empty: price_close = df['price_close'].values[0]
+    current_price = get_avg_price(coin)
+    if not current_price: return
+    current_price = float(current_price['price'])
+    if current_price > price_close * (1 - down_step): return print(f"{coin} current price: {current_price} > price_close") 
+    return binance_funding_buy_and_hold(coin, from_id)
+
+
+def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positive = True):
+    head_count = 0
+    coin = coin.upper()
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
+    if df.empty: return
+    df = df.sort_values(by='price_create', ascending=True)
+    current_price = get_avg_price(coin)
+    if not current_price: return
+    current_price = float(current_price['price'])
+    df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
+    if is_positive:
+        df = df[df['profit'] > 0]
+        if df.empty: return
+    head_count = 1 if interval == '15' else 2 if interval == '60' else 4 if interval == '240' else 8 if interval == 'D' else 16 if interval == 'W' else 32 if interval == 'M' else head_count
+    if not head_count: return
+    df = df.head(head_count) if head_count < df.shape[0] else df
+    for i in range(df.shape[0]):
+        coin_df = df[i:i+1]
+        coin_with_highest_profit = coin_df['coin'].values[0]
+        orderId_create = int(coin_df['orderId_create'].values[0])
+        do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+        time.sleep(1)
+    return
+
+
 def coin_create_position(coin, message, from_id, is_cheaper = True):
     if not trading_bot_switch_status(): return
     coin = coin.upper()

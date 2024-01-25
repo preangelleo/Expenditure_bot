@@ -114,34 +114,25 @@ def handel_webhook_push_from_trading_view(token):
 
 
 def tradingview_webhook_handler(data):
-    '''{"condition": "ON", "message": "1234567", "token": "xxxxxxxxxxxxxx}'''
-    '''{"condition": "OFF", "message": "1234567", "token": "xxxxxxxxxxxxxx}'''
-    '''
-    bullishJson = '{"condition": "ON", "message": "KDJ future trend turning positive", "token": "WLlV70uyXTE01_Tcgu5KRw", "interval": "' + timeframe.period + '", "symbol": "' + syminfo.tickerid + '"}'
-    bearishJson = '{"condition": "OFF", "message": "KDJ future trend turning negative", "token": "WLlV70uyXTE01_Tcgu5KRw", "interval": "' + timeframe.period + '", "symbol": "' + syminfo.tickerid + '"}'
-    '''
     condition = data.get('condition', 'NONE')
     message = data.get('message', 'WEBHOOK')
     interval = data.get('interval', 'NONE')
     symbol = data.get('symbol', 'NONE')
-    '''
-    Webhook triger:
-    Condition: ON
-    Message: KDJ future trend turning positive
-    Interval: D
-    Symbol: BINANCE:WLDUSDT
-    Coin: BINANCE:WLD'''
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
 
-    send_msg(f"Webhook triger:\nCondition: {condition}\nMessage: {message}\nInterval: {interval}\nSymbol: {symbol}\nCoin: {coin}", TG_BOT_OWNER_ID)
+    send_msg(f"Webhook triger:\nCondition: {condition}\nInterval: {interval}\nCoin: {coin}", TG_BOT_OWNER_ID)
 
     if interval in ['D', 'W', 'M']: 
         if coin in ['BTC']:
             if condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
             elif condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
-        elif coin not in ['NONE', 'BTC', 'ETH']:
+        elif coin not in ['NONE', 'BTC', 'ETH', 'RSR', 'OGN']:
             if condition == 'ON': coin_create_position(coin, message, TG_BOT_OWNER_ID, is_cheaper = True)
             elif condition == 'OFF': coin_close_position(coin, message, TG_BOT_OWNER_ID, is_positive = True)
+    
+    if interval in ['15', '60', '240', 'D', 'W', 'M'] and coin in ['RSR', 'OGN']: 
+        if condition == 'ON': webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
+        elif condition == 'OFF': webhook_kdj_sell(coin, interval, from_id = TG_BOT_OWNER_ID, is_positive = True)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 
