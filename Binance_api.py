@@ -3335,14 +3335,17 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     return binance_funding_buy_and_hold(coin, from_id)
 
 
-def webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID):
+def webhook_kdj_buy(coin, down_step = 0.05, from_id = TG_BOT_OWNER_ID):
     price_create = 0
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create FROM position_table WHERE is_closed = 0 AND coin = "{coin}" ORDER BY time_create DESC LIMIT 1')).fetchall())
-    if not df.empty: price_create = df['price_create'].values[0]
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}" ORDER BY time_create DESC LIMIT 1')).fetchall())
+    if not df.empty: 
+        df_position = df[df['is_closed'] == 0]
+        if not df_position.empty:  price_create = float(df_position['price_create'].min()) * (1 - down_step)
+        else: price_create = float(df['price_close'].max()) * (1 - down_step)
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    if current_price > price_create * (1 - down_step): return print(f"{coin} current price: {current_price} > price_create") 
+    if current_price > price_create > 0: return print(f"{coin} current price: {current_price} > price_create") 
     return binance_funding_buy_and_hold(coin, from_id)
 
 
@@ -3376,14 +3379,14 @@ def coin_create_position(coin, message, from_id, is_cheaper = True):
     coin = coin.upper()
     if is_cheaper:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
-        if df.empty: return
-        df_position = df[df['is_closed'] == 0]
-        if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
-        else: price_create_target = float(df['price_close'].max()) * 0.8
-        current_price = get_avg_price(coin)
-        if not current_price: return print(f"Failed to get current price for {coin}")
-        current_price = float(current_price['price'])
-        if current_price > price_create_target: return print(f"{coin} current price: {current_price} > price_create_target: {price_create_target}")
+        if not df.empty:
+            df_position = df[df['is_closed'] == 0]
+            if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
+            else: price_create_target = float(df['price_close'].max()) * 0.8
+            current_price = get_avg_price(coin)
+            if not current_price: return print(f"Failed to get current price for {coin}")
+            current_price = float(current_price['price'])
+            if current_price > price_create_target > 0: return print(f"{coin} current price: {current_price} > price_create_target: {price_create_target}")
     send_msg(message, from_id)
     return binance_funding_buy_and_hold(coin, from_id)
 
