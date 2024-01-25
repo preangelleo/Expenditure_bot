@@ -119,11 +119,17 @@ def tradingview_webhook_handler(data):
 
     condition = data.get('condition', 'NONE')
     message = data.get('message', 'WEBHOOK')
+    interval = data.get('interval', 'NONE')
+    symbol = data.get('symbol', 'NONE')
+    coin = symbol.replace('USDT', '').replace('USD', '')
 
-    if condition in ['ON', 'OFF']: 
-
-        if condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        elif condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+    if interval in ['1d', '1w', '1M']: 
+        if coin in ['BTC']:
+            if condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
+            elif condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+        else:
+            if condition == 'ON': coin_create_position(coin, message, TG_BOT_OWNER_ID, is_cheaper = True)
+            elif condition == 'OFF': coin_close_position(coin, message, TG_BOT_OWNER_ID, is_positive = True)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 

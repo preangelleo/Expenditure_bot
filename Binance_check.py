@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     try: binance_today_top_coin()
     except: pass
-
+    
     try: check_coin_position_in_funding_account(coin = 'RSR', amount_target = 146652243, down_step = 0.1, from_id=TG_BOT_OWNER_ID)
     except: pass
 

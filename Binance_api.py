@@ -597,7 +597,7 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
                 tranId = funding_main_transfer(coin, amount)
                 if tranId: 
                     send_msg(f'FUNDING >> MAIN: {format_number(amount)} {coin}', chat_id)
-                    time.sleep(0.5)
+                    time.sleep(1)
                     return tranId
             else: 
                 send_msg(f"Failed to transfer {format_number(amount)} {coin} from funding account to spot account, because the balance of {coin} in funding account is: {format_number(balance)}", chat_id)
@@ -715,7 +715,9 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
             balance = float(df['free'].values[0])
             if balance >= amount: 
                 tranId = main_funding_transfer(coin, amount)
-                if tranId: return send_msg(f"MAIN >> FUNDING: {format_number(amount)} {coin}", from_id)
+                if tranId: 
+                    time.sleep(1)
+                    return send_msg(f"MAIN >> FUNDING: {format_number(amount)} {coin}", from_id)
             else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
@@ -1447,7 +1449,7 @@ def binance_cancel_order_by_orderId(coin: str, orderId):
     r = requests.delete(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(0.5)
+        time.sleep(1)
         return data
     else: 
         print(r.json())
@@ -1920,7 +1922,7 @@ def binance_market_buy(coin, value):
     r = requests.post(url, headers=BINANCE_HEADERS, params=params)
     if r.status_code == 200:
         data = r.json()
-        time.sleep(0.5)
+        time.sleep(1)
         return data
     else: 
         print(r.reason)
@@ -3340,6 +3342,41 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     return binance_funding_buy_and_hold(coin, from_id)
 
 
+def coin_create_position(coin, message, from_id, is_cheaper = True):
+    coin = coin.upper()
+    if is_cheaper:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE coin = "{coin}" AND account = "funding"')).fetchall())
+        if df.empty: return
+        history_avg_price = df['price_create'].mean()
+        history_avg_price = float(history_avg_price)
+        current_price = get_avg_price(coin)
+        if not current_price: return
+        current_price = float(current_price['price'])
+        if current_price > history_avg_price: return
+    send_msg(message, from_id)
+    return binance_funding_buy_and_hold(coin, from_id)
+
+
+def coin_close_position(coin, message, from_id, is_positive = True):
+    coin = coin.upper()
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
+    if df.empty: return
+    current_price = get_avg_price(coin)
+    if not current_price: return
+    current_price = float(current_price['price'])
+    df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
+    if is_positive:
+        df = df[df['profit'] > 0]
+        if df.empty: return
+    send_msg(message, from_id)
+    for i in range(df.shape[0]):
+        coin_df = df[i:i+1]
+        coin_with_highest_profit = coin_df['coin'].values[0]
+        orderId_create = int(coin_df['orderId_create'].values[0])
+        do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    return
+
+
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
     global CMC_NO_DATA
     with engine.connect() as connection:
@@ -3540,11 +3577,9 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin if not coin.endswith('USDT') else coin[:-4]
     tranId = funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
     if not tranId: return
-    time.sleep(1)
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
-    time.sleep(1)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
@@ -3563,7 +3598,6 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID):
         orderId_close = int(row['orderId_close'])
         if orderId_close: 
             binance_cancel_order_by_orderId(coin, orderId_close)
-            time.sleep(0.5)
         if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
         switch_spot_to_funding(orderId_create)
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
@@ -3614,7 +3648,6 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID, is_repair = False):
     if not is_repair: 
         transId = funding_main_transfer_with_check_and_send(coin, amount, from_id)
         if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
-        time.sleep(1)
     data = binance_market_sell(coin, amount)
     if not data: return send_msg(f'Failed to do market sell for {coin}\n/repair_funding_sell_{coin}', from_id)
     profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data)
