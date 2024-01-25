@@ -127,7 +127,7 @@ def tradingview_webhook_handler(data):
         if coin in ['BTC']:
             if condition == 'ON': webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
             elif condition == 'OFF': webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
-        else:
+        elif coin not in ['NONE', 'BTC', 'ETH']:
             if condition == 'ON': coin_create_position(coin, message, TG_BOT_OWNER_ID, is_cheaper = True)
             elif condition == 'OFF': coin_close_position(coin, message, TG_BOT_OWNER_ID, is_positive = True)
 
