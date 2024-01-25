@@ -3345,7 +3345,7 @@ def webhook_kdj_buy(coin, down_step = 0.05, from_id = TG_BOT_OWNER_ID):
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    if current_price > price_create > 0: return print(f"{coin} current price: {current_price} > price_create") 
+    if current_price > price_create > 0: return send_msg(f"{coin} current price: {format_number(current_price)} > price_create {format_number(price_create)}", from_id) 
     return binance_funding_buy_and_hold(coin, from_id)
 
 
@@ -3386,7 +3386,7 @@ def coin_create_position(coin, message, from_id, is_cheaper = True):
             current_price = get_avg_price(coin)
             if not current_price: return print(f"Failed to get current price for {coin}")
             current_price = float(current_price['price'])
-            if current_price > price_create_target > 0: return print(f"{coin} current price: {current_price} > price_create_target: {price_create_target}")
+            if current_price > price_create_target > 0: return send_msg(f"{coin} current price: {format_number(current_price)} > price_create_target: {format_number(price_create_target)}", from_id)
     send_msg(message, from_id)
     return binance_funding_buy_and_hold(coin, from_id)
 
