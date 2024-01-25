@@ -3348,12 +3348,15 @@ def coin_create_position(coin, message, from_id, is_cheaper = True):
     if is_cheaper:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create FROM position_table WHERE coin = "{coin}"')).fetchall())
         if df.empty: return
+        # check if there's a position with is_closed = 0
+        df_position = df[df['is_closed'] == 0]
+        if not df_position.empty: return print(f"There's a position with is_closed = 0 for {coin}, no need to create a new position")
         history_avg_price = df['price_create'].mean()
         history_avg_price = float(history_avg_price)
         current_price = get_avg_price(coin)
-        if not current_price: return
+        if not current_price: return print(f"Failed to get current price for {coin}")
         current_price = float(current_price['price'])
-        if current_price > history_avg_price: return
+        if current_price > history_avg_price: return print(f"{coin} current price: {current_price} > history_avg_price: {history_avg_price}")
     send_msg(message, from_id)
     return binance_funding_buy_and_hold(coin, from_id)
 

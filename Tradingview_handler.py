@@ -116,12 +116,17 @@ def handel_webhook_push_from_trading_view(token):
 def tradingview_webhook_handler(data):
     '''{"condition": "ON", "message": "1234567", "token": "xxxxxxxxxxxxxx}'''
     '''{"condition": "OFF", "message": "1234567", "token": "xxxxxxxxxxxxxx}'''
-
+    '''
+    bullishJson = '{"condition": "ON", "message": "KDJ future trend turning positive", "token": "WLlV70uyXTE01_Tcgu5KRw", "interval": "' + timeframe.period + '", "symbol": "' + syminfo.tickerid + '"}'
+    bearishJson = '{"condition": "OFF", "message": "KDJ future trend turning negative", "token": "WLlV70uyXTE01_Tcgu5KRw", "interval": "' + timeframe.period + '", "symbol": "' + syminfo.tickerid + '"}'
+    '''
     condition = data.get('condition', 'NONE')
     message = data.get('message', 'WEBHOOK')
     interval = data.get('interval', 'NONE')
     symbol = data.get('symbol', 'NONE')
     coin = symbol.replace('USDT', '').replace('USD', '')
+
+    send_msg(f"Webhook triger:\nCondition: {condition}\nMessage: {message}\nInterval: {interval}\nSymbol: {symbol}\nCoin: {coin}", TG_BOT_OWNER_ID)
 
     if interval in ['1d', '1w', '1M']: 
         if coin in ['BTC']:
