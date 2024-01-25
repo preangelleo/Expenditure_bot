@@ -3343,13 +3343,13 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
 
 
 def webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID):
-    price_close = 0
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_close FROM position_table WHERE is_closed = 1 AND coin = "{coin}" ORDER BY time_close DESC LIMIT 1')).fetchall())
-    if not df.empty: price_close = df['price_close'].values[0]
+    price_create = 0
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create FROM position_table WHERE is_closed = 0 AND coin = "{coin}" ORDER BY time_create DESC LIMIT 1')).fetchall())
+    if not df.empty: price_create = df['price_create'].values[0]
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    if current_price > price_close * (1 - down_step): return print(f"{coin} current price: {current_price} > price_close") 
+    if current_price > price_create * (1 - down_step): return print(f"{coin} current price: {current_price} > price_create") 
     return binance_funding_buy_and_hold(coin, from_id)
 
 
@@ -3364,7 +3364,7 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     current_price = float(current_price['price'])
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
     if is_positive:
-        df = df[df['profit'] > 0]
+        df = df[df['profit'] > 15]
         if df.empty: return
     head_count = 1 if interval == '15' else 2 if interval == '60' else 4 if interval == '240' else 8 if interval == 'D' else 16 if interval == 'W' else 32 if interval == 'M' else head_count
     if not head_count: return
