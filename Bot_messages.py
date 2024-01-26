@@ -41,6 +41,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'read_bot_status': read_trading_bot_status,
     'close_postive_positions': close_postive_positions,
     'read_target_profit': read_target_profit_default,
+    'read_kdj_coinlist': read_kdj_coinlist,
     'open_orders_list': get_open_orders_list,
     'cancel_all_orders': binance_cancel_all_orders,
     'read_positions_limit': read_positions_limit,

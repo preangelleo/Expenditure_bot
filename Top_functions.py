@@ -226,7 +226,7 @@ def read_kdj_coinlist(from_id=None):
     except: df = pd.DataFrame()
     if df.empty: return 
     coinlist = df['coin'].values.tolist()
-    if from_id: send_msg(f"Current kdj coinlist:\n{coinlist}", from_id)
+    if from_id: send_msg(f"KDJ coinlist ({len(coinlist)}):\n{', '.join(coinlist)}", from_id)
     return coinlist
 
 def format_number(num):
