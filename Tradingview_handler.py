@@ -126,7 +126,8 @@ def tradingview_webhook_handler(data):
         elif condition == 'OFF' and current_status: return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if interval in ['60', '240', 'D', 'W', 'M'] and coin not in ['NONE', 'BTC']:
-        if interval in ['D', 'W', 'M']: send_msg(f"KDJ: {condition} / {interval} /as_{coin}", TG_BOT_OWNER_ID)
+        if coin in ['EH', 'HSAI']: send_email(f"{coin} {interval}_KDJ turned {condition}", f"{coin} {interval}_KDJ turned {condition}", GMAIL_ADDRESS_MAIN)
+        else: send_msg(f"/as_{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
 
         if condition == 'ON' and current_status: 
             if coin in ['RSR', 'OGN']: return webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
