@@ -216,6 +216,7 @@ def kdj_condition(coin, from_id=None):
     condition = 'ON' if d and (w or m) else 'OFF'
     if from_id: 
         if condition == 'ON': send_msg(f"/buy_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
+        else: send_msg(f"/as_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
     return True if condition == 'ON' else False
 
 
