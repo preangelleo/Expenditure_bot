@@ -2922,17 +2922,6 @@ def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
     if get_token_info(coin, from_id): return calculate_missed_profit_for_coin(coin, from_id)
 
 
-# Define a function to read hot_coin_history table and get today's hot coin list
-def get_hot_coin_list_of_today():
-    hotcoin_list = []
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM hot_coins_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
-    except: return hotcoin_list
-    hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
-    return hotcoin_list
-
-
 def calculate_hot_coin_price_change(from_id=None):
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     try: 
@@ -3135,8 +3124,8 @@ def remove_holding_coin(coin, from_id=TG_BOT_OWNER_ID):
 
 def get_holding_list(from_id=TG_BOT_OWNER_ID):
     holding_list = read_holding_list()
-    if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n\n/add_holding_RSR | /remove_holding_RSR", from_id)
-    return send_msg(f"Current holding list ({len(holding_list)}): \n\n{', '.join(holding_list)}", from_id)
+    if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n/hold_RSR", from_id)
+    return send_msg(f"Current holding list ({len(holding_list)}): \n{', '.join(holding_list)}", from_id)
 
 
 def update_get_token_total_supply():
@@ -3420,7 +3409,6 @@ def coin_close_position(coin, from_id, is_positive = True):
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    broadcast_text(f"{coin} ({format_number(current_price)}) position is good to close.")
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
     if is_positive:
         df = df[df['profit'] > 15]
@@ -3430,7 +3418,24 @@ def coin_close_position(coin, from_id, is_positive = True):
         coin_with_highest_profit = coin_df['coin'].values[0]
         orderId_create = int(coin_df['orderId_create'].values[0])
         do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    latest_price = get_hotcoin_latest(coin)
+    if latest_price:
+        price_diff = current_price - latest_price
+        if price_diff > 0:
+            price_diff_percentage = round(price_diff / latest_price * 100, 2)
+            broadcast_text(f"{coin} ({format_number(current_price)}) position is good to close. Price went up {format_number(price_diff_percentage)}% since reported last time at {format_number(latest_price)} usdt/{coin.lower()}")
     return
+
+
+# Define a function to read hot_coin_history table and get today's hot coin list
+def get_hot_coin_list_of_today():
+    hotcoin_list = []
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM hot_coins_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
+    except: return hotcoin_list
+    hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
+    return hotcoin_list
 
 
 def today_hotcoin_check_save(coin, price):
@@ -3443,6 +3448,17 @@ def today_hotcoin_check_save(coin, price):
         }
     data_to_table(hot_coin_history, 'hot_coins_history')
     return broadcast_text(f"{coin} ({format_number(price)}) is good to long.")
+
+
+# Define a function to read hot_coin_history table and get today's hot coin list
+def get_hotcoin_latest(coin):
+    coin = coin.upper()
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'''SELECT coin, price, date FROM hot_coins_history WHERE coin = "{coin}" ORDER BY date DESC LIMIT 1''')).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return 0
+    latest_price_reported = df['price'].values[0]
+    return float(latest_price_reported)
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):

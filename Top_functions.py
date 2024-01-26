@@ -203,21 +203,32 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     else: data_to_table({'coin': coin.upper(), 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
     condition = 'ON' if d and (w or m) else 'OFF'
     if from_id: send_msg(f"{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
-    return True if condition == 'ON' else False
+    score = d + w + m
+    long = True if score == 3 else False
+    short = True if score == 0 else False
+    return {'long': long, 'short': short, 'score': score, 'condition': True if condition == 'ON' else False}
 
 
 def kdj_condition(coin, from_id=None):
+    coin = coin.upper()
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin.upper()}'")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin}'")).fetchall())
     except: df = pd.DataFrame()
-    if df.empty: return send_msg(f"No kdj parameter for {coin.upper()} in the table.", from_id)
+    if df.empty: return send_msg(f"No KDJ parameter for {coin} in the table. Use below command to initiate KDJ parameter for {coin}:\n\n/KPI {coin} 1 0 1", from_id)
     d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
+    d = int(d) if d else 0
+    w = int(w) if w else 0
+    m = int(m) if m else 0
     date_string = df['date_string'].values[0]
     condition = 'ON' if d and (w or m) else 'OFF'
+    score = d + w + m
+    long = True if score == 3 else False
+    short = True if score == 0 else False
     if from_id: 
-        if condition == 'ON': send_msg(f"/buy_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
-        else: send_msg(f"/as_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
-    return True if condition == 'ON' else False
+        if long: send_msg(f"/buy_{coin} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
+        else: send_msg(f"/as_{coin} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
+    return {'long': long, 'short': short, 'score': score, 'condition': True if condition == 'ON' else False}
+
 
 # define a function to read out the coinlist from kdj_parameter
 def read_kdj_coinlist(from_id=None):
@@ -228,6 +239,7 @@ def read_kdj_coinlist(from_id=None):
     coinlist = df['coin'].values.tolist()
     if from_id: send_msg(f"KDJ coinlist ({len(coinlist)}):\n{', '.join(coinlist)}", from_id)
     return coinlist
+
 
 def format_number(num):
     if not num:
