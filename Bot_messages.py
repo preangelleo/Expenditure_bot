@@ -331,6 +331,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('add_holding_'): return add_holding_coin(first_word.split('_')[-1], from_id)
         if first_word.startswith('hold_'): return add_holding_coin(first_word.split('_')[-1], from_id)
         if first_word.startswith('remove_holding_'): return remove_holding_coin(first_word.split('_')[-1], from_id)
+        if first_word.startswith('kdj_'): return kdj_condition(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word
