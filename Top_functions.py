@@ -198,8 +198,9 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     w = 1 if dwm_dict.get('w', None) else w
     m = 1 if dwm_dict.get('m', None) else m
     date_string = datetime.now().strftime("%Y-%m-%d")
-    # Update the table
-    with engine.connect() as connection: connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin.upper()}'"))
+    if not df.empty:
+        with engine.connect() as connection: connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin.upper()}'"))
+    else: data_to_table({'coin': coin.upper(), 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
     condition = 'ON' if d and (w or m) else 'OFF'
     if from_id: send_msg(f"{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
     return True if condition == 'ON' else False
