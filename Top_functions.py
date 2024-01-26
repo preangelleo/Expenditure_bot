@@ -194,9 +194,9 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     except: df = pd.DataFrame()
     if df.empty: d, w, m = 0, 0, 0
     else: d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
-    d = 1 if dwm_dict.get('d', None) else d
-    w = 1 if dwm_dict.get('w', None) else w
-    m = 1 if dwm_dict.get('m', None) else m
+    d = int(dwm_dict['d']) if 'd' in dwm_dict else d
+    w = int(dwm_dict['w']) if 'w' in dwm_dict else w
+    m = int(dwm_dict['m']) if 'm' in dwm_dict else m
     date_string = datetime.now().strftime("%Y-%m-%d")
     if not df.empty:
         with engine.connect() as connection: connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin.upper()}'"))
