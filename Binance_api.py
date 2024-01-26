@@ -3374,35 +3374,35 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     return
 
 
-def coin_create_position(coin, message, from_id, is_cheaper = True):
+def coin_create_position(coin, from_id, is_cheaper = True):
     price_create_target = 0
     coin = coin.upper()
+    current_price = get_avg_price(coin)
+    if not current_price: return print(f"Failed to get current price for {coin}")
+    current_price = float(current_price['price'])
+    broadcast_text(f"{coin} ({format_number(current_price)}) is good to long.")
     if is_cheaper:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
         if not df.empty:
             df_position = df[df['is_closed'] == 0]
             if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
             else: price_create_target = float(df['price_close'].max()) * 0.8
-            current_price = get_avg_price(coin)
-            if not current_price: return print(f"Failed to get current price for {coin}")
-            current_price = float(current_price['price'])
             if current_price > price_create_target > 0: return send_msg(f"{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
-    send_msg(message, from_id)
     return binance_funding_buy_and_hold(coin, from_id)
 
 
-def coin_close_position(coin, message, from_id, is_positive = True):
+def coin_close_position(coin, from_id, is_positive = True):
     coin = coin.upper()
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
     if df.empty: return
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
+    broadcast_text(f"{coin} ({format_number(current_price)}) position is good to close.")
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
     if is_positive:
         df = df[df['profit'] > 15]
         if df.empty: return
-    send_msg(message, from_id)
     for i in range(df.shape[0]):
         coin_df = df[i:i+1]
         coin_with_highest_profit = coin_df['coin'].values[0]

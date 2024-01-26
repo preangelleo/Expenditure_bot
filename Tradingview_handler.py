@@ -126,16 +126,15 @@ def tradingview_webhook_handler(data):
         elif condition == 'OFF' and current_status: return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if interval in ['60', '240', 'D', 'W', 'M'] and coin not in ['NONE', 'BTC']:
-        if coin in ['EH', 'HSAI']: send_email(f"{coin} {interval}_KDJ turned {condition}", f"{coin} {interval}_KDJ turned {condition}", GMAIL_ADDRESS_MAIN)
-        else: send_msg(f"/as_{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
+        if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
 
         if condition == 'ON' and current_status: 
             if coin in ['RSR', 'OGN']: return webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
-            else: return coin_create_position(coin, message, TG_BOT_OWNER_ID, is_cheaper = True)
+            else: return coin_create_position(coin, TG_BOT_OWNER_ID, is_cheaper = True)
 
         elif condition == 'OFF' and (not current_status or interval in ['W', 'M']): 
             if coin in ['RSR', 'OGN']: return webhook_kdj_sell(coin, interval, from_id = TG_BOT_OWNER_ID, is_positive = True)
-            else: return coin_close_position(coin, message, TG_BOT_OWNER_ID, is_positive = True)
+            else: return coin_close_position(coin, TG_BOT_OWNER_ID, is_positive = True)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 

@@ -868,7 +868,7 @@ def get_remote_db_connection():
     return remote_engine
 
 
-def get_stock_info(symbol = None, from_id = TG_BOT_OWNER_ID):
+def get_stock_info(symbol = None, from_id = None):
     if not symbol: return
 
     symbol = symbol.upper()
@@ -895,7 +895,8 @@ def get_stock_info(symbol = None, from_id = TG_BOT_OWNER_ID):
 
     # make a string of the info dictionary
     info_str = '\n'.join([f"{k}: {v}" for k, v in info.items()])
-    return send_msg(info_str, from_id)
+    if from_id: return send_msg(info_str, from_id)
+    else: return info_str
 
 
 # check eth balance of a given address and convert the balance from wei to eth
