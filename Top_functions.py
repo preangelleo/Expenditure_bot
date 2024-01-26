@@ -214,7 +214,8 @@ def kdj_condition(coin, from_id=None):
     d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
     date_string = df['date_string'].values[0]
     condition = 'ON' if d and (w or m) else 'OFF'
-    if from_id: send_msg(f"{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
+    if from_id: 
+        if condition == 'ON': send_msg(f"/buy_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
     return True if condition == 'ON' else False
 
 

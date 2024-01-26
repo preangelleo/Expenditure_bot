@@ -54,7 +54,7 @@ def network_name_change(str_name: str):
 
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
+    return f"/as_{coin} | /cpa_{coin} | /kdj_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 
 
 def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
