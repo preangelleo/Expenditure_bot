@@ -1966,8 +1966,6 @@ def instert_position_table(data, account = 'spot'):
 def do_market_buy(coin: str, value):
     print(f"Calling do_market_buy for {coin} with checksize: {value} usdt")
     coin = coin.upper()
-    reply_msg = ''
-    # check USDT balance see if it is bigger than value
     counts = check_positions_counts()
     if counts >= POSITIONS_LIMIT: return f'Current spot positions + limit buy orders counts ({counts}) is full.'
     data = binance_market_buy(coin, value)
@@ -2503,7 +2501,7 @@ def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
     df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
     df_balance['duration'] = (int(time.time() * 1000) - df_balance['time_create']) / 1000 / 60 / 60
     df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_duration = df_balance[df_balance['duration'] >= 24].copy()
+    df_duration = df_balance[df_balance['duration'] >= 72].copy()
     for i in range(df_duration.shape[0]): 
         current_target_profit = df_duration.iloc[i]['target_profit']
         if current_target_profit == 0.01 and not df_duration.iloc[i]['is_manual']: continue
@@ -2527,7 +2525,7 @@ def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
         profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
         if profit_take >= profit_take_target: break
     if profit_take >= profit_take_target:
-        df_loss = df_balance[(df_balance['profit'] <= 1) & (df_balance['duration'] < 24)].copy()
+        df_loss = df_balance[(df_balance['profit'] <= 1) & (df_balance['duration'] < 72)].copy()
         for i in range(df_loss.shape[0]): 
             current_target_profit = df_loss.iloc[i]['target_profit']
             if current_target_profit == 0.01 and not df_loss.iloc[i]['is_manual']: continue
@@ -2934,12 +2932,13 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
 def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
     if get_token_info(coin, from_id): return calculate_missed_profit_for_coin(coin, from_id)
 
+
 # Define a function to read hot_coin_history table and get today's hot coin list
 def get_hot_coin_list_of_today():
     hotcoin_list = []
     today_date = datetime.now().strftime('%Y-%m-%d')
     try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM hot_coins_history WHERE date LIKE :date ORDER BY date DESC LIMIT 10'), {'date': f"{today_date}%"}).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM hot_coins_history WHERE date LIKE :date'), {'date': f"{today_date}%"}).fetchall())
     except: return hotcoin_list
     hotcoin_list = df['coin'].values.tolist() if not df.empty else hotcoin_list
     return hotcoin_list
@@ -3254,6 +3253,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     if from_id: send_msg(reply_msg, from_id)
     return
 
+
 # from position_table table get a given coin's higest close price
 def get_highest_close_price(coin):
     coin = coin.upper()
@@ -3263,6 +3263,16 @@ def get_highest_close_price(coin):
     if df.empty: return 0
     highest_close_price = df['price_close'].max()
     return float(highest_close_price)
+
+
+def is_spot_full():
+    with engine.connect() as connection: 
+        df_in_position = pd.DataFrame(connection.execute(text('''SELECT coin FROM position_table WHERE is_closed = 0 AND account == "spot"''')).fetchall())
+        if df_in_position.shape[0] >= POSITIONS_LIMIT: return True
+        df_orderId = get_open_orders_list(None, 'BUY')
+        if df_orderId.shape[0] + df_in_position.shape[0] >= POSITIONS_LIMIT: return True
+    return False
+
 
 def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
     position_created_today_spot = 0
@@ -3380,7 +3390,7 @@ def coin_create_position(coin, from_id, is_cheaper = True):
     current_price = get_avg_price(coin)
     if not current_price: return print(f"Failed to get current price for {coin}")
     current_price = float(current_price['price'])
-    broadcast_text(f"{coin} ({format_number(current_price)}) is good to long.")
+    today_hotcoin_check_save(coin, current_price)
     if is_cheaper:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
         if not df.empty:
@@ -3388,7 +3398,8 @@ def coin_create_position(coin, from_id, is_cheaper = True):
             if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
             else: price_create_target = float(df['price_close'].max()) * 0.8
             if current_price > price_create_target > 0: return send_msg(f"{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
-    return binance_funding_buy_and_hold(coin, from_id)
+    if is_spot_full(): return binance_funding_buy_and_hold(coin, from_id)
+    return bot_market_buy_one_unit(coin, from_id)
 
 
 def coin_close_position(coin, from_id, is_positive = True):
@@ -3409,6 +3420,18 @@ def coin_close_position(coin, from_id, is_positive = True):
         orderId_create = int(coin_df['orderId_create'].values[0])
         do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
     return
+
+
+def today_hotcoin_check_save(coin, price):
+    hotcoin_list = get_hot_coin_list_of_today()
+    if coin in hotcoin_list: return
+    hot_coin_history = {
+        'coin': coin, 
+        'price': price, 
+        'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+    data_to_table(hot_coin_history, 'hot_coins_history')
+    return broadcast_text(f"{coin} ({format_number(price)}) is good to long.")
 
 
 def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingbot_status = False):
