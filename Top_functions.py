@@ -219,6 +219,15 @@ def kdj_condition(coin, from_id=None):
         else: send_msg(f"/as_{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
     return True if condition == 'ON' else False
 
+# define a function to read out the coinlist from kdj_parameter
+def read_kdj_coinlist(from_id=None):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return 
+    coinlist = df['coin'].values.tolist()
+    if from_id: send_msg(f"Current kdj coinlist:\n{coinlist}", from_id)
+    return coinlist
 
 def format_number(num):
     if not num:
