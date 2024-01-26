@@ -129,7 +129,7 @@ def tradingview_webhook_handler(data):
         if result.get('condition', False): return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
         elif result.get('short', False): return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
-    if interval in ['60', '240', 'D', 'W', 'M'] and coin not in ['NONE', 'BTC']:
+    elif coin not in ['NONE', 'BTC']:
         if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
         
         bot_current_status = trading_bot_switch_status()
