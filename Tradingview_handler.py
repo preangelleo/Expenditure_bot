@@ -125,6 +125,7 @@ def tradingview_webhook_handler(data):
     dwm_dict = {'d': v} if interval == 'D' else {'w': v} if interval == 'W' else {'m': v} if interval == 'M' else {}
     
     if interval in ['D', 'W', 'M'] and coin in ['BTC']:
+        if not dwm_dict: return
         current_status = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
         if current_status: return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
         else: return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
