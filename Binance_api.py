@@ -2656,18 +2656,6 @@ def binance_position_set_limit_sell(target_profit=None, chat_id=TG_BOT_OWNER_ID,
     return
 
 
-# Define a function to make a dict to dataframe and create or append to a given table name
-def data_to_table(data, table_name, if_exists='append'):
-    if type(data) != dict: return
-    df = pd.DataFrame(data, index=[0])
-    if df.empty: return
-    try: 
-        with engine.connect() as connection: df.to_sql(table_name, connection, if_exists=if_exists, index=False)
-        return True
-    except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
-    return
-
-
 # difne a function to update net_profit_daily_record, alter NetProfit value to input value for a given date(string like 2023-12-10)
 def update_net_profit_daily_record(date, net_profit):
     with engine.connect() as connection:

@@ -152,6 +152,58 @@ def get_daily_new_positions_limit(from_id = TG_BOT_OWNER_ID):
     return send_msg(f"Current daily new positions limit: {read_daily_new_positions_limit()}", from_id)
 
 
+# Define a function to make a dict to dataframe and create or append to a given table name
+def data_to_table(data, table_name, if_exists='append'):
+    if type(data) != dict: return
+    df = pd.DataFrame(data, index=[0])
+    if df.empty: return
+    try: 
+        with engine.connect() as connection: df.to_sql(table_name, connection, if_exists=if_exists, index=False)
+        return True
+    except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: {table_name}\nData:\n\n{data}")
+    return
+
+
+def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID):
+    data = {
+        'coin': coin.upper(),
+        'd': 1 if d else 0,
+        'w': 1 if w else 0,
+        'm': 1 if m else 0,
+        'date_string': datetime.now().strftime("%Y-%m-%d")
+    }
+    return data_to_table(data, 'kdj_parameter')
+
+
+def reset_kdj_parameter(coin, dwm_dict = {}, from_id=TG_BOT_OWNER_ID):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin.upper()}'")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: d, w, m = 0, 0, 0
+    else: d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
+    d = 1 if dwm_dict.get('d', None) else d
+    w = 1 if dwm_dict.get('w', None) else w
+    m = 1 if dwm_dict.get('m', None) else m
+    date_string = datetime.now().strftime("%Y-%m-%d")
+    # Update the table
+    with engine.connect() as connection: connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin.upper()}'"))
+    condition = 'ON' if d and (w or m) else 'OFF'
+    if from_id: send_msg(f"{coin.upper()} condition: {condition}\nLast update: {date_string}", from_id)
+    return True if condition == 'ON' else False
+
+
+def kdj_condition(coin, from_id=None):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin.upper()}'")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"No kdj parameter for {coin.upper()} in the table.", from_id)
+    d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
+    date_string = df['date_string'].values[0]
+    condition = 'ON' if d and (w or m) else 'OFF'
+    if from_id: send_msg(f"{coin.upper()} condition: {condition}\nLast update: {date_string}", from_id)
+    return True if condition == 'ON' else False
+
+
 def format_number(num):
     if not num:
         return 0
@@ -1260,3 +1312,4 @@ def coinbase_market_buy_order(product_id, funds = '10000'):
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
     reset_bot_starting_date(bot_starting_date = '2023-12-10')
+    initial_kdj_parameter('BTC', d=1, w=0, m=1, from_id=TG_BOT_OWNER_ID)
