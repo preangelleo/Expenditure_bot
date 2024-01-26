@@ -118,7 +118,7 @@ COMMANDS = [
     {"command": "get_white_list", "description": "Get the white list"},
     {"command": "add_white_list", "description": "Add a coin to the white list"},
     {"command": "remove_white_list", "description": "Remove a coin from the white list"},
-    {"command": "get_holding_coin", "description": "Get the holding coin list"},
+    {"command": "get_holding_list", "description": "Get the holding coin list"},
     {"command": "add_holding_coin", "description": "Add a coin to the holding coin list"},
     {"command": "remove_holding_coin", "description": "Remove a coin from the holding coin list"},
     {"command": "get_coin_info", "description": "Get the information of a given coin symbol"},

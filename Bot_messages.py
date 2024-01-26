@@ -328,6 +328,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('tvs_'): return tradingview_fms_webhook_command(first_word.split('_')[-1], from_id)
         if first_word.startswith('repair_funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id, is_repair = True)
         if first_word.startswith('add_holding_'): return add_holding_coin(first_word.split('_')[-1], from_id)
+        if first_word.startswith('hold_'): return add_holding_coin(first_word.split('_')[-1], from_id)
         if first_word.startswith('remove_holding_'): return remove_holding_coin(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):

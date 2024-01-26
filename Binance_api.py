@@ -52,6 +52,7 @@ def network_name_change(str_name: str):
     str_name = 'ETH' if str_name.startswith("ERC") else 'TRX' if str_name.startswith("TRC") else 'BSC' if str_name.startswith("BEP") else str_name
     return str_name
 
+
 def generate_bottom_msg(coin):
     return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
 

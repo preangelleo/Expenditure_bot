@@ -298,8 +298,9 @@ def get_token_info(coin: str, from_id=TG_BOT_OWNER_ID):
         'Turnover_Ratio': 'N/A',
         '24H_Fluctuation': f"{token_info['quote']['USD']['percent_change_24h']:.2f}%",
         'Current_Time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'add_ignorelist': f"/ignore_{coin.upper()}",
-        'add_whitelist': f"/white_{coin.upper()}",
+        'ail': f"/ignore_{coin.upper()}",
+        'awl': f"/white_{coin.upper()}",
+        'ahl': f"/hold_{coin.upper()}",
     }
     try: output_dict['Turnover_Ratio'] = round(float(token_info['quote']['USD']['volume_24h']) / float(token_info['quote']['USD']['market_cap']), 2)
     except: pass
