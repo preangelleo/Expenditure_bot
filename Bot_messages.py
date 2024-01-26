@@ -116,7 +116,7 @@ THREE_PARAMETER_COMMAND_LIST = {
 
 FOUR_PARAMETER_COMMAND_LIST = {
     'binance_send_coin': {'function': binance_send_coin, 'description': '/binance_send_coin 100 BSC USDT 0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'},
-    'kdj_parameter_initial': {'function': reset_kdj_parameter, 'description': 'You need to input a coin symbol, day, week, month KDJ value after this command, for example: /kpi RSR 1 0 1'},
+    'kdj_parameter_initiate': {'function': kdj_parameter_initiate, 'description': 'You need to input a coin symbol, day, week, month KDJ value after this command, for example: /kpi RSR 1 0 1'},
     'sum_category_merchant': {'function': get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant, 'description': 'You need to input a year, a month, a category and a merchant after this command, for example: /sum_category_merchant 2022 12 Electronics Amazon or /sum 2023 12 Electronics ALL or /scm 2023 12 ALL Amazon'},
     }
 

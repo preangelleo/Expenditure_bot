@@ -184,7 +184,7 @@ COMMANDS = [
     {"command": "cancel_all_buy", "description": "Cancel all buy orders"},
     {"command": "cancel_all_sell", "description": "Cancel all sell orders"},
     {"command": "count_positions_amounts", "description": "Count the amounts of a given coin in Spot and Funding account positions"},
-    {"command": "kdj_parameter_initial", "description": "Initialize the KDJ parameters for a given coin"},
+    {"command": "kdj_parameter_initiate", "description": "Initialize the KDJ parameters for a given coin"},
 ]
 
 
@@ -642,7 +642,7 @@ BOT_COMMAND_DICT = {
     'ahl': 'add_holding_coin',
     'rhc': 'remove_holding_coin',
     'rhl': 'remove_holding_coin',
-    'kpi': 'kdj_parameter_initial',
+    'kpi': 'kdj_parameter_initiate',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

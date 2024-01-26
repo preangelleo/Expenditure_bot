@@ -165,6 +165,9 @@ def data_to_table(data, table_name, if_exists='append'):
 
 
 def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID):
+    d = int(d) if d else 0
+    w = int(w) if w else 0
+    m = int(m) if m else 0
     data = {
         'coin': coin.upper(),
         'd': 1 if d else 0,
@@ -174,6 +177,15 @@ def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID)
     }
     if from_id: send_msg(f"Initialized KDJ parameter for {coin.upper()}: \nday: {d}, week: {w}, month: {m}\n{data.get('date_string')}", from_id)
     return data_to_table(data, 'kdj_parameter')
+
+
+def kdj_parameter_initiate(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    d = int(d) if d else 0
+    w = int(w) if w else 0
+    m = int(m) if m else 0
+    dwm_dict = {'d': d, 'w': w, 'm': m}
+    return reset_kdj_parameter(coin, dwm_dict, from_id)
 
 
 def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
