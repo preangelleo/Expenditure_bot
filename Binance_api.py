@@ -3128,6 +3128,28 @@ def get_white_list(from_id=TG_BOT_OWNER_ID):
     return []
 
 
+def add_holding_coin(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    r = insert_coin_into_holding_list(coin)
+    if not r: return send_msg(f"Failed to add {coin} into holding list", from_id)
+    if r == 2: return send_msg(f"{coin} is already in holding list", from_id)
+    if r == 1: return send_msg(f"Successfully added {coin} into holding list.\n/remove_holding_{coin}", from_id)
+
+
+def remove_holding_coin(coin, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    r = remove_coin_from_holding_list(coin)
+    if not r: return send_msg(f"Failed to remove {coin} from holding list", from_id)
+    if r == 2: return send_msg(f"{coin} is not in holding list", from_id)
+    if r == 1: return send_msg(f"Successfully removed {coin} from holding list.\n/add_holding_{coin}", from_id)
+
+
+def get_holding_list(from_id=TG_BOT_OWNER_ID):
+    holding_list = read_holding_list()
+    if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n\n/add_holding_RSR | /remove_holding_RSR", from_id)
+    return send_msg(f"Current holding list ({len(holding_list)}): \n\n{', '.join(holding_list)}", from_id)
+
+
 def update_get_token_total_supply():
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]

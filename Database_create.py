@@ -342,6 +342,84 @@ def create_white_list_table():
     return True
 
 
+# Define a function to create a white_list table to save the white list
+def create_holding_list_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'white_list'
+    cursor.execute("CREATE TABLE IF NOT EXISTS holding_list (id INT NOT NULL AUTO_INCREMENT, coin VARCHAR(20) DEFAULT NULL, PRIMARY KEY (id))")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'holding_list' created successfully!")
+    return True
+
+
+# define a function to insert a new coin into holding_list table, check if the coin is already in the table, if yes, return 2, if not, insert the coin and return 1, if error, return 0
+def insert_coin_into_holding_list(coin):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the coin is already in the table
+    cursor.execute(f"SELECT * FROM holding_list WHERE coin = '{coin}'")
+    result = cursor.fetchall()
+    if len(result) == 0: 
+        # Insert a new coin into holding_list table
+        cursor.execute(f"INSERT INTO holding_list (coin) VALUES ('{coin}')")
+        # Commit the session
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"{coin} inserted successfully!")
+        return 1
+    else: 
+        cursor.close()
+        conn.close()
+        print(f"{coin} already in the list!")
+        return 2
+    
+
+# define a function to remove a coin from holding_list table, check if the coin is already in the table, if yes, remove the coin and return 1, if not, return 2, if error, return 0
+def remove_coin_from_holding_list(coin):
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the coin is already in the table
+    cursor.execute(f"SELECT * FROM holding_list WHERE coin = '{coin}'")
+    result = cursor.fetchall()
+    if len(result) > 0: 
+        # Remove a coin from holding_list table
+        cursor.execute(f"DELETE FROM holding_list WHERE coin = '{coin}'")
+        # Commit the session
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"{coin} removed successfully!")
+        return 1
+    else: 
+        cursor.close()
+        conn.close()
+        print(f"{coin} not in the list!")
+        return 2
+
+
+# define a function to get all coins from holding_list table, return a list of coins
+def read_holding_list():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Get all coins from holding_list table
+    cursor.execute(f"SELECT coin FROM holding_list")
+    result = cursor.fetchall()
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return [item[0] for item in result]
+
+
 # Define a function to create a table for white_list_users, with ID (key), Status (bolean), From_id (string, not none), Username (string, not none), First_name (default none), Last_name (default none), Date (date)
 def create_white_list_users_table():
     # Create a new session
@@ -642,6 +720,9 @@ if __name__ == '__main__':
 
     # Initial Step 7: Create white_list_users tables
     create_white_list_users_table()
+
+    # Initial Step 8: Create holding_list tables
+    create_holding_list_table()
 
     print("All tables created successfully!")
 

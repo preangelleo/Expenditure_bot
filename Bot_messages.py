@@ -28,6 +28,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_top_turnover': top_turnover,
     'get_ignore_list': get_ignore_list, 
     'get_white_list': get_white_list,
+    'get_holding_list': get_holding_list,
     'get_initial_funding': get_initial_funding_amount,
     'get_daily_new': get_daily_new_positions_limit,
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
@@ -63,6 +64,7 @@ NONE_PARAMETER_COMMAND_LIST = {
 ONE_PARAMETER_COMMAND_LIST = {
     'add_ignore_coin': {'function': set_coin_ignore, 'description': 'You need to input a coin symbol after this command, for example: /add_ignore_coin BTC'},
     'add_white_list': {'function': set_coin_white, 'description': 'You need to input a coin symbol after this command, for example: /add_white_list BTC'},
+    'add_holding_coin': {'function': add_holding_coin, 'description': 'You need to input a coin symbol after this command, for example: /add_holding_coin RSR'},
     'get_coin_info': {'function': get_token_info_for_user, 'description': 'You need to input a coin symbol after this command, for example: /get_coin_info BTC'},
     'get_stock_info': {'function': get_stock_info, 'description': 'You need to input a stock symbol after this command, for example: /get_stock_info AAPL'},
     'refill_stella_danli': {'function': refill_stella_danli, 'description': 'You need to input a usdt amount after this command, for example: /refill_stella_danli 1000'},
@@ -84,6 +86,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'set_target_profit': {'function': set_new_target_profit, 'description': 'You need to input a target profit after this command, for example: /set_target_profit 0.07'},
     'remove_ignore_coin': {'function': remove_coin_ignore, 'description': 'You need to input a coin symbol after this command, for example: /remove_ignore_coin BTC'},
     'remove_white_list': {'function': remove_coin_white, 'description': 'You need to input a coin symbol after this command, for example: /remove_white_list BTC'},
+    'remove_holding_coin': {'function': remove_holding_coin, 'description': 'You need to input a coin symbol after this command, for example: /remove_holding_coin RSR'},
     'set_limit_sell': {'function': binance_position_set_limit_sell, 'description': 'You need to input target profit after this command, for example: /set_limit_sell 0.01'},
     'btc_rsi_chart': {'function': get_btc_data_with_rsi, 'description': 'You need to input a timeframe (1d, 1w, 1M) after this command, for example: /btc_rsi_chart 1d'},
     'set_position_limit': {'function': set_position_limit_by_user, 'description': 'You need to input a position limit number after this command, for example: /set_position_limit 5'},
@@ -324,6 +327,8 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('tvb_'): return tradingview_fmb_webhook_command(first_word.split('_')[-1], from_id)
         if first_word.startswith('tvs_'): return tradingview_fms_webhook_command(first_word.split('_')[-1], from_id)
         if first_word.startswith('repair_funding_sell_'): return binance_funding_sell(first_word.split('_')[-1], from_id, is_repair = True)
+        if first_word.startswith('add_holding_'): return add_holding_coin(first_word.split('_')[-1], from_id)
+        if first_word.startswith('remove_holding_'): return remove_holding_coin(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

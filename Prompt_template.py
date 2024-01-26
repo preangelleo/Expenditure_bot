@@ -118,6 +118,9 @@ COMMANDS = [
     {"command": "get_white_list", "description": "Get the white list"},
     {"command": "add_white_list", "description": "Add a coin to the white list"},
     {"command": "remove_white_list", "description": "Remove a coin from the white list"},
+    {"command": "get_holding_coin", "description": "Get the holding coin list"},
+    {"command": "add_holding_coin", "description": "Add a coin to the holding coin list"},
+    {"command": "remove_holding_coin", "description": "Remove a coin from the holding coin list"},
     {"command": "get_coin_info", "description": "Get the information of a given coin symbol"},
     {"command": "get_wallet_balance", "description": "Get the balance of all coins in the wallet"},
     {"command": "binance_market_sell", "description": "Do market sell of a given coin in Binance"},
@@ -633,6 +636,11 @@ BOT_COMMAND_DICT = {
     'rdn': 'read_daily_new',
     'gtp': 'get_trading_parameters',
     'tpu': 'get_trading_parameters',
+    'ghl': 'get_holding_list',
+    'ahc': 'add_holding_coin',
+    'ahl': 'add_holding_coin',
+    'rhc': 'remove_holding_coin',
+    'rhl': 'remove_holding_coin',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''
