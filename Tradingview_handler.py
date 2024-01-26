@@ -121,9 +121,10 @@ def tradingview_webhook_handler(data):
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
     current_status = trading_bot_switch_status()
 
+    v = 1 if condition == 'ON' else 0
+    dwm_dict = {'d': v} if interval == 'D' else {'w': v} if interval == 'W' else {'m': v} if interval == 'M' else {}
+    
     if interval in ['D', 'W', 'M'] and coin in ['BTC']:
-        v = 1 if condition == 'ON' else 0
-        dwm_dict = {'d': v} if interval == 'D' else {'w': v} if interval == 'W' else {'m': v} if interval == 'M' else {}
         current_status = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
         if current_status: return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
         else: return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
@@ -134,11 +135,13 @@ def tradingview_webhook_handler(data):
         holding_list = read_holding_list()
         if not holding_list: holding_list = ['RSR', 'OGN']
 
-        if condition == 'ON' and current_status: 
+        coin_status = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID) if dwm_dict else False
+
+        if coin_status and current_status: 
             if coin in holding_list: return webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
             else: return coin_create_position(coin, TG_BOT_OWNER_ID, is_cheaper = True)
 
-        elif condition == 'OFF' and (not current_status or interval in ['W', 'M']): 
+        elif not coin_status and not current_status: 
             if coin in holding_list: return webhook_kdj_sell(coin, interval, from_id = TG_BOT_OWNER_ID, is_positive = True)
             else: return coin_close_position(coin, TG_BOT_OWNER_ID, is_positive = True)
 

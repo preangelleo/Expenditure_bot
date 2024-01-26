@@ -3415,7 +3415,7 @@ def coin_create_position(coin, from_id, is_cheaper = True):
 
 def coin_close_position(coin, from_id, is_positive = True):
     coin = coin.upper()
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
     if df.empty: return
     current_price = get_avg_price(coin)
     if not current_price: return

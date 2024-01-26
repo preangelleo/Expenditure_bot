@@ -164,7 +164,7 @@ def data_to_table(data, table_name, if_exists='append'):
     return
 
 
-def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID):
+def initial_kdj_parameter(coin, d=None, w=None, m=None):
     data = {
         'coin': coin.upper(),
         'd': 1 if d else 0,
@@ -175,7 +175,7 @@ def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID)
     return data_to_table(data, 'kdj_parameter')
 
 
-def reset_kdj_parameter(coin, dwm_dict = {}, from_id=TG_BOT_OWNER_ID):
+def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin.upper()}'")).fetchall())
     except: df = pd.DataFrame()
@@ -1312,4 +1312,4 @@ def coinbase_market_buy_order(product_id, funds = '10000'):
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
     reset_bot_starting_date(bot_starting_date = '2023-12-10')
-    initial_kdj_parameter('BTC', d=1, w=0, m=1, from_id=TG_BOT_OWNER_ID)
+    initial_kdj_parameter('BTC', d=1, w=0, m=1)
