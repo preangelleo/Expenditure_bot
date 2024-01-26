@@ -14,9 +14,8 @@ def hello_world():
 def tv_webhook():
     try:
         data = request.json
-        if data['token'] == TRADINGVIEW_WEBHOOK_TOKEN: tradingview_webhook_handler(data)
-
-    except: pass
+        if data['token'] == TRADINGVIEW_WEBHOOK_TOKEN: tradingview_webhook_handler(data) 
+    except Exception as e: send_msg(f"ERROR while tradingview_webhook_handler(): \n\n{e}\n\n", TG_BOT_OWNER_ID)
 
     return {'message': 'Thanks'}, 200
 

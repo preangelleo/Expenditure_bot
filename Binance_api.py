@@ -3347,7 +3347,7 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
 
 def webhook_kdj_buy(coin, down_step = 0.05, from_id = TG_BOT_OWNER_ID):
     price_create = 0
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}" ORDER BY time_create DESC LIMIT 1')).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
     if not df.empty: 
         df_position = df[df['is_closed'] == 0]
         if not df_position.empty:  price_create = float(df_position['price_create'].min()) * (1 - down_step)
@@ -3355,7 +3355,7 @@ def webhook_kdj_buy(coin, down_step = 0.05, from_id = TG_BOT_OWNER_ID):
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
-    if current_price > price_create > 0: return send_msg(f"{coin} price: {format_number(current_price)} > {format_number(price_create)}", from_id) 
+    if current_price > price_create > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create)}", from_id) 
     return binance_funding_buy_and_hold(coin, from_id)
 
 
