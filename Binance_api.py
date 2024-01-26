@@ -3395,8 +3395,8 @@ def coin_create_position(coin, from_id, is_cheaper = True):
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
         if not df.empty:
             df_position = df[df['is_closed'] == 0]
-            if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.8
-            else: price_create_target = float(df['price_close'].max()) * 0.8
+            if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * 0.85
+            else: price_create_target = float(df['price_close'].max()) * 0.85
             if current_price > price_create_target > 0: return send_msg(f"{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
     if is_spot_full(): return binance_funding_buy_and_hold(coin, from_id)
     return bot_market_buy_one_unit(coin, from_id)
