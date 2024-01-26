@@ -145,11 +145,11 @@ def tradingview_webhook_handler(data):
 
         if long or (bot_current_status and coin_condition): 
             if coin in holding_list: return webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
-            elif coin in kdj_coinlist: return coin_create_position(coin, TG_BOT_OWNER_ID, is_cheaper = True)
+            elif coin in kdj_coinlist: return coin_create_position(coin, long, TG_BOT_OWNER_ID, is_cheaper = True)
 
         elif short or (not bot_current_status and not coin_condition): 
             if coin in holding_list: return webhook_kdj_sell(coin, interval, from_id = TG_BOT_OWNER_ID, is_positive = True)
-            elif coin in kdj_coinlist: return coin_close_position(coin, TG_BOT_OWNER_ID, is_positive = True)
+            elif coin in kdj_coinlist: return coin_close_position(coin, short, TG_BOT_OWNER_ID, is_positive = True)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 
