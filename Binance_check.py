@@ -8,8 +8,8 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'\n{datetime.now().strftime("%Y-%m-%d %H:%M")} Binance_check.py is running ...')
 
-    try: profit_take_per_6_min()
-    except: pass
+    # try: profit_take_per_6_min()
+    # except: pass
 
     try: binance_today_top_coin()
     except: pass
