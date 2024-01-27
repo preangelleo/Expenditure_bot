@@ -143,7 +143,7 @@ def tradingview_webhook_handler(data):
 
         if not dwm_dict: 
             if interval in ['60', '240']:
-                send_msg(f"{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
+                # send_msg(f"{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
                 if condition == 'ON':
                     coin_status_result = kdj_condition(coin)
                     long = coin_status_result.get('long', False)

@@ -3411,7 +3411,7 @@ def coin_create_position(coin, step, from_id, is_holding = False):
         resistance_dict = get_resistant_price(coin)
         if not resistance_dict: return send_msg(f"Failed to get resistance price for {coin}", from_id)
         else: target_profit = resistance_dict.get('target_profit', 0.01)
-        if target_profit < TARGET_PROFIT_PERCENTAGE: return send_msg(f"Target profit for {coin} is too low: {target_profit}", from_id)
+        if target_profit < TARGET_PROFIT_PERCENTAGE: return send_msg(f"Target profit for {coin} is too low: {round(target_profit*100)}%", from_id)
         bot_market_buy_one_unit(coin, from_id)
         binance_position_set_limit_sell(target_profit, from_id, coin)
         return
