@@ -3275,8 +3275,12 @@ def is_spot_full():
 
 
 def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
+    # try: profit_take_per_6_min()
+    # except: pass
+
     btc_condition = kdj_condition('BTC')
     if not btc_condition.get('long', False): return print("BTC is not in good condition")
+
     position_created_today_spot = 0
     default_target_profit = TARGET_PROFIT_PERCENTAGE
     with engine.connect() as connection: 
@@ -3400,7 +3404,14 @@ def coin_create_position(coin, step, from_id, is_holding = False):
         else: price_create_target = float(df['price_close'].max()) * (1 - step)
         if current_price > price_create_target > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
     if is_holding: return binance_funding_buy_and_hold(coin, from_id)
-    if not is_spot_full(): return bot_market_buy_one_unit(coin, from_id)
+    if not is_spot_full(): 
+        resistance_dict = get_resistant_price(coin)
+        if not resistance_dict: return send_msg(f"Failed to get resistance price for {coin}", from_id)
+        else: target_profit = resistance_dict.get('target_profit', 0.01)
+        if target_profit < TARGET_PROFIT_PERCENTAGE: return send_msg(f"Target profit for {coin} is too low: {target_profit}", from_id)
+        bot_market_buy_one_unit(coin, from_id)
+        binance_position_set_limit_sell(target_profit, from_id, coin)
+        return
 
 
 def coin_close_position(coin, profit, from_id, is_holding = False):
