@@ -3397,11 +3397,14 @@ def coin_create_position(coin, step, from_id, is_holding = False):
     if not current_price: return print(f"Failed to get current price for {coin}")
     current_price = float(current_price['price'])
     today_hotcoin_check_save(coin, current_price)
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed, time_close FROM position_table WHERE coin = "{coin}"')).fetchall())
     if not df.empty:
         df_position = df[df['is_closed'] == 0]
         if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * (1 - 2 * step)
-        else: price_create_target = float(df['price_close'].max()) * (1 - step)
+        else: 
+            df_latest = df[df['time_close'] == df['time_close'].max()]
+            if not df_latest.empty: price_create_target = float(df_latest['price_close'].max()) * (1 - step)
+            else: price_create_target = float(df['price_close'].max()) * (1 - step)
         if current_price > price_create_target > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
     if is_holding: return binance_funding_buy_and_hold(coin, from_id)
     if not is_spot_full(): 
