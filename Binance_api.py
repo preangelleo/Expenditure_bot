@@ -3267,7 +3267,7 @@ def get_highest_close_price(coin):
 
 def is_spot_full():
     with engine.connect() as connection: 
-        df_in_position = pd.DataFrame(connection.execute(text('''SELECT coin FROM position_table WHERE is_closed = 0 AND account == "spot"''')).fetchall())
+        df_in_position = pd.DataFrame(connection.execute(text('''SELECT coin FROM position_table WHERE is_closed = 0 AND account = "spot"''')).fetchall())
         if df_in_position.shape[0] >= POSITIONS_LIMIT: return True
         df_orderId = get_open_orders_list(None, 'BUY')
         if df_orderId.shape[0] + df_in_position.shape[0] >= POSITIONS_LIMIT: return True
