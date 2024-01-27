@@ -145,12 +145,9 @@ def tradingview_webhook_handler(data):
                 coin_status_result = kdj_condition(coin)
                 long = coin_status_result.get('long', False)
                 coin_condition = coin_status_result.get('condition', False)
-                if long: 
-                    if coin in holding_list: webhook_kdj_buy(coin, 0.05, TG_BOT_OWNER_ID)
-                    elif coin in kdj_coinlist: coin_create_position(coin, 0.05, TG_BOT_OWNER_ID, is_cheaper = True)
-                elif coin_condition and bot_current_status: 
-                    if coin in holding_list: webhook_kdj_buy(coin, 0.1, TG_BOT_OWNER_ID)
-                    elif coin in kdj_coinlist: coin_create_position(coin, 0.1, TG_BOT_OWNER_ID, is_cheaper = True)
+                step = 0.05 if long and bot_current_status else 0.08 if long else 0.13 if coin_condition and bot_current_status else 0.21 if coin_condition else 0.34
+                if coin in holding_list: webhook_kdj_buy(coin, step, TG_BOT_OWNER_ID)
+                elif coin in kdj_coinlist: coin_create_position(coin, step, TG_BOT_OWNER_ID, is_cheaper = True)
                 return
         else:
             coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)

@@ -3347,13 +3347,13 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     return binance_funding_buy_and_hold(coin, from_id)
 
 
-def webhook_kdj_buy(coin, down_step = 0.05, from_id = TG_BOT_OWNER_ID):
+def webhook_kdj_buy(coin, step = 0.05, from_id = TG_BOT_OWNER_ID):
     price_create = 0
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
     if not df.empty: 
         df_position = df[df['is_closed'] == 0]
-        if not df_position.empty:  price_create = float(df_position['price_create'].min()) * (1 - down_step)
-        else: price_create = float(df['price_close'].max()) * (1 - down_step)
+        if not df_position.empty:  price_create = float(df_position['price_create'].min()) * (1 - step)
+        else: price_create = float(df['price_close'].max()) * (1 - step)
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
@@ -3386,9 +3386,8 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     return
 
 
-def coin_create_position(coin, long, from_id, is_cheaper = True):
+def coin_create_position(coin, step, from_id, is_cheaper = True):
     price_create_target = 0
-    step = 0.05 if long else 0.1
     coin = coin.upper()
     current_price = get_avg_price(coin)
     if not current_price: return print(f"Failed to get current price for {coin}")
