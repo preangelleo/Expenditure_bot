@@ -189,8 +189,9 @@ def kdj_parameter_initiate(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID
 
 
 def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
+    coin = coin.upper()
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin.upper()}'")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin}'")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: d, w, m = 0, 0, 0
     else: d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
@@ -199,7 +200,9 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     m = int(dwm_dict['m']) if 'm' in dwm_dict else m
     date_string = datetime.now().strftime("%Y-%m-%d")
     if not df.empty:
-        with engine.connect() as connection: connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin.upper()}'"))
+        with engine.connect() as connection: 
+            connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin}'"))
+            connection.commit()
     else: data_to_table({'coin': coin.upper(), 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
     condition = 'ON' if d and (w or m) else 'OFF'
     if from_id: send_msg(f"{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)

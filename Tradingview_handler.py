@@ -122,14 +122,14 @@ def tradingview_webhook_handler(data):
     
     v = 1 if condition == 'ON' else 0
     dwm_dict = {'d': v} if interval == 'D' else {'w': v} if interval == 'W' else {'m': v} if interval == 'M' else {}
-    
+
     if interval in ['D', 'W', 'M'] and coin in ['BTC']:
         if not dwm_dict: return
         result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
         if result.get('condition', False): return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
         elif result.get('short', False): return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
-    elif coin not in ['NONE', 'BTC']:
+    if coin not in ['NONE', 'BTC']:
         if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
         
         bot_current_status = trading_bot_switch_status()
