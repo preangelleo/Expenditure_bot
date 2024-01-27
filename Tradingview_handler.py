@@ -135,23 +135,27 @@ def tradingview_webhook_handler(data):
         bot_current_status = trading_bot_switch_status()
         holding_list = read_holding_list()
         if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n/hold_RSR", TG_BOT_OWNER_ID)
+        kdj_coinlist = read_kdj_coinlist()
+        if not kdj_coinlist: return send_msg("Your KDJ coinlist is empty! Use below command to add any coin into KDJ coinlist.\n/kpi RSR 1 0 1\nMeaning current RSR KDJ day is positive, week is negative, month is positive", TG_BOT_OWNER_ID)
+
+        if coin not in holding_list + kdj_coinlist: return send_msg(f"{coin} is not in your holding list or KDJ coinlist!", TG_BOT_OWNER_ID)
 
         if not dwm_dict: 
-            if condition == 'ON' and coin in holding_list: webhook_kdj_buy(coin, down_step = 0.1, from_id = TG_BOT_OWNER_ID)
-            return
+            if condition == 'ON' and interval in ['60', '240']:
+                coin_status_result = kdj_condition(coin)
+                long = coin_status_result.get('long', False)
+                coin_condition = coin_status_result.get('condition', False)
+                if long: 
+                    if coin in holding_list: webhook_kdj_buy(coin, 0.05, TG_BOT_OWNER_ID)
+                    elif coin in kdj_coinlist: coin_create_position(coin, 0.05, TG_BOT_OWNER_ID, is_cheaper = True)
+                elif coin_condition and bot_current_status: 
+                    if coin in holding_list: webhook_kdj_buy(coin, 0.1, TG_BOT_OWNER_ID)
+                    elif coin in kdj_coinlist: coin_create_position(coin, 0.1, TG_BOT_OWNER_ID, is_cheaper = True)
+                return
         else:
-            kdj_coinlist = read_kdj_coinlist()
-            if not kdj_coinlist: return send_msg("Your KDJ coinlist is empty! Use below command to add any coin into KDJ coinlist.\n/kpi RSR 1 0 1\nMeaning current RSR KDJ day is positive, week is negative, month is positive", TG_BOT_OWNER_ID)
-
             coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
-            long = coin_status_result.get('long', False)
             short = coin_status_result.get('short', False)
             coin_condition = coin_status_result.get('condition', False)
-            
-            if long or (bot_current_status and coin_condition): 
-                down_step = 0.05 if long else 0.1
-                if coin in holding_list: return webhook_kdj_buy(coin, down_step, from_id = TG_BOT_OWNER_ID)
-                elif coin in kdj_coinlist: return coin_create_position(coin, long, TG_BOT_OWNER_ID, is_cheaper = True)
 
             if short or (not bot_current_status and not coin_condition): 
                 if coin in holding_list: return webhook_kdj_sell(coin, interval, from_id = TG_BOT_OWNER_ID, is_positive = True)
