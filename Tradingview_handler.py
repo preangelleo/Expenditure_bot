@@ -127,7 +127,10 @@ def tradingview_webhook_handler(data):
         if not dwm_dict: return
         result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
         if result.get('condition', False): return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        elif result.get('short', False): return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+        elif result.get('short', False): 
+            webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+            close_postive_positions(TG_BOT_OWNER_ID, grid_profit_target=1)
+            return
 
     if coin not in ['NONE', 'BTC']:
         if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
