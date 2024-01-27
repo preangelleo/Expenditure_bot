@@ -3386,36 +3386,34 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     return
 
 
-def coin_create_position(coin, step, from_id, is_cheaper = True):
+def coin_create_position(coin, step, from_id, is_holding = False):
     price_create_target = 0
     coin = coin.upper()
     current_price = get_avg_price(coin)
     if not current_price: return print(f"Failed to get current price for {coin}")
     current_price = float(current_price['price'])
     today_hotcoin_check_save(coin, current_price)
-    if is_cheaper:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
-        if not df.empty:
-            df_position = df[df['is_closed'] == 0]
-            if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * (1 - 2 * step)
-            else: price_create_target = float(df['price_close'].max()) * (1 - step)
-            if current_price > price_create_target > 0: return send_msg(f"{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
-    if is_spot_full(): return binance_funding_buy_and_hold(coin, from_id)
-    return bot_market_buy_one_unit(coin, from_id)
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
+    if not df.empty:
+        df_position = df[df['is_closed'] == 0]
+        if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * (1 - 2 * step)
+        else: price_create_target = float(df['price_close'].max()) * (1 - step)
+        if current_price > price_create_target > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
+    if is_holding: return binance_funding_buy_and_hold(coin, from_id)
+    if not is_spot_full(): return bot_market_buy_one_unit(coin, from_id)
 
 
-def coin_close_position(coin, short, from_id, is_positive = True):
+def coin_close_position(coin, profit, from_id, is_holding = False):
+    profit = profit * 2 if is_holding else profit
     coin = coin.upper()
-    step = -200 if short else 0
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
     if df.empty: return
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
-    if is_positive:
-        df = df[df['profit'] > step]
-        if df.empty: return
+    df = df[df['profit'] > profit]
+    if df.empty: return
     for i in range(df.shape[0]):
         coin_df = df[i:i+1]
         coin_with_highest_profit = coin_df['coin'].values[0]
