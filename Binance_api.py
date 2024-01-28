@@ -2491,6 +2491,26 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
     except Exception as e: return send_email(f"ERRO: profit_taken_today()", e, GMAIL_ADDRESS_MAIN)
 
 
+def reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id = TG_BOT_OWNER_ID):
+    df_balance = read_position_table_account()
+    if df_balance.empty: return print('No position found')
+    try: df = get_token_price_table()
+    except: df = pd.DataFrame()
+    if df.empty: return print('Failed to fetch price info')
+    df = df.drop(columns=['coin'])
+    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
+    df_balance = df_balance[df_balance['profit'] < 100]
+    if df_balance.empty: return print('No position with profit < 100 found')
+    df_balance['duration'] = (int(time.time() * 1000) - df_balance['time_create']) / 1000 / 60 / 60
+    df_duration = df_balance[df_balance['duration'] >= limit_hour].copy()
+    for i in range(df_duration.shape[0]): 
+        current_target_profit = df_duration.iloc[i]['target_profit']
+        if current_target_profit == target_profit and not df_duration.iloc[i]['is_manual']: continue
+        binance_position_set_limit_sell(target_profit, from_id, df_duration.iloc[i]['coin'], is_manual = 1)
+    return True
+
+
 def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
     profit_take_target=DAILY_TARGET_PROFIT
     df_balance = read_position_table_account()

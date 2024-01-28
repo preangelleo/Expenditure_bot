@@ -9,18 +9,13 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} Profit_record.py is running ...')
 
-    current_bot_status = False
-
-    try: current_bot_status = trading_bot_switch_status()
-    except: pass
-
     try: binance_spot_position_check(None, None, True)
     except Exception as e: print(f'binance_spot_position_check() error:\n\n{e}\n\n')
 
     try: binance_adjust_profit()
     except Exception as e: print(f'binance_adjust_profit() error:\n\n{e}\n\n')
 
-    try: get_btc_data_with_rsi(timeframe='1d', from_id=TG_BOT_OWNER_ID)
+    try: get_btc_data_with_rsi(timeframe = '1d', from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_btc_data_with_rsi() error:\n\n{e}\n\n')
 
     try: get_coin_list_from_trading_pairs()
