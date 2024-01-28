@@ -3405,7 +3405,7 @@ def coin_create_position(coin, step, from_id, is_holding = False):
             df_latest = df[df['time_close'] == df['time_close'].max()]
             if not df_latest.empty: price_create_target = float(df_latest['price_close'].max()) * (1 - step)
             else: price_create_target = float(df['price_close'].max()) * (1 - step)
-        if current_price > price_create_target > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create_target)}", from_id)
+        if current_price > price_create_target > 0: return
     if is_holding: return binance_funding_buy_and_hold(coin, from_id)
     if not is_spot_full(): 
         resistance_dict = get_resistant_price(coin)

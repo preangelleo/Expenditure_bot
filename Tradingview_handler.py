@@ -116,7 +116,7 @@ def handel_webhook_push_from_trading_view(token):
 def tradingview_webhook_handler(data):
     condition = data.get('condition', 'NONE')
     message = data.get('message', 'WEBHOOK')
-    interval = data.get('interval', 'NONE')
+    interval = str(data.get('interval', 'NONE'))
     symbol = data.get('symbol', 'NONE')
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
     
@@ -153,7 +153,7 @@ def tradingview_webhook_handler(data):
                     coin_condition = coin_status_result.get('condition', False)
                     step = 0.05 if long and bot_current_status else 0.08 if long else 0.13 if coin_condition and bot_current_status else 0.21 if coin_condition else 0.34
                     return coin_create_position(coin, step, TG_BOT_OWNER_ID, is_holding)
-                if condition == 'OFF':
+                if condition == 'OFF' and interval in ['240']:
                     coin_status_result = kdj_condition(coin)
                     short = coin_status_result.get('short', False)
                     coin_condition = coin_status_result.get('condition', False)
