@@ -175,6 +175,7 @@ COMMANDS = [
     {"command": "get_initial_funding", "description": "Get the initial funding amount value"},
     {"command": "binance_pay_record", "description": "Get the binance pay record"},
     {"command": "calculate_missed_profit", "description": "Calculate the missed profit of today"},
+    {"command": "calculate_missed_yesterday", "description": "Calculate the missed profit of yesterday"},
     {"command": "grid_profit_check", "description": "Check current unrealized grid profit"},
     {"command": "click_to_close", "description": "Click to close the position of a given orderId /close_123456789"},
     {"command": "click_to_buy", "description": "Click to market buy a given coin /buy_BTC"},
@@ -645,6 +646,7 @@ BOT_COMMAND_DICT = {
     'rhl': 'remove_holding_coin',
     'kpi': 'kdj_parameter_initiate',
     'kdj': 'read_kdj_coinlist',
+    'cmy': 'calculate_missed_yesterday',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

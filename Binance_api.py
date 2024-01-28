@@ -2861,13 +2861,14 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
     return 
 
 
-# define a function to check all of the coin sold today, if don't sell, how much profit missed or locked
-def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03):
+def calculate_missed_profit_yesterday(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03, is_yesterday = True):
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, price_close, time_close FROM position_table WHERE is_closed = 1')).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return 
-    # group df by coin and chose the latest time_close with the corresponding price_close
+    if is_yesterday: 
+        timestamp_yesterday = int(time.time() * 1000) - 24 * 60 * 60 * 1000
+        df = df[df['time_close'] > timestamp_yesterday]
     df = df.sort_values(by=['coin', 'time_close']).groupby('coin').last().reset_index()
     with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 0 GROUP BY coin')).fetchall())
     df = df[~df['coin'].isin(df_position['coin'])]
@@ -2903,6 +2904,11 @@ def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03
         reply_list_locked.append(msg)
     if from_id: send_msg('\n'.join(reply_list_locked), from_id)
     return coins_could_buy_back
+
+
+# define a function to check all of the coin sold today, if don't sell, how much profit missed or locked
+def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03):
+    return calculate_missed_profit_yesterday(from_id, buy_back_target_profit, is_yesterday = False)
 
 
 def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):

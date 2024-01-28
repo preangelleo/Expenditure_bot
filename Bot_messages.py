@@ -52,6 +52,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'positions_coin_list': get_current_positions_from_all_tables,
     'binance_pay_record': binance_pay_record,
     'calculate_missed_profit': calculate_missed_profit,
+    'calculate_missed_yesterday': calculate_missed_profit_yesterday,
     'grid_profit_check': grid_profit_check_for_user,
     'position_check_all': position_check_for_user,
     'count_positions': count_positions,
