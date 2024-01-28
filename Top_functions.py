@@ -205,10 +205,10 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
             connection.commit()
     else: data_to_table({'coin': coin.upper(), 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
     condition = 'ON' if d and (w or m) else 'OFF'
-    if from_id: send_msg(f"{coin.upper()} | {d}{w}{m} | {condition}\nLast update: {date_string}", from_id)
     score = d + w + m
     long = True if score == 3 else False
     short = True if score == 0 else False
+    if long and from_id: send_msg(f"/buy_{coin} | {d}{w}{m} | {condition}\nUpdate: {date_string}", from_id)
     return {'long': long, 'short': short, 'score': score, 'condition': True if condition == 'ON' else False}
 
 
