@@ -3295,12 +3295,8 @@ def is_spot_full():
 
 
 def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
-    # try: profit_take_per_6_min()
-    # except: pass
-
     btc_condition = kdj_condition('BTC')
     if not btc_condition.get('long', False): return print("BTC is not in good condition")
-
     position_created_today_spot = 0
     default_target_profit = TARGET_PROFIT_PERCENTAGE
     with engine.connect() as connection: 
