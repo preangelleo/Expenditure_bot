@@ -147,7 +147,7 @@ def tradingview_webhook_handler(data):
         if not dwm_dict: 
             if interval in ['60', '240']:
                 # send_msg(f"{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
-                if condition == 'ON':
+                if condition == 'ON' and interval in ['60']:
                     coin_status_result = kdj_condition(coin)
                     long = coin_status_result.get('long', False)
                     coin_condition = coin_status_result.get('condition', False)
@@ -158,7 +158,6 @@ def tradingview_webhook_handler(data):
                     short = coin_status_result.get('short', False)
                     coin_condition = coin_status_result.get('condition', False)
                     profit = 0 if short and not bot_current_status else 100 if short else 200 if not coin_condition and not bot_current_status else 400 if not coin_condition else 800
-                    profit = profit / 2 if interval == '240' else profit
                     return coin_close_position(coin, profit, TG_BOT_OWNER_ID, is_holding)
         else:
             coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)

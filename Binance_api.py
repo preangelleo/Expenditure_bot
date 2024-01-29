@@ -597,7 +597,6 @@ def funding_main_transfer_with_check_and_send(coin, amount, chat_id=TG_BOT_OWNER
             if balance >= amount: 
                 tranId = funding_main_transfer(coin, amount)
                 if tranId: 
-                    send_msg(f'FUNDING >> MAIN: {format_number(amount)} {coin}', chat_id)
                     time.sleep(1)
                     return tranId
             else: 
@@ -718,7 +717,7 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
                 tranId = main_funding_transfer(coin, amount)
                 if tranId: 
                     time.sleep(1)
-                    return send_msg(f"MAIN >> FUNDING: {format_number(amount)} {coin}", from_id)
+                    return 
             else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
@@ -3418,7 +3417,7 @@ def coin_create_position(coin, step, from_id, is_holding = False):
     current_price = get_avg_price(coin)
     if not current_price: return print(f"Failed to get current price for {coin}")
     current_price = float(current_price['price'])
-    today_hotcoin_check_save(coin, current_price)
+    if step == 0.05: today_hotcoin_check_save(coin, current_price)
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed, time_close FROM position_table WHERE coin = "{coin}"')).fetchall())
     if not df.empty:
         df_position = df[df['is_closed'] == 0]
