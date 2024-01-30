@@ -160,17 +160,10 @@ def tradingview_webhook_handler(data):
                     profit = 0 if short and not bot_current_status else 100 if short else 200 if not coin_condition and not bot_current_status else 400 if not coin_condition else 800
                     return coin_close_position(coin, profit, TG_BOT_OWNER_ID, is_holding)
         else:
-            if 'current_price' in data:
-                current_price = float(data.get('current_price', 0))
-                if current_price == 0: return
-                dwm_dict = {'d': v, 'w': v, 'm': v}
-                send_msg(f"DWM_KDJ: {coin} condition turned {condition}\ncurrent price: {format_number(current_price)}", TG_BOT_OWNER_ID)
-
-            else:
-                coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
-                short = coin_status_result.get('short', False)
-                coin_condition = coin_status_result.get('condition', False)
-                if short or (not bot_current_status and not coin_condition): return coin_close_position(coin, 0, TG_BOT_OWNER_ID, is_holding)
+            coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
+            short = coin_status_result.get('short', False)
+            coin_condition = coin_status_result.get('condition', False)
+            if short or (not bot_current_status and not coin_condition): return coin_close_position(coin, 0, TG_BOT_OWNER_ID, is_holding)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 
