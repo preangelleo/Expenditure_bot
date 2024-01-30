@@ -8,5 +8,5 @@ if __name__ == '__main__':
     # print current time string format and the function is running
     print(f'\n{datetime.now().strftime("%Y-%m-%d %H:%M")} Hourly_check.py is running ...')
 
-    try: reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
-    except Exception as e: print(f'reset_target_profit_for_coins() error:\n\n{e}\n\n')
+    # try: reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
+    # except Exception as e: print(f'reset_target_profit_for_coins() error:\n\n{e}\n\n')
