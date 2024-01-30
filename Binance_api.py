@@ -2827,13 +2827,17 @@ def binance_market_buy_quantity(coin, quantity):
     
 # define a function to switch on the trading bot and send a message to the user
 def webhook_switch_on_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
-    if trading_bot_switch_on(): return send_msg(f"Succeed to switch on the bot! \n{msg}", from_id)
+    if trading_bot_switch_on(): 
+        send_msg(f"Succeed to switch on the bot! \n{msg}", from_id)
+        return buy_back_most_profitable(0.03, from_id)
     return send_msg(f"Failed to switch on the bot! \n{msg}", from_id)
 
 
 # define a function to switch off the trading bot and send a message to the user
 def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
-    if trading_bot_switch_off(): return send_msg(f"Succeed to switch off the bot!\n{msg}", from_id)
+    if trading_bot_switch_off(): 
+        send_msg(f"Succeed to switch off the bot!\n{msg}", from_id)
+        return close_postive_positions(from_id, 1, 'spot')
     return send_msg(f"Failed to switch off the bot!\n{msg}", from_id)
 
 
@@ -3437,6 +3441,21 @@ def coin_create_position(coin, current_price, step, from_id, is_holding = False)
         return
 
 
+def buy_back_most_profitable(buy_back_target_profit=0.03, from_id=TG_BOT_OWNER_ID):
+    coins_could_buy_back = calculate_missed_profit(from_id, buy_back_target_profit)
+    if not coins_could_buy_back: return
+    for coin in coins_could_buy_back:
+        if is_spot_full(): return
+        resistance_dict = get_resistant_price(coin)
+        if not resistance_dict: return send_msg(f"Failed to get resistance price for {coin}", from_id)
+        else: target_profit = resistance_dict.get('target_profit', 0.01)
+        if target_profit < TARGET_PROFIT_PERCENTAGE: return send_msg(f"Target profit for {coin} is too low: {round(target_profit*100)}%", from_id)
+        bot_market_buy_one_unit(coin, from_id)
+        target_profit = max(target_profit, TARGET_PROFIT_PERCENTAGE)
+        binance_position_set_limit_sell(target_profit, from_id, coin)
+    return
+
+
 def coin_close_position(coin, current_price, profit, from_id, is_holding = False):
     profit = profit * 2 if is_holding else profit
     coin = coin.upper()
@@ -3920,23 +3939,25 @@ def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
     for i in range(df_balance.shape[0]): do_market_sell_by_orderId_create(int(df_balance.iloc[i]['orderId_create']), from_id, df_balance.iloc[i:i+1], df_balance.iloc[i]['coin'])
 
 
-def close_postive_positions(from_id, grid_profit_target=1):
+def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
     df_balance = grid_profit_check(grid_profit_target)
     if df_balance.empty: return send_msg(f"No open positions with profit.", from_id)
-    df_spot = df_balance[df_balance['account'] == 'spot']
-    if not df_spot.empty:
-        for i in range(df_spot.shape[0]):
-            coin_df = df_spot[i:i+1]
-            coin_with_highest_profit = coin_df['coin'].values[0]
-            orderId_create = int(coin_df['orderId_create'].values[0])
-            do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
-    df_funding = df_balance[df_balance['account'] == 'funding']
-    if not df_funding.empty:
-        for i in range(df_funding.shape[0]):
-            coin_df = df_funding[i:i+1]
-            coin_with_highest_profit = coin_df['coin'].values[0]
-            orderId_create = int(coin_df['orderId_create'].values[0])
-            do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    if account == 'spot': 
+        df_spot = df_balance[df_balance['account'] == 'spot']
+        if not df_spot.empty:
+            for i in range(df_spot.shape[0]):
+                coin_df = df_spot[i:i+1]
+                coin_with_highest_profit = coin_df['coin'].values[0]
+                orderId_create = int(coin_df['orderId_create'].values[0])
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+    if account == 'funding':
+        df_funding = df_balance[df_balance['account'] == 'funding']
+        if not df_funding.empty:
+            for i in range(df_funding.shape[0]):
+                coin_df = df_funding[i:i+1]
+                coin_with_highest_profit = coin_df['coin'].values[0]
+                orderId_create = int(coin_df['orderId_create'].values[0])
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
     return 
 
 
