@@ -118,16 +118,12 @@ def tradingview_webhook_handler(data):
     message = data.get('message', 'WEBHOOK')
     interval = data.get('interval', 'NONE')
     symbol = data.get('symbol', 'NONE')
+    current_price = float(data.get('current_price', 0))
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
-    
-    v = 1 if condition == 'ON' else 0
-    dwm_dict = {'d': v} if interval == 'D' else {'w': v} if interval == 'W' else {'m': v} if interval == 'M' else {}
 
-    if interval in ['D', 'W', 'M'] and coin in ['BTC']:
-        if not dwm_dict: return
-        result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
-        if result.get('condition', False): return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        elif result.get('short', False): 
+    if coin in ['BTC']:
+        if condition == 'ON': return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'OFF': 
             webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
             close_postive_positions(TG_BOT_OWNER_ID, grid_profit_target=1)
             return
@@ -138,32 +134,12 @@ def tradingview_webhook_handler(data):
         bot_current_status = trading_bot_switch_status()
         holding_list = read_holding_list()
         if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n/hold_RSR", TG_BOT_OWNER_ID)
-        kdj_coinlist = read_kdj_coinlist()
-        if not kdj_coinlist: return send_msg("Your KDJ coinlist is empty! Use below command to add any coin into KDJ coinlist.\n/kpi RSR 1 0 1\nMeaning current RSR KDJ day is positive, week is negative, month is positive", TG_BOT_OWNER_ID)
-
-        if coin not in holding_list + kdj_coinlist: return send_msg(f"{coin} is not in your holding list or KDJ coinlist!\nUse below command to add any coin into KDJ coinlist.\n/kpi {coin} 1 0 1\nMeaning current {coin} KDJ day is positive, week is negative, month is positive", TG_BOT_OWNER_ID)
         is_holding = True if coin in holding_list else False
+        step = 0.05 if bot_current_status else 0.08 
+        profit = 0 if not bot_current_status else 100
 
-        if not dwm_dict:
-            if interval in ['60', '240']:
-                # send_msg(f"{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
-                if condition == 'ON' and interval in ['60']:
-                    coin_status_result = kdj_condition(coin)
-                    long = coin_status_result.get('long', False)
-                    coin_condition = coin_status_result.get('condition', False)
-                    step = 0.05 if long and bot_current_status else 0.08 if long else 0.13 if coin_condition and bot_current_status else 0.21 if coin_condition else 0.34
-                    return coin_create_position(coin, step, TG_BOT_OWNER_ID, is_holding)
-                if condition == 'OFF' and interval in ['240']:
-                    coin_status_result = kdj_condition(coin)
-                    short = coin_status_result.get('short', False)
-                    coin_condition = coin_status_result.get('condition', False)
-                    profit = 0 if short and not bot_current_status else 100 if short else 200 if not coin_condition and not bot_current_status else 400 if not coin_condition else 800
-                    return coin_close_position(coin, profit, TG_BOT_OWNER_ID, is_holding)
-        else:
-            coin_status_result = reset_kdj_parameter(coin, dwm_dict, TG_BOT_OWNER_ID)
-            short = coin_status_result.get('short', False)
-            coin_condition = coin_status_result.get('condition', False)
-            if short or (not bot_current_status and not coin_condition): return coin_close_position(coin, 0, TG_BOT_OWNER_ID, is_holding)
+        if condition == 'ON': return coin_create_position(coin, current_price, step, TG_BOT_OWNER_ID, is_holding)
+        if condition == 'OFF': return coin_close_position(coin, current_price, profit, TG_BOT_OWNER_ID, is_holding)
 
     if condition in ['ALERT']: send_msg(message, TG_BOT_OWNER_ID)
 

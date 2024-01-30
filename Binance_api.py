@@ -3411,10 +3411,10 @@ def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positi
     return
 
 
-def coin_create_position(coin, step, from_id, is_holding = False):
+def coin_create_position(coin, current_price, step, from_id, is_holding = False):
     price_create_target = 0
     coin = coin.upper()
-    current_price = get_avg_price(coin)
+    if not current_price: current_price = get_avg_price(coin) 
     if not current_price: return print(f"Failed to get current price for {coin}")
     current_price = float(current_price['price'])
     if step == 0.05: today_hotcoin_check_save(coin, current_price)
@@ -3438,12 +3438,12 @@ def coin_create_position(coin, step, from_id, is_holding = False):
         return
 
 
-def coin_close_position(coin, profit, from_id, is_holding = False):
+def coin_close_position(coin, current_price, profit, from_id, is_holding = False):
     profit = profit * 2 if is_holding else profit
     coin = coin.upper()
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
     if df.empty: return
-    current_price = get_avg_price(coin)
+    if not current_price: current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
