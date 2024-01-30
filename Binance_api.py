@@ -2531,7 +2531,7 @@ def reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id
     df_duration = df_balance[df_balance['duration'] >= limit_hour].copy()
     for i in range(df_duration.shape[0]): 
         current_target_profit = df_duration.iloc[i]['target_profit']
-        if current_target_profit == target_profit and not df_duration.iloc[i]['is_manual']: continue
+        if current_target_profit == target_profit or df_duration.iloc[i]['is_manual']: continue
         binance_position_set_limit_sell(target_profit, from_id, df_duration.iloc[i]['coin'], is_manual = 1)
     return True
 
