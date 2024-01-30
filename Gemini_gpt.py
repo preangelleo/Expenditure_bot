@@ -11,6 +11,7 @@ curl https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generate
         "parts":[{
           "text": "Write a story about a magic backpack."}]}]}' 2> /dev/null'''
 
+
 # define a function to use requests to generate text from googleapis
 def generate_text(prompt, model_name='gemini-pro'):
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}'
