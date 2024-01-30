@@ -2007,9 +2007,9 @@ def reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID):
         resistant_price = resistance_dict.get('resistant_price', 0)
         ideal_target_profit = resistant_price / df_balance.iloc[i]['price_create'] - 1
         ideal_target_profit = round(ideal_target_profit, 2)
-        ideal_target_profit = max(ideal_target_profit, 0.01)
+        target_profit = max(ideal_target_profit, 0.01)
         current_target_profit = df_balance.iloc[i]['target_profit']
-        if current_target_profit == target_profit and not df_balance.iloc[i]['is_manual']: continue
+        if current_target_profit == target_profit or df_balance.iloc[i]['is_manual']: continue
         binance_position_set_limit_sell(target_profit, from_id, df_balance.iloc[i]['coin'], is_manual = 1)
     return True
 
