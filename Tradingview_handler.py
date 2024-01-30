@@ -119,6 +119,7 @@ def tradingview_webhook_handler(data):
     interval = data.get('interval', 'NONE')
     symbol = data.get('symbol', 'NONE')
     current_price = float(data.get('current_price', 0))
+    score = int(float(data.get('score', 0)))
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
 
     if coin in ['BTC']:
@@ -129,14 +130,15 @@ def tradingview_webhook_handler(data):
             return
 
     if coin not in ['NONE', 'BTC']:
+        is_strong = True if score == 4 else False
         if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
         
         bot_current_status = trading_bot_switch_status()
         holding_list = read_holding_list()
         if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n/hold_RSR", TG_BOT_OWNER_ID)
         is_holding = True if coin in holding_list else False
-        step = 0.05 if bot_current_status else 0.08 
-        profit = 0 if not bot_current_status else 100
+        step = 0.03 if is_strong and bot_current_status else 0.05 if is_strong else 0.08 if bot_current_status else 0.16
+        profit = 0 if is_strong and not bot_current_status else 100
 
         if condition == 'ON': return coin_create_position(coin, current_price, step, TG_BOT_OWNER_ID, is_holding)
         if condition == 'OFF': return coin_close_position(coin, current_price, profit, TG_BOT_OWNER_ID, is_holding)
