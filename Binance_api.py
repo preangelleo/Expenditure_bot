@@ -1989,6 +1989,31 @@ def set_limit_sell_to_resistant_price(coin, from_id=TG_BOT_OWNER_ID):
     return binance_position_set_limit_sell(round(resistant_price_dict.get('target_profit', 0.01), 2), from_id, coin)
 
 
+def reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID):
+    df_balance = read_position_table_account()
+    if df_balance.empty: return print('No position found')
+    try: df = get_token_price_table()
+    except: df = pd.DataFrame()
+    if df.empty: return print('Failed to fetch price info')
+    df = df.drop(columns=['coin'])
+    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
+    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
+    df_balance = df_balance[df_balance['profit'] < 100]
+    if df_balance.empty: return print('No position with profit < 100 found')
+    for i in range(df_balance.shape[0]): 
+        coin = df_balance.iloc[i]['coin']
+        resistance_dict = get_resistant_price(coin)
+        if not resistance_dict: continue
+        resistant_price = resistance_dict.get('resistant_price', 0)
+        ideal_target_profit = resistant_price / df_balance.iloc[i]['price_create'] - 1
+        ideal_target_profit = round(ideal_target_profit, 2)
+        ideal_target_profit = max(ideal_target_profit, 0.01)
+        current_target_profit = df_balance.iloc[i]['target_profit']
+        if current_target_profit == target_profit and not df_balance.iloc[i]['is_manual']: continue
+        binance_position_set_limit_sell(target_profit, from_id, df_balance.iloc[i]['coin'], is_manual = 1)
+    return True
+
+
 def manually_market_buy_one_unit(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     reply_msg = do_market_buy(coin, CHECK_SIZE)
@@ -2323,6 +2348,7 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             long = 1 if result.get('long', False) else 0
             if for_webhook: return {'target_profit': f"{format_number(target_profit * 100)}%", 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%", 'long': long}
             return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage, 'long': long}
+    return {}
 
 
 def weekly_rsi_over_high(symbol):

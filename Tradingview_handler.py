@@ -124,8 +124,12 @@ def tradingview_webhook_handler(data):
 
     if coin in ['BTC']:
         send_msg(f"BTC {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", TG_BOT_OWNER_ID)
-        if condition == 'ON': return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        if condition == 'OFF': return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'ON': 
+            reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID)
+            return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'OFF': 
+            if interval == '240': reset_target_profit_for_coins(limit_hour = 0, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
+            return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if coin not in ['NONE', 'BTC']:
         is_strong = True if score == 4 else False
