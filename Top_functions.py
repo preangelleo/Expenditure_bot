@@ -194,14 +194,14 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM kdj_parameter WHERE coin = '{coin}'")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: d, w, m = 0, 0, 0
-    else: d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
-    if 'd' in dwm_dict and int(d) != int(dwm_dict['d']): 
+    else: d, w, m = int(df['d'].values[0]), int(df['w'].values[0]), int(df['m'].values[0])
+    if 'd' in dwm_dict and d != int(dwm_dict['d']): 
         d = int(dwm_dict['d'])
         if from_id: send_msg(f"{coin} KDJ_D turned {d}", from_id)
-    if 'w' in dwm_dict and int(w) != int(dwm_dict['w']): 
+    if 'w' in dwm_dict and w != int(dwm_dict['w']): 
         w = int(dwm_dict['w'])
         if from_id: send_msg(f"{coin} KDJ_W turned {w}", from_id)
-    if 'm' in dwm_dict and int(m) != int(dwm_dict['m']):
+    if 'm' in dwm_dict and m != int(dwm_dict['m']):
         m = int(dwm_dict['m'])
         if from_id: send_msg(f"{coin} KDJ_M turned {m}", from_id)
     date_string = datetime.now().strftime("%Y-%m-%d")
