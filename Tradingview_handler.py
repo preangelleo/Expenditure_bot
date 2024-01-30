@@ -144,7 +144,7 @@ def tradingview_webhook_handler(data):
         if coin not in holding_list + kdj_coinlist: return send_msg(f"{coin} is not in your holding list or KDJ coinlist!\nUse below command to add any coin into KDJ coinlist.\n/kpi {coin} 1 0 1\nMeaning current {coin} KDJ day is positive, week is negative, month is positive", TG_BOT_OWNER_ID)
         is_holding = True if coin in holding_list else False
 
-        if not dwm_dict: 
+        if not dwm_dict:
             if interval in ['60', '240']:
                 # send_msg(f"{coin} {interval}_KDJ turned {condition}", TG_BOT_OWNER_ID)
                 if condition == 'ON' and interval in ['60']:
