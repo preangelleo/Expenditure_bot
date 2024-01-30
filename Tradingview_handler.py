@@ -116,7 +116,7 @@ def handel_webhook_push_from_trading_view(token):
 def tradingview_webhook_handler(data):
     condition = data.get('condition', 'NONE')
     message = data.get('message', 'WEBHOOK')
-    interval = str(data.get('interval', 'NONE'))
+    interval = data.get('interval', 'NONE')
     symbol = data.get('symbol', 'NONE')
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
     

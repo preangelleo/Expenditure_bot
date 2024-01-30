@@ -195,20 +195,27 @@ def reset_kdj_parameter(coin, dwm_dict = {}, from_id=None):
     except: df = pd.DataFrame()
     if df.empty: d, w, m = 0, 0, 0
     else: d, w, m = df['d'].values[0], df['w'].values[0], df['m'].values[0]
-    d = int(dwm_dict['d']) if 'd' in dwm_dict else d
-    w = int(dwm_dict['w']) if 'w' in dwm_dict else w
-    m = int(dwm_dict['m']) if 'm' in dwm_dict else m
+    if 'd' in dwm_dict and int(d) != int(dwm_dict['d']): 
+        d = int(dwm_dict['d'])
+        if from_id: send_msg(f"{coin} KDJ_D turned {d}", from_id)
+    if 'w' in dwm_dict and int(w) != int(dwm_dict['w']): 
+        w = int(dwm_dict['w'])
+        if from_id: send_msg(f"{coin} KDJ_W turned {w}", from_id)
+    if 'm' in dwm_dict and int(m) != int(dwm_dict['m']):
+        m = int(dwm_dict['m'])
+        if from_id: send_msg(f"{coin} KDJ_M turned {m}", from_id)
     date_string = datetime.now().strftime("%Y-%m-%d")
     if not df.empty:
         with engine.connect() as connection: 
             connection.execute(text(f"UPDATE kdj_parameter SET d = {d}, w = {w}, m = {m}, date_string = '{date_string}' WHERE coin = '{coin}'"))
             connection.commit()
-    else: data_to_table({'coin': coin.upper(), 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
+    else: data_to_table({'coin': coin, 'd': d, 'w': w, 'm': m, 'date_string': date_string}, 'kdj_parameter')
     condition = 'ON' if d and (w or m) else 'OFF'
     score = d + w + m
     long = True if score == 3 else False
     short = True if score == 0 else False
     if long and from_id: send_msg(f"/buy_{coin} | {d}{w}{m} | {condition}\nUpdate: {date_string}", from_id)
+    elif short and from_id: send_msg(f"/as_{coin} | {d}{w}{m} | {condition}\nUpdate: {date_string}", from_id)
     return {'long': long, 'short': short, 'score': score, 'condition': True if condition == 'ON' else False}
 
 
