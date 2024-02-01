@@ -467,6 +467,11 @@ def calculate_coin_valuation(coin, amount = 146652243, from_id=TG_BOT_OWNER_ID):
             price_diff_percentage_string = f"{price_diff_percentage * 100:.2f}%"
             higher_lower = 'higher' if price_diff_percentage > 0 else 'lower'
             reply_msg += f"\n\nBuying back the rest {format_number(rest_amount)} {coin} will cost {format_number(cost_for_rest_amount)} usdt. Totally it will cost {format_number(total_usdt_cost)} and end up with an average price of {format_number(new_avg_price)} usdt/{coin.lower()} and will be {price_diff_percentage_string} {higher_lower} than current price {format_number(current_price)} usdt/{coin.lower()}."
+        if coin == 'RSR': 
+            last_close_usdt = 435898
+            last_close_amount = 146652243
+            totally_saved = last_close_usdt - total_usdt_cost
+            reply_msg += f"\n\nGiven that you have sold {format_number(last_close_amount)} RSR for {format_number(last_close_usdt)} usdt, you could save {format_number(totally_saved)} usdt."
         send_msg(reply_msg, from_id)
     return valuation
 
