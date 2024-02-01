@@ -424,14 +424,50 @@ def get_token_price_info(coin: str):
     return current_price
 
 
+def read_position_table(is_close = 0, coin = None):
+    with engine.connect() as conn: 
+        if not coin: 
+            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT * FROM position_table WHERE is_closed = {is_close}")).fetchall())
+            except: df_position = pd.DataFrame()
+        else:
+            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT * FROM position_table WHERE is_closed = {is_close} AND coin = '{coin}'")).fetchall())
+            except: df_position = pd.DataFrame()
+    return df_position
+
+
 # Calculate the valuation of a give coin for a given amount
 def calculate_coin_valuation(coin, amount = 146652243, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f"Amount has to be a number, your input is {amount}", from_id)
-    current_price = get_token_price_info(coin.upper())
+    current_price = get_token_price_info(coin)
     if not current_price: return 0
     valuation = current_price * amount
-    if from_id: send_msg(f"{amount} {coin.upper()} = {format_number(valuation)} usd", from_id)
+    if from_id: send_msg(f"{amount} {coin} = {format_number(valuation)} usd", from_id)
+    if from_id and coin in read_holding_list():
+        # Get current position total amount of RSR
+        df_balance = read_position_table(0, coin)
+        if df_balance.empty: return
+        df_balance = df_balance[['coin', 'account', 'price_create', 'amount', 'usdt_value']]
+        df_balance['current_price'] = current_price
+        df_balance['current_value'] = df_balance['current_price'] * df_balance['amount']
+        total_amount = df_balance['amount'].sum()
+        total_usdt_cost = df_balance['usdt_value'].sum()
+        total_usdt_value = df_balance['current_value'].sum()
+        gain = total_usdt_value - total_usdt_cost
+        loss_or_gain = 'gain' if gain > 0 else 'loss'
+        avg_price = total_usdt_cost / total_amount
+        rest_amount = amount - total_amount
+        reply_msg = f"In your position, you have {format_number(total_amount)} {coin} with {format_number(total_usdt_cost)} usdt cost, the current value is {format_number(total_usdt_value)} usdt, the average price is {format_number(avg_price)} usdt/{coin.lower()}, meaning {format_number(abs(gain))} usdt {loss_or_gain}. "
+        if rest_amount > 0:
+            cost_for_rest_amount = rest_amount * current_price
+            total_usdt_cost += cost_for_rest_amount
+            new_avg_price = total_usdt_cost / amount
+            price_diff_percentage = new_avg_price / current_price - 1
+            price_diff_percentage_string = f"{price_diff_percentage * 100:.2f}%"
+            higher_lower = 'higher' if price_diff_percentage > 0 else 'lower'
+            reply_msg += f"\n\nBuying back the rest {format_number(rest_amount)} {coin} will cost {format_number(cost_for_rest_amount)} usdt. Totally it will cost {format_number(total_usdt_value)} and end up with an average price of {format_number(new_avg_price)} usdt/{coin.lower()} and will be {price_diff_percentage_string} {higher_lower} than current price {format_number(current_price)} usdt/{coin.lower()}."
+        send_msg(reply_msg, from_id)
     return valuation
 
 

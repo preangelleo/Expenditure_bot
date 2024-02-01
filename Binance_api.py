@@ -1703,17 +1703,6 @@ def cancel_all_sell_orders(from_id=None):
 #     return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
 
 
-def read_position_table(is_close = 0, coin = None):
-    with engine.connect() as conn: 
-        if not coin: 
-            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT * FROM position_table WHERE is_closed = {is_close}")).fetchall())
-            except: df_position = pd.DataFrame()
-        else:
-            try: df_position = pd.DataFrame(conn.execute(text(f"SELECT * FROM position_table WHERE is_closed = {is_close} AND coin = '{coin}'")).fetchall())
-            except: df_position = pd.DataFrame()
-    return df_position
-
-
 def read_position_table_of_this_year(is_close = 1, coin = None):
     with engine.connect() as conn: 
         if not coin: 
