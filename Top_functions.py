@@ -466,7 +466,7 @@ def calculate_coin_valuation(coin, amount = 146652243, from_id=TG_BOT_OWNER_ID):
             price_diff_percentage = new_avg_price / current_price - 1
             price_diff_percentage_string = f"{price_diff_percentage * 100:.2f}%"
             higher_lower = 'higher' if price_diff_percentage > 0 else 'lower'
-            reply_msg += f"\n\nBuying back the rest {format_number(rest_amount)} {coin} will cost {format_number(cost_for_rest_amount)} usdt. Totally it will cost {format_number(total_usdt_value)} and end up with an average price of {format_number(new_avg_price)} usdt/{coin.lower()} and will be {price_diff_percentage_string} {higher_lower} than current price {format_number(current_price)} usdt/{coin.lower()}."
+            reply_msg += f"\n\nBuying back the rest {format_number(rest_amount)} {coin} will cost {format_number(cost_for_rest_amount)} usdt. Totally it will cost {format_number(total_usdt_cost)} and end up with an average price of {format_number(new_avg_price)} usdt/{coin.lower()} and will be {price_diff_percentage_string} {higher_lower} than current price {format_number(current_price)} usdt/{coin.lower()}."
         send_msg(reply_msg, from_id)
     return valuation
 
