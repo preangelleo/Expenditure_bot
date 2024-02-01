@@ -3908,6 +3908,16 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     if df_balance.empty: return send_msg(f"No open positions with profit.", from_id)
     df_funding = df_balance[df_balance['account'] == 'funding']
     if not df_funding.empty:
+        # Seperate 'RSR' with other coins
+        df_rsr = df_funding[df_funding['coin'] == 'RSR']
+        if not df_rsr.empty:
+            total_profit_rsr = df_rsr['profit'].sum()
+            reply_list = [f'RSR positions ({df_rsr.shape[0]}):'] if df_rsr.shape[0] <= 5 else [f'RSR Top 5 positions of {df_rsr.shape[0]}:']
+            df_rsr_head = df_rsr.head(5)
+            for index, row in df_rsr_head.iterrows(): reply_list.append(f"/ftm_{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
+            reply_string = '\n'.join(reply_list)
+            send_msg(f"{reply_string}\nTotal profit: {format_number(total_profit_rsr)} usdt", from_id)
+            df_funding = df_funding[df_funding['coin'] != 'RSR']
         reply_list = [f'FUNDING account ({df_funding.shape[0]}):']
         for index, row in df_funding.iterrows(): reply_list.append(f"/ftm_{row['coin']} >> {format_number(row['profit'])} /close_{row['orderId_create']}")
         reply_string = '\n'.join(reply_list)
