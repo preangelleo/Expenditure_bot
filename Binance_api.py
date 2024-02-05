@@ -2438,6 +2438,7 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
                 year_and_month_day = datetime.now().strftime('%Y-%m-%d')
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
+                send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, os.getenv('GMAIL_DANLI'))
                 plot_net_profit_sum(chat_id)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
     return 
@@ -3824,6 +3825,7 @@ def monthly_summary():
     reply_sumary = f"Trading Counts: {trading_counts}\nTotal Profit: {format_number(total_profit)}\nROI: {total_profit_by_initialfund:.2f}%\n\nBest Coin: {best_coin} >> {format_number(best_coin_profit)}\nWorst Coin: {worst_coin} >> {format_number(worst_coin_profit)}"
     send_msg(f"Trading Bot Performance Summary of {last_month_year}-{last_month}:\n\n{reply_sumary}", TG_BOT_OWNER_ID)
     send_email(f'Trading Bot Performance Summary of {last_month_year}-{last_month}', reply_sumary, GMAIL_ADDRESS_MAIN)
+    send_email(f'Trading Bot Performance Summary of {last_month_year}-{last_month}', reply_sumary, os.getenv('GMAIL_DANLI'))
     return reply_sumary
 
 
