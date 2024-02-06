@@ -257,16 +257,16 @@ def display_daily_profit_take():
     df_profit['profit'] = pd.to_numeric(df_profit['profit'], errors='coerce').fillna(0)
     col1, col2, col3 = st.columns(3)
     with col1:
-        df_daily_profit = df_profit.groupby(['year_close', 'month_close', 'day_close'])['profit'].sum(numeric_only=True).reset_index().astype(int)
+        df_daily_profit = df_profit.groupby(['year_close', 'month_close', 'day_close'])['profit'].sum(numeric_only=True).reset_index()
         df_daily_profit = df_daily_profit[df_daily_profit['year_close'] == datetime.now().year]
         df_daily_profit['date'] = df_daily_profit['year_close'].astype(str) + '-' + df_daily_profit['month_close'].astype(str) + '-' + df_daily_profit['day_close'].astype(str)
         with st.expander("Daily Profit", expanded=False): st.table(df_daily_profit)
     with col2:
-        df_monthly_profit = df_profit.groupby(['year_close', 'month_close'])['profit'].sum(numeric_only=True).reset_index().astype(int)
+        df_monthly_profit = df_profit.groupby(['year_close', 'month_close'])['profit'].sum(numeric_only=True).reset_index()
         df_monthly_profit['date'] = df_monthly_profit['year_close'].astype(str) + '-' + df_monthly_profit['month_close'].astype(str)
         with st.expander("Monthly Profit", expanded=False): st.table(df_monthly_profit)
     with col3:
-        df_yearly_profit = df_profit.groupby(['year_close'])['profit'].sum(numeric_only=True).reset_index().astype(int)
+        df_yearly_profit = df_profit.groupby(['year_close'])['profit'].sum(numeric_only=True).reset_index()
         with st.expander("Yearly Profit", expanded=False): st.table(df_yearly_profit)
 
         
