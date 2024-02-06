@@ -120,6 +120,8 @@ def tradingview_webhook_handler(data):
     symbol = data.get('symbol', 'NONE')
     current_price = float(data.get('current_price', 0))
     score = int(float(data.get('score', 0)))
+    is_binance = True if 'BINANCE' in symbol else False
+    original_symbol = symbol
     coin = symbol.replace('BINANCE:', '').replace('USDT', '').replace('USD', '')
 
     if coin in ['BTC']:
@@ -133,7 +135,7 @@ def tradingview_webhook_handler(data):
 
     if coin not in ['NONE', 'BTC']:
         is_strong = True if score == 4 else False
-        if coin in ['EH', 'HSAI']: return send_email(f"{coin} {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
+        if not is_binance: return send_email(f"{original_symbol} {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
         
         bot_current_status = trading_bot_switch_status()
         holding_list = read_holding_list()
