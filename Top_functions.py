@@ -33,6 +33,7 @@ import smtplib
 from email.mime.text import MIMEText
 import imaplib
 import email
+from requests.auth import AuthBase
 
 
 # Load environment variables
@@ -1343,61 +1344,64 @@ def get_symbol_list_from_trading_pairs():
     return symbol_list
 
 
-# NOT SUCCESSFUL
-def coinbase_market_buy_order(product_id, funds = '10000'):
-    """
-    Place a market buy order on Coinbase Pro.
 
-    :param api_url: URL of the Coinbase Pro API.
-    :param api_key: Your Coinbase Pro API key.
-    :param secret_key: Your Coinbase Pro API secret key.
-    :param passphrase: Your Coinbase Pro API passphrase.
-    :param product_id: The product to buy (e.g., 'BTC-USD').
-    :param funds: The amount of funds (in quote currency) to use for the purchase.
-    """
 
+# Create custom authentication for Exchange
+class CoinbaseExchangeAuth(AuthBase):
+    def __init__(self, api_key, secret_key, passphrase):
+        self.api_key = api_key
+        self.secret_key = secret_key
+        self.passphrase = passphrase
+
+    def __call__(self, request):
+        timestamp = str(time.time())
+        message = timestamp + request.method + request.path_url + (request.body or '')
+        hmac_key = base64.b64decode(self.secret_key)
+        signature = hmac.new(hmac_key, message.encode(), hashlib.sha256)
+        signature_b64 = base64.b64encode(signature.digest())
+
+        request.headers.update({
+            'CB-ACCESS-SIGN': signature_b64,
+            'CB-ACCESS-TIMESTAMP': timestamp,
+            'CB-ACCESS-KEY': self.api_key,
+            'CB-ACCESS-PASSPHRASE': self.passphrase,
+            'Content-Type': 'application/json'
+        })
+        return request
+
+# Function to place a market order
+def convert_usdt_to_symbol(amount, symbol):
+    """
+    Convert a specified amount of USDT to the given symbol.
+    :param amount: float, amount of USDT to convert.
+    :param symbol: str, target cryptocurrency symbol (e.g., 'BTC-USD').
+    """
+    API_KEY = os.getenv('COINBASE_API_KEY')
+    API_SECRET = os.getenv('COINBASE_API_SECRET')
+    PASSPHRASE = os.getenv('COINBASE_API_PASSPHRASE')
     api_url = 'https://api.pro.coinbase.com'
-    api_key = os.getenv('COINBASE_API_KEY')
-    secret_key = os.getenv('COINBASE_API_SECRET')
-    passphrase = os.getenv('COINBASE_API_PASSPHRASE')
 
-    if product_id not in COINBASE_SYMBOL_LIST: 
-        coinbase_product_id_list = get_symbol_list_from_trading_pairs()
-        if product_id not in coinbase_product_id_list: return f"Product_id {product_id} not in COINBASE_SYMBOL_LIST"
+    # Ensure the symbol is in the correct format for a trading pair
+    target_pair = f'USDT-{symbol}' if 'USDT' not in symbol else symbol
 
-    timestamp = str(time.time())
-    method = 'POST'
-    path = '/orders'
-    body = json.dumps({
+    # Market order payload
+    order = {
         'type': 'market',
-        'side': 'buy',
-        'product_id': product_id,
-        'funds': str(funds)
-    })
-
-    # Create a signature
-    message = timestamp + method + path + body
-    hmac_key = base64.b64decode(secret_key)
-    signature = hmac.new(hmac_key, message.encode(), hashlib.sha256)
-    signature_b64 = base64.b64encode(signature.digest())
-
-    # Define the request headers
-    headers = {
-        'Content-Type': 'application/json',
-        'CB-ACCESS-KEY': api_key,
-        'CB-ACCESS-SIGN': signature_b64,
-        'CB-ACCESS-TIMESTAMP': timestamp,
-        'CB-ACCESS-PASSPHRASE': passphrase
+        'side': 'sell',
+        'product_id': target_pair,
+        'size': amount
     }
 
-    # Send the request
-    response = requests.post(api_url + path, headers=headers, data=body)
-    
-    if response.status_code == 200: return response.json()
-    else: return response.json()  # Contains the error message
+    # Create a market order to sell USDT
+    r = requests.post(api_url + '/orders', json=order, auth=CoinbaseExchangeAuth(API_KEY, API_SECRET, PASSPHRASE))
+    return r.json()  # Return the response from the API
 
 
 if __name__ == '__main__':
     print(f"Top_functions.py is running...")
-    reset_bot_starting_date(bot_starting_date = '2023-12-10')
-    initial_kdj_parameter('BTC', d=1, w=0, m=1)
+
+    # Example usage
+    # amount = 9660  # Amount of USDT you want to convert
+    # symbol = 'SWFTC'  # Symbol you want to convert to
+    # response = convert_usdt_to_symbol(amount, symbol)
+    # print(response)
