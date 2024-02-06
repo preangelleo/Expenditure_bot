@@ -233,17 +233,14 @@ def display_funding_account_performance():
         df['time_create'] = df['time_create'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
         df['time_close'] = df['time_close'].apply(lambda x: datetime.fromtimestamp(x/1000).strftime('%Y-%m-%d %H:%M'))
         df['duration_hour'] = df['duration'].apply(lambda x: int(x/1000/60/60))
-        
         df['profit'] = pd.to_numeric(df['profit'], errors='coerce').fillna(0)
         total_profit = df['profit'].sum()
         df.sort_values(by=['time_close'], ascending=False, inplace=True)
         df_latest = df.head(10).copy()
-        df_latest['profit'] = df_latest['profit'].apply(lambda x: format_number(x))
         df_group = df.groupby(['coin']).sum(numeric_only=True).astype(float)
         df_group = df_group[['profit']]
         df_group.sort_values(by=['profit'], ascending=False, inplace=True)
         df_group.reset_index(inplace=True)
-        df_group['profit'] = df_group['profit'].apply(lambda x: format_number(x))
         st.write(f"Funding Account Total Profit: {format_number(total_profit)} | Binance Pay: {binance_pay_record()} | Table shows last 10 records")
         with st.expander("Funding Account Performance", expanded=False): st.table(df_latest)
         with st.expander("Funding Account Performance Grouped by coin", expanded=False): st.table(df_group.head(10))
