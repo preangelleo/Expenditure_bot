@@ -1355,10 +1355,12 @@ class CoinbaseExchangeAuth(AuthBase):
 
     def __call__(self, request):
         timestamp = str(time.time())
-        message = timestamp + request.method + request.path_url + (request.body or '')
+        # Decode the request body if it's not None
+        message_body = (request.body or b'').decode() if request.body else ''
+        message = timestamp + request.method + request.path_url + message_body
         hmac_key = base64.b64decode(self.secret_key)
         signature = hmac.new(hmac_key, message.encode(), hashlib.sha256)
-        signature_b64 = base64.b64encode(signature.digest())
+        signature_b64 = base64.b64encode(signature.digest()).decode()  # Also decode this to ensure it's a str
 
         request.headers.update({
             'CB-ACCESS-SIGN': signature_b64,
