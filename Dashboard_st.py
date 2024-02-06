@@ -185,6 +185,7 @@ def display_binance_trading_history():
     st.write(f"Spot Account Total Profit: {format_number(total_profit)}")
     with st.expander("Spot Account BUY & SELL Latest 20 Trades", expanded=False): st.table(df_lastest)
     df_merged = df_merged.groupby(['coin']).sum(numeric_only=True).astype(float)
+    df_merged['profit'] = pd.to_numeric(df_merged['profit'], errors='coerce').fillna(0)
     df_merged = df_merged[['profit']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
