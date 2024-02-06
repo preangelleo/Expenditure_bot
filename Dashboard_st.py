@@ -177,7 +177,6 @@ def display_binance_trading_history():
     df_merged = df_merged[['coin', 'profit', 'account', 'type_create', 'type_close', 'duration_min', 'time_create', 'time_close', 'price_create', 'price_close', 'orderId_create', 'orderId_close']]
     df_merged.sort_values(by=['time_close'], ascending=False, inplace=True)
     df_lastest = df_merged.head(20).copy()
-    df_lastest['profit'] = df_lastest['profit'].apply(lambda x: round(x))
     total_profit = df_merged['profit'].sum()
     csv = df_merged.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
@@ -189,7 +188,6 @@ def display_binance_trading_history():
     df_merged = df_merged[['profit']]
     df_merged.sort_values(by=['profit'], ascending=False, inplace=True)
     df_merged.reset_index(inplace=True)
-    df_merged['profit'] = df_merged['profit'].apply(lambda x: round(x))
     with st.expander("Spot Account Performance Grouped by Coin Top 10", expanded=False): st.table(df_merged.head(10))
     return
 
