@@ -1027,10 +1027,8 @@ def get_stock_info(symbol = None, from_id = None):
     info = {
         'Symbol': info['symbol'],
         'Price': f"{format_number(info['currentPrice'])} {info['currency']}",
-        'Market Cap': format_number(info['marketCap']),
-        'Volume': format_number(info['volume']),
-        'Sector': info['sector'],
-        'Industry': info['industry'],
+        'Market_Cap': format_number(info['marketCap']),
+        'Quote_Volume': format_number(float(info['volume']) * float(info['currentPrice'])),
         'Full Name': info['longName'],
         'Current Time': datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
