@@ -36,14 +36,24 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
+                charset = part.get_content_charset()
                 content_disposition = str(part.get("Content-Disposition"))
                 if "attachment" not in content_disposition and content_type == "text/html":
-                    body = part.get_payload(decode=True).decode()
+                    email_payload = part.get_payload(decode=True)
+                    try:
+                        body = email_payload.decode(charset if charset else 'utf-8', errors='replace')
+                    except LookupError:  # If the specified charset is unknown
+                        body = email_payload.decode('utf-8', errors='replace')
                     break
         else:
             content_type = msg.get_content_type()
+            charset = msg.get_content_charset()
             if content_type == "text/html":
-                body = msg.get_payload(decode=True).decode()
+                email_payload = msg.get_payload(decode=True)
+                try:
+                    body = email_payload.decode(charset if charset else 'utf-8', errors='replace')
+                except LookupError:  # If the specified charset is unknown
+                    body = email_payload.decode('utf-8', errors='replace')
 
         soup = BeautifulSoup(body, 'html.parser')
         plain_text = soup.get_text(separator='\n')
