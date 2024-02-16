@@ -36,28 +36,24 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
-                charset = part.get_content_charset()
                 content_disposition = str(part.get("Content-Disposition"))
-                if "attachment" not in content_disposition and content_type == "text/html":
-                    email_payload = part.get_payload(decode=True)
+                if "attachment" not in content_disposition and content_type in ["text/plain", "text/html"]:
                     try:
-                        body = email_payload.decode(charset if charset else 'utf-8', errors='replace')
-                    except LookupError:  # If the specified charset is unknown
-                        body = email_payload.decode('utf-8', errors='replace')
+                        body = part.get_payload(decode=True).decode('utf-8', 'ignore')
+                    except UnicodeDecodeError:
+                        body = part.get_payload(decode=True).decode('iso-8859-1')
                     break
         else:
             content_type = msg.get_content_type()
-            charset = msg.get_content_charset()
-            if content_type == "text/html":
-                email_payload = msg.get_payload(decode=True)
+            if content_type in ["text/plain", "text/html"]:
                 try:
-                    body = email_payload.decode(charset if charset else 'utf-8', errors='replace')
-                except LookupError:  # If the specified charset is unknown
-                    body = email_payload.decode('utf-8', errors='replace')
+                    body = msg.get_payload(decode=True).decode('utf-8', 'ignore')
+                except UnicodeDecodeError:
+                    body = msg.get_payload(decode=True).decode('iso-8859-1')
 
         soup = BeautifulSoup(body, 'html.parser')
         plain_text = soup.get_text(separator='\n')
-        
+
         if 'receipt' in plain_text.lower() or 'receipt' in email_subject.lower() or 'invoice' in email_subject.lower() or 'invoice' in plain_text.lower() or 'bill' in email_subject.lower() or 'renewed' in email_subject.lower() or 'payment' in email_subject.lower() or '收据' in email_subject.lower() or '付款' in email_subject.lower() or '充值' in email_subject.lower() or 'statement' in email_subject.lower() or 'order' in email_subject.lower() or '发票' in email_subject.lower():
             
             new_prompt = f"Extract the receipt detail information from this email and call function: insert_new_expenditure_record to insert the record into the table. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
