@@ -1687,21 +1687,40 @@ def cancel_all_sell_orders(from_id=None):
             else: send_msg(f"Failed to cancel /as_{coin} limit sell order: \n/cancel_{coin}_{orderId}", from_id)
     return
 
-# def get_open_limit_orders_for_user(from_id=TG_BOT_OWNER_ID):
-#     df = read_position_table_account()
-#     if df.empty: return send_msg('No open limit orders.', from_id)
-#     df = df[df['orderId_close']!=0]
-#     df = df.loc[:, ['coin', 'orderId_create', 'target_profit']]
-#     reply_msg_list = []
-#     for index, row in df.iterrows():
-#         coin = row['coin']
-#         orderId_create = row['orderId_create']
-#         target_profit = row['target_profit']
-#         reply_msg = f"{coin}: {int(target_profit*100)}% /close_{orderId_create}"
-#         reply_msg_list.append(reply_msg)
-#     reply_msg = '\n'.join(reply_msg_list)
-#     return send_msg(f"Open Limit Orders for Sell:\n{reply_msg}", from_id)
 
+# Define a function to check the last filled orders for a given coin, side = 'BUY' or 'SELL'
+def get_last_filled_orders(coin, side = 'BUY', time_offset = 24):
+    coin = coin.upper()
+    PATH = '/api/v3/myTrades'
+    timestamp = int(time.time() * 1000)
+    params = {
+        'symbol': coin + 'USDT',
+        'timestamp': timestamp
+        }
+    query_string = urlencode(params)
+    params['signature'] = hmac.new(BINANCE_SECRET.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
+    url = urljoin(BINANCE_BASE_URL, PATH)
+    r = requests.get(url, headers=BINANCE_HEADERS, params=params)
+    if r.status_code == 200:
+        data = r.json()
+        df = pd.DataFrame(data)
+        if df.empty: return pd.DataFrame()
+        df.loc[:, 'coin'] = df['symbol'].apply(lambda x: x[:-4])  
+        # Keep only isBuyer
+        df = df[df['isBuyer']] if side == 'BUY' else df[~df['isBuyer']] if side == 'SELL' else df
+        # Keep only coin, orderId
+        df_orderId = df.loc[:, ['coin', 'orderId', 'time']]
+        # Keep only the orderId within last 24 hours
+        df_orderId = df_orderId[df_orderId['time'] >= int(datetime.now().timestamp() * 1000) - time_offset * 60 * 60 * 1000]
+        # Group by orderId, and time column keep only the latest one
+        df_orderId = df_orderId.groupby('orderId').last()
+        # Sort by time, Descending
+        df_orderId = df_orderId.sort_values(by=['time'], ascending=False)
+        return df_orderId
+    else: 
+        print(r.json())
+        return pd.DataFrame()
+    
 
 def read_position_table_of_this_year(is_close = 1, coin = None):
     with engine.connect() as conn: 
@@ -1827,6 +1846,70 @@ def update_position_table_for_limit_sell_order(coin: str, orderId: int, from_id=
         data['price_create'] = float(row['price_create'])
         data['amount'] = float(row['amount'])
         return update_position_table(data, from_id)
+
+
+def update_all_position_table_for_limit_sell_order(from_id=TG_BOT_OWNER_ID):
+    df_position = read_position_table_account(0)
+    if df_position.empty: return
+    for index, row in df_position.iterrows():
+        coin = row['coin']
+        orderId = int(row['orderId_close'])
+        data = check_order_status_by_orderId(coin, orderId)
+        if not data: continue
+        if data['status'] == 'FILLED':
+            data['coin'] = coin
+            data['orderId_create'] = int(row['orderId_create'])
+            data['time_create'] = int(row['time_create'])
+            data['commission'] = float(row['commission'])
+            data['usdt_value'] = float(row['usdt_value'])
+            data['price_create'] = float(row['price_create'])
+            data['amount'] = float(row['amount'])
+            try: update_position_table(data, from_id)
+            except: pass
+    
+
+def check_all_limit_buy_order_filled(from_id = TG_BOT_OWNER_ID):
+    # Check current spot balance coin in binance spot account
+    df = get_user_asset()
+    df_position = read_position_table_account(0)
+    # Check coins in df asset but not in df_position['coin']
+    coins = df['asset'].values
+    coins = [coin for coin in coins if coin not in df_position['coin'].values]
+    # Remove 'USDT', 'BNB' from coins
+    coins = [coin for coin in coins if coin not in ['USDT', 'BNB']]
+    if not coins: return
+    for coin in coins:
+        # Get the latest trade history for the coin from binance
+        df_orderId = get_last_filled_orders(coin, side = 'BUY', time_offset = 48)
+        # get orderId from data
+        for orderId_create in df_orderId.index:
+            orderId_create = int(orderId_create)
+            df_spot_coins_history = read_position_table_by_orderId_create(orderId_create)
+            if not df_spot_coins_history.empty: continue
+            data = check_order_status_by_orderId(coin, orderId_create)
+            if not data: continue
+            instert_position_table(data, account = 'spot')
+            price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
+            send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}\n{generate_bottom_msg(coin)}", from_id)
+            try: set_limit_sell_to_resistant_price(coin, from_id)
+            except: pass
+
+
+# Create a function to check position_table, find out the duplicated orderId_create, and delete the one with bigger time_create
+def check_position_table_for_duplicated_orderId_create(from_id = TG_BOT_OWNER_ID):
+    with engine.connect() as conn: 
+        try: df = pd.DataFrame(conn.execute(text(f"SELECT orderId_create, count(orderId_create) as count, max(time_create) as max_time_create FROM position_table GROUP BY orderId_create HAVING count > 1")).fetchall())
+        except: df = pd.DataFrame()
+    if df.empty: return send_msg('No duplicated orderId_create', from_id)
+    for index, row in df.iterrows():
+        orderId_create = int(row['orderId_create'])
+        max_time_create = int(row['max_time_create'])
+        try: 
+            with engine.connect() as conn:
+                conn.execute(text(f"DELETE FROM position_table WHERE orderId_create = {orderId_create} AND time_create = {max_time_create}"))
+                conn.commit()
+        except: pass
+    return send_msg('Duplicated orderId_create deleted', from_id)
 
 
 def update_position_table_with_orderId(coin, orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID, row = pd.DataFrame(), data = {}):
@@ -3986,6 +4069,46 @@ def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
     return 
 
 
+def auto_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
+    target_price_dict = get_resistant_price(coin)
+    if not target_price_dict: return 
+    target_price = float(target_price_dict.get('support_price', 0))
+    if not target_price: return 
+    amount = CHECK_SIZE / target_price
+    polished_parameters = polish_parameters_for_limit_order(coin, amount, target_price)
+    if not polished_parameters: return
+    amount = polished_parameters['amount']
+    price = polished_parameters['price']
+    data = binance_limit_buy(coin, amount, price)
+    if not data: return
+    orderId = data['orderId']
+    if from_id: send_msg(f"{coin} Limit Buy Order at {price} \n/cancel_{coin}_{orderId}\n{generate_bottom_msg(coin)}", from_id)
+    return True
+
+
+# Check open orders for BUY and place a new order for the coins in holding_list but not in open orders
+def check_open_orders_and_place_new_order(from_id=TG_BOT_OWNER_ID):
+    df = read_position_table_account(0, None, 'spot')
+    position_coins = df['coin'].values.tolist()
+    limit_buy_df = get_open_orders_list(None, side = 'BUY')
+    ''' limit_buy
+       coin side      orderId
+    0   ETH  BUY  16013178663
+    2  IOTX  BUY    911140331
+    3   OGN  BUY    812101781
+    6   RSR  BUY    781465890
+    8   GMT  BUY   1983013771
+    9   APE  BUY   1607665465
+    '''
+    current_limit_buy = limit_buy_df['coin'].values.tolist()
+    holding_list = read_holding_list()
+    '''['RSR', 'OGN', 'IOTX', 'CTK', 'CHZ', 'WLD']'''
+    # check if the length of position_coins + current_limit_buy is less than POSITIONS_LIMIT
+    if len(position_coins) + len(current_limit_buy) >= POSITIONS_LIMIT: return send_msg(f'Positions and open orders are already at the limit: {POSITIONS_LIMIT}', from_id)
+    coins_to_buy = set(holding_list) - set(current_limit_buy) - set(position_coins)
+    for coin in coins_to_buy: 
+        if auto_limit_buy_at_support_price(coin, from_id): return
+    return
 
 
 if __name__ == '__main__':

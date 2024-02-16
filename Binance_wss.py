@@ -126,7 +126,10 @@ def handle_socket_message(msg):
             elif msg['S'] == 'BUY' and msg['o'] == 'LIMIT':
                 try: limit_buy_order_filled(symbol, orderId_create = orderId, chat_id = TG_BOT_OWNER_ID)
                 except Exception as e: print(f'limit_buy_order_filled() error:\n\n{e}\n\n')
+            try: check_open_orders_and_place_new_order(from_id)
+            except Exception as e: print(f'check_open_orders_and_place_new_order() error:\n\n{e}\n\n')
 
+            
 def main():
     twm = ThreadedWebsocketManager(api_key=BINANCE_API, api_secret=BINANCE_SECRET)
     twm.start()

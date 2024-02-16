@@ -14,4 +14,11 @@ if __name__ == '__main__':
     try: read_emails()
     except: pass
 
-    if '23:50' < datetime.now().strftime("%H:%M") < '23:59':  profit_taken_today(TG_BOT_OWNER_ID, report = True)
+    if '23:50' < datetime.now().strftime("%H:%M") < '23:59': 
+        try: update_all_position_table_for_limit_sell_order()
+        except: pass
+        try: check_all_limit_buy_order_filled()
+        except: pass
+        try: profit_taken_today(TG_BOT_OWNER_ID, report = True)
+        except: pass
+        
