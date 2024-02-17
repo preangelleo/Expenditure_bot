@@ -30,7 +30,6 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_white_list': get_white_list,
     'get_holding_list': get_holding_list,
     'get_initial_funding': get_initial_funding_amount,
-    'get_daily_new': get_daily_new_positions_limit,
     'get_expenditure_now': get_total_spend_of_any_year_any_month,
     'get_last_msg': get_latest_message_from_telegram_messages_table,
     'funding_main_transfer': funding_main_transfer_all_usdt,
@@ -62,6 +61,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'get_trading_parameters': get_trading_parameters,
     'update_limit_buy': update_limit_buy_orders,
     'update_limit_sell': update_all_position_table_for_limit_sell_order,
+    'set_trading_parameters_default': set_trading_parameters_default,
     }
 
 
