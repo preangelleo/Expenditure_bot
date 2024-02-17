@@ -17,7 +17,7 @@ if __name__ == '__main__':
     if '23:50' < datetime.now().strftime("%H:%M") < '23:59': 
         try: update_all_position_table_for_limit_sell_order()
         except: pass
-        try: check_all_limit_buy_order_filled(TG_BOT_OWNER_ID, engine)
+        try: check_all_limit_buy_order_filled()
         except: pass
         try: profit_taken_today(TG_BOT_OWNER_ID, report = True)
         except: pass

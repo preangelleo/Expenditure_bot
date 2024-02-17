@@ -54,7 +54,7 @@ def network_name_change(str_name: str):
 
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /cas"
+    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
 
 
 def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
@@ -1897,6 +1897,11 @@ def check_all_limit_buy_order_filled(from_id = TG_BOT_OWNER_ID, engine = engine)
                 if coin in holding_list: switch_position_from_main_to_funding(coin, from_id) 
                 else: set_limit_sell_to_resistant_price(coin, from_id, engine)
             except: pass
+
+
+def update_limit_buy_orders(from_id = TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    return check_all_limit_buy_order_filled(from_id, engine)
 
 
 # Create a function to check position_table, find out the duplicated orderId_create, and delete the one with bigger time_create

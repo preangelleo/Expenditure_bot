@@ -60,6 +60,8 @@ NONE_PARAMETER_COMMAND_LIST = {
     'cancel_all_sell': cancel_all_sell_orders,
     'deposit_check': get_deposit_history_by_hours,
     'get_trading_parameters': get_trading_parameters,
+    'update_limit_buy': update_limit_buy_orders,
+    'update_limit_sell': update_all_position_table_for_limit_sell_order,
     }
 
 

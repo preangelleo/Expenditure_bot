@@ -187,6 +187,8 @@ COMMANDS = [
     {"command": "count_positions_amounts", "description": "Count the amounts of a given coin in Spot and Funding account positions"},
     {"command": "kdj_parameter_initiate", "description": "Initialize the KDJ parameters for a given coin"},
     {"command": "read_kdj_coinlist", "description": "Read the KDJ watching list"},
+    {"command": "update_limit_buy", "description": "Update the limit buy excuted orders"},
+    {"command": "update_limit_sell", "description": "Update the limit sell excuted orders"},
 ]
 
 
@@ -647,6 +649,8 @@ BOT_COMMAND_DICT = {
     'kpi': 'kdj_parameter_initiate',
     'kdj': 'read_kdj_coinlist',
     'cmy': 'calculate_missed_yesterday',
+    'ulb': 'update_limit_buy',
+    'uls': 'update_limit_sell',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''
