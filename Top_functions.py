@@ -154,7 +154,7 @@ def get_daily_new_positions_limit(from_id = TG_BOT_OWNER_ID):
 
 
 # Define a function to make a dict to dataframe and create or append to a given table name
-def data_to_table(data, table_name, if_exists='append'):
+def data_to_table(data, table_name, if_exists='append', engine=engine):
     if type(data) != dict: return
     df = pd.DataFrame(data, index=[0])
     if df.empty: return
