@@ -3,24 +3,21 @@ from Generate_token import *
 
 CMC_NO_DATA = ['EUR', 'BEAMX']
 
-'''
-parameters_dict = {'ID': 2, 'trading_bot_status': 1, 'initial_fund_spot': 100000, 'initial_funding_fund': 100000, 'check_size': 10000, 'position_limit_spot': 10, 'target_profit_usdt': 300, 'target_profit_percentage': 0.03, 'daily_target_profit': 1000, 'daily_new_positions_limit': 2, 'bot_starting_date': datetime.date(2024, 1, 21), 'trading_volume_limit': 20000000, 'fully_diluted_market_cap_up_limit': 5000000000, 'market_cap_down_limit': 30000000, 'circulation_ratio': 0.3}
-'''
 parameters_dict = read_trading_parameters()
 
 TRADING_VOLUME_LIMIT = parameters_dict.get('trading_volume_limit', 50_000_000)
-INITIAL_FUND = parameters_dict.get('initial_fund_spot', 100_000)
-CHECK_SIZE = parameters_dict.get('check_size', 10_000)
+INITIAL_FUND = parameters_dict.get('initial_fund_spot', 200_000)
+CHECK_SIZE = parameters_dict.get('check_size', 20_000)
 POSITIONS_LIMIT = parameters_dict.get('position_limit_spot', 10)
-TARGET_PROFIT_PERCENTAGE = parameters_dict.get('target_profit_percentage', 0.03)
+TARGET_PROFIT_PERCENTAGE = parameters_dict.get('target_profit_percentage', 0.13)
 TARGET_PROFIT_USDT = parameters_dict.get('target_profit_usdt', 300)
 FULLLY_DILUTED_MARKET_CAP_UP_LIMIT = parameters_dict.get('fully_diluted_market_cap_up_limit', 5_000_000_000)
 MARKET_CAP_DOWN_LIMIT = parameters_dict.get('market_cap_down_limit', 30_000_000)
 CIRCULATION_RATIO = parameters_dict.get('circulation_ratio', 0.3)
-DAILY_TARGET_PROFIT = parameters_dict.get('daily_target_profit', 1000)
+DAILY_TARGET_PROFIT = parameters_dict.get('daily_target_profit', 2000)
 DAILY_NEW_POSITIONS_LIMIT = parameters_dict.get('daily_new_positions_limit', 2)
 TRADING_BOT_STATUS = parameters_dict.get('trading_bot_status', 0)
-INITIAL_FUNDING_FUND = parameters_dict.get('initial_funding_fund', 100_000)
+INITIAL_FUNDING_FUND = parameters_dict.get('initial_funding_fund', 300_000)
 BOT_STARTING_DATE = parameters_dict.get('bot_starting_date')
 TARGET_PROFIT = TARGET_PROFIT_PERCENTAGE
 

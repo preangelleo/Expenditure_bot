@@ -124,12 +124,14 @@ BINANCE_HEADERS = {
 
 # read trading parameters from table 'trading_parameters' and return a dict
 def read_trading_parameters():
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df_trading_parameters = pd.DataFrame(connection.execute(text("SELECT * FROM trading_parameters ORDER BY ID DESC LIMIT 1")).fetchall())
     if not df_trading_parameters.empty: return df_trading_parameters.to_dict(orient='records')[0]
     return {}
 
 # from "CREATE TABLE IF NOT EXISTS target_profit (ID INTEGER PRIMARY KEY AUTO_INCREMENT, Date DATE, TargetProfit FLOAT)" table read the target profit
 def read_target_profit_default(from_id=None):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df_target_profit = pd.DataFrame(connection.execute(text("SELECT target_profit_percentage FROM trading_parameters ORDER BY ID DESC LIMIT 1")).fetchall())
     target_profit = float(df_target_profit['target_profit_percentage'].values[0]) if not df_target_profit.empty else 0.05
     if from_id: send_msg(f"Current target profit: {target_profit*100}%", from_id)
@@ -137,6 +139,7 @@ def read_target_profit_default(from_id=None):
 
 
 def reset_initial_funding_amount(initial_funding_fund = 100000, from_id = TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try: int(initial_funding_fund)
     except: return send_msg(f"Initial funding fund has to be an integer, your input is {initial_funding_fund}", from_id)
     if set_initial_funding_fund(initial_funding_fund): return send_msg(f"Initial funding fund has been set to {initial_funding_fund} usd!", from_id)
