@@ -3517,15 +3517,8 @@ def coin_create_position(coin, current_price, step, from_id, is_holding = False)
     coin = coin.upper()
     if not current_price: current_price = float(get_avg_price(coin)['price'])
     if step == 0.03: today_hotcoin_check_save(coin, current_price)
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed, time_close FROM position_table WHERE coin = "{coin}"')).fetchall())
-    if not df.empty:
-        df_position = df[df['is_closed'] == 0]
-        if not df_position.empty:  price_create_target = float(df_position['price_create'].min()) * (1 - 2 * step)
-        else: 
-            df_latest = df[df['time_close'] == df['time_close'].max()]
-            if not df_latest.empty: price_create_target = float(df_latest['price_close'].max()) * (1 - step)
-            else: price_create_target = float(df['price_close'].max()) * (1 - step)
-        if current_price > price_create_target > 0: return
+    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed, time_close FROM position_table WHERE coin = "{coin}" AND is_closed = 0')).fetchall())
+    if not df.empty and current_price > float(df['price_create'].min()) * (1 - step): return
     if is_holding: return binance_funding_buy_and_hold(coin, from_id)
     if not is_spot_full(): 
         resistance_dict = get_resistant_price(coin)

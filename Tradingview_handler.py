@@ -129,10 +129,10 @@ def tradingview_webhook_handler(data):
     if coin in ['BTC']:
         send_msg(f"BTC {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", TG_BOT_OWNER_ID)
         if condition == 'ON': 
-            reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID)
+            # reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID)
             return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
         if condition == 'OFF': 
-            if interval == '240': reset_target_profit_for_coins(limit_hour = 0, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
+            # if interval == '240': reset_target_profit_for_coins(limit_hour = 0, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
             return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if coin not in ['NONE', 'BTC']:
@@ -141,12 +141,11 @@ def tradingview_webhook_handler(data):
         if is_bybit: return send_msg(f"{original_symbol} {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", TG_BOT_OWNER_ID)
         if not is_binance: return send_email(f"{original_symbol} {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", get_stock_info(coin), GMAIL_ADDRESS_MAIN)
         
-        bot_current_status = trading_bot_switch_status()
         holding_list = read_holding_list()
         if not holding_list: return send_msg("Your holding list is empty! Use below command to add any coin into holding list.\n/hold_RSR", TG_BOT_OWNER_ID)
         is_holding = True if coin in holding_list else False
-        step = 0.03 if is_strong and bot_current_status else 0.05 if is_strong else 0.08 if bot_current_status else 0.16
-        profit = 0 if is_strong and not bot_current_status else 100
+        step = 0.03 if is_strong  else 0.05
+        profit = 0 if is_strong else 100
 
         if condition == 'ON': return coin_create_position(coin, current_price, step, TG_BOT_OWNER_ID, is_holding)
         if condition == 'OFF': return coin_close_position(coin, current_price, profit, TG_BOT_OWNER_ID, is_holding)
