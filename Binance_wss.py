@@ -4,6 +4,7 @@ from binance import ThreadedWebsocketManager
 from_id = TG_BOT_OWNER_ID
 
 def handle_socket_message(msg):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     if msg['e'] == 'outboundAccountPosition':
         df = pd.DataFrame(msg['B'])
         df['timestamp'] = msg['E']
@@ -114,7 +115,6 @@ def handle_socket_message(msg):
         symbol = msg['s']
         coin = symbol.replace('USDT', '')
         orderId = int(msg['i'])
-        engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
 
         if msg['X'] in ['CANCELED', 'CANCELLED', 'EXPIRED']: mark_limit_order_as_canceled_by_orderId(orderId, engine)
 
