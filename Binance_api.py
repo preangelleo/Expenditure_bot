@@ -3408,8 +3408,9 @@ def coin_close_position(coin, current_price, profit, from_id, is_holding = False
     if df.empty: return
     if not current_price: current_price = float(get_avg_price(coin)['price'])
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
-    df = df[df['profit'] > profit]
-    if df.empty: return
+    if df['profit'].sum() < profit:
+        df = df[df['profit'] >= profit]
+        if df.empty: return
     for i in range(df.shape[0]):
         coin_df = df[i:i+1]
         coin_with_highest_profit = coin_df['coin'].values[0]
