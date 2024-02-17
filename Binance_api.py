@@ -2898,7 +2898,7 @@ def webhook_switch_off_bot(msg = 'None', from_id=TG_BOT_OWNER_ID):
 def calculate_missed_profit_yesterday(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03, is_yesterday = True):
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, price_close, time_close FROM position_table WHERE is_closed = 1')).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, usdt_value, price_close, time_close FROM position_table WHERE is_closed = 1')).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return 
     if is_yesterday: 
@@ -2917,7 +2917,7 @@ def calculate_missed_profit_yesterday(from_id=TG_BOT_OWNER_ID, buy_back_target_p
     if df.empty: return
     df['price_diff'] = df['lastPrice'] - df['price_close']
     df['price_diff_percentage'] = df['price_diff'] / df['price_close']
-    df['diff_profit'] = CHECK_SIZE * (df['price_diff_percentage'])
+    df['diff_profit'] = (df['price_diff_percentage']) * df['usdt_value']
     total_profit_missed = df['diff_profit'].sum()
     reply_msg = f"Sorry, you missed: {format_number(total_profit_missed)} usdt profit\n\n" if total_profit_missed > 0 else f"Great, you locked: {format_number(abs(total_profit_missed))} usdt profit.\n\n"
     if from_id: send_msg(reply_msg, from_id)
@@ -2950,16 +2950,17 @@ def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, price_close, time_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}' ORDER BY time_close DESC LIMIT 1")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, usdt_value, price_close, time_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}' ORDER BY time_close DESC LIMIT 1")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return 
     current_price = get_avg_price(coin)
     if not current_price: return
     current_price = float(current_price['price'])
+    usdt_value = df['usdt_value'].values[0]
     last_price_close = df['price_close'].values[0]
     price_diff = last_price_close - current_price
     price_diff_percentage = price_diff / last_price_close
-    diff_profit = CHECK_SIZE * price_diff_percentage
+    diff_profit = price_diff_percentage * usdt_value
     if diff_profit < 0: reply_msg = f"{coin} {format_number(last_price_close)} >> {format_number(current_price)} | missed {format_number(abs(diff_profit))}"
     if diff_profit > 0: reply_msg = f"/buy_{coin} {format_number(last_price_close)} >> {format_number(current_price)} | locked {format_number(abs(diff_profit))}"
     if diff_profit == 0: reply_msg = f"{coin} {format_number(current_price)} hasn't changed"
@@ -3677,10 +3678,11 @@ def switch_position_from_main_to_funding(coin, from_id=TG_BOT_OWNER_ID, engine =
     if df.empty: return send_msg(f'No {coin} position in main account', from_id)
     for index, row in df.iterrows():
         amount = float(row['amount'])
+        usdt_value = float(row['usdt_value'])
         orderId_create = int(row['orderId_create'])
         orderId_close = int(row['orderId_close'])
         if orderId_close: binance_cancel_order_by_orderId(coin, orderId_close)
-        if not funding_main_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
+        if not funding_main_transfer_with_check_and_send('USDT', usdt_value, from_id): return send_msg(f'USDT in funding account is not sufficient', from_id)
         switch_spot_to_funding(orderId_create, engine)
         main_funding_transfer_with_check_and_send(coin, amount, from_id)
         send_msg(f'''{coin} has been switched to funding account!\norderId_create | {orderId_create}\n\n{generate_bottom_msg(coin)}''', from_id)
@@ -3694,10 +3696,11 @@ def switch_position_from_funding_to_main(coin, from_id=TG_BOT_OWNER_ID, engine =
     if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
     for index, row in df.iterrows():
         amount = float(row['amount'])
+        usdt_value = float(row['usdt_value'])
         orderId_create = int(row['orderId_create'])
         if not funding_main_transfer_with_check_and_send(coin, amount, from_id): return send_msg(f'{coin} in funding account is not sufficient', from_id)
         switch_funding_to_spot(orderId_create, engine)
-        main_funding_transfer_with_check_and_send('USDT', CHECK_SIZE, from_id)
+        main_funding_transfer_with_check_and_send('USDT', usdt_value, from_id)
         send_msg(f'''{coin} has been switched to main account!\norderId_create | {orderId_create}\n\n{generate_bottom_msg(coin)}''', from_id)
         set_limit_sell_to_resistant_price(coin, from_id, engine)
     return
