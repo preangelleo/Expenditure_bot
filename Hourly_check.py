@@ -1,4 +1,3 @@
-from Binance_api import reset_target_profit_for_coins, TG_BOT_OWNER_ID
 from datetime import datetime
 
 if __name__ == '__main__':

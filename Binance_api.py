@@ -1878,6 +1878,7 @@ def check_all_limit_buy_order_filled(from_id = TG_BOT_OWNER_ID):
     # Remove 'USDT', 'BNB' from coins
     coins = [coin for coin in coins if coin not in ['USDT', 'BNB']]
     if not coins: return
+    holding_list = read_holding_list()
     for coin in coins:
         # Get the latest trade history for the coin from binance
         df_orderId = get_last_filled_orders(coin, side = 'BUY', time_offset = 48)
@@ -1891,7 +1892,9 @@ def check_all_limit_buy_order_filled(from_id = TG_BOT_OWNER_ID):
             instert_position_table(data, account = 'spot')
             price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
             send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}\n{generate_bottom_msg(coin)}", from_id)
-            try: set_limit_sell_to_resistant_price(coin, from_id)
+            try:
+                if coin in holding_list: switch_position_from_main_to_funding(coin, from_id) 
+                else: set_limit_sell_to_resistant_price(coin, from_id)
             except: pass
 
 

@@ -18,8 +18,8 @@ if __name__ == '__main__':
     try: get_btc_data_with_rsi(timeframe = '1d', from_id = TG_BOT_OWNER_ID)
     except Exception as e: print(f'get_btc_data_with_rsi() error:\n\n{e}\n\n')
 
-    try: get_coin_list_from_trading_pairs()
-    except Exception as e: print(f'get_coin_list_from_trading_pairs() error:\n\n{e}\n\n')
+    # try: get_coin_list_from_trading_pairs()
+    # except Exception as e: print(f'get_coin_list_from_trading_pairs() error:\n\n{e}\n\n')
 
     try: send_file(TG_BOT_OWNER_ID, 'cron.log', 'Operation log of crontab job')
     except Exception as e: print(f'send_file() error:\n\n{e}\n\n')
