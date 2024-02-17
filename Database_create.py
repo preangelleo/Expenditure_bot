@@ -121,15 +121,15 @@ def set_trading_parameters_default():
     drop_trading_parameters_table()
     create_trading_parameters_table()
     TRADING_VOLUME_LIMIT = int(os.getenv('TRADING_VOLUME_LIMIT', 50_000_000))
-    INITIAL_FUND = int(os.getenv('INITIAL_FUND', 100_000))
-    CHECK_SIZE = int(os.getenv('CHECK_SIZE', 10_000))
+    INITIAL_FUND = int(os.getenv('INITIAL_FUND', 200_000))
+    CHECK_SIZE = int(os.getenv('CHECK_SIZE', 20_000))
     POSITIONS_LIMIT = int(INITIAL_FUND / CHECK_SIZE)
     FULLLY_DILUTED_MARKET_CAP_UP_LIMIT=int(os.getenv('FULLLY_DILUTED_MARKET_CAP_UP_LIMIT', 50_000_000_000))
     MARKET_CAP_DOWN_LIMIT=int(os.getenv('MARKET_CAP_DOWN_LIMIT', 50_000_000))
     CIRCULATION_RATIO=float(os.getenv('CIRCULATION_RATIO', 0.3))
-    TARGET_PROFIT_PERCENTAGE = float(os.getenv('TARGET_PROFIT', 0.05))
+    TARGET_PROFIT_PERCENTAGE = float(os.getenv('TARGET_PROFIT', 0.13))
     TARGET_PROFIT_USDT = int(TARGET_PROFIT_PERCENTAGE * CHECK_SIZE)
-    DAILY_TARGET_PROFIT = 1000
+    DAILY_TARGET_PROFIT = 2000
     DAILY_NEW_POSITIONS_LIMIT = 2
 
     # Create a new session
