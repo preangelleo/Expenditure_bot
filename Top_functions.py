@@ -149,10 +149,6 @@ def reset_daily_new_positions_limit(daily_new_positions_limit = 2, from_id = TG_
     return set_daily_new_positions_limit(daily_new_positions_limit)
 
 
-def get_daily_new_positions_limit(from_id = TG_BOT_OWNER_ID):
-    return send_msg(f"Current daily new positions limit: {read_daily_new_positions_limit()}", from_id)
-
-
 # Define a function to make a dict to dataframe and create or append to a given table name
 def data_to_table(data, table_name, if_exists='append', engine=engine):
     if type(data) != dict: return

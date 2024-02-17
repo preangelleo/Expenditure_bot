@@ -128,12 +128,8 @@ def tradingview_webhook_handler(data):
 
     if coin in ['BTC']:
         send_msg(f"BTC {interval}_KDJ turned {condition}\nCurrent price: {current_price}\nScore: {score}", TG_BOT_OWNER_ID)
-        if condition == 'ON': 
-            # reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID)
-            return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
-        if condition == 'OFF': 
-            # if interval == '240': reset_target_profit_for_coins(limit_hour = 0, target_profit = 0.01, from_id = TG_BOT_OWNER_ID)
-            return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'ON': return webhook_switch_on_bot(message, TG_BOT_OWNER_ID)
+        if condition == 'OFF': return webhook_switch_off_bot(message, TG_BOT_OWNER_ID)
 
     if coin not in ['NONE', 'BTC']:
         is_strong = True if score == 4 else False
@@ -146,7 +142,7 @@ def tradingview_webhook_handler(data):
         is_holding = True if coin in holding_list else False
         step = 0.03 if is_strong  else 0.05
         profit = 0 if is_strong else 100
-        
+
         engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
 
         if condition == 'ON': return coin_create_position(coin, current_price, step, TG_BOT_OWNER_ID, is_holding, engine)
