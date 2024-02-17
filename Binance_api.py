@@ -2036,7 +2036,7 @@ def instert_position_table(data, account = 'spot', engine = engine):
         'commission': float(data['cummulativeQuoteQty']) * 0.0015,
         'exchange': 'binance',
     }
-    return data_to_table(position_table, 'position_table', engine)
+    return data_to_table(position_table, 'position_table', 'append', engine)
 
 
 def do_market_buy(coin: str, value, engine = engine):
@@ -3591,7 +3591,7 @@ def today_hotcoin_check_save(coin, price, engine = engine):
         'price': price, 
         'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
-    data_to_table(hot_coin_history, 'hot_coins_history', engine)
+    data_to_table(hot_coin_history, 'hot_coins_history', 'append', engine)
     return broadcast_text(f"{coin} ({format_number(price)}) is good to long.")
 
 
