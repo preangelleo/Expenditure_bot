@@ -1921,11 +1921,11 @@ def check_position_table_for_duplicated_orderId_create(from_id = TG_BOT_OWNER_ID
     return send_msg('Duplicated orderId_create deleted', from_id)
 
 
-def update_position_table_with_orderId(coin, orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID, row = pd.DataFrame(), data = {}):
+def update_position_table_with_orderId(coin, orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID, row = pd.DataFrame(), data = {}, engine = engine):
     if row.empty: 
         if not orderId_create: return send_msg(f'row or orderId_create has to be provided at least one.', from_id)
         orderId_create = int(orderId_create)
-        df = read_position_table_by_orderId_create(orderId_create)
+        df = read_position_table_by_orderId_create(orderId_create, engine)
         if df.empty: return send_msg(f'No open position with orderId_create: {orderId_create}', from_id)
         row = df.iloc[0]
     if not data: 
@@ -1939,7 +1939,7 @@ def update_position_table_with_orderId(coin, orderId_create, orderId_close, from
         data['usdt_value'] = float(row['usdt_value'])
         data['price_create'] = float(row['price_create'])
         data['amount'] = float(row['amount'])
-        return update_position_table(data, from_id)
+        return update_position_table(data, from_id, engine)
 
 
 def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWNER_ID, coin_df = pd.DataFrame(), coin = None, engine = engine):
@@ -1958,7 +1958,7 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
     if account == 'funding': funding_main_transfer_with_check_and_send(coin, amount, from_id)
     data = binance_market_sell(coin, amount)
     if not data: return send_msg(f'Failed to do market sell for {coin}', from_id)
-    profit = update_position_table_with_orderId(coin, int(row['orderId_create']), int(data.get('orderId', 0)), from_id, row, data)
+    profit = update_position_table_with_orderId(coin, int(row['orderId_create']), int(data.get('orderId', 0)), from_id, row, data, engine)
     if account == 'funding': main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
     return profit
     
@@ -1966,12 +1966,13 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
 def do_market_sell(coin: str, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df_position = read_position_table_account(0, coin)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_position = read_position_table_account(0, coin, 'spot', engine)
     if df_position.empty: return send_msg(f'No open position for coin: {coin}', from_id)
     df_position = df_position.sort_values(by=['price_create'], ascending=True)
     coin_df = df_position.head(1)
     orderId_create = int(coin_df['orderId_create'].values[0])
-    return do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin)
+    return do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin, engine)
 
 
 def get_latest_sold_coin():
@@ -2071,7 +2072,8 @@ def set_limit_sell_to_resistant_price(coin, from_id=TG_BOT_OWNER_ID, engine = en
 
 
 def reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID):
-    df_balance = read_position_table_account()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_balance = read_position_table_account(0, None, 'spot', engine)
     if df_balance.empty: return print('No position found')
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
@@ -2091,7 +2093,7 @@ def reset_target_profit_for_resistance(from_id = TG_BOT_OWNER_ID):
         target_profit = max(ideal_target_profit, 0.01)
         current_target_profit = df_balance.iloc[i]['target_profit']
         if current_target_profit == target_profit or df_balance.iloc[i]['is_manual']: continue
-        binance_position_set_limit_sell(target_profit, from_id, df_balance.iloc[i]['coin'], is_manual = 1)
+        binance_position_set_limit_sell(target_profit, from_id, df_balance.iloc[i]['coin'], 1, engine)
     return True
 
 
@@ -2109,7 +2111,7 @@ def click_to_create(coin, from_id=TG_BOT_OWNER_ID):
     return manually_market_buy_one_unit(coin, from_id)
 
 
-def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
+def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID, engine = engine):
     filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}.png"
     # check if the file exists, if yes, return the file name
     if os.path.isfile(filename): return send_img(chat_id, filename)
@@ -2133,8 +2135,6 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
         # Convert 'Date' to datetime
         df['Date'] = pd.to_datetime(df['Date'])
 
-        print(df)
-
     except: return send_img(chat_id, f"net_profit_daily_record/Leowang.net.jpg")
 
     # Plotting
@@ -2156,6 +2156,7 @@ def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID):
 
 
 def update_kline_data_from_binance_to_table(symbol: str, interval: str):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try: 
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM {symbol}_{interval}_kline_data ORDER BY `Close Time` DESC LIMIT 1")).fetchall())
     except: df = pd.DataFrame()
@@ -2454,17 +2455,8 @@ def weekly_rsi_over_high(symbol):
     
 
 def binance_spot_position_check(coin=None, chat_id=None, crontab_profit_record=False):
-    df_balance = read_position_table_account(0, coin, 'spot')
-    '''
-       coin    symbol account  price_create      amount  usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
-    0  ATOM  ATOMUSDT    spot     12.269441     815.030  9999.96274      2594994242  1703573139555      MARKET          0          0            0.1          0.0     2660334050           0                      0       0         0         2023            12          25           0            0          0   14.999944  binance
-    1   APE   APEUSDT    spot      1.786000    5599.100  9999.99260      1563146551  1703736326606      MARKET          0          0            0.1          0.0     1582032805           0                      0       0         0         2023            12          27           0            0          0   14.999989  binance
-    2  COMP  COMPUSDT    spot     66.115741     151.249  9999.93975      1259040501  1703742928420      MARKET          0          0            0.1          0.0     1286232395           0                      0       0         0         2023            12          27           0            0          0   14.999910  binance
-    3  GALA  GALAUSDT    spot      0.033265  300613.000  9999.96916      2192893079  1703744426664      MARKET          0          0            0.1          0.0     2225174967           0                      0       0         0         2023            12          27           0            0          0   14.999954  binance
-    4   GRT   GRTUSDT    spot      0.223840   44674.000  9999.81620      1394304791  1704162623034      MARKET          0          0            0.1          0.0     1411409643           0                      0       0         0         2024             1           1           0            0          0   14.999724  binance
-    5  HBAR  HBARUSDT    spot      0.098600  101419.000  9999.91340       782193241  1704245781505      MARKET          0          0            0.1          0.0      790382917           0                      0       0         0         2024             1           2           0            0          0   14.999870  binance
-    6  ORDI  ORDIUSDT    spot     86.979837     114.960  9999.20201       511430308  1704276389162      MARKET          0          0            0.1          0.0      629662801           0                      0       0         0         2024             1           3           0            0          0   14.998803  binance
-    7  ARPA  ARPAUSDT    spot      0.073910  135299.700  9999.99612       786394949  1704511096530      MARKET          0          0            0.1          0.0      799006405           0                      0       0         0         2024             1           5           0            0          0   14.999994  binance'''
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_balance = read_position_table_account(0, coin, 'spot', engine)
     df = get_token_price_table()
     if df.empty: return 'Failed to fetch price info'
     df = df.drop(columns=['coin'])
@@ -2490,15 +2482,14 @@ def binance_spot_position_check(coin=None, chat_id=None, crontab_profit_record=F
         reply_msg = '\n'.join([f"{k}: {v}" for k, v in for_reply.items()])
         if chat_id: send_msg(f"{i+1}/{df_balance.shape[0]}\n{reply_msg}", chat_id)
         book_value += reply_dict['profit']
-    try: check_profit_and_record(chat_id, crontab_profit_record, book_value, current_positions=df_balance.shape[0])
+    try: check_profit_and_record(chat_id, crontab_profit_record, book_value, df_balance.shape[0], engine)
     except: pass
     return
 
-# check_profit_and_record(chat_id=TG_BOT_OWNER_ID, crontab_profit_record=False, book_value=0)
 
-def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_value=0, current_positions=0):
+def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_value=0, current_positions=0, engine=engine):
     if chat_id or crontab_profit_record: 
-        df_profit = read_position_table_account(1, None, 'spot')
+        df_profit = read_position_table_account(1, None, 'spot', engine)
         if not df_profit.empty: 
             with engine.connect() as conn: df_earliest_transactTime = pd.DataFrame(conn.execute(text('SELECT time_create FROM position_table ORDER BY time_create ASC LIMIT 1')).fetchall())
             earliest_transactTime = int(df_earliest_transactTime['time_create'].values[0])
@@ -2531,11 +2522,12 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 year_and_month_day = datetime.now().strftime('%Y-%m-%d')
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, os.getenv('GMAIL_DANLI'))
-                plot_net_profit_sum(chat_id)
+                plot_net_profit_sum(chat_id, engine)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
     return 
 
 def today_profit_sum():
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f'SELECT coin, profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
     except: df_profit = pd.DataFrame()
@@ -2543,6 +2535,7 @@ def today_profit_sum():
 
 
 def monthly_profit_sum():
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text(f"SELECT profit FROM position_table WHERE is_closed = 1 AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}")).fetchall())
     except: df_profit = pd.DataFrame()
@@ -2551,6 +2544,7 @@ def monthly_profit_sum():
 
 # Define a function to set positon limit to 5 if the monthly profit is over 30000
 def reset_position_limit(monthly_profit_target = 30_000, upper_limit = 10, lower_limit = 5, from_id = TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT SUM(profit) FROM position_table WHERE is_closed = 1 AND account = 'spot' AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}")).fetchall())
     df = df.fillna(0)
     monthly_profit = df.iloc[0].astype(float).values[0]
@@ -2599,7 +2593,8 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
 
 
 def reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id = TG_BOT_OWNER_ID):
-    df_balance = read_position_table_account()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_balance = read_position_table_account(0, None, 'spot', engine)
     if df_balance.empty: return print('No position found')
     try: df = get_token_price_table()
     except: df = pd.DataFrame()
@@ -2614,54 +2609,8 @@ def reset_target_profit_for_coins(limit_hour = 72, target_profit = 0.01, from_id
     for i in range(df_duration.shape[0]): 
         current_target_profit = df_duration.iloc[i]['target_profit']
         if current_target_profit == target_profit or df_duration.iloc[i]['is_manual']: continue
-        binance_position_set_limit_sell(target_profit, from_id, df_duration.iloc[i]['coin'], is_manual = 1)
+        binance_position_set_limit_sell(target_profit, from_id, df_duration.iloc[i]['coin'], 1, engine)
     return True
-
-
-def profit_take_per_6_min(chat_id=TG_BOT_OWNER_ID):
-    profit_take_target=DAILY_TARGET_PROFIT
-    df_balance = read_position_table_account()
-    try: df = get_token_price_table()
-    except: df = pd.DataFrame()
-    if df.empty: return print('Failed to fetch price info')
-    df = df.drop(columns=['coin'])
-    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
-    df_balance['profit'] = (df_balance['lastPrice'] - df_balance['price_create']) * df_balance['amount'] - df_balance['commission']
-    df_balance['duration'] = (int(time.time() * 1000) - df_balance['time_create']) / 1000 / 60 / 60
-    df_balance = df_balance.sort_values(by='profit', ascending=False)
-    df_duration = df_balance[df_balance['duration'] >= 72].copy()
-    for i in range(df_duration.shape[0]): 
-        current_target_profit = df_duration.iloc[i]['target_profit']
-        if current_target_profit == 0.01 and not df_duration.iloc[i]['is_manual']: continue
-        binance_position_set_limit_sell(0.01, chat_id, df_duration.iloc[i]['coin'], is_manual = 1)
-    df_profit = df_balance[df_balance['profit'] > 1].copy()
-    if df_profit.empty: return print(f"No coin with profit > 0")
-    df_today_profit_take = today_profit_sum()
-    current_profit_sum = df_today_profit_take['profit'].sum() if not df_today_profit_take.empty else 0
-    profit_sum = df_profit['profit'].astype(float).sum()
-    profit_take_target -= current_profit_sum
-    if profit_sum < profit_take_target: return print(f"Profit sum: {profit_sum} is less than profit_take_target: {profit_take_target}")
-    print(f"Profit sum: {profit_sum} is greater than profit_take_target: {profit_take_target}, let's take them.")
-    profit_take = 0
-    profit_coinlist = []
-    for i in range(df_profit.shape[0]):
-        coin_df = df_profit.iloc[i:i+1]
-        coin = df_profit.iloc[i]['coin']
-        orderId_create = df_profit.iloc[i]['orderId_create']
-        coin_profit = do_market_sell_by_orderId_create(orderId_create, chat_id, coin_df, coin)
-        profit_take += coin_profit
-        profit_coinlist.append(f"{coin}: {format_number(coin_profit)} usdt")
-        if profit_take >= profit_take_target: break
-    if profit_take >= profit_take_target:
-        df_loss = df_balance[(df_balance['profit'] <= 1) & (df_balance['duration'] < 72)].copy()
-        for i in range(df_loss.shape[0]): 
-            current_target_profit = df_loss.iloc[i]['target_profit']
-            if current_target_profit == 0.01 and not df_loss.iloc[i]['is_manual']: continue
-            binance_position_set_limit_sell(0.01, chat_id, df_loss.iloc[i]['coin'], is_manual = 1)
-    is_last_hour = True if '23:50' < datetime.now().strftime("%H:%M") < '23:59' else False
-    is_first_hour_day_month = True if '00:00' < datetime.now().strftime("%H:%M") < '00:10' and datetime.now().day == 1 else False
-    if is_last_hour or is_first_hour_day_month: reset_position_limit(30_000, 10, 5, chat_id)
-    return print(f"6 Min Profit Take: {profit_take} usdt {profit_coinlist}")
 
 
 # Define a function 'polish_parameters_for_limit_order' to polish parameters for limit order, take input coint, amount, price, get_exchange_info_symbols(coin) and compare the price, amount with minPrice, maxPrice, minQty, maxQty, tickSize, stepSize, quoteAssetPrecision, baseAssetPrecision, round the price and amount to the right precision if needed, return polished coin, amount, price
@@ -2973,6 +2922,7 @@ def read_latest_sell_price(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def calculate_missed_profit_yesterday(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03, is_yesterday = True):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, price_close, time_close FROM position_table WHERE is_closed = 1')).fetchall())
     except: df = pd.DataFrame()
@@ -3024,6 +2974,7 @@ def calculate_missed_profit(from_id=TG_BOT_OWNER_ID, buy_back_target_profit=0.03
 
 def calculate_missed_profit_for_coin(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, price_close, time_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}' ORDER BY time_close DESC LIMIT 1")).fetchall())
     except: df = pd.DataFrame()
@@ -3061,6 +3012,7 @@ def get_token_info_for_user(coin: str, from_id=TG_BOT_OWNER_ID):
 
 def calculate_hot_coin_price_change(from_id=None):
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try: 
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM hot_coin_history WHERE date LIKE :date'), {'date': f"{yesterday_date}%"}).fetchall())
     except: return
@@ -3089,6 +3041,7 @@ def calculate_hot_coin_price_change(from_id=None):
 
 def update_coin_info_to_token_cmc_info_table(token_cmc_info_dict):
     print(f"Updating coin info to token_cmc_info table for {token_cmc_info_dict['coin']}")
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -3127,6 +3080,7 @@ def get_token_market_cap_and_ratio(token_symbol, turnover_ratio_eth=0.05):
 def get_token_total_supply(coin):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info WHERE coin = :coin'), {'coin': coin}).fetchall())
     if not df.empty: return df.to_dict(orient='records')[0]
     try: token_info = get_token_info_from_coinmarketcap(coin)
@@ -3155,6 +3109,7 @@ def set_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -3172,6 +3127,7 @@ def remove_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -3186,6 +3142,7 @@ def remove_coin_ignore(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def get_ignore_list(from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
         if not df.empty:
@@ -3201,6 +3158,7 @@ def set_coin_white(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -3218,6 +3176,7 @@ def remove_coin_white(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin[:-4] if coin.endswith('USDT') else coin
     if not get_token_total_supply(coin): return send_msg(f'Failed to get token total supply of {coin} from CMC', from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection:
         try:
             # Execute the query with the updated update_id
@@ -3232,6 +3191,7 @@ def remove_coin_white(coin, from_id=TG_BOT_OWNER_ID):
 
 
 def get_white_list(from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_white = 1')).fetchall())
         if not df.empty: 
@@ -3269,6 +3229,7 @@ def update_get_token_total_supply():
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'openPrice', 'highPrice', 'lowPrice', 'quoteVolume', 'openTime', 'closeTime']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
     # find out the coins in df_ticker but not in df_token_info
     df_ticker = df_ticker[~df_ticker['symbol'].isin(df_token_info['symbol'])]
@@ -3288,6 +3249,7 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
     df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000)]
     if df_ticker.empty: return {}
     df_ticker['coin'] = df_ticker['symbol'].str[:-4]
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
         df_ticker_missed = df_ticker[~df_ticker['coin'].isin(df_token_info['coin'])]
@@ -3331,6 +3293,7 @@ def top_turnover(from_id = TG_BOT_OWNER_ID, head = 10):
 
 
 def count_positions(from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT coin, account FROM position_table WHERE is_closed = 0')).fetchall())
     if df.empty: return send_msg("No positions in spot account or funding account", from_id)
     df_spot = df[df['account'] == 'spot']
@@ -3343,6 +3306,7 @@ def count_positions(from_id=TG_BOT_OWNER_ID):
 
 
 def positions_counts():
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: 
         try: df = pd.DataFrame(connection.execute(text('SELECT count(*) FROM position_table WHERE is_closed = 0 AND account = "spot"')).fetchall())
         except: df = pd.DataFrame()
@@ -3359,6 +3323,7 @@ def check_positions_counts():
 
 def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, account, amount, usdt_value FROM position_table WHERE is_closed = 0 AND coin = '{coin}'")).fetchall())
     if df.empty: return send_msg(f"No {coin} positions in spot account or funding account", from_id)
     total_coin_in_position = df['amount'].sum()
@@ -3394,6 +3359,7 @@ def count_positions_amounts(coin, from_id=TG_BOT_OWNER_ID):
 # from position_table table get a given coin's higest close price
 def get_highest_close_price(coin):
     coin = coin.upper()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT coin, price_close FROM position_table WHERE is_closed = 1 AND coin = '{coin}'")).fetchall())
     except: df = pd.DataFrame()
@@ -3411,62 +3377,6 @@ def is_spot_full(engine=engine):
     return False
 
 
-def binance_today_top_coin(chat_id=TG_BOT_OWNER_ID):
-    position_created_today_spot = 0
-    default_target_profit = TARGET_PROFIT_PERCENTAGE
-    with engine.connect() as connection: 
-        df_in_position = pd.DataFrame(connection.execute(text('SELECT coin, account, amount, day_create, month_create, year_create FROM position_table WHERE is_closed = 0')).fetchall())
-        df_in_position_today = df_in_position[(df_in_position['day_create'] == datetime.now().day) & (df_in_position['month_create'] == datetime.now().month) & (df_in_position['year_create'] == datetime.now().year)] if not df_in_position.empty else pd.DataFrame()
-        if df_in_position_today.shape[0] > 0: 
-            # get the new position counts in spot
-            df_in_position_today_spot = df_in_position_today[df_in_position_today['account'] == 'spot']
-            position_created_today_spot = df_in_position_today_spot.shape[0]
-            if position_created_today_spot >= DAILY_NEW_POSITIONS_LIMIT: return print(f"Today's new positions counts in spot account ({df_in_position_today_spot.shape[0]}) reached the limit of {DAILY_NEW_POSITIONS_LIMIT}")
-        df_in_spot = df_in_position[df_in_position['account'] == 'spot']
-        if not df_in_spot.empty and df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions counts ({df_in_spot.shape[0]}) reached the limit of {POSITIONS_LIMIT}")
-        df_orderId = get_open_orders_list(None, 'BUY')
-        if df_orderId.shape[0] + df_in_spot.shape[0] >= POSITIONS_LIMIT: return print(f"Positions + limit orders reached the limit of: {POSITIONS_LIMIT}")
-        if position_created_today_spot: default_target_profit += TARGET_PROFIT_PERCENTAGE / 2
-        df_profit = pd.DataFrame(connection.execute(text(f'SELECT profit FROM position_table WHERE is_closed = 1 AND day_close = {datetime.now().day} AND month_close = {datetime.now().month} AND year_close = {datetime.now().year}')).fetchall())
-        if (not df_profit.empty and df_profit['profit'].sum() >= DAILY_TARGET_PROFIT): default_target_profit += TARGET_PROFIT_PERCENTAGE / 2
-        df_token_info = pd.DataFrame(connection.execute(text('SELECT * FROM token_supply_info')).fetchall())
-    df_ticker = pd.read_json(BINANCE_TICKER_URL)
-    df_ticker = df_ticker.loc[:, ['symbol', 'priceChangePercent', 'lastPrice', 'quoteVolume']]
-    df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
-    df_ticker = df_ticker[df_ticker['priceChangePercent'] > 5]
-    if df_ticker.shape[0] < 10: return print("Not enough coins raise, not a good trend, keep watching")
-    df_ticker = df_ticker[(df_ticker['lastPrice'] > 0.0001) & (df_ticker['lastPrice'] < 2000) & (df_ticker['priceChangePercent'] < 20) & (df_ticker['quoteVolume'] > 10_000_000)]
-    df_ticker['coin'] = df_ticker['symbol'].str[:-4]
-    df_ticker = df_ticker.sort_values(by='priceChangePercent', ascending=False)
-    df_ticker = pd.merge(df_ticker, df_token_info, on='coin', how='left')
-    df_ticker = df_ticker.query('is_ignore == 0 and is_stablecoin == 0 and is_white == 1')
-    if df_ticker.empty: return print("No top coin to buy")
-    if not df_in_position.empty: df_ticker = df_ticker[~df_ticker['coin'].isin(df_in_position['coin'])]
-    if df_ticker.empty: return print("No top coin to buy after ignoring coins in position and today's coins")
-    df_ticker = df_ticker[~df_ticker['coin'].isin(df_orderId['coin'])] if not df_orderId.empty else df_ticker
-    if df_ticker.empty: return print("No top coin to buy after ignoring coins in limit buy orders")
-    highest_target_profit = 0
-    coin_with_high_target_profit = ''
-    for i in range(df_ticker.shape[0]):
-        coin = df_ticker.iloc[i]['coin']
-        current_price = df_ticker.iloc[i]['lastPrice']
-        highest_close = get_highest_close_price(coin)
-        if highest_close and current_price > highest_close * 0.9: continue
-        resistance_dict = get_resistant_price(coin)
-        if not resistance_dict or not resistance_dict.get('long', 0): continue
-        target_profit = resistance_dict.get('target_profit', 0.01)
-        if target_profit <= default_target_profit: continue
-        if target_profit > highest_target_profit: 
-            highest_target_profit = target_profit
-            coin_with_high_target_profit = coin
-    if not coin_with_high_target_profit: return print("No top coin to buy after checking resistance price")
-    print(f"Buying {coin_with_high_target_profit} with target profit: {highest_target_profit}")
-    bot_market_buy_one_unit(coin_with_high_target_profit, chat_id)
-    binance_position_set_limit_sell(highest_target_profit, chat_id, coin_with_high_target_profit)
-    return print(f"Bought {coin} successfully")
-
-
 def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 146652243, down_step = 0.1, from_id=TG_BOT_OWNER_ID):
     total_amount, total_cost, price_create = 0, 0, 0
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, account, amount, price_create, usdt_value FROM position_table WHERE is_closed = 0 AND coin = "{coin}" AND account = "funding"')).fetchall())
@@ -3480,45 +3390,6 @@ def check_coin_position_in_funding_account(coin = 'RSR', amount_target = 1466522
     current_price = float(current_price['price'])
     if current_price > price_create * (1 - down_step): return print(f"{coin} current price: {current_price} > price_create_min: {price_create} * (1 - down_step: {down_step})")
     return binance_funding_buy_and_hold(coin, from_id)
-
-
-def webhook_kdj_buy(coin, step = 0.05, from_id = TG_BOT_OWNER_ID):
-    price_create = 0
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT coin, price_create, price_close, is_closed FROM position_table WHERE coin = "{coin}"')).fetchall())
-    if not df.empty: 
-        df_position = df[df['is_closed'] == 0]
-        if not df_position.empty:  price_create = float(df_position['price_create'].min()) * (1 - step)
-        else: price_create = float(df['price_close'].max()) * (1 - step)
-    current_price = get_avg_price(coin)
-    if not current_price: return
-    current_price = float(current_price['price'])
-    if current_price > price_create > 0: return send_msg(f"/as_{coin} price: {format_number(current_price)} > {format_number(price_create)}", from_id) 
-    return binance_funding_buy_and_hold(coin, from_id)
-
-
-def webhook_kdj_sell(coin, interval = '15', from_id = TG_BOT_OWNER_ID, is_positive = True):
-    head_count = 0
-    coin = coin.upper()
-    with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
-    if df.empty: return
-    df = df.sort_values(by='price_create', ascending=True)
-    current_price = get_avg_price(coin)
-    if not current_price: return
-    current_price = float(current_price['price'])
-    df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
-    if is_positive:
-        df = df[df['profit'] > 15]
-        if df.empty: return
-    head_count = 1 if interval == '15' else 2 if interval == '60' else 4 if interval == '240' else 6 if interval == 'D' else 8 if interval == 'W' else 10 if interval == 'M' else head_count
-    if not head_count: return
-    df = df.head(head_count) if head_count < df.shape[0] else df
-    for i in range(df.shape[0]):
-        coin_df = df[i:i+1]
-        coin_with_highest_profit = coin_df['coin'].values[0]
-        orderId_create = int(coin_df['orderId_create'].values[0])
-        do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
-        time.sleep(1)
-    return
 
 
 def coin_create_position(coin, current_price, step, from_id, is_holding = False, engine = engine):
@@ -3540,17 +3411,18 @@ def coin_create_position(coin, current_price, step, from_id, is_holding = False,
 
 
 def buy_back_most_profitable(buy_back_target_profit=0.03, from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     coins_could_buy_back = calculate_missed_profit(from_id, buy_back_target_profit)
     if not coins_could_buy_back: return
     for coin in coins_could_buy_back:
-        if is_spot_full(): return
+        if is_spot_full(engine): return
         resistance_dict = get_resistant_price(coin)
         if not resistance_dict: return send_msg(f"Failed to get resistance price for {coin}", from_id)
         else: target_profit = resistance_dict.get('target_profit', 0.01)
         if target_profit < TARGET_PROFIT_PERCENTAGE: return send_msg(f"Target profit for {coin} is too low: {round(target_profit*100)}%", from_id)
-        bot_market_buy_one_unit(coin, from_id)
+        bot_market_buy_one_unit(coin, from_id, engine)
         target_profit = max(target_profit, TARGET_PROFIT_PERCENTAGE)
-        binance_position_set_limit_sell(target_profit, from_id, coin)
+        binance_position_set_limit_sell(target_profit, from_id, coin, 0, engine)
     return
 
 
@@ -3699,10 +3571,11 @@ def binance_today_hot_coin(trading_volume_limit = TRADING_VOLUME_LIMIT, tradingb
 
 
 def binance_adjust_profit():
-    df_spot_position = read_position_table_account()
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_spot_position = read_position_table_account(0, None, 'spot', engine)
     if df_spot_position.empty: fund_in_spot_position = 0
     else: fund_in_spot_position = df_spot_position['usdt_value'].sum()
-    df_profit = read_position_table_account(1)
+    df_profit = read_position_table_account(1, None, 'spot', engine)
     profit = df_profit['profit'].sum()
     spot_balance = get_coin_wallet_balance_with_locked()
     USDT_balance = int(spot_balance['USDT'])
@@ -3713,7 +3586,7 @@ def binance_adjust_profit():
         data = binance_market_buy_quantity('BNB', 1)
         if not data: return send_msg(f'{alert}\nfailed to market buy 1 BNB', TG_BOT_OWNER_ID)
         if 'fills' in data: del data['fills']
-        if data_to_table(data, f'check_and_buy_BNB'): send_msg(f'{alert}\nDONE: Market buy 1 BNB', TG_BOT_OWNER_ID)
+        if data_to_table(data, 'check_and_buy_BNB', 'append', engine): send_msg(f'{alert}\nDONE: Market buy 1 BNB', TG_BOT_OWNER_ID)
     return amount_to_be_adjusted
 
 
@@ -3747,13 +3620,15 @@ def switch_funding_to_spot(orderId_create, engine = engine):
             connection.rollback()
     return
 
+
 def user_limit_buy_at_support_price(coin, from_id=TG_BOT_OWNER_ID):
     chat_id = from_id
     if not coin: return send_msg(f'Coin is not given', chat_id)
     if check_positions_counts() >= POSITIONS_LIMIT: return
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df = read_position_table_account(0, coin, 'spot')
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df = read_position_table_account(0, coin, 'spot', engine)
     if not df.empty: return send_msg(f'Coin {coin} is in auto position, do not double buy', chat_id)
     target_price_dict = get_resistant_price(coin)
     if not target_price_dict: return send_msg(f'Failed to get target price for {coin}', chat_id)
@@ -3857,7 +3732,8 @@ def switch_position_from_funding_to_main(coin, from_id=TG_BOT_OWNER_ID, engine =
 def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df = read_position_table_account(0, coin, 'funding')
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df = read_position_table_account(0, coin, 'funding', engine)
     if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
     # sort df by price, ascending
     df = df.sort_values(by='price_create', ascending=True)
@@ -3872,7 +3748,8 @@ def funding_position_price(coin, from_id=TG_BOT_OWNER_ID):
 def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID, is_repair = False):
     coin = coin.upper()
     coin = coin if not coin.endswith('USDT') else coin[:-4]
-    df = read_position_table_account(0, coin, 'funding')
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df = read_position_table_account(0, coin, 'funding', engine)
     if df.empty: return send_msg(f'No {coin} position in funding account', from_id)
     df = df.sort_values(by='price_create', ascending=True)
     row = df.iloc[0]
@@ -3883,7 +3760,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID, is_repair = False):
         if not transId: return send_msg(f'Failed to transfer {coin} from funding to main', from_id)
     data = binance_market_sell(coin, amount)
     if not data: return send_msg(f'Failed to do market sell for {coin}\n/repair_funding_sell_{coin}', from_id)
-    profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data)
+    profit = update_position_table_with_orderId(coin, orderId_create, int(data.get('orderId', 0)), from_id, row, data, engine)
     main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
     return profit
 
@@ -3891,6 +3768,7 @@ def binance_funding_sell(coin, from_id=TG_BOT_OWNER_ID, is_repair = False):
 def monthly_summary():
     last_month = datetime.now().month - 1 if datetime.now().month != 1 else 12
     last_month_year = datetime.now().year - 1 if datetime.now().month == 1 else datetime.now().year
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as connection: df_profit = pd.DataFrame(connection.execute(text('SELECT coin, symbol, time_close, profit FROM position_table WHERE is_closed = 1 AND month_close = :month AND year_close = :year'), {'month': last_month, 'year': last_month_year}).fetchall())
     # Add string format column of transactTime
     df_profit['time_string_month'] = df_profit['time_close'].apply(lambda x: datetime.fromtimestamp(x / 1000).strftime('%Y-%m'))
@@ -4034,7 +3912,8 @@ def click_to_close(orderId_create, from_id=TG_BOT_OWNER_ID):
     try: orderId_create = int(orderId_create)
     except: return send_msg(f'orderId_create: {orderId_create} is not a number', from_id)
     if orderId_create == 123456789: return send_msg(f'Yes, now you know how to close a position by orderId_create, just replace the 123456789 with a valid orderId', from_id)
-    return do_market_sell_by_orderId_create(orderId_create, from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    return do_market_sell_by_orderId_create(orderId_create, from_id, pd.DataFrame(), None, engine)
 
 
 def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
@@ -4044,12 +3923,14 @@ def close_all_positions(confirm: str, from_id=TG_BOT_OWNER_ID):
     ignore_list = [k for k, v in coin_position_counts.items() if v > 1]
     df_balance = df_balance[~df_balance['coin'].isin(ignore_list)] if ignore_list else df_balance
     if df_balance.empty: return send_msg(f'No open position for close', from_id)
-    for i in range(df_balance.shape[0]): do_market_sell_by_orderId_create(int(df_balance.iloc[i]['orderId_create']), from_id, df_balance.iloc[i:i+1], df_balance.iloc[i]['coin'])
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    for i in range(df_balance.shape[0]): do_market_sell_by_orderId_create(int(df_balance.iloc[i]['orderId_create']), from_id, df_balance.iloc[i:i+1], df_balance.iloc[i]['coin'], engine)
 
 
 def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
     df_balance = grid_profit_check(grid_profit_target)
     if df_balance.empty: return send_msg(f"No open positions with profit.", from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     if account == 'spot': 
         df_spot = df_balance[df_balance['account'] == 'spot']
         if not df_spot.empty:
@@ -4057,7 +3938,7 @@ def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
                 coin_df = df_spot[i:i+1]
                 coin_with_highest_profit = coin_df['coin'].values[0]
                 orderId_create = int(coin_df['orderId_create'].values[0])
-                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit, engine)
     if account == 'funding':
         df_funding = df_balance[df_balance['account'] == 'funding']
         if not df_funding.empty:
@@ -4065,7 +3946,7 @@ def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
                 coin_df = df_funding[i:i+1]
                 coin_with_highest_profit = coin_df['coin'].values[0]
                 orderId_create = int(coin_df['orderId_create'].values[0])
-                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit)
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit, engine)
     return 
 
 

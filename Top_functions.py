@@ -426,6 +426,7 @@ def get_token_price_info(coin: str):
 
 
 def read_position_table(is_close = 0, coin = None):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as conn: 
         if not coin: 
             try: df_position = pd.DataFrame(conn.execute(text(f"SELECT * FROM position_table WHERE is_closed = {is_close}")).fetchall())
