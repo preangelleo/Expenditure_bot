@@ -3404,24 +3404,30 @@ def buy_back_most_profitable(buy_back_target_profit=0.03, from_id=TG_BOT_OWNER_I
 def coin_close_position(coin, current_price, profit, from_id, is_holding = False, engine = engine):
     profit = profit * 2 if is_holding else profit
     coin = coin.upper()
+    if not current_price: current_price = float(get_avg_price(coin)['price'])
+    try:
+        latest_price = get_hotcoin_latest(coin, engine)
+        if latest_price:
+            price_diff = current_price - latest_price
+            if price_diff > 0:
+                price_diff_percentage = round(price_diff / latest_price * 100, 2)
+                broadcast_text(f"{coin} ({format_number(current_price)}) position is good to close. Price went up {format_number(price_diff_percentage)}% since reported last time at {format_number(latest_price)} usdt/{coin.lower()}")
+    except Exception as e: send_msg(f"Failed to get_hotcoin_latest and broadcast_text for {coin}\n\n{e}", from_id)
+
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM position_table WHERE is_closed = 0 AND coin = "{coin}"')).fetchall())
     if df.empty: return
-    if not current_price: current_price = float(get_avg_price(coin)['price'])
+    
     df['profit'] = (current_price - df['price_create']) * df['amount'] - df['commission']
     if df['profit'].sum() < profit:
         df = df[df['profit'] >= profit]
         if df.empty: return
+        
     for i in range(df.shape[0]):
         coin_df = df[i:i+1]
         coin_with_highest_profit = coin_df['coin'].values[0]
         orderId_create = int(coin_df['orderId_create'].values[0])
         do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit, engine)
-    latest_price = get_hotcoin_latest(coin, engine)
-    if latest_price:
-        price_diff = current_price - latest_price
-        if price_diff > 0:
-            price_diff_percentage = round(price_diff / latest_price * 100, 2)
-            broadcast_text(f"{coin} ({format_number(current_price)}) position is good to close. Price went up {format_number(price_diff_percentage)}% since reported last time at {format_number(latest_price)} usdt/{coin.lower()}")
+
     return
 
 
