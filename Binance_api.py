@@ -299,7 +299,7 @@ def get_token_price_table(coin_column=True):
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'lastPrice']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker = df_ticker[~df_ticker['symbol'].str.contains('UP|DOWN')]
+    df_ticker = df_ticker[~df_ticker['symbol'].str.endswith('UP|DOWN')]
     df_ticker = df_ticker.reset_index(drop=True)
     if coin_column: df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     return df_ticker
