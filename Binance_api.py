@@ -2577,7 +2577,7 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
     try:
         reply_dict = check_today_profit_sum()
         profit_take = reply_dict['profit_sum']
-        if profit_take <= 0: return send_msg('No profit has been taken today', chat_id)
+        if profit_take == 0: return send_msg('No profit has been taken today', chat_id)
         profit_coinlist = reply_dict['profit_coinlist']
         profit_coinlist_string = '\n'.join(profit_coinlist)
         reply_title = f"Profit Take {datetime.now().strftime('%Y-%m-%d')}: {format_number(profit_take)} usdt"
@@ -2585,7 +2585,7 @@ def profit_taken_today(chat_id=TG_BOT_OWNER_ID, report = False):
         send_msg(reply_msg, chat_id)
         if not report: return
         send_email(reply_title, profit_coinlist_string, GMAIL_ADDRESS_MAIN)
-        send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
+        if profit_take >= 0: send_email(reply_title, profit_coinlist_string, os.getenv('GMAIL_DANLI'))
     except Exception as e: return send_email(f"ERRO: profit_taken_today()", e, GMAIL_ADDRESS_MAIN)
 
 
