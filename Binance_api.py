@@ -299,7 +299,7 @@ def get_token_price_table(coin_column=True):
     df_ticker = pd.read_json(BINANCE_TICKER_URL)
     df_ticker = df_ticker.loc[:, ['symbol', 'lastPrice']]
     df_ticker = df_ticker[df_ticker['symbol'].str.endswith('USDT')]
-    df_ticker = df_ticker[~df_ticker['symbol'].str.endswith('UP|DOWN')]
+    df_ticker = df_ticker[~df_ticker['symbol'].str.endswith('UPUSDT|DOWNUSDT')]
     df_ticker = df_ticker.reset_index(drop=True)
     if coin_column: df_ticker['coin'] = df_ticker['symbol'].str[:-4]
     return df_ticker
@@ -3381,7 +3381,7 @@ def coin_create_position(coin, current_price, step, from_id, is_holding = False,
         if target_profit < TARGET_PROFIT_PERCENTAGE and step != 0.03: return send_msg(f"Target profit for {coin} is too low: {round(target_profit*100)}%", from_id)
         bot_market_buy_one_unit(coin, from_id, engine)
         target_profit = max(target_profit, TARGET_PROFIT_PERCENTAGE)
-        binance_position_set_limit_sell(target_profit, from_id, coin, engine)
+        binance_position_set_limit_sell(target_profit, from_id, coin, 0, engine)
         return
 
 
@@ -3974,6 +3974,26 @@ def check_open_orders_and_place_new_order(from_id=TG_BOT_OWNER_ID, engine = engi
     for coin in coins_to_buy: 
         if auto_limit_buy_at_support_price(coin, from_id): return
     return
+
+
+def grid_price_change_check():
+    df_balance = read_position_table()
+    if df_balance.empty: return pd.DataFrame()
+    try: df = get_token_price_table(coin_column=False)
+    except: return pd.DataFrame()
+    df_balance = pd.merge(df_balance, df, on='symbol', how='left')
+    df_balance['price_change'] = (df_balance['lastPrice'] - df_balance['price_create']) / df_balance['price_create'] * 100
+    df_balance = df_balance.sort_values(by='price_change', ascending=False)
+    df_balance = df_balance.loc[:, ['coin', 'price_create', 'lastPrice', 'price_change']]
+    return df_balance
+
+
+def positions_price_change(from_id=TG_BOT_OWNER_ID):
+    df_balance = grid_price_change_check()
+    if df_balance.empty: return send_msg(f"No open positions.", from_id)
+    reply_string = '\n'.join([f"{row['coin']} {format_number(row['price_create'])} >> {format_number(row['lastPrice'])} ^ {row['price_change']:.2f}%" for index, row in df_balance.iterrows()])
+    send_msg(f"Positions with Price Change:\n\n{reply_string}", from_id)
+    return 
 
 
 if __name__ == '__main__':

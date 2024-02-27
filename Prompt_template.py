@@ -103,6 +103,7 @@ CATEGORIES = ['Groceries', 'Dining Out', 'Transportation', 'Utilities', 'Rent Mo
 
 COMMANDS = [
     {"command": "start", "description": "Get started"},
+    {"command": "positions_price_change", "description": "Get the positions price change"},
     {"command": "refill_stella_danli", "description": "Refill 1000 USDT to stella account of Danli"},
     {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
     {"command": "help", "description": "Get help information"},
@@ -649,6 +650,7 @@ BOT_COMMAND_DICT = {
     'cmy': 'calculate_missed_yesterday',
     'ulb': 'update_limit_buy',
     'uls': 'update_limit_sell',
+    'ppc': 'positions_price_change',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

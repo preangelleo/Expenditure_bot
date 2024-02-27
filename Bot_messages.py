@@ -62,6 +62,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'update_limit_buy': update_limit_buy_orders,
     'update_limit_sell': update_all_position_table_for_limit_sell_order,
     'set_trading_parameters_default': set_trading_parameters_default,
+    'positions_price_change': positions_price_change,
     }
 
 

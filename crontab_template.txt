@@ -4,5 +4,4 @@
 21 6 * * 1 cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Weekly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
 13 8 1 * * cd /home/preangel/Expenditure_bot && /home/preangel/anaconda3/envs/expenditure_ai/bin/python3 /home/preangel/Expenditure_bot/Monthly_check.py >> /home/preangel/Expenditure_bot/cron.log 2>&1
 22 5 * * * rm /home/preangel/Expenditure_bot/cron.log
-1 7 * * * /usr/local/bin/pm2 restart ws
 5 7 * * * /usr/local/bin/pm2 restart st
