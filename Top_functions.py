@@ -235,14 +235,14 @@ def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
         hands = df['Hands'].values[0]
         game_id = df['Game_id'].values[0]
         chips_of_one_hand = chips / hands
-        add_hands = add_chips / chips_of_one_hand
+        add_hands = int(add_chips / chips_of_one_hand)
         updated_hands = int(add_hands + hands)
         updated_chips = int(chips + add_chips)
         try: 
             with engine.connect() as connection: 
                 connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {updated_chips}, Hands = {updated_hands} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
                 connection.commit()
-            return send_msg(f"{player_name} just added {add_hands} hands / {add_chips} chips, now has {updated_hands} hands / {updated_chips} chips!", from_id)
+            return send_msg(f"{player_name} just added {add_hands} hands / {add_chips} chips, totally has {updated_hands} hands / {updated_chips} chips!", from_id)
         except Exception as e: print(f"An error occurred while calling texas_holdem_chips_update(): \n\n{e}")
         return texas_holdem_chips_status(from_id)
     elif add_chips < 0:
@@ -340,7 +340,10 @@ def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
         player_name = row['Player_name']
         chips = row['Chips']
         hands = row['Hands']
-        reply_msg_list.append(f"{player_name}: {hands} hands / {chips} chips")
+        returned_chips = row['Returned_chips']
+        net_profit = row['NetProfit']
+        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / P {net_profit}"
+        reply_msg_list.append(msg_string)
     reply_msg_list.append(f"\nTotal chips: {total_chips}")
     return send_msg('\n'.join(reply_msg_list), from_id)
 
