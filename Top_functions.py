@@ -259,9 +259,9 @@ def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
             with engine.connect() as connection: 
                 connection.execute(text(f"UPDATE texas_holdem_chips SET Returned_chips = {returned_chips}, NetProfit = {net_profit} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
                 connection.commit()
-            if net_profit > 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually gained {net_profit}!\n\n/th_status", from_id)
-            if net_profit < 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually lost {abs(net_profit)}!\n\n/th_status", from_id)
-            if net_profit == 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually broke even!\n\n/th_status", from_id)
+            if net_profit > 0: send_msg(f"{player_name} just returned {returned_chips}, totally bought in {chips}, and eventually gained {net_profit}!\n\n/th_status", from_id)
+            if net_profit < 0: send_msg(f"{player_name} just returned {returned_chips}, totally bought in {chips}, and eventually lost {abs(net_profit)}!\n\n/th_status", from_id)
+            if net_profit == 0: send_msg(f"{player_name} just returned {returned_chips}, totally bought in {chips}, and eventually broke even!\n\n/th_status", from_id)
         except Exception as e: print(f"An error occurred while calling texas_holdem_chips_update(): \n\n{e}")
         return 
     
@@ -342,7 +342,7 @@ def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
         hands = row['Hands']
         returned_chips = row['Returned_chips']
         net_profit = row['NetProfit']
-        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / G {net_profit}"
+        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / G {net_profit}" if net_profit >= 0 else f"{player_name}: B {chips}({hands}) / R {returned_chips} / L {abs(net_profit)}"
         reply_msg_list.append(msg_string)
     reply_msg_list.append(f"\nTotal chips: {total_chips}")
     return send_msg('\n'.join(reply_msg_list), from_id)
