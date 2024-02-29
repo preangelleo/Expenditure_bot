@@ -297,7 +297,7 @@ def texas_holdem_chips_dealer_net_profit(game_id, from_id=TG_BOT_OWNER_ID):
         players_withno_return = player_name_df['Player_name'].values.tolist()
         reply_msg = f"Game_id {game_id} has players with no return: {', '.join(players_withno_return)}"
         player_list_with_command = [f"/th_zero_{player}" for player in players_withno_return]
-        reply_msg += f"\n\nUse below command to update the player with 0 chip return:\n\n{'\n'.join(player_list_with_command)}"
+        reply_msg += f"\n\nUse below command to update the player with 0 chip return:\n\n{', '.join(player_list_with_command)}"
         return send_msg(reply_msg, from_id)
     total_chips = df['Chips'].sum()
     total_returned_chips = df['Returned_chips'].sum()
