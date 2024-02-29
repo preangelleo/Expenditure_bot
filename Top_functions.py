@@ -328,10 +328,12 @@ def texas_holdem_chips_zero_return(player_name, from_id=TG_BOT_OWNER_ID):
 # Define a function to read the latest game status, players list with chips and hands
 def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips ORDER BY Game_id DESC LIMIT 1")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips ORDER BY Game_id DESC")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return send_msg(f"No new game status found in the table!", from_id)
     game_id = df['Game_id'].values[0]
+    # chose only the same game_id
+    df = df[df['Game_id'] == game_id]
     total_chips = df['Chips'].sum()
     reply_msg_list = [f"Game_id {game_id} current status: \n"]
     for index, row in df.iterrows():
