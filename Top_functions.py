@@ -302,7 +302,7 @@ def texas_holdem_chips_dealer_net_profit(game_id, from_id=TG_BOT_OWNER_ID):
     total_chips = df['Chips'].sum()
     total_returned_chips = df['Returned_chips'].sum()
     dealer_net_profit = total_chips - total_returned_chips
-    return send_msg(f"Game_id {game_id} has total bought in {total_chips}, and total returned {total_returned_chips}, the dealer's net profit is {dealer_net_profit}!", from_id)
+    return send_msg(f"Game_id {game_id} has total bought in {total_chips}, and total returned {total_returned_chips}, the dealer's net profit is {dealer_net_profit}!\n\n/th_delete_{game_id}", from_id)
 
 
 # Define a function to update the player with 0 chip return
@@ -342,7 +342,7 @@ def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
         hands = row['Hands']
         returned_chips = row['Returned_chips']
         net_profit = row['NetProfit']
-        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / P {net_profit}"
+        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / G {net_profit}"
         reply_msg_list.append(msg_string)
     reply_msg_list.append(f"\nTotal chips: {total_chips}")
     return send_msg('\n'.join(reply_msg_list), from_id)
