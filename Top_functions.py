@@ -236,8 +236,8 @@ def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
         game_id = df['Game_id'].values[0]
         chips_of_one_hand = chips / hands
         add_hands = add_chips / chips_of_one_hand
-        updated_hands = add_hands + hands
-        updated_chips = chips + add_chips
+        updated_hands = int(add_hands + hands)
+        updated_chips = int(chips + add_chips)
         try: 
             with engine.connect() as connection: 
                 connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {updated_chips}, Hands = {updated_hands} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
@@ -292,12 +292,12 @@ def texas_holdem_chips_dealer_net_profit(game_id, from_id=TG_BOT_OWNER_ID):
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Game_id = {game_id}")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return send_msg(f"Game_id {game_id} does not exist in the table!", from_id)
-    player_name_df = df[df['Returned_chips'] == 0 & df['NetProfit'] == 0]
+    player_name_df = df[(df['Returned_chips'] == 0) & (df['NetProfit'] == 0)]
     if not player_name_df.empty: 
         players_withno_return = player_name_df['Player_name'].values.tolist()
         reply_msg = f"Game_id {game_id} has players with no return: {', '.join(players_withno_return)}"
         player_list_with_command = [f"/th_zero_{player}" for player in players_withno_return]
-        reply_msg += f"\n\nUse below command to update the player with 0 chip return:\n\n{', '.join(player_list_with_command)}"
+        reply_msg += f"\n\nUse below command to update the player with 0 chip return:\n\n{'\n'.join(player_list_with_command)}"
         return send_msg(reply_msg, from_id)
     total_chips = df['Chips'].sum()
     total_returned_chips = df['Returned_chips'].sum()
@@ -328,14 +328,9 @@ def texas_holdem_chips_zero_return(player_name, from_id=TG_BOT_OWNER_ID):
 # Define a function to read the latest game status, players list with chips and hands
 def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
     try:
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Returned_chips = 0 AND NetProfit = 0")).fetchall())
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips ORDER BY Game_id DESC LIMIT 1")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return send_msg(f"No new game status found in the table!", from_id)
-    # find out the unique game_id, if there's two game_id, then pick the bigger one and reslect the df only with the bigger game_id
-    game_id_list = df['Game_id'].unique().tolist()
-    if len(game_id_list) > 1: 
-        game_id = max(game_id_list)
-        df = df[df['Game_id'] == game_id]
     game_id = df['Game_id'].values[0]
     total_chips = df['Chips'].sum()
     reply_msg_list = [f"Game_id {game_id} current status: \n"]
@@ -378,7 +373,8 @@ def texas_holdem_merge(player_name_1, player_name_2, from_id=TG_BOT_OWNER_ID):
             connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {chips}, Hands = {hands} WHERE Game_id = {game_id_1} AND Player_name = '{player_name_1}'"))
             connection.execute(text(f"DELETE FROM texas_holdem_chips WHERE Game_id = {game_id_2} AND Player_name = '{player_name_2}'"))
             connection.commit()
-        return send_msg(f"{player_name_2} have been merged to {player_name_1}! Now {player_name_1} has {hands} hands / {chips} chips!", from_id)
+        send_msg(f"{player_name_2} have been merged to {player_name_1}! Now {player_name_1} has {hands} hands / {chips} chips!", from_id)
+        return texas_holdem_chips_status(from_id)
     except Exception as e: print(f"An error occurred while calling texas_holdem_chips_merge(): \n\n{e}")
     return
 
