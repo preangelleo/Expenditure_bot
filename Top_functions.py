@@ -204,6 +204,7 @@ Welcome to Texas Holdem Poker Game! Here are the commands you can use:
 5. /th_delete_gameId: Delete a game from the table;
 6. /th_dealer_gameId: Show the dealer's net profit of a game;
 7. /th_clean: Delete all the rows with NetProfit = 0 and Returned_chips = 0 in the table 'texas_holdem_chips';
+8. /th_zero_player: Update the player with 0 chip return;
 '''
     send_msg(help_msg, from_id)
     return
@@ -258,10 +259,9 @@ def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
             with engine.connect() as connection: 
                 connection.execute(text(f"UPDATE texas_holdem_chips SET Returned_chips = {returned_chips}, NetProfit = {net_profit} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
                 connection.commit()
-            if net_profit > 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually gained {net_profit}!", from_id)
-            if net_profit < 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually lost {abs(net_profit)}!", from_id)
-            if net_profit == 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually broke even!", from_id)
-            texas_holdem_chips_status(from_id)
+            if net_profit > 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually gained {net_profit}!\n\n/th_status", from_id)
+            if net_profit < 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually lost {abs(net_profit)}!\n\n/th_status", from_id)
+            if net_profit == 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually broke even!\n\n/th_status", from_id)
         except Exception as e: print(f"An error occurred while calling texas_holdem_chips_update(): \n\n{e}")
         return 
     
@@ -285,17 +285,44 @@ def texas_holdem_chips_delete(game_id, from_id=TG_BOT_OWNER_ID):
 
 # Define a function to calculate the dealer's net profit in the table 'texas_holdem_chips'
 def texas_holdem_chips_dealer_net_profit(game_id, from_id=TG_BOT_OWNER_ID):
+    texas_holdem_chips_status(from_id)
     try: game_id = int(game_id)
     except: return send_msg(f"Game_id has to be an integer, your input is {game_id}", from_id)
     try: 
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Game_id = {game_id}")).fetchall())
     except: df = pd.DataFrame()
     if df.empty: return send_msg(f"Game_id {game_id} does not exist in the table!", from_id)
+    player_name_df = df[df['Returned_chips'] == 0 & df['NetProfit'] == 0]
+    if not player_name_df.empty: 
+        players_withno_return = player_name_df['Player_name'].values.tolist()
+        reply_msg = f"Game_id {game_id} has players with no return: {', '.join(players_withno_return)}"
+        player_list_with_command = [f"/th_zero_{player}" for player in players_withno_return]
+        reply_msg += f"\n\nUse below command to update the player with 0 chip return:\n\n{', '.join(player_list_with_command)}"
+        return send_msg(reply_msg, from_id)
     total_chips = df['Chips'].sum()
     total_returned_chips = df['Returned_chips'].sum()
     dealer_net_profit = total_chips - total_returned_chips
-    texas_holdem_chips_status(from_id)
     return send_msg(f"Game_id {game_id} has total bought in {total_chips}, and total returned {total_returned_chips}, the dealer's net profit is {dealer_net_profit}!", from_id)
+
+
+# Define a function to update the player with 0 chip return
+def texas_holdem_chips_zero_return(player_name, from_id=TG_BOT_OWNER_ID):
+    player_name = player_name.capitalize()
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Player_name = '{player_name}' AND Returned_chips = 0 AND NetProfit = 0 ORDER BY Game_id DESC LIMIT 1")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"Player_name {player_name} does not exist in the table!", from_id)
+    game_id = df['Game_id'].values[0]
+    chips = df['Chips'].values[0]
+    returned_chips = 0
+    net_profit = returned_chips - chips
+    try: 
+        with engine.connect() as connection: 
+            connection.execute(text(f"UPDATE texas_holdem_chips SET Returned_chips = {returned_chips}, NetProfit = {net_profit} WHERE Game_id = {game_id} AND Player_name = '{player_name}'"))
+            connection.commit()
+        return send_msg(f"{player_name} has been updated with 0 chip return! Total loss: {abs(net_profit)}", from_id)
+    except Exception as e: print(f"An error occurred while calling texas_holdem_chips_zero_return(): \n\n{e}")
+    return
 
 
 # Define a function to read the latest game status, players list with chips and hands
@@ -351,7 +378,7 @@ def texas_holdem_merge(player_name_1, player_name_2, from_id=TG_BOT_OWNER_ID):
             connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {chips}, Hands = {hands} WHERE Game_id = {game_id_1} AND Player_name = '{player_name_1}'"))
             connection.execute(text(f"DELETE FROM texas_holdem_chips WHERE Game_id = {game_id_2} AND Player_name = '{player_name_2}'"))
             connection.commit()
-        return send_msg(f"Player_name {player_name_2} have been merged to {player_name_1}! Now {player_name_1} has {hands} hands / {chips} chips!", from_id)
+        return send_msg(f"{player_name_2} have been merged to {player_name_1}! Now {player_name_1} has {hands} hands / {chips} chips!", from_id)
     except Exception as e: print(f"An error occurred while calling texas_holdem_chips_merge(): \n\n{e}")
     return
 
