@@ -3996,6 +3996,7 @@ def positions_price_change(from_id=TG_BOT_OWNER_ID):
     return 
 
 
+
 if __name__ == '__main__':
     print('Binance_api.py is running')
     parameters_dict = read_trading_parameters()

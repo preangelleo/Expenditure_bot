@@ -189,6 +189,9 @@ COMMANDS = [
     {"command": "read_kdj_coinlist", "description": "Read the KDJ watching list"},
     {"command": "update_limit_buy", "description": "Update the limit buy excuted orders"},
     {"command": "update_limit_sell", "description": "Update the limit sell excuted orders"},
+    {"command": "texas_holdem_merge", "description": "Merge second name to the first name in the texas_holdem table"},
+    {"command": "texas_holdem_update", "description": "Update the texas_holdem table with the given name and chips"},
+    {"command": "texas_holdem_help", "description": "Get the help information of the texas_holdem game"},
 ]
 
 
@@ -651,6 +654,9 @@ BOT_COMMAND_DICT = {
     'ulb': 'update_limit_buy',
     'uls': 'update_limit_sell',
     'ppc': 'positions_price_change',
+    'thu': 'texas_holdem_update',
+    'thm': 'texas_holdem_merge',
+    'thh': 'texas_holdem_help',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''

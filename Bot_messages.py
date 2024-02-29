@@ -63,6 +63,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'update_limit_sell': update_all_position_table_for_limit_sell_order,
     'set_trading_parameters_default': set_trading_parameters_default,
     'positions_price_change': positions_price_change,
+    'texas_holdem_help': texas_holdem_help,
     }
 
 
@@ -112,6 +113,8 @@ TWO_PARAMETER_COMMAND_LIST = {
     'insert_otp': {'function': insert_otp, 'description': 'You need to input a app_name and a passcode_key after this command, for example: /insert_otp carta your_passcode_key_here'},
     'binance_pay_usdt': {'function': binance_pay_usdt, 'description': 'You need to input an amount and a target TRX address after this command, for example: /binance_pay_usdt 100 TQKgU4QRWpfoUYBno6dG8USABkeYQRvQ72'},
     'cancel_order_id': {'function': cancel_orderId, 'description': 'You need to input the orderId_close after this command, for example: \n/cancel_order_id RSR 123456789\n/cancel_RSR_123456789'},
+    'texas_holdem_update': {'function': texas_holdem_update, 'description': 'You need to input a player_name and a chips amount after this command, for example: /thu leo 1000'},
+    'texas_holdem_merge': {'function': texas_holdem_merge, 'description': 'You need to input player_name_1 and player_name_2 after this command, for example: /thm leo leon'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {
@@ -338,6 +341,10 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('remove_holding_'): return remove_holding_coin(first_word.split('_')[-1], from_id)
         if first_word.startswith('kdj_'): return kdj_condition(first_word.split('_')[-1], from_id)
         if first_word.startswith('kpi_'): return kdj_condition(first_word.split('_')[-1], from_id)
+        if first_word.startswith('th_delete_'): return texas_holdem_chips_delete(first_word.split('_')[-1], from_id)
+        if first_word.startswith('th_dealer_'): return texas_holdem_chips_dealer_net_profit(first_word.split('_')[-1], from_id)
+        if first_word.startswith('th_status'): return texas_holdem_chips_status(from_id)
+        if first_word.startswith('th_help'): return texas_holdem_help(from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

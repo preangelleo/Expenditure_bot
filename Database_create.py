@@ -698,8 +698,24 @@ def print_binance_funding_profits_structure():
     return True
 
 
+# Def a function to record chips (buy in) for a texas holdem game for each players and calculate the net profit, columns should include: ID, from_id INT, game_id INT, Date, Time, Player_name VACHAR, Chips INT, Hands INT, Returned_chips INT, NetProfit INT
+def create_texas_holdem_chips_table():
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Create a new table 'texas_holdem_chips'
+    cursor.execute("CREATE TABLE IF NOT EXISTS texas_holdem_chips (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Game_id INTEGER, Date DATE, Time VARCHAR(20), Player_name VARCHAR(255), Chips INTEGER, Hands INTEGER, Returned_chips INTEGER, NetProfit INTEGER)")
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Table 'texas_holdem_chips' created successfully!")
+    return True
+
+
 if __name__ == '__main__':
     print("Create database and tables...")
+    
     # Initial Step 1: Create database
     create_database()
 
@@ -723,6 +739,8 @@ if __name__ == '__main__':
 
     # Initial Step 8: Create holding_list tables
     create_holding_list_table()
+
+    create_texas_holdem_chips_table()
 
     print("All tables created successfully!")
 

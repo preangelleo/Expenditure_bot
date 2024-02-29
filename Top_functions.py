@@ -164,6 +164,182 @@ def data_to_table(data, table_name, if_exists='append', engine=engine):
     return
 
 
+'''CREATE TABLE IF NOT EXISTS texas_holdem_chips (ID INTEGER PRIMARY KEY AUTO_INCREMENT, From_id VARCHAR(255), Game_id INTEGER, Date DATE, Time VARCHAR(20), Player_name VARCHAR(255), Chips INTEGER, Hands INTEGER, Returned_chips INTEGER, NetProfit INTEGER)'''
+# Define a function to insert data into the table 'texas_holdem_chips'
+def texas_holdem_insert(player_name, chips, from_id=TG_BOT_OWNER_ID):
+    # game_id will be the timestamp of the game
+    from_id = str(from_id)
+    chips = int(chips)
+    game_id = int(datetime.now().timestamp())
+    data = {
+        'From_id': from_id,
+        'Game_id': game_id,
+        'Date': datetime.now().strftime("%Y-%m-%d"),
+        'Time': datetime.now().strftime("%H:%M"),
+        'Player_name': player_name,
+        'Chips': chips,
+        'Hands': 1,
+        'Returned_chips': 0,
+        'NetProfit': 0
+    }
+    data_to_table(data, 'texas_holdem_chips')
+    send_msg(f"{player_name} added 1 hand / {chips} chips!\n\n/th_delete_{game_id}\n/th_dealer_{game_id}\n/th_status\n/th_help", from_id)
+    return
+
+
+# Define a function to retrieve the help information for the commands of texas_holdem
+def texas_holdem_help(from_id=TG_BOT_OWNER_ID):
+    help_msg = '''
+Welcome to Texas Holdem Poker Game! Here are the commands you can use:
+
+1. /thu player_name chips: Add chips to the player's account. Example: /thu Leo 500;
+2. /thd player_name -chips: Return chips from the player's account. Example: /thu Leo -500;
+3. /thm player_name_1 player_name_2: Merge player_name_2 to player_name_1, and delete player_name_2. Example: /thm Leo Leon;
+4. /th_status: Show the current game status;
+5. /th_delete_gameId: Delete a game from the table;
+6. /th_dealer_gameId: Show the dealer's net profit of a game;
+'''
+    send_msg(help_msg, from_id)
+    return
+
+
+# Define a function to update the table 'texas_holdem_chips' with the added chips
+def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
+    from_id = str(from_id)
+    add_chips = float(add_chips)
+    add_chips = int(add_chips)
+    player_name = player_name.capitalize()
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Returned_chips = 0 AND NetProfit = 0")).fetchall())
+    except: df = pd.DataFrame()
+    if add_chips > 0:
+        if df.empty: return texas_holdem_insert(player_name, add_chips, from_id)
+        chips = df['Chips'].values[0]
+        hands = df['Hands'].values[0]
+        game_id = df['Game_id'].values[0]
+        chips_of_one_hand = chips / hands
+        add_hands = add_chips / chips_of_one_hand
+        updated_hands = add_hands + hands
+        updated_chips = chips + add_chips
+        try: 
+            with engine.connect() as connection: 
+                connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {updated_chips}, Hands = {updated_hands} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
+                connection.commit()
+            return send_msg(f"{player_name} just added {add_hands} hands / {add_chips} chips, now has {updated_hands} hands / {updated_chips} chips!", from_id)
+        except Exception as e: print(f"An error occurred while calling texas_holdem_chips_update(): \n\n{e}")
+        return texas_holdem_chips_status(from_id)
+    elif add_chips < 0:
+        returned_chips = abs(add_chips)
+        if df.empty: return send_msg(f"Wrong format, {player_name} has no chips added yet, how come he/she returns {returned_chips} chips? Check if the input name was wrong?", from_id)
+        chips = df['Chips'].values[0]
+        hands = df['Hands'].values[0]
+        game_id = df['Game_id'].values[0]
+        chips_of_one_hand = chips / hands
+        returned_hands = returned_chips / chips_of_one_hand
+        updated_hands = returned_hands - hands
+        net_profit = returned_chips - chips
+        try: 
+            with engine.connect() as connection: 
+                connection.execute(text(f"UPDATE texas_holdem_chips SET Returned_chips = {returned_chips}, NetProfit = {net_profit} WHERE From_id = '{from_id}' AND Player_name = '{player_name}' AND Game_id = {game_id}"))
+                connection.commit()
+            if net_profit > 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually gained {net_profit}!", from_id)
+            if net_profit < 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually lost {abs(net_profit)}!", from_id)
+            if net_profit == 0: send_msg(f"{player_name} just returned {returned_chips}, he / she totally bought in {chips}, and eventually broke even!", from_id)
+            texas_holdem_chips_status(from_id)
+        except Exception as e: print(f"An error occurred while calling texas_holdem_chips_update(): \n\n{e}")
+        return 
+    
+
+# Define a function to delete a given game_id from the table 'texas_holdem_chips'
+def texas_holdem_chips_delete(game_id, from_id=TG_BOT_OWNER_ID):
+    try: game_id = int(game_id)
+    except: return send_msg(f"Game_id has to be an integer, your input is {game_id}", from_id)
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Game_id = {game_id}")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"Game_id {game_id} does not exist in the table!", from_id)
+    try: 
+        with engine.connect() as connection: 
+            connection.execute(text(f"DELETE FROM texas_holdem_chips WHERE Game_id = {game_id}"))
+            connection.commit()
+        return send_msg(f"Game_id {game_id} has been deleted!", from_id)
+    except Exception as e: print(f"An error occurred while calling texas_holdem_chips_delete(): \n\n{e}")
+    return
+
+
+# Define a function to calculate the dealer's net profit in the table 'texas_holdem_chips'
+def texas_holdem_chips_dealer_net_profit(game_id, from_id=TG_BOT_OWNER_ID):
+    try: game_id = int(game_id)
+    except: return send_msg(f"Game_id has to be an integer, your input is {game_id}", from_id)
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Game_id = {game_id}")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"Game_id {game_id} does not exist in the table!", from_id)
+    total_chips = df['Chips'].sum()
+    total_returned_chips = df['Returned_chips'].sum()
+    dealer_net_profit = total_chips - total_returned_chips
+    texas_holdem_chips_status(from_id)
+    return send_msg(f"Game_id {game_id} has total bought in {total_chips}, and total returned {total_returned_chips}, the dealer's net profit is {dealer_net_profit}!", from_id)
+
+
+# Define a function to read the latest game status, players list with chips and hands
+def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
+    try:
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Returned_chips = 0 AND NetProfit = 0")).fetchall())
+    except: df = pd.DataFrame()
+    if df.empty: return send_msg(f"No new game status found in the table!", from_id)
+    # find out the unique game_id, if there's two game_id, then pick the bigger one and reslect the df only with the bigger game_id
+    game_id_list = df['Game_id'].unique().tolist()
+    if len(game_id_list) > 1: 
+        game_id = max(game_id_list)
+        df = df[df['Game_id'] == game_id]
+    game_id = df['Game_id'].values[0]
+    total_chips = df['Chips'].sum()
+    reply_msg_list = [f"Game_id {game_id} current status: \n"]
+    for index, row in df.iterrows():
+        player_name = row['Player_name']
+        chips = row['Chips']
+        hands = row['Hands']
+        reply_msg_list.append(f"{player_name}: {hands} hands / {chips} chips")
+    reply_msg_list.append(f"\nTotal chips: {total_chips}")
+    return send_msg('\n'.join(reply_msg_list), from_id)
+
+
+# Define a function to merge two player's chips in the table 'texas_holdem_chips' and keep the player_name with the bigger ID
+def texas_holdem_merge(player_name_1, player_name_2, from_id=TG_BOT_OWNER_ID):
+    player_name_1 = player_name_1.capitalize()
+    player_name_2 = player_name_2.capitalize()
+    # From table read name = player_name_1 or player_name_2 with no net profit and no returned chips
+    try:
+        with engine.connect() as connection: df_1 = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Player_name = '{player_name_1}' AND Returned_chips = 0 AND NetProfit = 0")).fetchall())
+    except: df_1 = pd.DataFrame()
+    try:
+        with engine.connect() as connection: df_2 = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE Player_name = '{player_name_2}' AND Returned_chips = 0 AND NetProfit = 0")).fetchall())
+    except: df_2 = pd.DataFrame()
+    if df_1.empty and df_2.empty: return send_msg(f"Player_name {player_name_1} and {player_name_2} do not exist in the table!", from_id)
+    if df_1.empty: return send_msg(f"Player_name {player_name_1} does not exist in the table!", from_id)
+    if df_2.empty: return send_msg(f"Player_name {player_name_2} does not exist in the table!", from_id)
+    game_id_1 = df_1['Game_id'].values[0]
+    game_id_2 = df_2['Game_id'].values[0]
+    # if game_id is different, return
+    if game_id_1 != game_id_2: return send_msg(f"Game_id {game_id_1} and {game_id_2} are different, cannot merge!", from_id)
+    chips_1 = df_1['Chips'].values[0]
+    chips_2 = df_2['Chips'].values[0]
+    hands_1 = df_1['Hands'].values[0]
+    hands_2 = df_2['Hands'].values[0]
+    chips = chips_1 + chips_2
+    hands = hands_1 + hands_2
+    # update the table with the merged chips and hands to player_name_1 and delete player_name_2
+    try:
+        with engine.connect() as connection: 
+            connection.execute(text(f"UPDATE texas_holdem_chips SET Chips = {chips}, Hands = {hands} WHERE Game_id = {game_id_1} AND Player_name = '{player_name_1}'"))
+            connection.execute(text(f"DELETE FROM texas_holdem_chips WHERE Game_id = {game_id_2} AND Player_name = '{player_name_2}'"))
+            connection.commit()
+        return send_msg(f"Player_name {player_name_2} have been merged to {player_name_1}! Now {player_name_1} has {hands} hands / {chips} chips!", from_id)
+    except Exception as e: print(f"An error occurred while calling texas_holdem_chips_merge(): \n\n{e}")
+    return
+
+
 def initial_kdj_parameter(coin, d=None, w=None, m=None, from_id=TG_BOT_OWNER_ID):
     d = int(d) if d else 0
     w = int(w) if w else 0
