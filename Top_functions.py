@@ -170,7 +170,11 @@ def texas_holdem_insert(player_name, chips, from_id=TG_BOT_OWNER_ID):
     # game_id will be the timestamp of the game
     from_id = str(from_id)
     chips = int(chips)
-    game_id = int(datetime.now().timestamp())
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM texas_holdem_chips WHERE From_id = '{from_id}' AND Returned_chips = 0 AND NetProfit = 0 ORDER BY Game_id DESC LIMIT 1")).fetchall())
+    except: df = pd.DataFrame()
+    if not df.empty: game_id = df['Game_id'].values[0]
+    else: game_id = int(datetime.now().timestamp())
     data = {
         'From_id': from_id,
         'Game_id': game_id,
@@ -183,7 +187,8 @@ def texas_holdem_insert(player_name, chips, from_id=TG_BOT_OWNER_ID):
         'NetProfit': 0
     }
     data_to_table(data, 'texas_holdem_chips')
-    send_msg(f"{player_name} added 1 hand / {chips} chips!\n\n/th_delete_{game_id}\n/th_dealer_{game_id}\n/th_status\n/th_help", from_id)
+    if df.empty: send_msg(f"New game started:\n\n{player_name} added 1 hand / {chips} chips!\n\n/th_delete_{game_id}\n/th_dealer_{game_id}\n/th_status\n/th_help", from_id)
+    else: send_msg(f"{player_name} added 1 hand / {chips} chips!\n\n/th_status", from_id)
     return
 
 
@@ -198,10 +203,21 @@ Welcome to Texas Holdem Poker Game! Here are the commands you can use:
 4. /th_status: Show the current game status;
 5. /th_delete_gameId: Delete a game from the table;
 6. /th_dealer_gameId: Show the dealer's net profit of a game;
+7. /th_clean: Delete all the rows with NetProfit = 0 and Returned_chips = 0 in the table 'texas_holdem_chips';
 '''
     send_msg(help_msg, from_id)
     return
 
+
+# Define a function to delete all of the rows with NetProfit = 0 and Returned_chips = 0 in the table 'texas_holdem_chips'
+def texas_holdem_chips_delete_all(from_id=TG_BOT_OWNER_ID):
+    try: 
+        with engine.connect() as connection: 
+            connection.execute(text(f"DELETE FROM texas_holdem_chips WHERE Returned_chips = 0 AND NetProfit = 0"))
+            connection.commit()
+        return send_msg(f"All the rows with NetProfit = 0 and Returned_chips = 0 have been deleted!", from_id)
+    except Exception as e: print(f"An error occurred while calling texas_holdem_chips_delete_all(): \n\n{e}")
+    return
 
 # Define a function to update the table 'texas_holdem_chips' with the added chips
 def texas_holdem_update(player_name, add_chips, from_id=TG_BOT_OWNER_ID):
