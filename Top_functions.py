@@ -342,7 +342,7 @@ def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
         hands = row['Hands']
         returned_chips = row['Returned_chips']
         net_profit = row['NetProfit']
-        msg_string = f"{player_name}: B {chips}({hands}) / R {returned_chips} / G {net_profit}" if net_profit >= 0 else f"{player_name}: B {chips}({hands}) / R {returned_chips} / L {abs(net_profit)}"
+        msg_string = f"{player_name}: B {chips}/ R {returned_chips} / G {net_profit}" if net_profit >= 0 else f"{player_name}: B {chips} / R {returned_chips} / L {abs(net_profit)}"
         reply_msg_list.append(msg_string)
     reply_msg_list.append(f"\nTotal chips: {total_chips}")
     return send_msg('\n'.join(reply_msg_list), from_id)
