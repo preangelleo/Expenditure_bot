@@ -339,12 +339,11 @@ def texas_holdem_chips_status(from_id=TG_BOT_OWNER_ID):
     for index, row in df.iterrows():
         player_name = row['Player_name']
         chips = row['Chips']
-        hands = row['Hands']
         returned_chips = row['Returned_chips']
         net_profit = row['NetProfit']
         msg_string = f"{player_name}: B {chips}/ R {returned_chips} / G {net_profit}" if net_profit >= 0 else f"{player_name}: B {chips} / R {returned_chips} / L {abs(net_profit)}"
         reply_msg_list.append(msg_string)
-    reply_msg_list.append(f"\nTotal chips: {total_chips}")
+    reply_msg_list.append(f"\nTotal chips: {total_chips}\n/th_dealer_{game_id}")
     return send_msg('\n'.join(reply_msg_list), from_id)
 
 
