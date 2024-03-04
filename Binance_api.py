@@ -2444,7 +2444,7 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
     return {}
 
 
-def get_target_price(symbol: str, interval = '1w'):
+def get_target_price(symbol, interval = '1w'):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     coin = symbol[:-4]
     df = get_kline_data(symbol, interval)
@@ -2452,7 +2452,7 @@ def get_target_price(symbol: str, interval = '1w'):
         current_price = float(df['Close'].iloc[-1])
         if current_price > 0:
             resistance_support_levels = calculate_resistance_support(df)
-            resistance_support_levels = [str(format_number(price)) for price in resistance_support_levels if price >= current_price * 1.5]
+            resistance_support_levels = [f"{format_number(price)}({format_number(100 * float(price) / current_price)}%)" for price in resistance_support_levels if price >= current_price * 1.5]
             # MATIC: Current Price 1.13, Target  1.56 / 1.74 / 2.1 / 2.45 / 2.9
             reply_msg = f"{coin}: Current Price {format_number(current_price)}, Target prices: {', '.join(resistance_support_levels[0:3])}"
             return reply_msg
