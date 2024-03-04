@@ -128,8 +128,8 @@ def handle_socket_message(msg):
                 try: limit_buy_order_filled(symbol, orderId, TG_BOT_OWNER_ID, engine)
                 except Exception as e: print(f'limit_buy_order_filled() error:\n\n{e}\n\n')
                 if coin in read_holding_list(): switch_position_from_main_to_funding(coin, TG_BOT_OWNER_ID, engine)
-            try: check_open_orders_and_place_new_order(from_id, engine)
-            except Exception as e: print(f'check_open_orders_and_place_new_order() error:\n\n{e}\n\n')
+            # try: check_open_orders_and_place_new_order(from_id, engine)
+            # except Exception as e: print(f'check_open_orders_and_place_new_order() error:\n\n{e}\n\n')
 
             
 def main():
