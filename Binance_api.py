@@ -3978,8 +3978,7 @@ def check_open_orders_and_place_new_order(from_id=TG_BOT_OWNER_ID, engine = engi
     # check if the length of position_coins + current_limit_buy is less than POSITIONS_LIMIT
     if len(position_coins) + len(current_limit_buy) >= POSITIONS_LIMIT: return send_msg(f'Positions and open orders are already at the limit: {POSITIONS_LIMIT}', from_id)
     coins_to_buy = set(holding_list) - set(current_limit_buy) - set(position_coins)
-    for coin in coins_to_buy: 
-        if auto_limit_buy_at_support_price(coin, from_id): return
+    for coin in coins_to_buy: auto_limit_buy_at_support_price(coin, from_id)
     return
 
 
