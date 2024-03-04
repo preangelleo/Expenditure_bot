@@ -51,7 +51,7 @@ def network_name_change(str_name: str):
 
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /cpa_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
+    return f"/as_{coin} | /ps_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
 
 
 def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
@@ -2442,6 +2442,27 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
             if for_webhook: return {'target_profit': f"{format_number(target_profit * 100)}%", 'resistant_price': format_number(nearest_resistance_level), 'support_price': format_number(nearest_support_level), 'deviation_percentage': f"{format_number(deviation_percentage * 100)}%", 'long': long}
             return {'target_profit': target_profit, 'resistant_price': nearest_resistance_level, 'support_price': nearest_support_level, 'deviation_percentage': deviation_percentage, 'long': long}
     return {}
+
+
+def get_target_price(symbol: str, interval = '1w'):
+    symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
+    coin = symbol[:-4]
+    df = get_kline_data(symbol, interval)
+    if not df.empty: 
+        current_price = float(df['Close'].iloc[-1])
+        if current_price > 0:
+            resistance_support_levels = calculate_resistance_support(df)
+            resistance_support_levels = [str(format_number(price)) for price in resistance_support_levels if price >= current_price * 1.5]
+            # MATIC: Current Price 1.13, Target  1.56 / 1.74 / 2.1 / 2.45 / 2.9
+            reply_msg = f"{coin}: Current Price {format_number(current_price)}, Target prices: {', '.join(resistance_support_levels[0:3])}"
+            return reply_msg
+    return
+
+
+def get_target_price_for_user(coin, from_id = TG_BOT_OWNER_ID):
+    reply_msg = get_target_price(coin)
+    if reply_msg: send_msg(reply_msg, from_id)
+    return reply_msg
 
 
 def weekly_rsi_over_high(symbol):

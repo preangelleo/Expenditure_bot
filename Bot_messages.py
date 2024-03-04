@@ -99,6 +99,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'set_daily_new': {'function': reset_daily_new_positions_limit, 'description': 'You need to input a position limit number after this command, for example: /set_daily_new 5'},
     'get_fibonacci_sequence': {'function': fibonacci_sequence, 'description': 'You need to input a number after this command, for example: /fibonacci_sequence 10'},
     'analyze_symbol': {'function': analyze_symbol_for_user, 'description': 'You need to input a coin symbol after this command, for example: /analyze_symbol BTC'},
+    'price_resistant': {'function': get_target_price_for_user, 'description': 'You need to input a coin symbol after this command, for example: /ps MATIC'},
     'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
     'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
     'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
@@ -318,6 +319,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('buy_'): return click_to_create(first_word.split('_')[-1], from_id)
         if first_word.startswith('ccv_'): return calculate_coin_valuation(first_word.split('_')[1], first_word.split('_')[-1], from_id)
         if first_word.startswith('as_'): return analyze_symbol_for_user(first_word.split('_')[-1], from_id)
+        if first_word.startswith('ps_'): return get_target_price_for_user(first_word.split('_')[-1], from_id)
         if first_word.startswith('swp_'): return switch_position_from_main_to_funding(first_word.split('_')[-1], from_id)
         if first_word.startswith('mtf_'): return switch_position_from_main_to_funding(first_word.split('_')[-1], from_id)
         if first_word.startswith('ftm_'): return switch_position_from_funding_to_main(first_word.split('_')[-1], from_id)
