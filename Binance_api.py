@@ -1812,7 +1812,8 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID, engine = engine):
     profit = usdt_close - data['usdt_value'] - data['commission']
     target_profit = profit / data['usdt_value']
     target_profit = round(target_profit, 2)
-    price_close = usdt_close / data['amount']
+    amount = float(data['executedQty'])
+    price_close = usdt_close / amount
     time_close = int(datetime.now().timestamp() * 1000)
     year_close = datetime.now().year
     month_close = datetime.now().month
@@ -1946,17 +1947,30 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
         coin_df = read_position_table_by_orderId_create(orderId_create, engine)
         if coin_df.empty: return send_msg(f'No open position with orderId_create: {orderId_create}', from_id)
         coin = coin_df['coin'].values[0]
+    current_price = float(get_avg_price(coin)['price'])
     coin = coin.upper() if coin else coin_df['coin'].values[0]
     row = coin_df.iloc[0]
+    usdt_value = float(row['usdt_value'])
     amount = float(row['amount'])
     account = row['account']
     orderId_close = int(row['orderId_close'])
+    # Calculate the current of the position, calculate the profit, calculate the amount to sell if want to keep half the profit as coin and half as usdt
+    amount_to_sell = amount - (amount * current_price - usdt_value) / 2 / current_price
+    if amount_to_sell >= amount: return send_msg(f'No profit, amount_to_sell: {amount_to_sell} >= amount: {amount}, can not close a position losing money.', from_id)
+    # make sure the decimal of amount_to_sell is same as amount
+    decimal = len(str(amount).split('.')[1]) if '.' in str(amount) else 0
+    amount_to_sell = round(amount_to_sell, decimal)
     if orderId_close:  binance_cancel_order_by_orderId(coin, orderId_close)
-    if account == 'funding': funding_main_transfer_with_check_and_send(coin, amount, from_id)
-    data = binance_market_sell(coin, amount)
+    if account == 'funding': funding_main_transfer_with_check_and_send(coin, amount_to_sell, from_id)
+    data = binance_market_sell(coin, amount_to_sell)
     if not data: return send_msg(f'Failed to do market sell for {coin}', from_id)
     profit = update_position_table_with_orderId(coin, int(row['orderId_create']), int(data.get('orderId', 0)), from_id, row, data, engine)
     if account == 'funding': main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
+    if account == 'spot':
+        # calculate the remaining amount of the coin and transfer to funding account
+        amount_remaining = amount - amount_to_sell
+        amount_remaining = round(amount_remaining, decimal)
+        if amount_remaining > 0: main_funding_transfer_with_check_and_send(coin, amount_remaining, from_id)
     return profit
     
 
@@ -3374,15 +3388,8 @@ def coin_create_position(coin, current_price, step, from_id, is_holding = False,
     with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT price_create, price_close, is_closed, time_close FROM position_table WHERE coin = "{coin}" AND is_closed = 0')).fetchall())
     if not df.empty and current_price > float(df['price_create'].min()) * (1 - step): return
     if is_holding: return binance_funding_buy_and_hold(coin, from_id, engine)
-    if not is_spot_full(engine): 
-        resistance_dict = get_resistant_price(coin)
-        if not resistance_dict: return send_msg(f"Failed to get resistance price for {coin}", from_id)
-        else: target_profit = resistance_dict.get('target_profit', 0.01)
-        if target_profit < TARGET_PROFIT_PERCENTAGE and step != 0.03: return send_msg(f"Target profit for {coin} is too low: {round(target_profit*100)}%", from_id)
-        bot_market_buy_one_unit(coin, from_id, engine)
-        target_profit = max(target_profit, TARGET_PROFIT_PERCENTAGE)
-        binance_position_set_limit_sell(target_profit, from_id, coin, 0, engine)
-        return
+    if not is_spot_full(engine): return bot_market_buy_one_unit(coin, from_id, engine)
+
 
 
 def buy_back_most_profitable(buy_back_target_profit=0.03, from_id=TG_BOT_OWNER_ID):
@@ -3920,17 +3927,17 @@ def close_postive_positions(from_id, grid_profit_target=1, account = 'spot'):
         if not df_spot.empty:
             for i in range(df_spot.shape[0]):
                 coin_df = df_spot[i:i+1]
-                coin_with_highest_profit = coin_df['coin'].values[0]
+                coin = coin_df['coin'].values[0]
                 orderId_create = int(coin_df['orderId_create'].values[0])
-                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit, engine)
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin, engine)
     if account == 'funding':
         df_funding = df_balance[df_balance['account'] == 'funding']
         if not df_funding.empty:
             for i in range(df_funding.shape[0]):
                 coin_df = df_funding[i:i+1]
-                coin_with_highest_profit = coin_df['coin'].values[0]
+                coin = coin_df['coin'].values[0]
                 orderId_create = int(coin_df['orderId_create'].values[0])
-                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin_with_highest_profit, engine)
+                do_market_sell_by_orderId_create(orderId_create, from_id, coin_df, coin, engine)
     return 
 
 
