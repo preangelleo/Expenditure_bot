@@ -606,6 +606,7 @@ BOT_COMMAND_DICT = {
     'fmb': 'funding_market_buy',
     'fms': 'funding_market_sell',
     'ptt': 'profit_taken_today',
+    'ppt': 'profit_taken_today',
     'swp': 'switch_position',
     'rsd': 'refill_stella_danli',
     'rsl': 'refill_stella_leo',
