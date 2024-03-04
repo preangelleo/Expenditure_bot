@@ -857,7 +857,7 @@ Receipt_Image_URL (VARCHAR): URL link to the image of the receipt.
 # Define a function to insert a new expenditure record into the table 'user_expenditures_record'
 def insert_new_expenditure_record(from_id, date, time, spent, category, payment_method, merchant, item_name, price, card_number, tax, tips, address, receipt_image_url):
     from_id = str(from_id)
-    
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     # Assuming engine is already created as shown in previous examples
     with engine.connect() as connection:
         try:
@@ -893,7 +893,7 @@ def insert_new_expenditure_record(from_id, date, time, spent, category, payment_
             # Read the ID of the last inserted row
             last_row_id = result.lastrowid
 
-            send_msg(f'''Successfully inserted: \n\nID: {last_row_id}\nName: {item_name}\nDate: {date}\nSpent: {spent}\nCategory: {category}\nMerchant: {merchant}\n\n/alter_record {last_row_id} Spent a_new_number''', from_id)
+            send_msg(f'''Successfully inserted: \n\nID: {last_row_id}\nName: {item_name}\nDate: {date}\nSpent: {spent}\nCategory: {category}\nMerchant: {merchant}\n\n/alter_record {last_row_id} Spent a_new_number\n/drop_record_{last_row_id}''', from_id)
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -922,6 +922,25 @@ def alter_expenditure_record(id, column_name, new_value, from_id=TG_BOT_OWNER_ID
     cursor.close()
     conn.close()
     return send_msg(f"Successfully updated {column_name} to {format_number(new_value)} for ID {id}", from_id)
+
+
+# Delete a record from user_expenditures_record for a given ID
+def delete_expenditure_record(id, from_id=TG_BOT_OWNER_ID):
+    try: id = int(id)
+    except: return send_msg(f"ID has to be an integer, your input is {id}", from_id)
+
+    # Create a new session
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Check if the symbol is already in the table
+    try: cursor.execute(f"DELETE FROM user_expenditures_record WHERE ID = {id}")
+    except Exception as e: return send_msg(f"No record with ID {id} in the table.\n\n{e}", from_id)
+
+    # Commit the session
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return send_msg(f"Successfully deleted record with ID {id}", from_id)
 
 
 # Define a function to get all the expenditure records from the table 'user_expenditures_record' as a pandas dataframe

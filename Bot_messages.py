@@ -347,6 +347,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('th_help'): return texas_holdem_help(from_id)
         if first_word.startswith('th_clean'): return texas_holdem_chips_delete_all(from_id)
         if first_word.startswith('th_zero_'): return texas_holdem_chips_zero_return(first_word.split('_')[-1], from_id)
+        if first_word.startswith('drop_record_'): return delete_expenditure_record(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word
