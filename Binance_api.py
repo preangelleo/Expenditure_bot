@@ -51,7 +51,7 @@ def network_name_change(str_name: str):
 
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /ps_{coin} | /buy_{coin}\n/tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
+    return f"/as_{coin} | /ps_{coin} | /pr_{coin}\n/buy_{coin} | /tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
 
 
 def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
@@ -1856,7 +1856,7 @@ def update_position_table(data: dict, from_id=TG_BOT_OWNER_ID, engine = engine):
         conn.execute(text(f"UPDATE position_table SET is_closed = 1, time_close = {time_close}, price_close = {price_close}, orderId_close = {data['orderId']}, usdt_close = {usdt_close}, profit = {profit}, duration = {duration}, target_profit = {target_profit}, type_close = '{data['type']}', year_close = {year_close}, month_close = {month_close}, day_close = {day_close} WHERE orderId_create = {data['orderId_create']}"))
         conn.commit()
     reply_msg = f"{data['coin']} Position closed with profit: {format_number(profit)} usdt"
-    send_msg(f"{reply_msg}\n/as_{data['coin']} | /tvb_{data['coin']} | /limit_buy_{data['coin']}", from_id)
+    send_msg(f"{reply_msg}\n/as_{data['coin']} | /ps_{data['coin']} | /pr_{data['coin']}\n/limit_buy_{data['coin']} | /funding_buy_{data['coin']}", from_id)
     return profit
 
 
