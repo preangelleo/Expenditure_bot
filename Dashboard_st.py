@@ -301,7 +301,6 @@ def main():
 
     display_daily_profit_take()
 
-    display_both_list()
     
 
 if __name__ == "__main__":

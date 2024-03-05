@@ -3909,6 +3909,16 @@ def check_usdt_balance(from_id=None):
     return {'spot': spot_USDT_balance, 'funding': funding_USDT_balance, 'total': total_usdt}
 
 
+def binance_pay_record():
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    with engine.connect() as connection: 
+        try: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM binance_pay_records")).fetchall())
+        except: df = pd.DataFrame()
+    if df.empty: return 
+    total_paid_amount = df['amount'].sum()
+    return total_paid_amount
+
+
 def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = grid_profit_check(grid_profit_target)
     if df_balance.empty: return send_msg(f"No open positions with profit.", from_id)
@@ -3949,7 +3959,8 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     funding_total_value = get_funding_asset_value()
     total_value_spot_funding = spot_total_value + funding_total_value
     earned_token_value = total_value_spot_funding - total_value
-    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nEarned Token Value: {format_number(earned_token_value)}\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/open_orders_list\n/calculate_missed_profit", from_id)
+    total_paid_amount = binance_pay_record()
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nEarned Token Value: {format_number(earned_token_value)}\nTotal Paid Out: {format_number(total_paid_amount)}\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/open_orders_list\n/calculate_missed_profit", from_id)
     return 
 
 
