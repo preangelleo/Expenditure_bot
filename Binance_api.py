@@ -375,6 +375,26 @@ print(df)
 [491 rows x 14 columns]
 '''
 
+def get_spot_balance():
+    data = get_account_all()
+    df = pd.DataFrame(data)
+    df = df[['coin', 'free', 'locked', 'freeze', 'withdrawing']]
+    df['total'] = df['free'] + df['locked'] + df['freeze'] + df['withdrawing']
+    df['total'] = df['total'].astype(float)
+    df = df[df['total'] > 0]
+    return df
+
+# get spot balance and calculate the current value
+def get_spot_balance_value():
+    df = get_spot_balance()
+    df_price = get_token_price_table()
+    df = df.merge(df_price, on='coin', how='left')
+    df['value'] = df['total'] * df['lastPrice']
+    total_value = df['value'].sum()
+    usdt_balance = df[df['coin'] == 'USDT']['total'].values[0]
+    return total_value + usdt_balance
+
+
 
 # from result of get_account_all(), check if a given coin is in the list, and the given network is in the list of the coin's networkList and withdrawEnable is True and check the withdrawFee, withdrawMin, withdrawMax, withdrawIntegerMultiple, and check the address is valid with addressRegex, return networkList
 def check_coin_network(coin, network):
@@ -417,15 +437,28 @@ def get_funding_asset():
             return
         data = r.json()
         df = pd.DataFrame(data)
+        # add a column of coin, value = asset
+        df['coin'] = df['asset']
         return df
     except Exception as e:
         print(e)
         return
-'''
-  asset            free locked freeze withdrawing btcValuation
-0   ENS               1      0      0           0            0
-1   NFT  8077335.411327      0      0           0            0
-'''
+
+# calculate value of funding asset
+def get_funding_asset_value():
+    df = get_funding_asset()
+    df_price = get_token_price_table()
+    df = df.merge(df_price, on='coin', how='left')
+    # convert free to float
+    df['free'] = df['free'].astype(float)
+    # convert lastPrice to float
+    df['lastPrice'] = df['lastPrice'].astype(float)
+    df['value'] = df['free'] * df['lastPrice']
+    total_value = df['value'].sum()
+    # get usdt balance
+    usdt_balance = df[df['coin'] == 'USDT']['free'].values[0]
+    total_value += usdt_balance
+    return total_value
 
 '''
 查询每日资产快照 (USER_DATA)
@@ -3912,7 +3945,11 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     df_balance = df_balance.sort_values(by='profit', ascending=True).reset_index(drop=True)
     coin_with_highest_lost = df_balance['coin'][0]
     coin_with_highest_lost_profit = format_number(df_balance['profit'][0])
-    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/close_postive_positions\n/close_all_positions\n/open_orders_list\n/calculate_missed_profit", from_id)
+    spot_total_value = get_spot_balance_value()
+    funding_total_value = get_funding_asset_value()
+    total_value_spot_funding = spot_total_value + funding_total_value
+    earned_token_value = total_value_spot_funding - total_value
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nEarned Token Value: {format_number(earned_token_value)}\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/open_orders_list\n/calculate_missed_profit", from_id)
     return 
 
 
