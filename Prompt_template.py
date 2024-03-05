@@ -108,7 +108,8 @@ COMMANDS = [
     {"command": "refill_stella_leo", "description": "Refill the given amount of USDT to stella account of Leo"},
     {"command": "help", "description": "Get help information"},
     {"command": "set_bot_menu", "description": "Set the bot's menu"},
-    {"command": "price_resistant", "description": "Get the next 3 target price for a given coin"},
+    {"command": "price_resistant", "description": "Get the next 3 resistant price for a given coin"},
+    {"command": "price_support", "description": "Get the next 3 support price for a given coin"},
     {"command": "get_trading_parameters", "description": "Get the bot's trading parameters"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
     {"command": "deposit_check", "description": "Check the deposit history of the latest 24 hour"},
@@ -659,7 +660,8 @@ BOT_COMMAND_DICT = {
     'thu': 'texas_holdem_update',
     'thm': 'texas_holdem_merge',
     'thh': 'texas_holdem_help',
-    'ps': 'price_resistant',
+    'ps': 'price_support',
+    'pr': 'price_resistant',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''
