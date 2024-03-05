@@ -2500,7 +2500,7 @@ def get_support_prices(symbol, interval = '1w'):
         current_price = float(df['Close'].iloc[-1])
         if current_price > 0:
             resistance_support_levels = calculate_resistance_support(df)
-            resistance_support_levels = [f"{format_number(price)}({format_number(100 * float(price) / current_price)}%)" for price in resistance_support_levels if price <= current_price * 0.8]
+            resistance_support_levels = [f"{format_number(price)}({format_number(100 * float(price) / current_price)}%)" for price in resistance_support_levels if price <= current_price * 0.9]
             # Reorder the list from high to low
             resistance_support_levels = resistance_support_levels[::-1]
             reply_msg = f"{coin}: Current Price {format_number(current_price)}, Support prices: {', '.join(resistance_support_levels[0:3])}"
