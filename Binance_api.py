@@ -2997,10 +2997,10 @@ def calculate_missed_profit_yesterday(from_id=TG_BOT_OWNER_ID, buy_back_target_p
     df = df.sort_values(by=['coin', 'time_close']).groupby('coin').last().reset_index()
     with engine.connect() as connection: df_position = pd.DataFrame(connection.execute(text('SELECT coin FROM position_table WHERE is_closed = 0 GROUP BY coin')).fetchall())
     df = df[~df['coin'].isin(df_position['coin'])]
-    # try:
-    #     with engine.connect() as connection: df_white = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_white = 1')).fetchall())
-    # except: df_white = pd.DataFrame()
-    # df = df[df['coin'].isin(df_white['coin'])]
+    try:
+        with engine.connect() as connection: df_ignore = pd.DataFrame(connection.execute(text('SELECT coin FROM token_supply_info WHERE is_ignore = 1')).fetchall())
+    except: df_ignore = pd.DataFrame()
+    df = df[~df['coin'].isin(df_ignore['coin'])]
     latest_price_df = get_token_price_table()
     latest_price_df = latest_price_df.drop(columns=['symbol'])
     df = pd.merge(df, latest_price_df, how='left', on='coin')
