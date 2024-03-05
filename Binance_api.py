@@ -2491,6 +2491,7 @@ def get_resistant_prices(symbol, interval = '1w'):
             return reply_msg
     return
 
+
 def get_support_prices(symbol, interval = '1w'):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     coin = symbol[:-4]
