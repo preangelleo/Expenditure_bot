@@ -2477,7 +2477,7 @@ def get_resistant_price(symbol: str, interval = '4h', for_webhook=False):
     return {}
 
 
-def get_resistant_price(symbol, interval = '1w'):
+def get_resistant_prices(symbol, interval = '1w'):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     coin = symbol[:-4]
     df = get_kline_data(symbol, interval)
@@ -2491,7 +2491,7 @@ def get_resistant_price(symbol, interval = '1w'):
             return reply_msg
     return
 
-def get_support_price(symbol, interval = '1w'):
+def get_support_prices(symbol, interval = '1w'):
     symbol = symbol.upper() + 'USDT' if not symbol.endswith('USDT') else symbol.upper()
     coin = symbol[:-4]
     df = get_kline_data(symbol, interval)
@@ -2508,13 +2508,13 @@ def get_support_price(symbol, interval = '1w'):
 
 
 def get_resistant_price_for_user(coin, from_id = TG_BOT_OWNER_ID):
-    reply_msg = get_resistant_price(coin)
+    reply_msg = get_resistant_prices(coin)
     if reply_msg: send_msg(reply_msg, from_id)
     return reply_msg
 
 
 def get_support_price_for_user(coin, from_id = TG_BOT_OWNER_ID):
-    reply_msg = get_support_price(coin)
+    reply_msg = get_support_prices(coin)
     if reply_msg: send_msg(reply_msg, from_id)
     return reply_msg
 
