@@ -2614,7 +2614,7 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
     return 
 
 
-def record_funding_asset_value():
+def record_earned_tokens_value():
     df = get_funding_asset()
     df = df[['coin', 'free']]
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
@@ -2642,14 +2642,6 @@ def record_funding_asset_value():
         return True
     except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: Earned_Tokens_Daily")
     return 
-
-
-def read_earned_tokens_daily():
-    try: 
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM Earned_Tokens_Daily')).fetchall())
-        return df
-    except Exception as e: print(f"An error occurred while calling read_earned_tokens_daily(): \n\n{e}\n\nTable_name: Earned_Tokens_Daily")
-    return pd.DataFrame()
 
 
 def today_profit_sum():

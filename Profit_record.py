@@ -12,6 +12,9 @@ if __name__ == '__main__':
     try: binance_spot_position_check(None, None, True)
     except Exception as e: print(f'binance_spot_position_check() error:\n\n{e}\n\n')
 
+    try: record_earned_tokens_value()
+    except Exception as e: print(f'record_earned_tokens_value() error:\n\n{e}\n\n')
+
     try: binance_adjust_profit()
     except Exception as e: print(f'binance_adjust_profit() error:\n\n{e}\n\n')
 
