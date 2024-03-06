@@ -2613,6 +2613,45 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
     return 
 
+
+def record_funding_asset_value():
+    df = get_funding_asset()
+    df = df[['coin', 'free']]
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_funding = read_position_table_account(0, None, 'funding', engine)
+    df_funding = df_funding[['coin', 'amount']]
+    df_funding = df_funding.groupby('coin').sum().reset_index()
+    df = pd.merge(df, df_funding, on='coin', how='left')
+    df['amount'] = df['amount'].fillna(0)
+    df['free'] = df['free'].astype(float)
+    df['earned_tokens'] = df['free'] - df['amount']
+    df = df[['coin', 'earned_tokens']]
+    df_price = get_token_price_table()
+    df_price = df_price[['coin', 'lastPrice']]
+    df = pd.merge(df, df_price, on='coin', how='left')
+    df['usdt_value'] = df['earned_tokens'] * df['lastPrice']
+    df = df.dropna()
+    df = df[['coin', 'earned_tokens', 'usdt_value']]
+    df = df.rename(columns={'earned_tokens': 'earned_amount'})
+    df = df[df['earned_amount'] > 0]
+    df = df.sort_values(by='usdt_value', ascending=False)
+    df = df[df['usdt_value'] > 100]
+    df['date'] = datetime.now().strftime('%Y-%m-%d')
+    try: 
+        with engine.connect() as connection: df.to_sql('Earned_Tokens_Daily', connection, if_exists='append', index=False)
+        return True
+    except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: Earned_Tokens_Daily")
+    return 
+
+
+def read_earned_tokens_daily():
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text('SELECT * FROM Earned_Tokens_Daily')).fetchall())
+        return df
+    except Exception as e: print(f"An error occurred while calling read_earned_tokens_daily(): \n\n{e}\n\nTable_name: Earned_Tokens_Daily")
+    return pd.DataFrame()
+
+
 def today_profit_sum():
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:

@@ -288,6 +288,25 @@ def display_both_list():
     with col2: display_white_list()
 
 
+def read_earned_tokens_daily():
+    ''' Earned_Tokens_Daily
+    coin  earned_amount    usdt_value        date
+    0   RSR     2438423.10  12735.883851  2024-03-06
+    1   ONG       12285.00   4970.511000  2024-03-06
+    2    OP         490.76   2223.633560  2024-03-06
+    3   ICP         102.89   1442.003350  2024-03-06
+    4   LSK         432.10   1011.546100  2024-03-06
+    5  ORDI          12.59    936.494560  2024-03-06
+    6    AI         398.00    608.542000  2024-03-06'''
+    # read Earned_Tokens_Daily with the latest date
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM Earned_Tokens_Daily WHERE date = (SELECT MAX(date) FROM Earned_Tokens_Daily)')).fetchall())
+    except: df = pd.DataFrame()
+    if not df.empty: 
+        usdt_value = df['usdt_value'].sum()
+        with st.expander(f"Earned Tokens ({format_number(usdt_value)})", expanded=False): st.table(df)
+
+
 def main():
     display_header()
     
@@ -301,6 +320,7 @@ def main():
 
     display_daily_profit_take()
 
+    read_earned_tokens_daily()
     
 
 if __name__ == "__main__":
