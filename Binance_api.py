@@ -380,8 +380,6 @@ def get_spot_balance():
     data = get_account_all()
     df = pd.DataFrame(data)
     df = df[['coin', 'free', 'locked']]
-    # get coin 'IOTX' only
-    df = df[df['coin'] == 'IOTX']
     df['free'] = df['free'].astype(float)
     df['locked'] = df['locked'].astype(float)
     df['total'] = df['free'] + df['locked']
