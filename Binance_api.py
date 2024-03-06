@@ -51,7 +51,7 @@ def network_name_change(str_name: str):
 
 
 def generate_bottom_msg(coin):
-    return f"/as_{coin} | /ps_{coin} | /pr_{coin}\n/buy_{coin} | /tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /cpp | /cab | /ulb"
+    return f"/as_{coin} | /ps_{coin} | /pr_{coin}\n/buy_{coin} | /tvb_{coin} | /tvs_{coin}\n/limit_buy_{coin} | /limit_sell_{coin}\n/funding_buy_{coin} | /funding_sell_{coin}\n/cpu | /gpu | /cmp | /ptt | /etv"
 
 
 def get_trading_parameters(from_id=TG_BOT_OWNER_ID):
@@ -2642,6 +2642,20 @@ def record_earned_tokens_value():
         return True
     except Exception as e: print(f"An error occurred while calling data_to_table(): \n\n{e}\n\nTable_name: Earned_Tokens_Daily")
     return 
+
+
+def earned_tokens_value(from_id = TG_BOT_OWNER_ID):
+    try: 
+        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f'SELECT * FROM Earned_Tokens_Daily WHERE date = (SELECT MAX(date) FROM Earned_Tokens_Daily)')).fetchall())
+    except: df = pd.DataFrame()
+    if not df.empty: 
+        usdt_value = df['usdt_value'].sum()
+        # reorder by usdt_value, descending
+        df = df.sort_values(by='usdt_value', ascending=False)
+        reply_msg = f"Total Earned Tokens Value: {format_number(usdt_value)} usdt\n"
+        for index, row in df.iterrows(): reply_msg += f"\n{row['coin']}: {format_number(row['earned_amount'])} ({format_number(row['usdt_value'])})"
+        send_msg(reply_msg, from_id)
+    return
 
 
 def today_profit_sum():

@@ -64,6 +64,7 @@ NONE_PARAMETER_COMMAND_LIST = {
     'set_trading_parameters_default': set_trading_parameters_default,
     'positions_price_change': positions_price_change,
     'texas_holdem_help': texas_holdem_help,
+    'earned_tokens_value': earned_tokens_value,
     }
 
 
