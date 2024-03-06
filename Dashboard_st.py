@@ -294,7 +294,7 @@ def read_earned_tokens_daily():
     except: df = pd.DataFrame()
     if not df.empty: 
         usdt_value = df['usdt_value'].sum()
-        with st.expander(f"Earned Tokens ({format_number(usdt_value)})", expanded=False): st.table(df)
+        with st.expander(f"Earned Tokens ({format_number(usdt_value)} usdt)", expanded=False): st.table(df)
 
 
 def main():
