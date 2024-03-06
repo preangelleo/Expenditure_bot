@@ -375,14 +375,19 @@ print(df)
 [491 rows x 14 columns]
 '''
 
+
 def get_spot_balance():
     data = get_account_all()
     df = pd.DataFrame(data)
-    df = df[['coin', 'free', 'locked', 'freeze', 'withdrawing']]
-    df['total'] = df['free'] + df['locked'] + df['freeze'] + df['withdrawing']
-    df['total'] = df['total'].astype(float)
+    df = df[['coin', 'free', 'locked']]
+    # get coin 'IOTX' only
+    df = df[df['coin'] == 'IOTX']
+    df['free'] = df['free'].astype(float)
+    df['locked'] = df['locked'].astype(float)
+    df['total'] = df['free'] + df['locked']
     df = df[df['total'] > 0]
     return df
+
 
 # get spot balance and calculate the current value
 def get_spot_balance_value():
@@ -390,8 +395,9 @@ def get_spot_balance_value():
     df_price = get_token_price_table()
     df = df.merge(df_price, on='coin', how='left')
     df['value'] = df['total'] * df['lastPrice']
-    total_value = df['value'].sum()
     usdt_balance = df[df['coin'] == 'USDT']['total'].values[0]
+    df = df.dropna()
+    total_value = df['value'].sum()
     return total_value + usdt_balance
 
 
