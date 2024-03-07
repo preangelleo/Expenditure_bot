@@ -1883,6 +1883,30 @@ def update_position_table_for_limit_sell_order(coin: str, orderId: int, from_id=
         return update_position_table(data, from_id, engine)
 
 
+def update_manually_sell(orderId_create, orderId_close, from_id=TG_BOT_OWNER_ID):
+    try: orderId_create = int(orderId_create)
+    except: return send_msg(f'orderId_create: {orderId_create} is not a valid number', from_id)
+    try: orderId_close = int(orderId_close)
+    except: return send_msg(f'orderId_close: {orderId_close} is not a valid number', from_id)
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+    df_position = read_position_table_by_orderId_create(orderId_create, engine)
+    if df_position.empty: return send_msg(f'No open position with limit orderId', from_id)
+    row = df_position.iloc[0]
+    coin = row['coin']
+    account = row['account']
+    data = check_order_status_by_orderId(coin, orderId_close)
+    if not data: return send_msg(f'No data for coin: {coin}, orderId: {orderId_close}', from_id)
+    if data['status'] == 'FILLED':
+        data['orderId_create'] = int(row['orderId_create'])
+        data['time_create'] = int(row['time_create'])
+        data['commission'] = float(row['commission'])
+        data['usdt_value'] = float(row['usdt_value'])
+        data['price_create'] = float(row['price_create'])
+        data['amount'] = float(row['amount'])
+        if account == 'funding': main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
+        return update_position_table(data, from_id, engine)
+    
+
 def update_all_position_table_for_limit_sell_order(from_id=TG_BOT_OWNER_ID):
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     df_position = read_position_table_account(0, None, 'spot', engine)

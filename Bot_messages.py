@@ -118,6 +118,7 @@ TWO_PARAMETER_COMMAND_LIST = {
     'cancel_order_id': {'function': cancel_orderId, 'description': 'You need to input the orderId_close after this command, for example: \n/cancel_order_id RSR 123456789\n/cancel_RSR_123456789'},
     'texas_holdem_update': {'function': texas_holdem_update, 'description': 'You need to input a player_name and a chips amount after this command, for example: /thu leo 1000'},
     'texas_holdem_merge': {'function': texas_holdem_merge, 'description': 'You need to input player_name_1 and player_name_2 after this command, for example: /thm leo leon'},
+    'update_manually_sell': {'function': update_manually_sell, 'description': 'You need to input orderId_create and orderId_close after this command, for example: /ums 123456789 987654321'},
     }
 
 THREE_PARAMETER_COMMAND_LIST = {

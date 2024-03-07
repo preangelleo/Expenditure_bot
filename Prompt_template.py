@@ -111,6 +111,7 @@ COMMANDS = [
     {"command": "price_resistant", "description": "Get the next 3 resistant price for a given coin"},
     {"command": "price_support", "description": "Get the next 3 support price for a given coin"},
     {"command": "earned_tokens_value", "description": "Get the current value of the earned tokens"},
+    {"command": "update_manually_sell", "description": "Update the manually sell price of a given coin need input OrderId_create first and OrderId_close lastly"},
     {"command": "get_trading_parameters", "description": "Get the bot's trading parameters"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
     {"command": "deposit_check", "description": "Check the deposit history of the latest 24 hour"},
@@ -664,6 +665,7 @@ BOT_COMMAND_DICT = {
     'ps': 'price_support',
     'pr': 'price_resistant',
     'etv': 'earned_tokens_value',
+    'ums': 'update_manually_sell',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''
