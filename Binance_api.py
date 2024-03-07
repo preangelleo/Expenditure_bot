@@ -4031,7 +4031,7 @@ def grid_profit_check_for_user(from_id=TG_BOT_OWNER_ID, grid_profit_target=1):
     total_value_spot_funding = spot_total_value + funding_total_value
     earned_token_value = total_value_spot_funding - total_value
     total_paid_amount = binance_pay_record()
-    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nEarned Token Value: {format_number(earned_token_value)}\nTotal Paid Out: {format_number(total_paid_amount)}\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/open_orders_list\n/calculate_missed_profit", from_id)
+    send_msg(f"Asset: {format_number(asset_value)} usdt\nUSDT Spot: {format_number(spot_usdt)}\nUSDT Funding: {format_number(funding_usdt)}\nUSDT Total: {format_number(total_usdt)}\n\nValue Total: {format_number(total_value)} usdt\nEarned Token Value: {format_number(earned_token_value)}\nTotal Paid Out: {format_number(total_paid_amount)}\nHighest Loss: /cpa_{coin_with_highest_lost} | {coin_with_highest_lost_profit}\n\n/open_orders_list\n/calculate_missed_profit\n/profit_taken_today", from_id)
     return 
 
 
