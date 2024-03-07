@@ -741,18 +741,14 @@ def main_funding_transfer_with_check_and_send(coin:str, amount, from_id=TG_BOT_O
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'ERROR: Wrong amount: {amount}, please input a number.', from_id)
-
     df = get_user_asset()
     if not df.empty:
         df = df[df['asset'] == coin]
         if not df.empty:
             balance = float(df['free'].values[0])
-            if balance >= amount: 
-                tranId = main_funding_transfer(coin, amount)
-                if tranId: 
-                    time.sleep(1)
-                    return 
-            else: return send_msg(f'现货账户 {coin} 余额: {format_number(balance)} 小于转账数量: {format_number(amount)}', from_id)
+            amount = balance if balance < amount else amount
+            tranId = main_funding_transfer(coin, amount)
+            if tranId: return time.sleep(1)
         else: return send_msg(f'现货账户没有 {coin} 资产。', from_id)
     return send_msg(f'转账失败，可能是网络问题，请稍后再试。', from_id)
 
