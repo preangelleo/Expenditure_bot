@@ -2022,7 +2022,6 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
     profit = update_position_table_with_orderId(coin, int(row['orderId_create']), int(data.get('orderId', 0)), from_id, row, data, engine)
     if account == 'funding': main_funding_transfer_with_check_and_send('USDT', float(data['cummulativeQuoteQty']), from_id)
     if account == 'spot':
-        # calculate the remaining amount of the coin and transfer to funding account
         amount_remaining = amount - amount_to_sell
         if amount_remaining > 0: main_funding_transfer_with_check_and_send(coin, amount_remaining, from_id)
     return profit
