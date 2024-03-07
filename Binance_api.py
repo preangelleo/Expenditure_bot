@@ -2018,9 +2018,7 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
     # Calculate the current of the position, calculate the profit, calculate the amount to sell if want to keep half the profit as coin and half as usdt
     amount_to_sell = amount - (amount * current_price - usdt_value) / 2 / current_price
     if amount_to_sell >= amount: return send_msg(f'No profit, amount_to_sell: {amount_to_sell} >= amount: {amount}, can not close a position losing money.', from_id)
-    # make sure the decimal of amount_to_sell is same as amount
-    decimal = len(str(amount).split('.')[1]) if '.' in str(amount) else 0
-    amount_to_sell = round(amount_to_sell, decimal)
+    amount_to_sell = polish_amount(coin, amount_to_sell, from_id)
     if orderId_close:  binance_cancel_order_by_orderId(coin, orderId_close)
     if account == 'funding': funding_main_transfer_with_check_and_send(coin, amount_to_sell, from_id)
     data = binance_market_sell(coin, amount_to_sell)
@@ -2030,7 +2028,6 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
     if account == 'spot':
         # calculate the remaining amount of the coin and transfer to funding account
         amount_remaining = amount - amount_to_sell
-        amount_remaining = round(amount_remaining, decimal)
         if amount_remaining > 0: main_funding_transfer_with_check_and_send(coin, amount_remaining, from_id)
     return profit
     
@@ -2815,6 +2812,25 @@ def polish_parameters_for_limit_order(coin, amount, price, from_id=TG_BOT_OWNER_
     }
 
     return polished_parameters
+
+# Define a function to polish the amount for a given coin with amount
+def polish_amount(coin, amount, from_id=TG_BOT_OWNER_ID):
+    coin = coin.upper()
+    print('Calling polish_amount()...')
+    # Assuming get_exchange_info_symbols is a function that fetches the exchange information
+    parameters_standard = get_exchange_info_symbols(coin)
+    if not parameters_standard: return send_msg(f'Failed to get parameters_standard for coin: {coin}', from_id)
+    # Check if the amount is within the range
+    min_qty = float(parameters_standard['minQty'])
+    max_qty = float(parameters_standard['maxQty'])
+    amount = float(amount)
+    if amount < min_qty: return send_msg(f'Amount: {amount} is lower than minQty: {min_qty} for coin: {coin}', from_id)
+    if amount > max_qty: return send_msg(f'Amount: {amount} is higher than maxQty: {max_qty} for coin: {coin}', from_id)
+    # Polish the amount to the right step size and precision
+    step_size = float(parameters_standard['stepSize'])
+    base_precision = int(parameters_standard['baseAssetPrecision'])
+    amount = round((round(amount / step_size) * step_size), base_precision)
+    return amount
 
 
 def is_scientific_notation(number):
