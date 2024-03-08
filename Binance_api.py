@@ -2016,6 +2016,7 @@ def do_market_sell_by_orderId_create(orderId_create = None, from_id = TG_BOT_OWN
     if amount_to_sell >= amount: return send_msg(f'No profit, amount_to_sell: {amount_to_sell} >= amount: {amount}, can not close a position losing money.', from_id)
     amount_to_sell = polish_amount(coin, amount_to_sell, from_id)
     if orderId_close:  binance_cancel_order_by_orderId(coin, orderId_close)
+    if amount_to_sell >= 10: amount_to_sell = int(amount_to_sell)
     if account == 'funding': funding_main_transfer_with_check_and_send(coin, amount_to_sell, from_id)
     data = binance_market_sell(coin, amount_to_sell)
     if not data: return send_msg(f'Failed to do market sell for {coin}', from_id)
