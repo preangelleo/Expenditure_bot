@@ -1119,6 +1119,7 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
 
 
 def update_binance_withdraw_task(withdraw_id_self, withdraw_id_binance):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     connection = engine.connect()
     transaction = connection.begin()
     try:
@@ -1129,6 +1130,7 @@ def update_binance_withdraw_task(withdraw_id_self, withdraw_id_binance):
 
 # define a function to read binance_withdraw_task where status = 'pending' and withdraw_id_binance = 'waiting_for_update' and withdraw_id_self = given token, if exist, call bianance_withdraw() and update withdraw_id_binance, status, updated_at
 def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     try:
         with engine.connect() as connection: df = pd.DataFrame(connection.execute(text(f"SELECT * FROM binance_withdraw_task WHERE withdraw_id_self = '{token}' AND withdraw_id_binance = 'waiting_for_update'")).fetchall())
         if df.empty: 
