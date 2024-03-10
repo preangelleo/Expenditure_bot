@@ -408,24 +408,24 @@ def check_coin_network(coin, network):
     if data:
         df = pd.DataFrame(data)
         df = df[df['coin'] == coin]
+        if df.empty: return send_msg(f"{coin} is not in the list of coins.", TG_BOT_OWNER_ID)
         if not df.empty:
             df_networkList = pd.DataFrame(df['networkList'].values[0])
-            # MAKE a list of network
             networkList = df_networkList['network'].values.tolist()
-
+            if not networkList: return send_msg(f"{coin} has no network list.", TG_BOT_OWNER_ID)
+            networkList_string = ', '.join(networkList)
+            send_msg(f"{coin} (Binance) supported network list: \n\n{networkList_string}", TG_BOT_OWNER_ID)
             df_networkList = df_networkList[df_networkList['network'] == network]
-            if not df_networkList.empty:
-                df_networkList = df_networkList[df_networkList['withdrawEnable'] == True]
-                if not df_networkList.empty: return {'status': True, 'network_list': networkList}
-    return {'status': False, 'network_list': networkList}
-'''
-  network coin entityTag withdrawIntegerMultiple  isDefault  depositEnable  withdrawEnable depositDesc withdrawDesc specialTips              name  resetAddressStatus           addressRegex addressRule memoRegex withdrawFee withdrawMin  withdrawMax  minConfirm  unLockConfirm  sameAddress  estimatedArrivalTime   busy                                            country           contractAddressUrl                             contractAddress
-0     ETH  RSR      main              0.00000001       True           True            True                                       Ethereum (ERC20)               False  ^(0x)[0-9A-Fa-f]{40}$                              3531        7062  10000000000           6             64        False                     4  False  AE,BINANCE_BAHRAIN_BSC,KZ,FR,ES,PL,IT,SE,JP,NL...  https://etherscan.io/token/  0x320623b8e4ff03373931769a31fc52a4e78b5d70
-'''
+            if not df_networkList.empty: 
+                dict_networkList = df_networkList.to_dict(orient='records')[0]
+                dict_to_string = '\n'.join([f"{key}: {value}" for key, value in dict_networkList.items()])
+                send_msg(f"{coin} {network} network withdraw info:\n\n{dict_to_string}", TG_BOT_OWNER_ID)
+                if dict_networkList['withdrawEnable'] == True: 
+                    send_msg(f"{coin} {network} network withdraw is enabled, network list.", TG_BOT_OWNER_ID)
+                    return True
+    return dict_networkList
 
-# 资金账户 (USER_DATA), 权重(IP): 1
-# POST /sapi/v1/asset/get-funding-asset (HMAC SHA256)
-# 目前仅支持查询以下业务资产：Binance Pay, Binance Card, Binance Gift Card, Stock Token
+
 def get_funding_asset():
     PATH = '/sapi/v1/asset/get-funding-asset'
     timestamp = int(time.time() * 1000)
@@ -1080,32 +1080,20 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {amount}', from_id)
-
     df_usdt_balance = get_user_asset()
     df_usdt_balance = df_usdt_balance[df_usdt_balance['asset']==coin]
     if df_usdt_balance.empty: return send_msg(f'No {coin} in your binance wallet. \n\n/get_wallet_balance', from_id)
-    
     balance = float(df_usdt_balance['free'].values[0])
     if balance < amount: return send_msg(f'{coin} balance is {balance}, which is not sufficient for {format_number(amount)}.', from_id)
-
-    # change network name 
     network = network_name_change(network)
-
-    # Check if the network is supported
-    r = check_coin_network(coin, network)
-    '''{'status': False, 'network_list': networkList}'''
-    if not r.get('status'): return send_msg(f"Input network: {network} is not supported for {coin}. \n\nSupported networks are:\n{', '.join(r.get('network_list'))}", from_id)
-    
+    dict_networkList = check_coin_network(coin, network)
+    if not dict_networkList.get('withdrawEnable'): return send_msg(f"Input network: {network} is not withdrawEnable for {coin}.", from_id)
     checksum_address = address
-    
-    # Polish address to checksum address
     if network in USDT_ETH_COMPATIBLE_NETWORK_LIST:
         try: checksum_address = web3.to_checksum_address(address)
         except Exception as e: return send_msg(f'Invalid address: {e}', from_id)
-
     withdraw_id_self = generate_token()
     withdraw_token = f"withdraw-{withdraw_id_self}"
-    # Prepare data = {} to a dataframe and append to table binance_withdraw_task
     data = {
         'coin': coin,
         'amount': amount,
@@ -1121,15 +1109,12 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     del data['withdraw_id_self']
     del data['from_id']
     del data['created_at']
-
     string_dict = '\n'.join([f'{k}: {v}' for k, v in data.items()])
     if str(from_id) == str(TG_BOT_OWNER_ID): reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nYou can reply: \n/confirm {withdraw_id_self}\n\nOr click the following link to confirm"
     else: reply_string_from_dict = f"Please confirm the following withdraw task:\n\n{string_dict}\n\nClick the following link to confirm"
     send_msg(reply_string_from_dict, from_id)
-
     confirm_link_markdown = f"[CONFIRM_WITHDRAW](https://wh.leowang.net/confirmation/{withdraw_token})"
     send_msg_markdown(confirm_link_markdown, from_id)
-
     return
 
 
