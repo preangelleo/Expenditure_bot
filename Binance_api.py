@@ -1066,11 +1066,7 @@ def binance_withdraw(amount, network, coin, address):
         data = r.json()
         return data
     else: return send_msg(r.reason, TG_BOT_OWNER_ID)
-''' return from binance_withdraw('eth', 0.1, '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'):
-{
-    "id":"7213fea8e94b4a5593d507237e5a555b"
-}
-'''
+
 
 # difine a binance_send_coin function for bot to call
 def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=TG_BOT_OWNER_ID):
@@ -1078,6 +1074,8 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     coin = coin.upper()
     try: amount = float(amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {amount}', from_id)
+    # if network is 'SOL' but coin is not 'SOL', return
+    if network == 'SOL' and coin != 'SOL': return send_msg(f'Network: {network} is only for SOL, but you input: {coin}', from_id)
     df_usdt_balance = get_user_asset()
     df_usdt_balance = df_usdt_balance[df_usdt_balance['asset']==coin]
     if df_usdt_balance.empty: return send_msg(f'No {coin} in your binance wallet. \n\n/get_wallet_balance', from_id)
@@ -1153,6 +1151,7 @@ def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
     if not funding_main_transfer_with_check_and_send(coin, amount, from_id): return
     try:
         data = binance_withdraw(amount, network, coin, address)
+        if not data: return send_msg(f'Failed to withdraw {amount} {coin} to {address} with network: {network}', from_id)
         if data.get('id'):
             update_binance_withdraw_task(token, data.get('id'))
             # update_binance_withdraw_task('u7s6TSq7EzLsWYNFzwFAQw', 'a97b825669b94c0c9b2658c34ac5d6dc')
