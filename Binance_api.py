@@ -1065,7 +1065,7 @@ def binance_withdraw(amount, network, coin, address):
     if r.status_code == 200:
         data = r.json()
         return data
-    else: return r.reason
+    else: return send_msg(r.reason, TG_BOT_OWNER_ID)
 ''' return from binance_withdraw('eth', 0.1, '0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'):
 {
     "id":"7213fea8e94b4a5593d507237e5a555b"
