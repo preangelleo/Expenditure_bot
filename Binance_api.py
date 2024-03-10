@@ -1150,6 +1150,7 @@ def binance_withdraw_task_update(token, from_id=TG_BOT_OWNER_ID):
     coin = df['coin'].values[0]
     address = df['to_address'].values[0]
 
+    if not funding_main_transfer_with_check_and_send(coin, amount, from_id): return
     try:
         data = binance_withdraw(amount, network, coin, address)
         if data.get('id'):
