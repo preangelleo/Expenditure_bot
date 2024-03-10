@@ -420,10 +420,8 @@ def check_coin_network(coin, network):
                 dict_networkList = df_networkList.to_dict(orient='records')[0]
                 dict_to_string = '\n'.join([f"{key}: {value}" for key, value in dict_networkList.items()])
                 send_msg(f"{coin} {network} network withdraw info:\n\n{dict_to_string}", TG_BOT_OWNER_ID)
-                if dict_networkList['withdrawEnable'] == True: 
-                    send_msg(f"{coin} {network} network withdraw is enabled, network list.", TG_BOT_OWNER_ID)
-                    return True
-    return dict_networkList
+                return dict_networkList
+    return
 
 
 def get_funding_asset():
@@ -1087,6 +1085,7 @@ def binance_send_coin(amount: float, network: str, coin: str, address: str, from
     if balance < amount: return send_msg(f'{coin} balance is {balance}, which is not sufficient for {format_number(amount)}.', from_id)
     network = network_name_change(network)
     dict_networkList = check_coin_network(coin, network)
+    if not dict_networkList: return send_msg(f'Input network: {network} is not supported for {coin}.', from_id)
     if not dict_networkList.get('withdrawEnable'): return send_msg(f"Input network: {network} is not withdrawEnable for {coin}.", from_id)
     checksum_address = address
     if network in USDT_ETH_COMPATIBLE_NETWORK_LIST:
