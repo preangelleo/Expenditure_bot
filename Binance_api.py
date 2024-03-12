@@ -2623,15 +2623,17 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
 
 def record_earned_tokens_value():
     df = get_funding_asset()
+    df['free'] = df['free'].astype(float)
     df = df[['coin', 'free']]
     engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     df_funding = read_position_table_account(0, None, 'funding', engine)
-    df_funding = df_funding[['coin', 'amount']]
-    df_funding = df_funding.groupby('coin').sum().reset_index()
-    df = pd.merge(df, df_funding, on='coin', how='left')
-    df['amount'] = df['amount'].fillna(0)
-    df['free'] = df['free'].astype(float)
-    df['earned_tokens'] = df['free'] - df['amount']
+    if not df_funding.empty:
+        df_funding = df_funding[['coin', 'amount']]
+        df_funding = df_funding.groupby('coin').sum().reset_index()
+        df = pd.merge(df, df_funding, on='coin', how='left')
+        df['amount'] = df['amount'].fillna(0)
+        df['earned_tokens'] = df['free'] - df['amount']
+    else: df['earned_tokens'] = df['free']
     df = df[['coin', 'earned_tokens']]
     df_price = get_token_price_table()
     df_price = df_price[['coin', 'lastPrice']]
