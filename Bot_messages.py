@@ -121,16 +121,19 @@ TWO_PARAMETER_COMMAND_LIST = {
     'update_manually_sell': {'function': update_manually_sell, 'description': 'You need to input orderId_create and orderId_close after this command, for example: /ums 123456789 987654321'},
     }
 
+
 THREE_PARAMETER_COMMAND_LIST = {
     'alter_expenditure_record': {'function': alter_expenditure_record, 'description': f'You need to input id column_name new_value after this command, for example: \n/alter_record 103 Spent 47000\n\nColumn Names:\n{EXPENDITURE_COLUMNS_STR}'},
     'transfer_between_accounts': {'function': transfer_between_accounts, 'description': 'You need to input a coin symbol, amount and transfer_type after this command, for example: /transfer_between_accounts USDT 1000 MAIN_UMFUTURE or /transfer_between_accounts USDT 1000 UMFUTURE_MAIN'},
     }
+
 
 FOUR_PARAMETER_COMMAND_LIST = {
     'binance_send_coin': {'function': binance_send_coin, 'description': '/binance_send_coin 100 BSC USDT 0xb411B974c0ac75C88E5039ea0bf63a84aa7B5377'},
     'kdj_parameter_initiate': {'function': kdj_parameter_initiate, 'description': 'You need to input a coin symbol, day, week, month KDJ value after this command, for example: /kpi RSR 1 0 1'},
     'sum_category_merchant': {'function': get_total_spend_of_given_year_and_month_for_a_given_category_and_merchant, 'description': 'You need to input a year, a month, a category and a merchant after this command, for example: /sum_category_merchant 2022 12 Electronics Amazon or /sum 2023 12 Electronics ALL or /scm 2023 12 ALL Amazon'},
     }
+
 
 SENTENCE_AS_PARAMETER_COMMAND_LIST = {
     'gemini': {"function": gemini_gpt, "description": "You need to input a sentence after this command, for example: /gemini What's the meaning of marriage?"},
