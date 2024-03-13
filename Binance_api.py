@@ -1069,7 +1069,9 @@ def binance_withdraw(amount, network, coin, address):
 
 
 # difine a binance_send_coin function for bot to call
-def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=TG_BOT_OWNER_ID):
+def binance_send_coin(amount: float, network: str, coin: str, address: str, from_id=None):
+    if not from_id: return 
+    if from_id != TG_BOT_OWNER_ID: return send_msg(f'You are not allowed to call this function.', from_id)
     time.sleep(0.5)
     coin = coin.upper()
     try: amount = float(amount)
