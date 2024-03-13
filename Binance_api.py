@@ -1210,7 +1210,9 @@ def check_transfer_and_sell_ong(usdt_amount: float, from_id=TG_BOT_OWNER_ID):
 
 
 # Define binance_pay_usdt, user input a usdt amount and a target address; then market sell coin ONG for this target usdt amount, and send the USDT to the target address with TRX network only, usdt input must less than 1000 usd.
-def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=TG_BOT_OWNER_ID):
+def binance_pay_usdt(usdt_amount: float, target_address: str, from_id=None):
+    if not from_id: return
+    if from_id != TG_BOT_OWNER_ID: return send_msg(f'You are not allowed to call this function.', from_id)
     try: usdt_amount = float(usdt_amount)
     except: return send_msg(f'You need to input a number for amount, but you input: {usdt_amount}', from_id)
 
