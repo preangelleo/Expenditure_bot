@@ -414,6 +414,16 @@ def handel_telegram_message_from_webhook_non_owner(message):
 
         return send_msg(msg_to_user, from_id)
     
+    is_command = False
+    # check if first_word starts with '/'
+    if text_prompt.startswith('/'): 
+        # Remove '/' from the first word
+        first_word = text_prompt.replace('/', '')
+        is_command = True
+
+    if is_command: 
+        if first_word.startswith('ps_'): return get_support_price_for_user(first_word.split('_')[-1], from_id)
+        if first_word.startswith('pr_'): return get_resistant_price_for_user(first_word.split('_')[-1], from_id)
 
     text_prompt = text_prompt.replace('/', '')
 
@@ -429,7 +439,6 @@ def handel_telegram_message_from_webhook_non_owner(message):
             if command_word in ['refill_stella_danli']: return refill_1000_danli(from_id)
 
         return send_msg(f"Sorry, you are not allowed to use /{command_word} command.", from_id)
-
 
     if not check_white_list_users(from_id): 
         message_to_owner = f"/{from_id} Said:\n\n{text_prompt}"
