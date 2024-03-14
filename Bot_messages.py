@@ -444,9 +444,14 @@ def handel_telegram_message_from_webhook_non_owner(message):
         return send_msg(f"Sorry, you are not allowed to use /{command_word} command.", from_id)
 
     if not check_white_list_users(from_id): 
-        message_to_owner = f"/{from_id} Said:\n\n{text_prompt}"
-        send_msg(message_to_owner, TG_BOT_OWNER_ID)
-        return
+        data = {'from_id': from_id, 'message': text_prompt, 'date_day': datetime.now().strftime('%Y-%m-%d'), 'date_time': datetime.now().strftime('%H:%M')}
+        data_to_table(data, 'non_whitelist_msg_table')
+        engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
+        with engine.connect() as conn:
+            df = pd.DataFrame(conn.execute(text(f'SELECT * FROM non_whitelist_msg_table WHERE from_id = {from_id} AND date_day = "{datetime.now().strftime("%Y-%m-%d")}"')).fetchall())
+            if df.empty: send_msg(f"/{from_id} Said:\n\n{text_prompt}", TG_BOT_OWNER_ID)
+            else: return send_msg(f"Sorry, you can only send 1 message to the bot per day.", from_id)
+        return 
     
     return gemini_gpt(text_prompt, from_id)
 
