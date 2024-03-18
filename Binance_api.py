@@ -3811,7 +3811,7 @@ def limit_buy_order_filled(symbol: str, orderId_create = 0, chat_id = TG_BOT_OWN
     instert_position_table(data, 'spot', engine)
     price = float(data['cummulativeQuoteQty']) / float(data['executedQty'])
     send_msg(f"Limit order bought {coin} at {format_number(price)} usdt/{coin.lower()}\n{generate_bottom_msg(coin)}", chat_id)
-    return set_limit_sell_to_resistant_price(coin, chat_id, engine)
+    return 
 
 
 # check orderId get data and insert to position_table
