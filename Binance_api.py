@@ -3831,6 +3831,7 @@ def binance_funding_buy_and_hold(coin, from_id=TG_BOT_OWNER_ID, engine = engine)
     data = binance_market_buy(coin, CHECK_SIZE)
     if not data: return send_msg(f'Failed to do market buy for coin: {coin}', from_id)
     executedQty = float(data['executedQty'])
+    time.sleep(1)
     main_funding_transfer_with_check_and_send(coin, executedQty, from_id)
     cummulativeQuoteQty = float(data['cummulativeQuoteQty'])
     price = cummulativeQuoteQty / executedQty
