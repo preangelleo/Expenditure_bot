@@ -124,7 +124,7 @@ def handle_socket_message(msg):
                 '''{'e': 'executionReport', 'E': 1703032385551, 's': 'NEARUSDT', 'c': 'b1vSFIYMRLWZrz4ecPsPaZ', 'S': 'SELL', 'o': 'LIMIT', 'f': 'GTC', 'q': '3960.70000000', 'p': '2.55000000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 2110473867, 'l': '3960.70000000', 'z': '3960.70000000', 'L': '2.55000000', 'n': '0.02982221', 'N': 'BNB', 'T': 1703032385543, 't': 138267320, 'I': 4348096316, 'w': False, 'm': True, 'M': True, 'O': 1703019732394, 'Z': '10099.78500000', 'Y': '10099.78500000', 'Q': '0.00000000', 'W': 1703019732394, 'V': 'EXPIRE_MAKER'}'''
                 try: update_position_table_for_limit_sell_order(coin, orderId, TG_BOT_OWNER_ID, engine)
                 except Exception as e: print(f'manually_update_position_table() error:\n\n{e}\n\n')
-            elif msg['S'] == 'BUY' and msg['o'] == 'LIMIT':
+            elif msg['S'] == 'BUY':
                 try: limit_buy_order_filled(symbol, orderId, TG_BOT_OWNER_ID, engine)
                 except Exception as e: print(f'limit_buy_order_filled() error:\n\n{e}\n\n')
                 if coin in read_holding_list(): switch_position_from_main_to_funding(coin, TG_BOT_OWNER_ID, engine)
