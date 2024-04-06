@@ -1912,7 +1912,31 @@ def update_all_position_table_for_limit_sell_order(from_id=TG_BOT_OWNER_ID):
             data['amount'] = float(row['amount'])
             try: update_position_table(data, from_id, engine)
             except: pass
-    
+
+''' df_position = read_position_table_account(0, None, 'spot', engine)
+     coin     symbol account  price_create        amount    usdt_value  orderId_create    time_create type_create  is_closed  is_manual  target_profit  price_close  orderId_close  time_close type_close  usdt_close  profit  duration  year_create  month_create  day_create  year_close  month_close  day_close  commission exchange
+0    ORDI   ORDIUSDT    spot     82.691961  2.418600e+02  19999.877660      1126565459  1710285988798      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          12           0            0          0   29.999816  binance
+1    FLOW   FLOWUSDT    spot      1.642700  1.217507e+04  19999.992860       470634804  1710286037140      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          12           0            0          0   29.999989  binance
+2     TIA    TIAUSDT    spot     17.995742  1.111300e+03  19998.668000       850159338  1710286118238      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          12           0            0          0   29.998002  binance
+3   MANTA  MANTAUSDT    spot      3.897369  5.131600e+03  19999.736600       377621266  1710286172768      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          12           0            0          0   29.999605  binance
+4    CAKE   CAKEUSDT    spot      4.991446  4.006850e+03  19999.974630       690193974  1710373016320      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          13           0            0          0   29.999962  binance
+5    OSMO   OSMOUSDT    spot      1.585147  1.261712e+04  19999.985710       164629261  1710450001770      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          14           0            0          0   29.999979  binance
+6     IMX    IMXUSDT    spot      3.087197  6.478360e+03  19999.972309       801567743  1710511074224      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          15           0            0          0   29.999958  binance
+7    PEPE   PEPEUSDT    spot      0.000009  2.254791e+09  19999.999993       529936795  1710555438891      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          15           0            0          0   30.000000  binance
+8    AEVO   AEVOUSDT    spot      3.593404  5.565750e+03  19999.988900        16568865  1711605603849      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             3          27           0            0          0   29.999983  binance
+9     WLD    WLDUSDT    spot      6.890094  2.902700e+03  19999.875100       768209278  1712328727906      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             4           5           0            0          0   29.999813  binance
+10    ENA    ENAUSDT    spot      1.019149  1.962421e+04  19999.995000        28823447  1712360046663      MARKET          0          0            0.0          0.0              0           0                      0       0         0         2024             4           5           0            0          0   29.999992  binance
+''' 
+
+# Define a function to delete a row from position_table by orderId_create
+def delete_position_table_by_orderId_create(orderId_create, engine = engine):
+    with engine.connect() as conn: 
+        try:
+            conn.execute(text(f"DELETE FROM position_table WHERE orderId_create = {orderId_create}"))
+            conn.commit()
+        except: pass
+    return
+
 
 def check_all_limit_buy_order_filled(from_id = TG_BOT_OWNER_ID, engine = engine):
     # Check current spot balance coin in binance spot account
