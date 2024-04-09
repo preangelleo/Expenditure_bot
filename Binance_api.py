@@ -1915,12 +1915,14 @@ def update_all_position_table_for_limit_sell_order(from_id=TG_BOT_OWNER_ID):
 
 
 # Define a function to delete a row from position_table by orderId_create
-def delete_position_table_by_orderId_create(orderId_create, engine = engine):
+def delete_position_table_by_orderId_create(orderId_create, from_id=TG_BOT_OWNER_ID):
+    engine = create_engine(f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',  pool_size=10, max_overflow=20)
     with engine.connect() as conn: 
         try:
             conn.execute(text(f"DELETE FROM position_table WHERE orderId_create = {orderId_create}"))
             conn.commit()
-        except: pass
+            send_msg(f'Position with orderId_create: {orderId_create} deleted.', from_id)
+        except: send_msg(f'Failed to delete position with orderId_create: {orderId_create}', from_id)
     return
 
 

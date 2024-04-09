@@ -105,6 +105,7 @@ ONE_PARAMETER_COMMAND_LIST = {
     'summarize_the_url': {'function': summarize_the_url, 'description': 'You need to input a url after this command, for example: /summarize_the_url https://www.binance.com/en/trade/BTC_USDT'},
     'get_otp': {'function': get_otp, 'description': 'You need to input a app_name after this command, for example: /get_otp carta'},
     'confirm_token': {'function': binance_withdraw_task_update, 'description': 'You need to input a token after this command, for example: /confirm_token 7Xa5r7QSRC_4Hsr0HwdpAA'},
+    'delete_position': {'function': delete_position_table_by_orderId_create, 'description': 'You need to input orderId_create after this command, for example: /delete_position 123456789'},
     }
 
 
@@ -357,6 +358,7 @@ def handel_telegram_message_from_webhook(message):
         if first_word.startswith('th_clean'): return texas_holdem_chips_delete_all(from_id)
         if first_word.startswith('th_zero_'): return texas_holdem_chips_zero_return(first_word.split('_')[-1], from_id)
         if first_word.startswith('drop_record_'): return delete_expenditure_record(first_word.split('_')[-1], from_id)
+        if first_word.startswith('delete_position_'): return delete_position_table_by_orderId_create(first_word.split('_')[-1], from_id)
     
         if check_if_from_id_in_telegram_messages_table(first_word):
             user_from_id = first_word

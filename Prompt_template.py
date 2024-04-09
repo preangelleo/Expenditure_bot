@@ -115,6 +115,7 @@ COMMANDS = [
     {"command": "get_trading_parameters", "description": "Get the bot's trading parameters"},
     {"command": "chatgpt", "description": "Chat with GPT, use /gpt for short"},
     {"command": "deposit_check", "description": "Check the deposit history of the latest 24 hour"},
+    {"command": "delete_position", "description": "Delete a position by the given orderId_create"},
     {"command": "open_orders_list", "description": "Get the open orders list in Binance"},
     {"command": "cancel_all_orders", "description": "Cancel all orders in Binance"},
     {"command": "get_ignore_list", "description": "Get the ignore list"},
@@ -666,6 +667,7 @@ BOT_COMMAND_DICT = {
     'pr': 'price_resistant',
     'etv': 'earned_tokens_value',
     'ums': 'update_manually_sell',
+    'dp': 'delete_position',
     }
 
 BOT_HELP = '''https://leowang.net/bot-help \n/cpu /gpu /cmp /ptt /cpp /gwl /gil /son /sof /ool /cab /cas /cp /spot /funding'''
