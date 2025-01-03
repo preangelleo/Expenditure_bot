@@ -61,15 +61,6 @@ def read_emails(user=GMAIL_ADDRESS, app_password=GMAIL_APP_PASSWORD):
             try: run_conversation_with_functions(chat_id=TG_BOT_OWNER_ID, model=DEFAULT_MODEL, image_url=None, prompt = new_prompt, message_id=None)
             except Exception as e: print(f"Error during receipt processing: {e}")
 
-        # else:
-        #     try: 
-        #         prompt = f"You are my email assistant. Please help me summarize this email concisely with bullet points. If you think it's an commercial or spam, please reply restrictly with only the word: no_need_to_summarize in lowercase. Then your reply will be passed to python code, if my python code finds 'no_need_to_summarize' in your reply, this email will be ignored. \n\nSubject: {email_subject}\n\nFrom: {email_from}\n\nContent:\n{plain_text}"
-
-        #         summary = generate_text(prompt)  # Assuming generate_text is a function you've defined
-        #         if 'no_need_to_summarize' not in summary.lower(): send_email(email_subject, summary, GMAIL_ADDRESS_MAIN)
-
-        #     except Exception as e: print(f"Error during email processing: {e}")
-
         # Archive the email
         result, copy_response = mail.uid('COPY', uid, '"[Gmail]/All Mail"')
         if result == 'OK':
