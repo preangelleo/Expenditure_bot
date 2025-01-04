@@ -2180,46 +2180,54 @@ def click_to_create(coin, from_id=TG_BOT_OWNER_ID):
 
 def plot_net_profit_sum(chat_id=TG_BOT_OWNER_ID, engine = engine):
     filename = f"net_profit_daily_record/{datetime.now().strftime('%Y-%m-%d')}.png"
-    # check if the file exists, if yes, return the file name
+    # Return existing file if it exists
     if os.path.isfile(filename): return send_img(chat_id, filename)
 
-    # print current time string format and the function is running
-    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M")} plot_net_profit_sum() is running ...')
-
     try:
-        # Read data from the table into a DataFrame
-        with engine.connect() as connection: df = pd.DataFrame(connection.execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
-        # print(df)
+        # Read data from the database into a DataFrame
+        with engine.connect() as connection:
+            df = pd.DataFrame(connection.execute(text("SELECT Date, NetProfit FROM net_profit_daily_record")).fetchall())
 
-        # if the df is empty, return a default image
-        if df.empty: return f"net_profit_daily_record/Leowang.net.jpg"
+        if df.empty:
+            return send_img(chat_id, "net_profit_daily_record/Leowang.net.jpg")
 
         df.columns = ['Date', 'NetProfit']
 
-        # Calculate percentage
+        # Calculate percentage relative to initial fund
         df['Percentage'] = (df['NetProfit'] / INITIAL_FUND) * 100
 
-        # Convert 'Date' to datetime
+        # Convert dates to datetime
         df['Date'] = pd.to_datetime(df['Date'])
 
-    except: return send_img(chat_id, f"net_profit_daily_record/Leowang.net.jpg")
+        # Create plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['Date'], df['Percentage'], marker='o', linewidth=2, markersize=4)
 
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(df['Date'], df['Percentage'], marker='o')
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    plt.xticks(rotation=45)
-    plt.xlabel('Date')
-    plt.ylabel('Net Profit as % of Initial Fund')
-    plt.title('Daily Book Value Percentage')
-    plt.grid(True)
-    # plt.show()
+        # Format x-axis
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
+        plt.xticks(rotation=45, ha='right')
 
-    # Save the plot to a file
-    plt.savefig(filename, bbox_inches='tight')
-    plt.close()
-    return send_img(chat_id, filename)
+        # Add labels and title
+        plt.xlabel('Date', fontsize=10)
+        plt.ylabel('Net Profit (% of Initial Fund)', fontsize=10)
+        plt.title('Daily Book Value Performance', fontsize=12, pad=15)
+
+        # Add grid
+        plt.grid(True, linestyle='--', alpha=0.7)
+
+        # Adjust layout to prevent label cutoff
+        plt.tight_layout()
+
+        # Save plot
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        return send_img(chat_id, filename)
+
+    except Exception as e:
+        print(f"Error in plot_net_profit_sum: {e}")
+        return send_img(chat_id, "net_profit_daily_record/Leowang.net.jpg")
 
 
 def update_kline_data_from_binance_to_table(symbol: str, interval: str):
@@ -2632,7 +2640,7 @@ def check_profit_and_record(chat_id=None, crontab_profit_record=False, book_valu
                 year_and_month_day = datetime.now().strftime('%Y-%m-%d')
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, GMAIL_ADDRESS_MAIN)
                 send_email(f'TRADING BOT OPERATION SUMMARY {year_and_month_day}', summary_msg, os.getenv('GMAIL_DANLI'))
-                plot_net_profit_sum(chat_id, engine)
+                # plot_net_profit_sum(chat_id, engine)
                 send_msg_markdown('''[Online Dashboard](https://wh.leowang.net/dashboard)''', chat_id)
     return 
 
