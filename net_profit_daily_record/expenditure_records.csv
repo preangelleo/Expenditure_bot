@@ -1,0 +1,258 @@
+ID,From_id,Date,Time,Spent,Category,PaymentMethod,Merchant,ItemName,Price,Card_Number,Tax,Tips,Address,Receipt_Image_URL
+177,2118900665,2020-11-25,20:17:11,174.07,Groceries,Credit Card,Target,Multiple Items,164.23,3024.0,9.84,0.0,"1775 Bayshore Rd, East Palo Alto, California 94303",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_83.jpg
+89,2118900665,2021-12-21,03:39,406.13,Groceries,Credit Card,Costco Wholesale,Multiple Items,406.13,0.0,35.24,0.0,"2300 MIDDLEFIELD RD, REDWOOD CITY, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_79.jpg
+223,2118900665,2022-06-03,00:00,9.95,Utilities,Other,AWS,AWS Service Charges,9.95,0.0,1.59,0.0,,
+222,2118900665,2022-07-02,16:03,11.52,Electronics,Credit Card,Amazon Web Services,AWS Service Charges,9.68,0.0,1.84,0.0,,
+221,2118900665,2022-08-02,16:02,14.14,Utilities,Unknown,AWS,Service Charges,11.88,0.0,2.26,0.0,,
+109,2118900665,2022-10-20,08:58,109.88,Electronics,Credit Card,Amazon,Yinleader Voltage Converter Transformer,109.88,0.0,0.0,0.0,,
+108,2118900665,2022-12-06,08:56,660.0,Home Maintenance,Unknown,Amazon,Tangkula 9 Piece Outdoor Dining Set,659.99,0.0,0.0,0.0,,
+107,2118900665,2022-12-06,08:51,593.0,Home Maintenance,Credit Card,Amazon,East West Furniture X026AB015-7 X-Style 7 Piece Set,593.0,0.0,0.0,0.0,,
+106,2118900665,2022-12-06,08:50,593.08,Furniture,Credit Card,Amazon,East West Furniture X026AB015-7 X-Style 7 Piece Set,593.08,0.0,0.0,0.0,Menlo Park 94025,
+116,2118900665,2022-12-07,09:06,90.0,Electronics,Credit Card,Amazon,Hot Tea Maker Electric Glass Kettle,90.0,0.0,0.0,0.0,,
+117,2118900665,2022-12-07,00:00,102.89,Electronics,Credit Card,Amazon,jar-owl 16.8V Tool Kit with Drill,94.07,2034.0,8.82,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+115,2118900665,2022-12-07,00:00,54.99,Electronics,Credit Card,Amazon,VacLife Tire Inflator Portable Air Compressor,54.99,0.0,0.0,0.0,,
+114,2118900665,2022-12-07,09:05,159.99,Electronics,Credit Card,Amazon,"Oraimo Patio Heater, Outdoor Heater with Remote, 1500/750W ETL, IP55- Certificatied Quiet Electric Infrared Heater",159.99,0.0,0.0,0.0,,
+118,2118900665,2022-12-07,09:07,44.76,Others,Credit Card,Amazon,"Wine Opener, Zinc Alloy Premium Wing Corkscrew Wine Bottle Opener with Multifunctional Bottles Opener, Upgrade",40.93,2034.0,3.83,0.0,,
+105,2118900665,2022-12-07,08:49,249.0,Electronics,Credit Card,TAVR Furniture Store via Amazon,Mobile TV Cart Rolling TV Stand,249.0,0.0,0.0,0.0,,
+94,2118900665,2022-12-08,18:47,229.99,Home Goods,unknown,Costco,OXO Softworks 13-piece Non-Stick Cookware Set,229.99,0.0,0.0,0.0,unknown,unknown
+95,2118900665,2022-12-13,18:47,1199.99,Furniture,Credit Card,Costco,Metro 7-piece Dining Set,1199.99,0.0,0.0,0.0,,
+96,2118900665,2022-12-15,18:48,129.99,Household,Credit Card,Costco,Schmidt Brothers Cutlery 10-Piece Bonded Steel Knife Block Set,129.99,,0.0,0.0,,
+93,2118900665,2022-12-15,18:47,59.98,Household Items,Credit Card,Costco,"Hotel Grand Feather & Down Pillow, 2-pack, Standard/Queen",29.99,0.0,0.0,0.0,,
+14,2118900665,2022-12-15,18:14,2500.0,Electronics,Credit Card,Costco,Samsung TV set,2500.0,0.0,0.0,0.0,Unknown Address,Unknown
+112,2118900665,2022-12-16,09:04,316.73,Electronics,Credit Card,Amazon,WAMPAT TV Stand for 100 Inch TV,289.58,2034.0,27.15,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+178,2118900665,2022-12-16,08:59,376.11,Others,Credit Card,Target,Multiple Items,376.11,366.0,23.18,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_84.jpg
+92,2118900665,2022-12-16,18:47,319.96,Home Goods,Credit Card,Costco,"Hotel Grand White Goose Feather & Down Comforter, King",79.99,,0.0,0.0,,
+119,2118900665,2022-12-16,00:00,284.35,Electronics,Credit Card,Amazon,[LCD Dual Screen] Portable Air Compressor Tire Inflator,74.99,2034.0,24.38,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+110,2118900665,2022-12-17,09:02,370.08,Electronics,Credit Card,Amazon,Items from Amazon,338.36,2034.0,31.72,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+111,2118900665,2022-12-17,09:03,65.6,Electronics,Credit Card,Amazon,exilot 2-Tier Side Table Tall End Table with Storage Rack,59.98,2034.0,5.62,0.0,,
+113,2118900665,2022-12-17,09:04,132.83,Electronics,Credit Card,Amazon,Items Purchased,121.43,2034.0,11.4,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+128,2118900665,2022-12-17,00:00,153.22,Electronics,Credit Card,Amazon,Duxtop Portable Induction Cooktop,140.09,2034.0,13.13,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+121,2118900665,2022-12-17,09:09,21.86,Home Maintenance,Credit Card,Amazon,SOCONT Suction Cup Hooks,19.98,2034.0,1.88,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+122,2118900665,2022-12-17,00:00,159.88,Electronics,Credit Card,Amazon,VECELO Corner Storage Cabinet with Mesh Doors and Wooden Shelves,146.17,2034.0,13.71,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+123,2118900665,2022-12-17,00:00,216.56,Electronics,Credit Card,Amazon,A3 Pro Chinese TV Box,198.0,2034.0,18.56,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+124,2118900665,2022-12-17,00:00,32.8,Electronics,Credit Card,Amazon,Neepiar Phone Mount Compatible with Jeep Wrangler,29.99,2034.0,2.81,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+125,2118900665,2022-12-17,09:13,54.66,Home Maintenance,Credit Card,Amazon,"IBUYKE 16.54"" Small Footstool Linen Fabric Pouf Ottoman",49.98,2034.0,4.68,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+126,2118900665,2022-12-17,00:00,218.74,Home Maintenance,Credit Card,Amazon,Gas Fire Pit Table,199.99,2034.0,18.75,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+127,2118900665,2022-12-17,00:00,219.38,Electronics,Credit Card,Amazon,FURINNO Turn-N-Tube 3-Tier Design Display Rack,200.58,2034.0,18.8,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+120,2118900665,2022-12-17,00:00,41.54,Home Maintenance,Credit Card,Amazon,Ariv Towels - Bath Towels Set,27.99,2034.0,3.56,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+129,2118900665,2022-12-18,00:00,2187.49,Fitness,Credit Card,Amazon,IFAST Power Cage with LAT Pulldown Home Gym Set,1999.99,2034.0,187.5,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302",
+91,2118900665,2022-12-21,18:46,479.99,Electronics,Credit Card,Costco,"Samsung 65"" - TU700D Series - 4K UHD LED LCD TV",479.99,0.0,0.0,0.0,,
+86,2118900665,2022-12-24,18:59,330.95,Groceries,Debit Card,Costco Wholesale,Multiple Items,330.95,2034.0,4.68,0.0,"2300 MIDDLEFIELD RD, REDWOOD CITY, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_76.jpg
+87,2118900665,2022-12-24,18:12,196.87,Groceries,Credit Card,Costco Wholesale,Various Groceries,196.87,0.0,16.88,0.0,"2300 MIDDLEFIELD RD REDWOOD CITY, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_77.jpg
+88,2118900665,2022-12-24,06:10,213.25,Home Maintenance,Credit Card,Costco Wholesale,Multiple Items,213.25,0.0,18.28,0.0,"2300 MIDDLEFIELD RD REDWOOD CITY, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_78.jpg
+153,2118900665,2023-01-03,10:12,53.8,Electronics,Credit Card,BOOGIIO,Wire Tracker RJ11 RJ45 Line Finder Handheld Cable Tester,53.8,9345.0,0.0,0.0,,
+85,2118900665,2023-01-09,21:31,326.91,Groceries,Debit Card,Costco,,326.91,2034.0,15.24,0.0,"2300 MIDDLEFIELD RD REDWOOD CITY, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_75.jpg
+70,2118900665,2023-01-12,15:00,11.75,Transportation,Credit Card,Pebble Beach Company,Vehicle Fee,11.75,7326.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_69.jpg
+15,2118900665,2023-01-15,18:20,400.0,Electronics,Credit Card,Costco,Samsung TV set,400.0,0.0,0.0,0.0,Unknown Address,Unknown
+98,2118900665,2023-01-17,00:00,131.24,Electronics,Credit Card,Bestbuy,Sanus - Speaker Stands for SONOS,119.99,,11.25,0.0,"28 ANDERSON WAY MENLO PARK, CA 940256302 US",
+99,2118900665,2023-01-17,18:56,639.0,Electronics,Credit Card,Bestbuy,Sonos - Sub (Gen 3) Wireless Subwoofer - Black,639.0,0.0,0.0,0.0,,
+100,2118900665,2023-01-17,18:57,719.0,Electronics,Credit Card,Bestbuy,Sonos - Arc Soundbar,719.0,0.0,0.0,0.0,,
+159,2118900665,2023-01-24,00:00,898.55,Entertainment,Credit Card,Amazon,SLOWPLAY Nash Ceramic Poker Chips Set,898.55,0.0,0.0,0.0,,
+157,2118900665,2023-01-26,10:14,503.11,Fitness,Credit Card,Amazon,mobifitness Turbo Exercise Bike for Indoor Cycling,503.11,0.0,0.0,0.0,,
+158,2118900665,2023-01-26,10:14,224.2,Electronics,Credit Card,Amazon,"HIFIMAN Deva-Pro Over-Ear Headphone, 62"" Selfie Stick Tripod with Remote, Lamicall Headphone Stand",224.2,0.0,0.0,0.0,,
+245,2118900665,2023-01-29,12:25,234.94,Miscellaneous,MASTERCARD DEBIT,T.J.Maxx & HomeGoods,Multiple Items,234.94,2034.0,20.14,0.0,"1251 INDUSTRIAL RD., SAN CARLOS, CA 94070, United States",
+84,2118900665,2023-01-29,21:42,369.0,Groceries,Debit Card,Costco Wholesale,Multiple Items,369.0,2034.0,7.2,0.0,"1000 N Rengstorff Ave, Mountain View, CA 94043",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_74.jpg
+83,2118900665,2023-02-15,20:34,514.1,Groceries,Debit Card,Costco Wholesale,Multiple Items,514.1,7414.0,40.11,0.0,"1001 METRO CENTER BLVD, FOSTER CITY, CA 94404",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_73.jpg
+156,2118900665,2023-03-05,10:14,974.64,Electronics,Credit Card,Amazon,EF ECOFLOW Portable Power Station RIVER 2 Max,974.64,8275.0,0.0,0.0,Lijie Wang,
+155,2118900665,2023-03-15,10:13,512.97,Electronics,Credit Card,Amazon,EF ECOFLOW Portable Power Station RIVER 2 Max,512.97,8155.0,0.0,0.0,,
+204,2118900665,2023-03-17,16:24,39.0,Utilities,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,2034.0,0.0,0.0,,
+256,2118900665,2023-03-21,00:59,72.03,Others,Credit Card,OpenAI,OpenAI API Invoice,72.03,2034.0,0.0,0.0,,
+154,2118900665,2023-03-25,10:13,37.5,Groceries,Credit Card,Amazon,"Nespresso Capsules VertuoLine, Caramel Cookie",37.5,4212.0,0.0,0.0,,
+162,2118900665,2023-03-26,10:16,131.68,Home Maintenance,Credit Card,Amazon,SparkPod Shower Head - High Pressure Rain,131.68,0.0,0.0,0.0,,
+82,2118900665,2023-03-29,20:18,233.63,Groceries,Unknown,Costco,Various Items,233.63,0.0,0.0,0.0,REDWOOD CITY,
+231,2118900665,2023-03-29,03:52,633.89,Utilities,Automatic Payment,Pacific Gas and Electric Company,Energy Statement,633.89,1738.0,0.0,0.0,,
+102,2118900665,2023-03-31,19:00,45000.0,Automobile,Credit Card,Tesla,Tesla Model 3,45000.0,0.0,0.0,0.0,,
+152,2118900665,2023-04-02,19:20,64.99,Others,Credit Card,Service Provider,Base Plan,64.99,9906.0,0.0,0.0,,
+81,2118900665,2023-04-05,01:19,160.72,Groceries,Credit Card,Costco,Various Items,160.72,0.0,0.0,0.0,REDWOOD CITY,
+251,2118900665,2023-04-10,13:37,61.22,Entertainment,Link,ElevenLabs,Character Usage and Creator Fee,61.22,1068.0,0.0,0.0,,
+236,2118900665,2023-04-12,03:23,238.76,Utilities,Online Payment,Menlo Park Municipal Water,Water Bill,238.76,0.0,0.0,0.0,"CITY OF MENLO PARK PO BOX 845629 LOS ANGELES, CA 90084-5629",
+161,2118900665,2023-04-18,10:16,614.82,Electronics,Credit Card,Online Shopping,Multiple Items,614.82,3406.0,0.0,0.0,,
+198,2118900665,2023-04-19,11:48,11.9,Entertainment,Credit Card,Stability AI Ltd,Credits for DreamStudio,10.0,2169.0,1.9,0.0,,
+160,2118900665,2023-04-26,10:16,55.0,Groceries,Credit Card,Starbucks by Nespresso,"Blonde, Medium, and Dark Roast Variety Pack Coffee",55.0,8480.0,0.0,0.0,,
+230,2118900665,2023-04-28,04:13,530.38,Utilities,Automatic Payments,Pacific Gas and Electric Company,Energy Statement,530.38,17385.0,0.0,0.0,,
+74,2118900665,2023-04-30,16:14,87.04,Groceries,Credit Card,Trader Joe's,Multiple Items,87.04,0.0,1.64,0.0,"855 El Camino Real, Bldg 6/Ste 140, Palo Alto, CA 94301",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_71.jpg
+151,2118900665,2023-05-02,12:34,540.0,Others,Credit Card,leo.win,"
+Domain Registration - leo.win for 1 year",540.0,9906.0,0.0,0.0,,
+213,2118900665,2023-05-06,08:11,45.06,Electronics,Credit Card,OpenAI,API Invoice,45.06,9906.0,0.0,0.0,,
+203,2118900665,2023-05-16,16:23,39.0,Telecommunications,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,9906.0,0.0,0.0,"17870 Newhope Street #104-155, Fountain Valley, CA 92708",
+167,2118900665,2023-05-31,10:17,111.34,Home Maintenance,Credit Card,Amazon,"AquaBliss Shower Filter, SparkPod Shower Head, ODMJ Shower Head",111.34,8603.0,0.0,0.0,,
+166,2118900665,2023-06-01,10:17,107.16,Electronics,Credit Card,Amazon,LED Recessed Light Bulbs; Multipurpose Stock Pot and Steamer,107.16,5433850.0,0.0,0.0,,
+150,2118900665,2023-06-02,19:20,72.99,Others,Credit Card,Base Plan,Base Plan,72.99,9906.0,0.0,0.0,,
+220,2118900665,2023-06-02,16:01,36.12,Utilities,Credit Card,Amazon Web Services,AWS Service Charges,36.12,0.0,0.0,0.0,,
+149,2118900665,2023-06-05,11:37,848.74,Electronics,Credit Card,Google Store,Nest Camera & Doorbell,775.99,9906.0,72.75,0.0,,
+165,2118900665,2023-06-05,00:00,67.11,Education,Not Provided,Amazon,Books - Longman Academic Writing Series & 21st Century Communication 4,67.11,0.0,0.0,0.0,Not Provided,Not Provided
+164,2118900665,2023-06-07,10:17,64.52,Automotive,Unknown,TESBEAUTY,Tesla Headrest Pillow 2 Packs,64.52,0.0,0.0,0.0,Unknown,Unknown
+148,2118900665,2023-06-13,15:35,319.0,Electronics,Visa,Google Store,"Nest Hub Max (Chalk), Nest Protect: 2nd Gen Smoke + CO Alarm - Battery",288.0,9906.0,27.0,0.0,NA,NA
+202,2118900665,2023-06-15,16:23,39.0,Utilities,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,9906.0,0.0,0.0,"17870 Newhope Street #104-155, Fountain Valley, CA 92708",
+254,2118900665,2023-06-17,00:55,42.12,Electronics,Credit Card,OpenAI,OpenAI API Invoice 3E569605-0004,42.12,9906.0,0.0,0.0,,
+170,2118900665,2023-06-22,00:00,76.45,Others,Credit Card,Amazon,BIC Multi-purpose Classic Edition Candle Lighters,76.45,3410631.0,0.0,0.0,,
+163,2118900665,2023-06-22,10:16,92.3,Home Maintenance,Unknown,Amazon,"Yankee Candle Vanilla Cupcake Scented, Classic 22oz Large Jar",92.3,0.0,0.0,0.0,Unknown,Unknown
+147,2118900665,2023-06-25,11:47,24.99,Entertainment,Visa,Kandahar (2023),Kandahar (2023),24.99,9906.0,0.0,0.0,,
+146,2118900665,2023-06-27,18:20,20.0,Others,Credit Card,Domain Registration,aiavatar.live Domain Registration,20.0,9906.0,0.0,0.0,,
+229,2118900665,2023-06-28,03:51,282.48,Utilities,Automatic Bank Withdrawal,Pacific Gas and Electric Company (PG&E),Energy Statement,282.48,17385.0,0.0,0.0,,
+145,2118900665,2023-07-02,19:20,72.99,Subscriptions,Credit Card,Subscription Service,Base Plan,72.99,9906.0,0.0,0.0,,
+103,2118900665,2023-07-04,19:01,47000.0,Automotive,Credit Card,Mini Cooper Dealership,Mini Cooper Convertible Sport,470000.0,0.0,0.0,0.0,,
+171,2118900665,2023-07-05,10:18,47.02,Home Maintenance,Card,Amazon,Unywarse Metal Garden Hose 50ft,47.02,0.0,0.0,0.0,,
+168,2118900665,2023-07-08,00:00,113.7,Home Maintenance,Credit Card,LEISURE TIME,"Brom Tabs Bromine Cleanser for Spas and Hot Tubs, 4 lbs",113.7,0.0,0.0,0.0,,
+169,2118900665,2023-07-08,00:00,24.29,Home Maintenance,Unknown,Amazon,Leisure Time A Bright and Clear Cleanser for Spas and Hot Tubs,24.29,0.0,0.0,0.0,,
+197,2118900665,2023-07-10,20:51,22.0,Software,Link,ElevenLabs,Creator,22.0,,0.0,0.0,,
+68,2118900665,2023-07-12,23:18,5.89,Groceries,Credit Card,Safeway,Chobani Greek Yogurt,6.49,3024.0,0.0,0.0,"325 Sharon Park Drive, Menlo Park CA 94025",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_67.jpg
+18,2118900665,2023-07-12,23:18,5.89,Groceries,Credit Card,Safeway,Chobani Greek Yogurt,6.49,3024.0,0.0,0.0,"325 Sharon Park Drive, Menlo Park CA 94025",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_58.jpg
+235,2118900665,2023-07-14,03:23,287.86,Utilities,Online Payment,Menlo Park Municipal Water,Water Bill,287.86,0.0,0.0,0.0,"CITY OF MENLO PARK, PO BOX 845629, LOS ANGELES, CA 90084-5629",
+201,2118900665,2023-07-15,17:15,39.0,Electronics,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,9906.0,0.0,0.0,"17870 Newhope Street #104-155, Fountain Valley, CA 92708",
+144,2118900665,2023-07-15,05:28,11.99,Entertainment,Visa,YouTube,YouTube Premium,11.99,9906.0,0.0,0.0,,
+211,2118900665,2023-07-18,04:27,142.27,Savings Investments,Credit Card,OpenAI,API Invoice,142.27,9906.0,0.0,0.0,,
+196,2118900665,2023-07-18,02:44,5.99,Electronics,Credit Card,De-Identification Inc.,lite,5.99,2169.0,0.0,0.0,,
+143,2118900665,2023-07-21,21:27,24.0,Utilities,Visa,preangel.org,Workspace Business Standard,24.0,9906.0,0.0,0.0,,
+228,2118900665,2023-07-28,04:09,283.59,Utilities,Automatic Payment,Pacific Gas and Electric Company,PG&E Energy Statement,283.59,17385.0,0.0,0.0,N/A,N/A
+172,2118900665,2023-07-30,10:19,54.68,Education,Card,Amazon,"Exerz 10"" Antique Globe With A Wood Base",54.68,2622.0,0.0,0.0,Lijie Wang's Address - Front door or porch,
+224,2118900665,2023-08-01,00:00,314.31,Utilities,Unknown,Pacific Gas and Electric Company,Electricity Bill,314.31,0.0,0.0,0.0,,
+142,2118900665,2023-08-02,19:20,72.99,Others,Visa,Base Plan Subscription,Base Plan,72.99,9906.0,0.0,0.0,,
+219,2118900665,2023-08-03,15:13,53.5,Utilities,Credit Card,"Amazon Web Services, Inc.",AWS Service Charges,53.5,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_88.jpg
+212,2118900665,2023-08-08,08:00,28.9,Electronics,Credit Card,OpenAI,API Invoice 31C80956-0003,28.9,2034.0,0.0,0.0,,
+205,2118900665,2023-08-12,05:58,80.0,Utilities,Automatic Payment,Xfinity,Monthly Bill,80.0,5643.0,0.0,0.0,"Comcast Cable, One Comcast Center 1701 JFK Boulevard, Philadelphia, PA 19103",
+200,2118900665,2023-08-14,16:24,39.0,Utilities,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,9906.0,0.0,0.0,"17870 Newhope Street #104-155, Fountain Valley, CA 92708",
+141,2118900665,2023-08-15,05:28,11.99,Entertainment,Credit Card,YouTube,YouTube Premium,11.99,9906.0,0.0,0.0,,
+140,2118900665,2023-08-22,13:53,24.0,Education,Credit Card,preangel.org,Workspace Business Standard,24.0,9906.0,0.0,0.0,,
+139,2118900665,2023-09-02,19:20,72.99,Others,Credit Card,Service Provider,Base Plan,72.99,9906.0,0.0,0.0,,
+218,2118900665,2023-09-02,00:00,38.63,Utilities,Credit Card,Amazon Web Services,AWS Service Charges,38.63,0.0,0.0,0.0,,
+234,2118900665,2023-09-06,00:00,329.32,Utilities,Unknown,Menlo Park Municipal Water,Water Bill,329.32,0.0,0.0,0.0,"Menlo Park, CA",
+194,2118900665,2023-09-10,20:47,22.0,Electronics,Link,ElevenLabs,Character Usage,22.0,0.0,0.0,0.0,,
+199,2118900665,2023-09-13,16:23,39.0,Utilities,Credit Card,Ultra Mobile,Ultra 1 Month Plan | 15GB/Mo,39.0,9906.0,0.0,0.0,"17870 Newhope Street #104-155, Fountain Valley, CA 92708",
+210,2118900665,2023-09-13,01:36,43.1,Others,Credit Card,OpenAI,API Invoice 31C80956-0004,43.1,2034.0,0.0,0.0,,
+138,2118900665,2023-09-14,05:33,0.0,Entertainment,Visa,YouTube,YouTube Premium,0.0,9906.0,0.0,0.0,,
+137,2118900665,2023-09-22,02:20,24.0,Business Services,Card,preangel.org,Workspace Business Standard,24.0,9906.0,0.0,0.0,,
+227,2118900665,2023-09-27,03:52,255.18,Utilities,Automatic Payment,Pacific Gas and Electric Company,Energy Statement,255.18,17385.0,0.0,0.0,,
+217,2118900665,2023-10-02,00:00,37.11,Utilities,Credit Card,Amazon Web Services,AWS Service Charges,37.11,0.0,0.0,0.0,,
+136,2118900665,2023-10-09,15:40,24.99,Entertainment,Visa,The Equalizer 3,The Equalizer 3 Movie Ticket,24.99,9906.0,0.0,0.0,,
+252,2118900665,2023-10-10,21:07,79.86,Utilities,Credit Card,OpenAI,API Invoice 3E569605-0008,79.86,9906.0,0.0,0.0,Email,
+233,2118900665,2023-10-11,00:00,212.72,Utilities,Online Payment,Menlo Park Municipal Water,Water Bill,212.72,0.0,0.0,0.0,Menlo Park,
+135,2118900665,2023-10-11,22:09,19.99,Entertainment,Credit Card,Movie Theater,Mission: Impossible - Dead Reckoning Part One,19.99,9906.0,0.0,0.0,,
+134,2118900665,2023-10-22,01:11,24.0,Others,Credit Card,preangel.org,Workspace Business Standard,24.0,9906.0,0.0,0.0,,
+226,2118900665,2023-10-27,04:10,211.09,Utilities,Automatic Payment,PG&E,Energy Statement,211.09,17385.0,0.0,0.0,,
+216,2118900665,2023-11-02,00:00,38.06,Utilities,Credit Card,Amazon Web Services,AWS Service Charges,38.06,0.0,0.0,0.0,,
+232,2118900665,2023-11-07,04:09,189.4,Utilities,Online,Menlo Park Municipal Water,Water Bill,189.4,0.0,0.0,0.0,"PO BOX 845629, LOS ANGELES, CA 90084-5629",
+195,2118900665,2023-11-07,20:27,8.25,Entertainment,Credit Card,"Flickr, Inc.",Flickr Pro Monthly,8.25,7672.0,0.0,0.0,,
+250,2118900665,2023-11-08,13:33,50.24,Others,Credit Card,"OpenAI, LLC",GPT Usage,50.24,97273.0,0.0,0.0,"548 Market Street PMB 97273 San Francisco, California 94104",
+193,2118900665,2023-11-10,20:49,22.0,Others,Link,ElevenLabs,Creator,22.0,,0.0,0.0,https://help.elevenlabs.io/,
+133,2118900665,2023-11-21,21:33,24.0,Subscriptions,Credit Card,preangel.org,Workspace Business Standard,24.0,9906.0,0.0,0.0,,
+174,2118900665,2023-11-24,00:00,108.28,Electronics,Credit Card,Online Shopping,GE Tilt-Head Electric Stand Mixer,108.28,3841066.0,0.0,0.0,,
+206,2118900665,2023-11-28,08:06,45.0,Utilities,Auto Pay,Verizon Wireless,Smartphone Plan,45.0,4727.0,0.0,0.0,"One Verizon Way, Mail Code: 180WVB, Basking Ridge, NJ 07920",
+225,2118900665,2023-11-29,04:54,284.05,Utilities,Automatic Bill Payment,Pacific Gas and Electric Company,Energy Statement,284.05,17385.0,0.0,0.0,"300 Lakeside Drive, Oakland, CA 94612",
+32,2118900665,2023-12-01,12:48,15.0,Dining Out,Credit Card,Dametra Café,BERNARDUS ROSE GLASS,15.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+34,2118900665,2023-12-01,12:48,18.95,Dining Out,Credit Card,Dametra Café,GRILLED VEGGIE SALAD,18.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+37,2118900665,2023-12-01,12:48,135.8,Dining Out,Credit Card,Dametra Café,GREEK LAMB SHANK,135.8,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+36,2118900665,2023-12-01,12:48,44.95,Dining Out,Credit Card,Dametra Café,LAMB CHOPS,44.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+35,2118900665,2023-12-01,12:48,15.95,Dining Out,Credit Card,Dametra Café,GRILLED PRAWNS,15.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+33,2118900665,2023-12-01,12:48,14.0,Dining Out,Credit Card,Dametra Café,GERARD BERTRAND GLASS,14.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+30,2118900665,2023-12-01,12:48,5.0,Dining Out,Credit Card,Dametra Café,APPLE JUICE,5.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+29,2118900665,2023-12-01,12:48,5.0,Dining Out,Credit Card,Dametra Café,CRANBERRY JUICE,5.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+31,2118900665,2023-12-01,12:48,5.0,Dining Out,Credit Card,Dametra Café,ORANGE JUICE,5.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+27,2118900665,2023-12-01,12:48,39.95,Dining Out,Credit Card,Dametra Café,FISHERMAN CIOPPINO,39.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+26,2118900665,2023-12-01,12:48,14.95,Dining Out,Credit Card,Dametra Café,RICE WITH CHICKEN,14.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+25,2118900665,2023-12-01,12:48,16.95,Dining Out,Credit Card,Dametra Café,GREEK SALAD,16.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+24,2118900665,2023-12-01,12:48,27.9,Dining Out,Credit Card,Dametra Café,CLAM CHOWDER BOWL,27.9,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+23,2118900665,2023-12-01,12:48,21.95,Dining Out,Credit Card,Dametra Café,STEAMED MUSSELS & CLAMS,21.95,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+28,2118900665,2023-12-01,12:48,30.0,Dining Out,Credit Card,Dametra Café,BAKLAVA,30.0,0.0,40.15,0.0,"Corner of Ocean & Lincoln St, Carmel-By-The-Sea, CA 93921",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_63.jpg
+215,2118900665,2023-12-02,15:53,34.45,Utilities,Invoice,Amazon Web Services,AWS Service Charges,34.45,,0.0,0.0,,
+214,2118900665,2023-12-02,15:13,34.45,Electronics,Credit Card,"Amazon Web Services, Inc.",Multiple Items,34.45,0.0,0.0,0.0,"28 Anderson Way Menlo Park, California, 94025, US",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_87.jpg
+17,2118900665,2023-12-03,15:06,41.01,Groceries,Credit Card,Safeway,Unclear,41.01,4016.0,0.0,0.0,"Menlo Park, CA 94025",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_62.jpg
+237,2118900665,2023-12-06,04:23,135.22,Utilities,Online,Menlo Park Municipal Water,Water Bill,135.22,,0.0,0.0,"PO BOX 845629, LOS ANGELES, CA 90084-5629",
+16,2118900665,2023-12-07,23:18,5.89,Groceries,Credit Card,Safeway,Chobani Greek Yogurt,6.49,3024.0,0.0,0.0,"325 Sharon Park Drive, Menlo Park CA 94025",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_60.jpg
+209,2118900665,2023-12-07,08:10,19.62,Software Subscriptions,Credit Card,OpenAI,API Invoice,19.62,9906.0,0.0,0.0,,
+2,2118900665,2023-12-08,17:23,18.99,Groceries,Credit Card,Unknown,EC Stainless S Pot,18.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+3,2118900665,2023-12-08,17:23,11.96,Groceries,Credit Card,Unknown,PSF Prs Mstrd W/Oliv,11.96,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+7,2118900665,2023-12-08,17:45,4.99,Groceries,Credit Card,Unknown,A-Potato Bag Gold 5 lb,4.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+5,2118900665,2023-12-08,17:23,5.44,Groceries,Credit Card,Unknown,White Pomelo,5.44,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+6,2118900665,2023-12-08,17:45,16.3,Groceries,Credit Card,Unknown,Unclear,16.3,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+8,2118900665,2023-12-08,17:45,6.49,Groceries,Credit Card,Unknown,A-5lb Org Sweet Potato,6.49,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+4,2118900665,2023-12-08,17:23,12.67,Groceries,Credit Card,Unknown,Pork Front Feet USA,12.67,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+11,2118900665,2023-12-08,17:45,5.99,Groceries,Credit Card,Unknown,Pork Nat Crate Free 80/2,5.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+1,2118900665,2023-12-08,17:16,23.03,Groceries,Credit Card,Unknown,RACK OF LAMB,23.03,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+10,2118900665,2023-12-08,17:45,11.99,Groceries,Credit Card,Unknown,Red Argentinian Shrimp,11.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+12,2118900665,2023-12-08,17:45,6.99,Groceries,Credit Card,Unknown,Bacon Black Forest Uncur,6.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+9,2118900665,2023-12-08,17:45,23.03,Groceries,Credit Card,Unknown,Rack of Lamb,23.03,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_54.jpg
+39,2118900665,2023-12-09,03:43,2.99,Groceries,Credit Card,Unknown,CRV REFRG SNGL NTX,2.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+40,2118900665,2023-12-09,03:43,4.99,Groceries,Credit Card,Unknown,FLORIDA’S NATURAL,4.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+41,2118900665,2023-12-09,03:43,8.99,Groceries,Credit Card,Unknown,LUCERNE WHOLE MILK,8.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+42,2118900665,2023-12-09,03:43,10.65,Groceries,Credit Card,Unknown,BLUEBERRIES ORGNC,10.65,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+43,2118900665,2023-12-09,03:43,10.65,Groceries,Credit Card,Unknown,GALA APPLES LARGE,10.65,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+44,2118900665,2023-12-09,07:55,10.49,Groceries,Credit Card,Unknown,ECO HALF STM,10.49,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+45,2118900665,2023-12-09,07:55,14.99,Groceries,Credit Card,Unknown,KS CUTLERY,14.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+46,2118900665,2023-12-09,07:55,17.79,Groceries,Credit Card,Unknown,FRZ GAL ZIPR,17.79,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+48,2118900665,2023-12-09,07:55,13.12,Groceries,Credit Card,Unknown,SPINSALAD,13.12,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfF9LRnx7ZDQ/photos/file_57.jpg
+49,2118900665,2023-12-09,07:55,44.62,Groceries,Credit Card,Unknown,BEEF RIBEYE,44.62,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+50,2118900665,2023-12-09,07:55,29.14,Groceries,Credit Card,Unknown,ST LOUIS RIB,29.14,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+51,2118900665,2023-12-09,07:55,14.94,Groceries,Credit Card,Unknown,KABOBS,14.94,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+52,2118900665,2023-12-09,07:55,14.94,Groceries,Credit Card,Unknown,KABOBS,14.94,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+53,2118900665,2023-12-09,07:55,14.11,Groceries,Credit Card,Unknown,SHRIMP CKTL,14.11,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+54,2118900665,2023-12-09,07:55,30.57,Groceries,Credit Card,Unknown,SALMON NLAN,30.57,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+55,2118900665,2023-12-09,07:55,6.99,Groceries,Credit Card,Unknown,GR CHILIBRD,6.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+56,2118900665,2023-12-09,07:55,5.99,Groceries,Credit Card,Unknown,CANDY SNAP,5.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+57,2118900665,2023-12-09,07:55,23.35,Groceries,Credit Card,Unknown,PORK BELLY,23.35,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+63,2118900665,2023-12-09,07:55,10.1,Groceries,Credit Card,Unknown,CAESAR SALAD,10.1,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+62,2118900665,2023-12-09,07:55,6.99,Groceries,Credit Card,Unknown,CHERRIES,6.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+61,2118900665,2023-12-09,07:55,5.99,Groceries,Credit Card,Unknown,SHISHITO PEP,5.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+60,2118900665,2023-12-09,07:55,6.99,Groceries,Credit Card,Unknown,3LB IDAHO FUJI,6.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+38,2118900665,2023-12-09,03:43,2.99,Groceries,Credit Card,Unknown,FLORIDAS NATURAL,2.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_64.jpg
+22,2118900665,2023-12-09,03:28,5.44,Groceries,Credit Card,Unknown,White Pomelo,5.44,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+47,2118900665,2023-12-09,07:55,11.99,Groceries,Credit Card,Unknown,VF NAPKIN,11.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+20,2118900665,2023-12-09,03:28,11.96,Groceries,Credit Card,Unknown,PSF PRS MSTRD W/Oliv,11.96,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+58,2118900665,2023-12-09,07:55,15.59,Groceries,Credit Card,Unknown,PROS/SALAMI,15.59,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+13,2118900665,2023-12-09,01:55,5.93,Groceries,Credit Card,Unknown,Unclear,5.93,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_56.jpg
+21,2118900665,2023-12-09,03:28,12.67,Groceries,Credit Card,Unknown,Pork Front Feet USA,12.67,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+59,2118900665,2023-12-09,07:55,6.99,Groceries,Credit Card,Unknown,ORG GRN GRPS,6.99,1822.0,4.81,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_57.jpg
+19,2118900665,2023-12-09,03:28,18.99,Groceries,Credit Card,Unknown,ES Stainless's Pot,18.99,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_55.jpg
+192,2118900665,2023-12-10,20:44,22.0,Electronics,Link,ElevenLabs,Character Usage,22.0,0.0,0.0,0.0,,
+64,2118900665,2023-12-10,01:35,309.82,Groceries,Credit Card,Costco Wholesale,KS BODYWASH,0.0,0.0,9.77,0.0,"2300 Middlefield Rd, Redwood City, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_66.jpg
+65,2118900665,2023-12-10,01:35,309.82,Groceries,Credit Card,Costco Wholesale,KS GLOVE MED,0.0,0.0,9.77,0.0,"2300 Middlefield Rd, Redwood City, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_66.jpg
+66,2118900665,2023-12-10,01:35,309.82,Groceries,Credit Card,Costco Wholesale,PEANUTS,0.0,0.0,9.77,0.0,"2300 Middlefield Rd, Redwood City, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_66.jpg
+67,2118900665,2023-12-10,01:35,309.82,Groceries,Credit Card,Costco Wholesale,ALMONDS,0.0,0.0,9.77,0.0,"2300 Middlefield Rd, Redwood City, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_66.jpg
+69,2118900665,2023-12-11,15:36,0.0,Others,Credit Card,Unknown,Unclear,0.0,0.0,0.0,0.0,Unknown Address,Unknown
+101,2118900665,2023-12-12,18:58,400.0,Electronics,Credit Card,Bestbuy,Sonos - Era 100 Speaker (Each) - Black,199.0,0.0,0.0,0.0,,
+71,2118900665,2023-12-12,14:31,14.96,Food & Beverages,Credit Card,Town & Country Village Boba Shop,Boba drink,14.96,3024.0,0.0,0.0,Town & Country Village,
+72,2118900665,2023-12-12,13:02,95.03,Groceries,Credit Card,Trader Joe's,Multiple Items,95.03,0.0,0.0,0.0,"855 El Camino Real, Bldg 6/Ste 140, Palo Alto, CA 94301",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_70.jpg
+73,2118900665,2023-12-12,15:35,87.04,Groceries,Stella Pay,Trader Joe's,Groceries,87.04,3024.0,0.0,0.0,,
+104,2118900665,2023-12-12,18:16,14.96,Dining Out,Credit Card,Boba Guys Palo Alto,Multiple Items,14.96,0.0,0.0,1.36,"Embarcadero Rd, Palo Alto",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_80.jpg
+76,2118900665,2023-12-12,18:29,69.99,Hobbies,Amazon,Woodronic Store,Woodronic Cigar Humidor with Digital Hygrometer,69.99,0.0,0.0,0.0,Online Purchase,
+78,2118900665,2023-12-12,18:34,40.0,Groceries,Credit Card,Amazon,"Nespresso Capsules VertuoLine, Espresso, Bold Variety Pack",40.0,0.0,0.0,0.0,,
+79,2118900665,2023-12-12,18:35,26.0,Office Supplies,Unknown,Amazon,"Hammermill Printer Paper, 20 lb Copy Paper, 8.5 x 11 - 3 Ream (1,500 Sheets) - 92 Bright, Made in the USA, 500 Count (pack of 3)",26.0,0.0,0.0,0.0,Unknown,Unknown
+80,2118900665,2023-12-12,18:16,362.58,Groceries,Credit Card,Costco Wholesale,Multiple Items,362.58,1822.0,10.46,0.0,"Costco Wholesale, 2300 Middlefield Rd, Redwood City, CA 94063",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_72.jpg
+75,2118900665,2023-12-12,16:57,105.0,Alcohol,Debit Card,COSTCO by Instacart,Box of Beer,105.0,6946.0,0.0,0.0,,
+77,2118900665,2023-12-12,18:31,190.0,Household,Credit Card,Amazon,GE Tilt-Head Electric Stand Mixer,190.0,0.0,0.0,0.0,,
+90,2118900665,2023-12-12,18:45,2199.99,Electronics,Credit Card,Costco,"Samsung 85"" Class - Q80BD Series - 4K UHD QLED LCD TV",2199.99,0.0,0.0,0.0,,
+97,2118900665,2023-12-12,18:51,7866.32,Home Furnishing,Credit Card,Purple,Multiple Items,7866.32,2034.0,655.32,0.0,Not Provided,Not Provided
+131,2118900665,2023-12-14,20:39,14.96,Dining Out,Credit Card,Boba Guys Palo Alto,Multiple Items,14.96,0.0,0.0,1.36,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_81.jpg
+130,2118900665,2023-12-14,14:37,23.0,Personal Care,Credit Card,Great Clips,Hair Cut,23.0,3024.0,0.0,0.0,,
+132,2118900665,2023-12-15,10:14,18.99,Entertainment,Credit Card,App Store,YouTube Premium,18.99,9906.0,0.0,0.0,"28 Anderson Way Menlo Park, CA 94025 USA",
+173,2118900665,2023-12-16,10:19,29.52,Electronics,Credit Card,Amazon,LED Recessed Light Bulbs BR30,29.52,0.0,0.0,0.0,,
+175,2118900665,2023-12-16,13:34,33.2,Groceries,Credit Card,Felipes Market,Multiple Items,33.2,8981.0,0.0,0.0,"1101 West El Camino Real, Sunnyvale, CA 94087",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_82.jpg
+176,2118900665,2023-12-17,09:06,99.0,Others,Credit Card,Target.com,Membership Card,99.0,9906.0,0.0,0.0,Online,
+241,2118900665,2023-12-18,08:36,76.55,Home Maintenance,Credit Card,Amazon,DONEUS Jersey Knit Duvet Cover Set,76.55,0.0,0.0,0.0,,
+181,2118900665,2023-12-18,21:28,76.55,Home Maintenance,Credit Card,Amazon,Jersey Knit Duvet Cover Set,76.55,0.0,0.0,0.0,,
+180,2118900665,2023-12-18,15:10,16.4,Electronics,Credit Card,Amazon Prime,Unknown,16.4,9906.0,0.0,0.0,Unknown,Unknown
+179,2118900665,2023-12-18,12:38,114.21,Groceries,Credit Card,Target,,116.73,8891.0,5.14,0.0,"2485 El Camino Real, Redwood City, California 94063-2849",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_85.jpg
+182,2118900665,2023-12-18,21:28,7.65,Others,Credit Card,Amazon,"SKQIT 2 Pieces Creative Cute Rabbit Rice Spoon, Non Stick Rice Paddle, Bunny Shape Stand Up Serving Rice Shovel",7.65,0.0,0.0,0.0,,
+183,2118900665,2023-12-18,21:28,32.58,Home Maintenance,Credit Card,Amazon,WACETOG Deep Frying Pan Nonstick Skillet,32.58,0.0,0.0,0.0,,
+186,2118900665,2023-12-20,10:12,10.0,Electronics,Credit Card,GitHub,preangelleo Pro yearly Plan,10.0,3024.0,0.0,0.0,"88 Colin P. Kelly Jr. Street San Francisco, CA 94107",
+185,2118900665,2023-12-20,10:27,10.0,Subscriptions Services,Credit Card,GitHub,Annual Fee,10.0,0.0,0.0,0.0,,
+207,2118900665,2023-12-20,00:00,182.24,Insurance,Credit Card,Tesla Insurance Services,Monthly Insurance Payment,182.24,,0.0,0.0,,
+184,2118900665,2023-12-20,00:01,69.99,Others,Credit Card,Linked in,Monthly Fee,69.99,3024.0,0.0,0.0,,
+187,2118900665,2023-12-20,20:01,182.24,Insurance,Credit Card,Tesla Insurance Services,Insurance Payment,182.24,9906.0,0.0,0.0,,
+188,2118900665,2023-12-21,09:04,45.29,Dining Out,Credit Card,50 BUCK'S,,0.0,8981.0,3.29,7.0,"3062 Woodside Rd, Woodside, CA 94062",https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_86.jpg
+191,2118900665,2023-12-22,14:47,35.0,Subscriptions,Credit Card,CoinMarketCap,API Subscription,35.0,3024.0,0.0,0.0,,
+190,2118900665,2023-12-22,13:20,144.0,Others,Credit Card,烟多多网,电子烟弹,144.0,0.0,0.0,0.0,,
+238,2118900665,2023-12-22,15:13,141.86,Gifts Donations,Credit Card,Tiffany & Co.,SS UPN HRT FEEDING SPOON,130.0,3024.0,11.86,0.0,Palo Alto,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_89.jpg
+208,2118900665,2023-12-22,12:08,24.0,Electronics,Credit Card,Google Domains,Workspace Business Standard - preangel.org,24.0,9906.0,0.0,0.0,"1600 Amphitheatre Pkwy, Mountain View, CA 94043, United States",
+189,2118900665,2023-12-22,21:21,8.25,Subscription Services,Credit Card,"Flickr, Inc.",Subscription,8.25,3024.0,0.0,0.0,,
+242,2118900665,2023-12-23,13:36,15.98,Groceries,Credit Card,T.J.Maxx & HomeGoods,WELLNESS FOOD,15.98,8981.0,1.5,0.0,"1251 INDUSTRIAL RD. SAN CARLOS, CA 94070",
+240,2118900665,2023-12-23,16:22,325.39,Electronics,Credit Card,Amazon.com,Pentair Everpure H-1200,325.39,0.0,0.0,0.0,"MENLO PARK, CA",
+246,2118900665,2023-12-23,16:57,545.78,Electronics,Credit Card,Online Shopping,Meta Quest 3 128GB,545.78,7486643.0,0.0,0.0,,
+247,2118900665,2023-12-23,17:09,359.84,Electronics,Credit Card,Amazon,Ray-Ban Meta - Wayfarer Smart Glasses,359.84,,0.0,0.0,,
+249,2118900665,2023-12-23,13:11,70.33,Groceries,Online Payment,Weee,Order #43173004,70.33,,0.0,0.0,"28 Anderson Way, Menlo Park, California, 94025, United States",
+239,2118900665,2023-12-23,20:00,325.39,Home Maintenance,Credit Card,Amazon,Pentair Everpure H-1200 Quick-Change Filter Cartridge Set,325.39,0.0,0.0,0.0,,
+243,2118900665,2023-12-23,14:55,17.65,Home Maintenance,Credit Card,Amazon,Pullman Loaf Pan with Lid,16.14,3024.0,1.51,0.0,"28 ANDERSON WAY MENLO PARK, CA 94025-6302 United States",
+248,2118900665,2023-12-24,07:41,111.2,Home Maintenance,Credit Card,Unknown,Multiple Items,111.2,0.0,0.0,0.0,Unknown Address,https://api.telegram.org/file/bot6134874649:AAG6QrYOOD5tvU-3q1sKOBcyfW9LRnx7ZDQ/photos/file_90.jpg
+255,2118900665,2023-12-24,13:40,30.37,Electronics,Credit Card,OpenAI,OpenAI API Invoice,30.37,9906.0,0.0,0.0,,
+253,2118900665,2023-12-24,13:39,42.69,Utilities,Credit Card,OpenAI,OpenAI API Invoice,42.69,9906.0,0.0,0.0,,
+244,2118900665,2023-12-28,14:55,17.65,Electronics,Credit Card,Amazon.com,KITESSENSU Pullman Loaf Pan,17.65,,,,"MENLO PARK, CA",
